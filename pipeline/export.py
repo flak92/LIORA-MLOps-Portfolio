@@ -1,11 +1,17 @@
-"""Export per-asset Parquet files from the canonical fused series.
+"""Export per-asset Parquet files from the canonical series.
 
 One file per asset: assets/Asset_<TICKER>/1m_<TICKER>_data.parquet with pure
 timestamp_ms, open, high, low, close, volume columns — a continuous canonical
-series with no gaps, so downstream indicator / ML code needs no gap handling.
-Provenance (src_count, is_ffill, divergence, weights) stays in the database and
-in the monitoring layer. Writes are atomic: COPY to a temp file, verify the
-read-back row count, then os.replace.
+series with no gaps. Provenance (source, zero_volume, validity, divergence)
+stays in the database and in the monitoring layer.
+
+Writes are fail-closed: the data is COPY'd to a temp file and a set of
+invariants is asserted on the temp file BEFORE os.replace — a failing
+invariant leaves the previously published Parquet untouched:
+  - row count equals the full minute grid of the window,
+  - timestamps are distinct and on the 60000 ms grid,
+  - no NULL and no non-finite OHLCV values,
+  - OHLC ordering invariants hold on every row.
 """
 
 from __future__ import annotations
@@ -17,6 +23,19 @@ import duckdb
 
 from . import config
 
+INVARIANTS = """
+SELECT count(*)                                                        AS rows,
+       count(DISTINCT timestamp_ms)                                    AS distinct_ts,
+       count(*) FILTER (timestamp_ms % 60000 <> 0)                     AS off_grid,
+       count(*) FILTER (open IS NULL OR high IS NULL OR low IS NULL
+                        OR close IS NULL OR volume IS NULL)            AS nulls,
+       count(*) FILTER (NOT (isfinite(open) AND isfinite(high) AND isfinite(low)
+                             AND isfinite(close) AND isfinite(volume))) AS non_finite,
+       count(*) FILTER (high < greatest(open, close, low)
+                     OR low  > least(open, close, high))               AS ohlc_broken
+FROM read_parquet('{path}')
+"""
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="ohlcv_1m_canonical -> assets/Asset_<T>/1m_<T>_data.parquet")
@@ -25,6 +44,10 @@ def main() -> int:
     tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
 
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    grid_rows = con.execute(
+        f"""SELECT (max(timestamp_ms) + {config.GRID_STEP_MS} - {config.START_MS})
+                   // {config.GRID_STEP_MS} FROM ohlcv_1m_canonical"""
+    ).fetchone()[0]
     for t in tickers:
         sym = config.symbol(t)
         out = config.asset_parquet(t)
@@ -35,12 +58,15 @@ def main() -> int:
                       FROM ohlcv_1m_canonical WHERE symbol = '{sym}' ORDER BY timestamp_ms)
                 TO '{tmp}' (FORMAT PARQUET, COMPRESSION zstd)"""
         )
-        db_rows = con.execute("SELECT count(*) FROM ohlcv_1m_canonical WHERE symbol = ?", [sym]).fetchone()[0]
-        file_rows = con.execute(f"SELECT count(*) FROM read_parquet('{tmp}')").fetchone()[0]
-        if file_rows != db_rows:
-            raise SystemExit(f"{out.name}: read-back {file_rows} rows != canonical {db_rows}")
+        inv = con.execute(INVARIANTS.format(path=tmp)).fetchone()
+        rows, distinct_ts, off_grid, nulls, non_finite, ohlc_broken = inv
+        assert rows == grid_rows, f"{out.name}: {rows} rows != grid {grid_rows}"
+        assert distinct_ts == rows, f"{out.name}: duplicate timestamps"
+        assert off_grid == 0, f"{out.name}: {off_grid} off-grid timestamps"
+        assert nulls == 0 and non_finite == 0, f"{out.name}: NULL/non-finite OHLCV"
+        assert ohlc_broken == 0, f"{out.name}: {ohlc_broken} OHLC-broken rows"
         os.replace(tmp, out)
-        print(f"{out.relative_to(config.REPO_ROOT)}: {file_rows} rows", flush=True)
+        print(f"{out.relative_to(config.REPO_ROOT)}: {rows} rows (invariants ok)", flush=True)
     con.close()
     return 0
 
