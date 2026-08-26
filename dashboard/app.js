@@ -61,6 +61,7 @@ function renderVenue(tableId, list) {
     cell(tr, fmt(v.rows));
     cell(tr, pctCell(v.coverage_pct));
     cell(tr, fmt(v.gaps));
+    cell(tr, fmt(v.gaps_after_listing), v.gaps_after_listing > 0);
     cell(tr, fmt(v.duplicates), v.duplicates > 0);
     cell(tr, fmt(v.ohlc_violations), v.ohlc_violations > 0);
     cell(tr, fmt(v.zero_volume));
@@ -71,7 +72,7 @@ function renderVenue(tableId, list) {
   }
 }
 
-fetch("status.json")
+fetch("status.json", { cache: "no-store" })
   .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
   .then((s) => {
     document.getElementById("meta").textContent =
@@ -114,6 +115,8 @@ fetch("status.json")
       cell(tr, fmt(y.ohlc_violations), y.ohlc_violations > 0);
       cell(tr, fmt(y.longest_flat_run_min));
       cell(tr, y.max_abs_ret_1m === null ? "-" : (100 * y.max_abs_ret_1m).toFixed(2) + "%");
+      cell(tr, y.max_phantom_ret === null ? "-" : (100 * y.max_phantom_ret).toFixed(2) + "%",
+           y.max_phantom_ret !== null && y.max_phantom_ret > 0.01);
       cell(tr, fmtDiv(y.div_mean));
       cell(tr, fmtDiv(y.div_p99), y.div_p99 !== null && y.div_p99 > 0.002);
       cell(tr, fmtDiv(y.div_max));

@@ -58,6 +58,20 @@ SELECT max(abs(close / prev - 1)) FROM (
   FROM ohlcv_1m_canonical WHERE symbol = ?)
 """
 
+# phantom return: canonical 1m move exceeding BOTH venues' own moves — the
+# index shifting between disagreeing venues via weight changes alone
+PHANTOM_RET = """
+WITH c AS (SELECT timestamp_ms, close AS cc, lag(close) OVER (ORDER BY timestamp_ms) AS pc
+           FROM ohlcv_1m_canonical WHERE symbol = ?),
+     b AS (SELECT timestamp_ms, close AS cb, lag(close) OVER (ORDER BY timestamp_ms) AS pb
+           FROM ohlcv_1m_binance WHERE symbol = ? AND volume > 0),
+     y AS (SELECT timestamp_ms, close AS cy, lag(close) OVER (ORDER BY timestamp_ms) AS py
+           FROM ohlcv_1m_bybit   WHERE symbol = ? AND volume > 0)
+SELECT max(greatest(abs(cc/pc-1) - greatest(abs(cb/pb-1), abs(cy/py-1)), 0)) AS max_phantom_ret
+FROM c JOIN b USING (timestamp_ms) JOIN y USING (timestamp_ms)
+WHERE pc IS NOT NULL AND pb IS NOT NULL AND py IS NOT NULL
+"""
+
 CANON_FLAT_RUN = """
 WITH f AS (SELECT timestamp_ms, (volume = 0 AND open = high AND high = low
                                  AND low = close) AS flat
@@ -92,6 +106,7 @@ def main() -> int:
         sym: (
             con.execute(CANON_MAX_RET, [sym]).fetchone()[0],
             con.execute(CANON_FLAT_RUN, [sym]).fetchone()[0],
+            con.execute(PHANTOM_RET, [sym, sym, sym]).fetchone()[0],
         )
         for sym in fusion_rows
     }
@@ -122,6 +137,7 @@ def main() -> int:
                     "rows": rows,
                     "coverage_pct": pct(distinct_ts, expected),
                     "gaps": expected - distinct_ts,
+                    "gaps_after_listing": ((r[4] - r[3]) // config.GRID_STEP_MS + 1 - distinct_ts) if r else 0,
                     "duplicates": rows - distinct_ts,
                     "ohlc_violations": int(r[5]) if r else 0,
                     "zero_volume": int(r[6]) if r else 0,
@@ -155,6 +171,7 @@ def main() -> int:
                 "flat_bars": int(r[12]),
                 "max_abs_ret_1m": round(float(canon_extra[sym][0]), 6) if canon_extra[sym][0] is not None else None,
                 "longest_flat_run_min": int(canon_extra[sym][1]),
+                "max_phantom_ret": round(float(canon_extra[sym][2]), 6) if canon_extra[sym][2] is not None else None,
             }
         )
         pq = config.asset_parquet(t)
@@ -210,12 +227,13 @@ def main() -> int:
                   f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume']:>6} {s['flat_bars']:>6}")
     print("[fusion / canonical]")
     print(f"{'symbol':9} {'rows':>9} {'both%':>7} {'bin%':>7} {'byb%':>6} {'ffill':>6} {'lead0':>5} "
-          f"{'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'div_p99':>10} {'div_max':>10}")
+          f"{'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'phantom':>8} {'div_p99':>10} {'div_max':>10}")
     for s in fusion:
         print(f"{s['symbol']:9} {s['rows']:>9} {s['pct_both']:>7.2f} {s['pct_binance_only']:>7.2f} "
               f"{s['pct_bybit_only']:>6.2f} {s['ffill_bars']:>6} {s['leading_null']:>5} "
               f"{s['ohlc_violations']:>4} {s['longest_flat_run_min']:>7} "
               f"{s['max_abs_ret_1m'] if s['max_abs_ret_1m'] is not None else '-':>8} "
+              f"{s['max_phantom_ret'] if s['max_phantom_ret'] is not None else '-':>8} "
               f"{s['div_p99'] if s['div_p99'] is not None else '-':>10} "
               f"{s['div_max'] if s['div_max'] is not None else '-':>10}")
     print(f"wrote {out.relative_to(config.REPO_ROOT)}")
