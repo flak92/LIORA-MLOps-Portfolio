@@ -8,11 +8,12 @@
 </head>
 <body>
   <h1>1m crypto data pipeline — status</h1>
-  <p class="sub">Binance USDS-M + Bybit Linear 1m klines &rarr; Lean ZIPs &rarr; DuckDB fusion &rarr; canonical per-asset Parquet</p>
+  <p class="sub">Binance USDS-M + Bybit Linear 1m klines &rarr; Lean ZIPs &rarr; DuckDB primary-failover canonical &rarr; per-asset Parquet</p>
 
   <nav id="tabs">
     <button data-tab="pipeline" class="active">Pipeline</button>
     <button data-tab="quality">Data Quality</button>
+    <button data-tab="ml">ML Research</button>
   </nav>
 
   <section id="tab-pipeline">
@@ -50,20 +51,37 @@
       </thead>
       <tbody></tbody>
     </table>
-    <h2>Fusion (canonical series)</h2>
-    <table id="fusion">
+    <h2>Canonical source (primary-failover)</h2>
+    <table id="canonical-source">
       <thead>
         <tr>
-          <th>symbol</th><th>rows</th><th>both venues</th><th>binance-only</th><th>bybit-only</th>
-          <th>ffill</th><th>leading null</th><th>ohlc bad</th><th>flat run (min)</th><th>max |ret| 1m</th>
-          <th>max phantom</th><th>div mean</th><th>div p99</th><th>div max</th>
+          <th>symbol</th><th>rows</th><th>binance</th><th>bybit</th><th>ffill</th>
+          <th>zero-vol</th><th>switches</th><th>max |ret| at switch</th><th>ohlc bad</th>
+          <th>flat run (min)</th><th>max |ret| 1m</th><th>div mean</th><th>div p99</th><th>div max</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </section>
 
-  <p class="foot">static page &middot; data from <code>status.json</code> (regenerate with <code>make status</code>)</p>
+  <section id="tab-ml" hidden>
+    <div id="ml-meta" class="box">loading ml_status.json&hellip;</div>
+    <table id="ml-assets" hidden>
+      <thead>
+        <tr>
+          <th>asset</th><th>rows</th><th>masked</th><th>classes &minus;/0/+</th>
+          <th>depth/eta/trees</th><th>val logloss</th><th>test logloss</th><th>bAcc</th><th>MCC</th>
+          <th>&tau;</th><th>Sharpe</th><th>maxDD</th><th>trades</th><th>hit</th><th>exposure</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">locked-test numbers are computed once with frozen parameters; warnings mark a
+      test log-loss at or above the uniform baseline (ln 3) or fewer than 30 trades.</p>
+  </section>
+
+  <p class="foot">static page &middot; data from <code>status.json</code> / <code>ml_status.json</code>
+    (regenerate with <code>make status</code> / <code>make ml-status</code>)</p>
   <script src="app.js"></script>
 </body>
 </html>
