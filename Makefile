@@ -1,15 +1,17 @@
 PY         := .venv/bin/python
 PORT       ?= 8900
 DUCKDB_PIN := duckdb==1.5.4
+ML_PINS    := numpy==2.5.2 xgboost==3.4.1 optuna==4.9.0
 COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
+TICKER_LIST = $(shell $(PY) -c "from pipeline.config import TICKERS; print(' '.join(TICKERS))")
 
 .DEFAULT_GOAL := help
 
 help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
 
-setup:           ## create .venv and install pinned DuckDB
-	python3 -m venv .venv && .venv/bin/pip install $(DUCKDB_PIN)
+setup:           ## create .venv and install the locked dependency set
+	python3 -m venv .venv && .venv/bin/pip install -r requirements.lock
 
 download:        ## fetch Binance + Bybit 1m klines (full UTC days, idempotent)
 	$(PY) -m pipeline.download
@@ -33,6 +35,36 @@ status:          ## data & DB monitoring -> stdout + dashboard/status.json
 dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory dashboard
+
+ml-bars:         ## canonical 1m -> 15m/1h/4h bars + research data hash (single DB writer)
+	$(PY) -m ml.bars
+
+ml-features:     ## fixed hierarchical 16-column feature matrix per asset
+	OMP_NUM_THREADS=1 $(PY) -m ml.features
+
+ml-labels:       ## triple-barrier labels on the 1m path + uniqueness weights
+	OMP_NUM_THREADS=1 $(PY) -m ml.labels
+
+ml-hpo:          ## Optuna TPE per asset (sequential)
+	OMP_NUM_THREADS=1 $(PY) -m ml.hpo
+
+ml-hpo-par:      ## Optuna HPO, 4 assets in parallel x nthread=1
+	printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P 4 -I{} $(PY) -m ml.hpo --tickers {}
+
+ml-train:        ## OOF predictions + locked test report per asset
+	OMP_NUM_THREADS=1 $(PY) -m ml.train
+
+ml-strategy:     ## tau selection on OOF splits, locked-test PnL
+	OMP_NUM_THREADS=1 $(PY) -m ml.strategy
+
+ml-finalize:     ## deployment model fitted on the full research window
+	OMP_NUM_THREADS=1 $(PY) -m ml.train --finalize
+
+ml-status:       ## aggregate ML artifacts -> dashboard/ml_status.json
+	$(PY) -m ml.status
+
+ml-all:          ## the whole ML chain in order
+	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-finalize ml-status
 
 docker-build:    ## build the pipeline image
 	$(COMPOSE) build
