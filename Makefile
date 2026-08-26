@@ -1,6 +1,7 @@
 PY         := .venv/bin/python
 PORT       ?= 8900
 DUCKDB_PIN := duckdb==1.5.4
+COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
 
 .DEFAULT_GOAL := help
 
@@ -34,23 +35,23 @@ dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory dashboard
 
 docker-build:    ## build the pipeline image
-	docker compose build
+	$(COMPOSE) build
 
 docker-download: ## run both download stages inside the container
-	docker compose run --rm pipeline python -m pipeline.download
-	docker compose run --rm pipeline python -m pipeline.download_bybit
+	$(COMPOSE) run --rm pipeline python -m pipeline.download
+	$(COMPOSE) run --rm pipeline python -m pipeline.download_bybit
 
 docker-ingest:   ## run the ingest stage inside the container
-	docker compose run --rm pipeline python -m pipeline.ingest
+	$(COMPOSE) run --rm pipeline python -m pipeline.ingest
 
 docker-export:   ## run the export stage inside the container
-	docker compose run --rm pipeline python -m pipeline.export
+	$(COMPOSE) run --rm pipeline python -m pipeline.export
 
 docker-status:   ## run the status stage inside the container
-	docker compose run --rm pipeline python -m pipeline.status
+	$(COMPOSE) run --rm pipeline python -m pipeline.status
 
 docker-up:       ## start the dashboard container at http://127.0.0.1:8900/
-	docker compose up -d dashboard
+	$(COMPOSE) up -d dashboard
 
 docker-down:     ## stop and remove the containers
-	docker compose down
+	$(COMPOSE) down

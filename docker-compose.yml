@@ -1,18 +1,18 @@
 services:
   pipeline:
     build: .
+    # live code and data via bind mount; host UID/GID so artifacts are not root-owned
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
-      - ./raw_downloaded_1m_data:/app/raw_downloaded_1m_data
-      - ./db:/app/db
-      - ./assets:/app/assets
-      - ./dashboard:/app/dashboard
+      - .:/app
 
   dashboard:
     build: .
+    user: "${UID:-1000}:${GID:-1000}"
     # 0.0.0.0 inside the container is required for the port mapping;
     # the host-side bind below keeps the dashboard loopback-only.
     command: python -m http.server 8900 --bind 0.0.0.0 --directory dashboard
     ports:
       - "127.0.0.1:8900:8900"
     volumes:
-      - ./dashboard:/app/dashboard
+      - .:/app

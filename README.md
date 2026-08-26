@@ -51,6 +51,8 @@ full minute grid — equal row counts by construction.
 
 ## Quickstart
 
+Requirements: **Python 3.11+** and `make`; Docker optional.
+
 ```bash
 make setup            # create .venv with pinned DuckDB
 make download         # backfill/top-up raw 1m ZIPs from both exchanges

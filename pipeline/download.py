@@ -127,7 +127,12 @@ def main() -> int:
                 skipped += 1
             else:
                 rows = fetch_day(sym, day_ms)
-                write_lean_zip(out_dir, sym, day, rows)  # empty day -> empty CSV, gap stays visible
+                if not rows:
+                    # the listing probe guarantees data exists for every day of the
+                    # window, so an empty 200 is a transient API failure — abort
+                    # instead of persisting a skip-forever empty ZIP
+                    raise SystemExit(f"{sym} {day}: empty response for a post-listing day — retry the download")
+                write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:
                     print(f"  {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
