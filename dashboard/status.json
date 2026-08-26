@@ -1,5 +1,5 @@
 {
- "generated_at_utc": "2026-08-26 17:35:33",
+ "generated_at_utc": "2026-08-26 17:54:39",
  "window_start": "2021-01-01 00:00",
  "window_end": "2026-08-26 00:00",
  "duckdb_version": "1.5.4",
@@ -102,6 +102,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 181,
@@ -115,6 +116,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 181,
@@ -128,6 +130,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 177,
@@ -141,6 +144,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 181,
@@ -154,6 +158,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 185,
@@ -167,6 +172,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 205,
@@ -180,6 +186,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 192,
@@ -193,6 +200,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 4218,
@@ -206,6 +214,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 184,
@@ -219,6 +228,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 181,
@@ -234,6 +244,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 92,
@@ -247,6 +258,7 @@
     "rows": 2865600,
     "coverage_pct": 96.461,
     "gaps": 105120,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 1125,
@@ -260,6 +272,7 @@
     "rows": 2712522,
     "coverage_pct": 91.309,
     "gaps": 258198,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 55174,
@@ -273,6 +286,7 @@
     "rows": 2780066,
     "coverage_pct": 93.582,
     "gaps": 190654,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 3182,
@@ -286,6 +300,7 @@
     "rows": 2557440,
     "coverage_pct": 86.088,
     "gaps": 413280,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 1078,
@@ -299,6 +314,7 @@
     "rows": 2621446,
     "coverage_pct": 88.243,
     "gaps": 349274,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 165074,
@@ -312,6 +328,7 @@
     "rows": 2751196,
     "coverage_pct": 92.61,
     "gaps": 219524,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 31705,
@@ -325,6 +342,7 @@
     "rows": 2499374,
     "coverage_pct": 84.134,
     "gaps": 471346,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 335401,
@@ -338,6 +356,7 @@
     "rows": 2970720,
     "coverage_pct": 100.0,
     "gaps": 0,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 1,
     "zero_volume": 34542,
@@ -351,6 +370,7 @@
     "rows": 2860807,
     "coverage_pct": 96.3,
     "gaps": 109913,
+    "gaps_after_listing": 0,
     "duplicates": 0,
     "ohlc_violations": 0,
     "zero_volume": 19964,
@@ -376,7 +396,8 @@
    "ohlc_violations": 0,
    "flat_bars": 0,
    "max_abs_ret_1m": 0.059129,
-   "longest_flat_run_min": 0
+   "longest_flat_run_min": 0,
+   "max_phantom_ret": 0.016533
   },
   {
    "symbol": "ETHUSDT",
@@ -393,7 +414,8 @@
    "ohlc_violations": 0,
    "flat_bars": 59,
    "max_abs_ret_1m": 0.155578,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.007557
   },
   {
    "symbol": "BNBUSDT",
@@ -410,7 +432,8 @@
    "ohlc_violations": 0,
    "flat_bars": 65,
    "max_abs_ret_1m": 0.141186,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.001608
   },
   {
    "symbol": "XRPUSDT",
@@ -427,7 +450,8 @@
    "ohlc_violations": 0,
    "flat_bars": 59,
    "max_abs_ret_1m": 0.236826,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.010568
   },
   {
    "symbol": "SOLUSDT",
@@ -444,7 +468,8 @@
    "ohlc_violations": 0,
    "flat_bars": 62,
    "max_abs_ret_1m": 0.19998,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.078418
   },
   {
    "symbol": "TRXUSDT",
@@ -461,7 +486,8 @@
    "ohlc_violations": 0,
    "flat_bars": 77,
    "max_abs_ret_1m": 0.179286,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.001822
   },
   {
    "symbol": "DOGEUSDT",
@@ -478,7 +504,8 @@
    "ohlc_violations": 0,
    "flat_bars": 76,
    "max_abs_ret_1m": 0.312457,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.009967
   },
   {
    "symbol": "ZECUSDT",
@@ -495,7 +522,8 @@
    "ohlc_violations": 0,
    "flat_bars": 2945,
    "max_abs_ret_1m": 0.18605,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.024958
   },
   {
    "symbol": "LINKUSDT",
@@ -512,7 +540,8 @@
    "ohlc_violations": 0,
    "flat_bars": 9,
    "max_abs_ret_1m": 0.220345,
-   "longest_flat_run_min": 2
+   "longest_flat_run_min": 2,
+   "max_phantom_ret": 0.035517
   },
   {
    "symbol": "ADAUSDT",
@@ -529,7 +558,8 @@
    "ohlc_violations": 0,
    "flat_bars": 63,
    "max_abs_ret_1m": 0.223683,
-   "longest_flat_run_min": 59
+   "longest_flat_run_min": 59,
+   "max_phantom_ret": 0.041653
   }
  ]
 }
