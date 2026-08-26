@@ -7,31 +7,26 @@ CANONICAL, CONTINUOUS DATA SERIES.**
 # DATA_README — Canonical 1m OHLCV Database
 
 How `db/1m_raw_data_db.duckdb` and the per-asset Parquet files are created:
-sources and endpoints, units and time, the fusion definition, the schema and
-the known v1 limitations.
+sources and endpoints, units and time, the canonical source-priority
+definition, the schema and the known limitations.
 
-## 1. Methodology — Cross-Exchange OHLCV Consolidation
+## 1. Methodology — primary-failover consolidation (v2)
 
 Raw one-minute OHLCV observations from Binance USDS-M and Bybit Linear USDT
 perpetual markets are synchronized to a common UTC one-minute grid and
-consolidated into a single canonical market series. Following cross-exchange
-cryptocurrency aggregation methodologies in the literature, venue prices are
-weighted by their relative trading activity. For each minute, the Binance and
-Bybit open, high, low and close observations are aggregated using weights
-proportional to the **USDT notional (dollar-volume) proxy** `q = close x
-base_volume` computed per venue and minute. Base-asset trading volumes are
-summed across both venues. If an observation is unavailable from one venue, the
-available venue receives unit weight. Only simultaneous absence from both
-venues constitutes a canonical data gap; such observations are deterministically
-forward-filled using the previous close with zero volume. Data-source
-availability, cross-exchange price divergence, duplicates and other integrity
-anomalies are recorded by the DATA INGEST quality-monitoring layer and exposed
-through the project dashboard. Consequently, downstream indicator calculation
-and XGBoost/LSTM pipelines operate exclusively on a continuous canonical
-t,O,H,L,C,V series and require no exchange-specific gap-handling logic.
-(Volume-weighted cross-venue aggregation in the spirit of published crypto
-reference-rate methodologies such as the CME CF Reference Rates and Coin
-Metrics Reference Rates.)
+consolidated into a single canonical market series. **Every canonical bar is
+one venue's candle copied verbatim** — prices and volume of a single exchange,
+never a blend: per minute, the highest-priority existing tier wins (traded
+Binance candle, then traded Bybit candle, then a valid no-trade candle from
+either venue in the same order), and only a minute with no valid candle on
+both venues is a canonical gap, deterministically forward-filled with the
+previous canonical close and zero volume. Data-source shares, source
+switches, the largest move at a switch, cross-exchange divergence and every
+other integrity anomaly are recorded by the DATA INGEST quality-monitoring
+layer and exposed through the project dashboard. Consequently, downstream
+indicator calculation and ML pipelines operate exclusively on a continuous
+canonical t,O,H,L,C,V series whose every printed price existed on a real
+exchange, and require no exchange-specific gap-handling logic.
 
 ## 2. Sources & endpoints
 
@@ -42,7 +37,9 @@ high, low, close, volume, closeTime, quoteVolume, ...]`; **columns 0–5** are
 kept — the bar-open timestamp, four prices and the **base-asset volume**.
 Before any download the oldest candle of every symbol is probed
 (`startTime=0&limit=1`); the run aborts if any listing is younger than the
-window start, which guarantees full Binance coverage of the window.
+window start, which guarantees full Binance coverage of the window. An empty
+response for a post-listing day aborts the run instead of persisting a
+skip-forever empty ZIP.
 
 **Bybit linear perpetuals** — `GET https://api.bybit.com/v5/market/kline` with
 `category=linear` (trade klines — **not** mark-price or index-price klines),
@@ -65,65 +62,42 @@ re-download of a historical day (exchanges do not restate klines).
 ## 3. Units & time
 
 UTC everywhere; timestamps are **bar OPEN** epoch milliseconds on a strict
-60 000 ms grid; the window is `2021-01-01 00:00 UTC` (inclusive) to the most
-recent UTC midnight (exclusive); volume is **base-asset volume**, never quote
-turnover; the unit of download work is one full UTC day = one ZIP (idempotent
-backfill and top-up with the same command).
+60 000 ms grid; the data window is `2021-01-01 00:00 UTC` (inclusive) to the
+most recent UTC midnight (exclusive); volume is **base-asset volume**, never
+quote turnover; the unit of download work is one full UTC day = one ZIP
+(idempotent backfill and top-up with the same command). Prices and volumes
+are stored exactly as the exchanges printed them — no rounding at any layer.
 
-## 4. Fusion
+## 4. Canonical source priority
 
-**A source is a venue that actually traded**: a bar counts only if it has
-`volume > 0` and intact OHLC invariants (`high >= max(open, close, low)`,
-`low <= min(open, close, high)`). Zero-volume bars — maintenance placeholders
-or simply minutes without trades — and OHLC-broken bars are not sources; they
-contribute neither price nor volume.
+A venue candle is **valid** when all values are finite, prices are positive,
+volume is non-negative and the OHLC ordering holds
+(`low <= min(open, close) <= max(open, close) <= high`). For every minute of
+the grid the first existing tier wins:
 
-| case | weight w (Binance) | O/H/L/C | volume |
-|---|---|---|---|
-| both venues traded | `q_bin / (q_bin + q_byb)` | `w*x_bin + (1-w)*x_byb` | `v_bin + v_byb` |
-| one venue traded | `1.0` / `0.0` | that venue verbatim | that venue |
-| no venue traded (canonical gap) | n/a (NULL) | previous fused close (all four) | `0`, `is_ffill=true` |
+| Tier | Condition | `source` |
+|---|---|---|
+| 1 | Binance candle valid, `volume > 0` | `binance` |
+| 2 | Bybit candle valid, `volume > 0` | `bybit` |
+| 3 | Binance candle valid, `volume = 0` | `binance` (+ `zero_volume`) |
+| 4 | Bybit candle valid, `volume = 0` | `bybit` (+ `zero_volume`) |
+| 5 | none of the above | `ffill`: `O = H = L = C =` previous canonical close, `V = 0` |
 
-`q = close x base_volume` is the USDT notional (dollar-volume) proxy per venue
-and minute. Properties:
+Properties:
 
-- The **same weight `w` is applied to all four price columns**, so the OHLC
-  ordering invariants survive by construction (and survive rounding, which is
-  monotonic). Canonical H/L are therefore weighted means of the venue extremes
-  — **index semantics**, not a cross-venue max/min.
-- **Volume is always the sum**, never an average — no artificial level shift
-  when the second venue starts trading.
-- Weights are per-minute, computed only from that minute's bars — no
-  lookahead, no full-sample fitting. A venue enters with small volume, so its
-  weight rises continuously from ~0: at every symbol's boundary minute the
-  canonical return differs from the pure-Binance return by at most 2.8e-05
-  (typical cross-venue basis is ~1e-3).
-- Since both-venue bars have `q > 0` by definition, the weight denominator is
-  never zero.
-- Forward-fill uses the previous **fused** close; rows before a symbol's first
-  observation stay NULL and are monitored as `leading_null` (pinned to 0 by
-  the Binance listing probe).
-- Canonical prices are rounded to the coarser venue tick's decimals + 1 guard
-  digit (per symbol, ticks probed 2026-08-26); volumes to 3 decimals. Raw
-  venue tables are never rounded.
-
-**Boundary table** — first minute with both venues trading, per symbol (BTC
-and LINK trade on Bybit from the window start):
-
-| symbol | first both-venue minute (UTC) | | symbol | first both-venue minute (UTC) |
-|---|---|---|---|---|
-| BTCUSDT | 2021-01-01 00:00 | | TRXUSDT | 2021-08-31 13:14 |
-| ETHUSDT | 2021-03-15 00:00 | | DOGEUSDT | 2021-06-02 10:44 |
-| BNBUSDT | 2021-06-29 07:18 | | ZECUSDT | 2021-11-24 07:46 |
-| XRPUSDT | 2021-05-13 09:34 | | LINKUSDT | 2021-01-01 00:00 |
-| SOLUSDT | 2021-10-15 00:00 | | ADAUSDT | 2021-03-18 07:53 |
-
-Reference points found in the data: during the synchronized Binance Futures
-maintenance window (59 minutes from 2021-03-02 01:01 UTC, all 10 symbols) the
-canonical BTC series switches to Bybit entirely (`w_binance = 0`, real volume,
-zero flat bars); the largest cross-venue divergences are the 2021-05-19 crash
-(LINK/ADA/ETH) and the FTX collapse on 2022-11-09 (SOL) — real market
-dislocations on both venues, not data errors.
+- A traded candle on either venue outranks a no-trade candle (an exchange
+  maintenance placeholder on Binance never outranks a real Bybit minute);
+  a valid no-trade candle still outranks fabrication.
+- Prices and volume are **copied verbatim** from the winning venue — no
+  weighting, no averaging, no rounding. Every canonical price existed on a
+  real exchange, so cross-venue "phantom returns" are zero by construction.
+- The only place a cross-venue basis difference can enter the series is a
+  minute whose source differs from the previous minute — monitored as
+  `source_switches` and `max_abs_ret_at_switch` per symbol.
+- `rel_divergence` (`|c_bin − c_byb| / mid` when both candles are valid) is a
+  **data-quality signal only** — it is never a model feature.
+- Rows before a symbol's first valid candle would stay NULL; the Binance
+  listing probe pins this to zero and the export invariants enforce it.
 
 ## 5. Database schema
 
@@ -136,42 +110,55 @@ dislocations on both venues, not data errors.
 | `open, high, low, close` | DOUBLE | venue trade prices |
 | `volume` | DOUBLE | base-asset volume of that venue |
 
-`ohlcv_1m_canonical` — the fused series, rebuilt deterministically per symbol
-on every `make ingest`; what exports and ML read:
+`ohlcv_1m_canonical` — the primary-failover series, rebuilt deterministically
+per symbol on every `make ingest`; what exports and ML read:
 
 | column | type | meaning |
 |---|---|---|
 | `symbol` | VARCHAR | asset symbol |
 | `timestamp_ms` | BIGINT | bar OPEN, UTC epoch ms; full grid, no missing minutes |
-| `open, high, low, close` | DOUBLE | notional-weighted cross-exchange prices, tick-rounded |
-| `volume` | DOUBLE | sum of venue base volumes (0 on forward-filled gaps) |
-| `src_count` | TINYINT | venues that actually traded that minute (0, 1, 2) |
-| `is_ffill` | BOOLEAN | true on forward-filled canonical gaps (`src_count = 0`) |
-| `rel_divergence` | DOUBLE | `abs(close_bin - close_byb) / mid` when both traded |
-| `w_binance` | DOUBLE | the Binance weight actually used (NULL on gaps) |
+| `open, high, low, close` | DOUBLE | verbatim venue prices (ffill rows: previous close) |
+| `volume` | DOUBLE | verbatim venue volume (0 on ffill rows) |
+| `source` | VARCHAR | `binance` / `bybit` / `ffill` |
+| `zero_volume` | BOOLEAN | tier 3/4: valid candle without trades |
+| `binance_valid`, `bybit_valid` | BOOLEAN | candle present with intact OHLC |
+| `rel_divergence` | DOUBLE | cross-venue close divergence when both valid (QC only) |
 
 **Exports**: `assets/Asset_<TICKER>/1m_<TICKER>_data.parquet` (zstd) carries
 only `timestamp_ms, open, high, low, close, volume` — identical row counts for
-every asset, continuous, no NULLs. **Semantics: a canonical two-venue index,
-not raw exchange data.** Use it for ML and indicators; for Lean backtests use
+every asset (full grid), continuous, no NULLs. Export is **fail-closed**: the
+Parquet is written to a temp file and replaced only after asserting the full
+grid row count, distinct on-grid timestamps, no NULL / non-finite values and
+intact OHLC on every row; a failing assertion leaves the previous file
+untouched. **Semantics: a canonical primary-failover series, not raw exchange
+data of a single venue.** Use it for ML and indicators; for Lean backtests use
 the per-venue raw ZIP trees. The whole database is a pure function of the two
-raw trees: rebuilding from a clean `db/` (`make ingest export`) reproduces
-bit-identical Parquet files.
+raw trees: rebuilding from a clean `db/` reproduces bit-identical Parquet
+files.
 
-## 6. Known limitations (v1)
+## 6. Known limitations
 
-- **Single-venue minutes have nothing to switch to.** When only one venue is
-  listed and that venue returns a maintenance placeholder, the minute becomes
-  a canonical forward-fill (`src_count = 0`) — which is also exactly what the
-  placeholder encodes (last price, zero volume).
+- **Single-venue minutes have nothing to fail over to.** When only one venue
+  is listed and that venue prints a no-trade candle, the canonical bar is that
+  candle (flagged `zero_volume`); when it prints nothing, the bar is a forward
+  fill.
+- **Source switches carry the cross-venue basis.** A switch between venues can
+  move the canonical close by the current Binance–Bybit basis without either
+  venue moving; the count and the largest such move are monitored per symbol
+  (`source_switches`, `max_abs_ret_at_switch`). No smoothing is applied — the
+  switch is visible, not hidden.
 - **No cross-exchange divergence cutoff.** Strongly diverging minutes are real
-  market dislocations; the notional weighting dampens the low-volume side, and
-  the full per-symbol distribution (mean / p99 / max) is exposed in
-  monitoring. A hard `|Δclose|` cutoff is deliberately not applied in v1 —
-  with two sources there is no median to define an objective outlier.
-- **Phantom returns during dislocations.** When the venues disagree by `d` and
-  the per-minute weight moves by `Δw`, the canonical close can move by
-  ≈ `d·Δw` without either venue moving — a property of any per-minute-weighted
-  index. Measured per symbol as `max_phantom_ret` in monitoring (the canonical
-  1m move minus the larger of the two venues' own moves). ML labelling in
-  minutes with high `rel_divergence` should account for this.
+  market dislocations; the per-symbol distribution (mean / p99 / max) is
+  exposed in monitoring.
+
+## 7. Changelog
+
+- **v2 (2026-08-26, WO-ML-001 v2).** The v1 canonical series was a per-minute
+  notional-weighted index of both venues. Measured on the full window it
+  produced weight-shift "phantom returns" up to 7.8 % in one minute (SOL,
+  2022-11-09) — moves no venue printed — and rounded prices to present-day
+  tick sizes. Replaced by the primary-failover definition above: verbatim
+  venue candles, no weighting, no rounding, phantom returns zero by
+  construction; `max_phantom_ret` monitoring retired, `source_switches` /
+  `max_abs_ret_at_switch` added.
+- **v1 (2026-08-26).** Notional-weighted two-venue index (superseded).

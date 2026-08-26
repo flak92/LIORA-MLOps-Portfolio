@@ -1,22 +1,22 @@
-"""Load both venue ZIP trees into DuckDB and rebuild the canonical fused series.
+"""Load both venue ZIP trees into DuckDB and rebuild the canonical series.
 
 Per venue and symbol: parse all day-ZIPs, spool rows into a temporary CSV with
 absolute timestamps, then DELETE + INSERT ... SELECT FROM read_csv (bulk load,
 idempotent re-runs). Timestamps are bar OPEN, UTC epoch ms, on a 60000 ms grid.
 
-The canonical table ohlcv_1m_canonical implements the cross-exchange
-consolidation methodology (full text in DATA_README.md):
-  - common per-symbol minute grid from the window start to the newest candle;
-  - a source is a venue that actually TRADED that minute: volume > 0 and
-    intact OHLC invariants (maintenance placeholders and broken bars are not
-    sources — they contribute neither price nor volume);
-  - venue OHLC weighted by the USDT notional (dollar-volume) proxy
-    q = close * base_volume; one source -> unit weight;
-  - base volumes are summed across venues;
-  - no source at all -> canonical gap, forward-filled with the previous
-    fused close and zero volume (is_ffill = true);
-  - rows before the first observation stay NULL (leading edge, monitored as
-    leading_null and expected to be zero thanks to the Binance listing probe).
+The canonical table ohlcv_1m_canonical is a PRIMARY-FAILOVER series (full text
+in DATA_README.md): every canonical bar is ONE venue's candle copied verbatim —
+no weighting, no rounding. Per minute, the first existing tier wins:
+  1. Binance candle, OHLC intact, volume > 0
+  2. Bybit candle,   OHLC intact, volume > 0
+  3. Binance candle, OHLC intact, volume = 0   (zero_volume flag)
+  4. Bybit candle,   OHLC intact, volume = 0   (zero_volume flag)
+  5. none            -> ffill: O=H=L=C = previous canonical close, V = 0
+OHLC intact means finite values, positive prices, non-negative volume and
+low <= min(open, close) <= max(open, close) <= high. A traded candle on either
+venue outranks a no-trade candle; a no-trade candle outranks fabrication.
+rel_divergence (|c_bin - c_byb| / mid when both candles are valid) is kept as a
+data-quality signal only.
 """
 
 from __future__ import annotations
@@ -57,100 +57,92 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
   high   DOUBLE,
   low    DOUBLE,
   close  DOUBLE,
-  volume DOUBLE,                   -- sum of venue base volumes (0 on gaps)
-  src_count      TINYINT,          -- 0, 1 or 2 venues present
-  is_ffill       BOOLEAN,          -- true on forward-filled canonical gaps
-  rel_divergence DOUBLE,           -- |c_bin - c_byb| / mid, when both present
-  w_binance      DOUBLE            -- Binance weight actually used
+  volume DOUBLE,                   -- verbatim venue volume (0 on ffill rows)
+  source         VARCHAR,          -- 'binance' / 'bybit' / 'ffill'
+  zero_volume    BOOLEAN,          -- tier 3/4: valid candle without trades
+  binance_valid  BOOLEAN,          -- Binance row present with intact OHLC
+  bybit_valid    BOOLEAN,          -- Bybit row present with intact OHLC
+  rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid (QC only)
 );
 """
 
 # ~3M-row build per symbol keeps memory bounded on small hosts; end_ms is the
 # shared global grid end so every symbol covers the identical window.
+# Tier order: traded Binance > traded Bybit > no-trade Binance > no-trade Bybit
+# > forward fill. use_b collapses tiers 1 and 3: Binance wins whenever it is
+# valid and either traded or the Bybit candle did not trade either.
 CANONICAL_INSERT = """
 INSERT INTO ohlcv_1m_canonical
 WITH
--- USDT notional (dollar-volume) proxy per venue-minute: q = close * base_volume
 b AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         close * volume AS notional
-  FROM ohlcv_1m_binance
-  WHERE symbol = '{sym}'
-    AND volume > 0                           -- a source is a venue that TRADED:
-    AND high >= greatest(open, close, low)   -- zero-volume placeholders and bars
-    AND low  <= least(open, close, high)     -- with broken OHLC are not sources
+         (isfinite(open) AND isfinite(high) AND isfinite(low)
+          AND isfinite(close) AND isfinite(volume)
+          AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
+          AND low <= least(open, close) AND high >= greatest(open, close)) AS valid
+  FROM ohlcv_1m_binance WHERE symbol = '{sym}'
 ),
 y AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         close * volume AS notional
-  FROM ohlcv_1m_bybit
-  WHERE symbol = '{sym}'
-    AND volume > 0
-    AND high >= greatest(open, close, low)
-    AND low  <= least(open, close, high)
+         (isfinite(open) AND isfinite(high) AND isfinite(low)
+          AND isfinite(close) AND isfinite(volume)
+          AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
+          AND low <= least(open, close) AND high >= greatest(open, close)) AS valid
+  FROM ohlcv_1m_bybit WHERE symbol = '{sym}'
 ),
 grid AS (
   SELECT t AS timestamp_ms FROM range({start_ms}, {end_ms}, {step_ms}) r(t)
 ),
 joined AS (
   SELECT g.timestamp_ms,
-         b.open AS o_b, b.high AS h_b, b.low AS l_b, b.close AS c_b,
-         b.volume AS v_b, b.notional AS q_b,
-         y.open AS o_y, y.high AS h_y, y.low AS l_y, y.close AS c_y,
-         y.volume AS v_y, y.notional AS q_y,
-         (b.close IS NOT NULL)::TINYINT + (y.close IS NOT NULL)::TINYINT AS src_count
+         b.open AS o_b, b.high AS h_b, b.low AS l_b, b.close AS c_b, b.volume AS v_b,
+         coalesce(b.valid, false) AS b_valid,
+         y.open AS o_y, y.high AS h_y, y.low AS l_y, y.close AS c_y, y.volume AS v_y,
+         coalesce(y.valid, false) AS y_valid
   FROM grid g
   LEFT JOIN b USING (timestamp_ms)
   LEFT JOIN y USING (timestamp_ms)
 ),
-weighted AS (
+tiered AS (
   SELECT *,
-         CASE
-           WHEN src_count = 2 THEN
-             CASE WHEN q_b + q_y > 0 THEN q_b / (q_b + q_y)
-                  ELSE 0.5   -- both present, both notionals zero: equal split
-             END
-           WHEN src_count = 1 AND c_b IS NOT NULL THEN 1.0
-           WHEN src_count = 1                     THEN 0.0
-           -- src_count = 0 -> NULL (canonical gap, forward-filled below)
-         END AS w_binance
+         (b_valid AND (v_b > 0 OR NOT (y_valid AND v_y > 0))) AS use_b,
+         (NOT (b_valid AND (v_b > 0 OR NOT (y_valid AND v_y > 0))) AND y_valid) AS use_y
   FROM joined
 ),
-fused AS (
-  SELECT timestamp_ms, src_count, w_binance,
-         CASE WHEN src_count = 2 THEN w_binance * o_b + (1 - w_binance) * o_y
-              WHEN src_count = 1 THEN coalesce(o_b, o_y) END AS o_f,
-         CASE WHEN src_count = 2 THEN w_binance * h_b + (1 - w_binance) * h_y
-              WHEN src_count = 1 THEN coalesce(h_b, h_y) END AS h_f,
-         CASE WHEN src_count = 2 THEN w_binance * l_b + (1 - w_binance) * l_y
-              WHEN src_count = 1 THEN coalesce(l_b, l_y) END AS l_f,
-         CASE WHEN src_count = 2 THEN w_binance * c_b + (1 - w_binance) * c_y
-              WHEN src_count = 1 THEN coalesce(c_b, c_y) END AS c_f,
-         CASE WHEN src_count > 0 THEN coalesce(v_b, 0) + coalesce(v_y, 0) END AS v_f,
-         CASE WHEN src_count = 2
+chosen AS (
+  SELECT timestamp_ms, b_valid, y_valid,
+         CASE WHEN use_b THEN 'binance' WHEN use_y THEN 'bybit' ELSE 'ffill' END AS source,
+         CASE WHEN use_b THEN v_b = 0 WHEN use_y THEN v_y = 0 ELSE false END AS zero_volume,
+         CASE WHEN use_b THEN o_b WHEN use_y THEN o_y END AS o_c,
+         CASE WHEN use_b THEN h_b WHEN use_y THEN h_y END AS h_c,
+         CASE WHEN use_b THEN l_b WHEN use_y THEN l_y END AS l_c,
+         CASE WHEN use_b THEN c_b WHEN use_y THEN c_y END AS c_c,
+         CASE WHEN use_b THEN v_b WHEN use_y THEN v_y END AS v_c,
+         CASE WHEN b_valid AND y_valid
               THEN abs(c_b - c_y) / ((c_b + c_y) / 2) END AS rel_divergence
-  FROM weighted
+  FROM tiered
 ),
 filled AS (
   SELECT *,
-         -- own close on data rows, previous known fused close on gap rows
-         last_value(c_f IGNORE NULLS) OVER (
+         -- own close on candle rows, previous canonical close on ffill rows
+         last_value(c_c IGNORE NULLS) OVER (
            ORDER BY timestamp_ms
            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
          ) AS c_known
-  FROM fused
+  FROM chosen
 )
 SELECT '{sym}' AS symbol,
        timestamp_ms,
-       round(coalesce(o_f, c_known), {pdec}) AS open,
-       round(coalesce(h_f, c_known), {pdec}) AS high,
-       round(coalesce(l_f, c_known), {pdec}) AS low,
-       round(coalesce(c_f, c_known), {pdec}) AS close,
-       round(coalesce(v_f, 0), {vdec})       AS volume,     -- gap rows: zero volume
-       src_count::TINYINT     AS src_count,
-       (src_count = 0 AND c_known IS NOT NULL) AS is_ffill,
-       rel_divergence,
-       w_binance
+       coalesce(o_c, c_known) AS open,
+       coalesce(h_c, c_known) AS high,
+       coalesce(l_c, c_known) AS low,
+       coalesce(c_c, c_known) AS close,
+       coalesce(v_c, 0)       AS volume,
+       source,
+       zero_volume,
+       b_valid AS binance_valid,
+       y_valid AS bybit_valid,
+       rel_divergence
 FROM filled
 ORDER BY timestamp_ms;
 """
@@ -228,14 +220,21 @@ def main() -> int:
                                           UNION ALL
                                           SELECT timestamp_ms FROM ohlcv_1m_bybit)"""
     ).fetchone()[0] + config.GRID_STEP_MS
+    old_cols = {
+        r[0]
+        for r in con.execute(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'ohlcv_1m_canonical'"
+        ).fetchall()
+    }
+    if old_cols and "source" not in old_cols:  # pre-failover schema: rebuild from scratch
+        con.execute("DROP TABLE ohlcv_1m_canonical")
     con.execute(CANONICAL_DDL)
     for t in tickers:
         sym = config.symbol(t)
         con.execute("DELETE FROM ohlcv_1m_canonical WHERE symbol = ?", [sym])
         con.execute(
             CANONICAL_INSERT.format(
-                sym=sym, start_ms=config.START_MS, end_ms=end_ms, step_ms=config.GRID_STEP_MS,
-                pdec=config.PRICE_DECIMALS[t], vdec=config.VOLUME_DECIMALS,
+                sym=sym, start_ms=config.START_MS, end_ms=end_ms, step_ms=config.GRID_STEP_MS
             )
         )
         print(f"canonical {sym}: rebuilt", flush=True)

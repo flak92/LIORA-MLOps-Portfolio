@@ -39,15 +39,6 @@ USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 
 VENUES = ("binance", "bybit")
 
-# Canonical prices are rounded to the coarser venue tick's decimals + 1 guard
-# digit for the weighted mean (tick sizes probed from both exchanges 2026-08-26);
-# volumes (sums of step-aligned quantities) are rounded to 3 decimals.
-PRICE_DECIMALS = {
-    "BTC": 2, "ETH": 3, "BNB": 3, "XRP": 5, "SOL": 3,
-    "TRX": 6, "DOGE": 6, "ZEC": 3, "LINK": 4, "ADA": 5,
-}
-VOLUME_DECIMALS = 3
-
 RAW_DIR = REPO_ROOT / "raw_downloaded_1m_data"
 DB_PATH = REPO_ROOT / "db" / "1m_raw_data_db.duckdb"
 ASSETS_DIR = REPO_ROOT / "assets"
