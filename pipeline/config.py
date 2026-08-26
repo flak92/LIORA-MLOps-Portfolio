@@ -1,7 +1,7 @@
 """Static configuration: the asset basket, time window, endpoint and paths.
 
 Single source of truth for every stage. All constants are plain values so a
-fresh clone reproduces the exact same dataset from the public Binance API.
+fresh clone reproduces the exact same dataset from the public exchange APIs.
 """
 
 from __future__ import annotations
