@@ -11,8 +11,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Basket: 10 assets, one uniform market (Binance USDS-M perpetuals, USDT-margined).
-# Every asset below has 1m history starting before START_UTC.
+# Basket: 10 assets, one uniform market — USDT-margined perpetuals, fused from
+# two venues (Binance USDS-M + Bybit Linear). Every asset has Binance 1m
+# history starting before START_UTC (probed before every download); Bybit
+# joins each symbol whenever its listing starts.
 TICKERS = ["BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "DOGE", "ZEC", "LINK", "ADA"]
 QUOTE = "USDT"
 MARKET = "binance"          # Lean market folder name

@@ -29,6 +29,9 @@ anomalies are recorded by the DATA INGEST quality-monitoring layer and exposed
 through the project dashboard. Consequently, downstream indicator calculation
 and XGBoost/LSTM pipelines operate exclusively on a continuous canonical
 t,O,H,L,C,V series and require no exchange-specific gap-handling logic.
+(Volume-weighted cross-venue aggregation in the spirit of published crypto
+reference-rate methodologies such as the CME CF Reference Rates and Coin
+Metrics Reference Rates.)
 
 ## 2. Sources & endpoints
 
@@ -71,9 +74,9 @@ backfill and top-up with the same command).
 
 **A source is a venue that actually traded**: a bar counts only if it has
 `volume > 0` and intact OHLC invariants (`high >= max(open, close, low)`,
-`low <= min(open, close, high)`). Zero-volume placeholder bars (returned by
-exchanges during maintenance instead of gaps) and OHLC-broken bars are not
-sources — they contribute neither price nor volume.
+`low <= min(open, close, high)`). Zero-volume bars — maintenance placeholders
+or simply minutes without trades — and OHLC-broken bars are not sources; they
+contribute neither price nor volume.
 
 | case | weight w (Binance) | O/H/L/C | volume |
 |---|---|---|---|
@@ -166,3 +169,9 @@ bit-identical Parquet files.
   the full per-symbol distribution (mean / p99 / max) is exposed in
   monitoring. A hard `|Δclose|` cutoff is deliberately not applied in v1 —
   with two sources there is no median to define an objective outlier.
+- **Phantom returns during dislocations.** When the venues disagree by `d` and
+  the per-minute weight moves by `Δw`, the canonical close can move by
+  ≈ `d·Δw` without either venue moving — a property of any per-minute-weighted
+  index. Measured per symbol as `max_phantom_ret` in monitoring (the canonical
+  1m move minus the larger of the two venues' own moves). ML labelling in
+  minutes with high `rel_divergence` should account for this.
