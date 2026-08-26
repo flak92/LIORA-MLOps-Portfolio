@@ -109,11 +109,22 @@ parquet rows`) and feeds the two-tab dashboard:
   (both-venue share, single-venue shares, forward-fills, cross-exchange
   divergence mean/p99/max).
 
+## ML research layer
+
+On top of the canonical series, `ml/` builds — per asset, deterministically —
+a fixed 16-column hierarchical feature matrix (15m/1h/4h), triple-barrier
+labels resolved on the 1-minute path with uniqueness sample weights, a purged
+walk-forward protocol with Optuna hyper-parameter search (XGBoost), a locked
+out-of-sample test read exactly once, and a top-down gated strategy
+evaluation with costs. Stages: `make ml-bars ml-features ml-labels ml-hpo
+ml-train ml-strategy ml-finalize ml-status` (or `make ml-all`); results on the
+dashboard's **ML Research** tab. Full methodology: [ML_README.md](ML_README.md).
+
 ## Roadmap
 
-- [x] Reproducible two-venue download → DuckDB fusion → Parquet pipeline
+- [x] Reproducible two-venue download → DuckDB primary-failover canonical → Parquet pipeline
 - [x] Canonical continuous series (no downstream gap handling)
-- [x] Two-tab static monitoring dashboard
+- [x] Static monitoring dashboard (Pipeline / Data Quality / ML Research)
+- [x] ML research layer: features → labels → HPO → locked test → strategy
 - [ ] Scheduled top-ups (the download stages are already incremental)
-- [ ] ML feature layers on top of the canonical Parquet files
-- [ ] Dashboard history (trend of completeness over time)
+- [ ] WO-ML-002: regime gating, per-asset selection, meta-labeling, sizing
