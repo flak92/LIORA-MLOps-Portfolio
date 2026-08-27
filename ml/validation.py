@@ -1,10 +1,10 @@
-"""Split contract and metrics: WARMUP | TRAIN | PURGE+GAP | OOS | locked TEST.
+"""Split contract and metrics: WARMUP | TRAIN | PURGE | OOS | final OOS.
 
-Pure numpy — no I/O. Training keeps only rows whose event truly finishes
-before the pre-test cutoff (purge on the real event_end_ts, plus a
-conservative 16-bar gap). Classical post-test embargo is not required in
-forward chaining because no training observation lies after the OOS block.
-Every builder asserts its own contract.
+Pure numpy — no I/O. Training keeps only the rows whose event finished before
+the OOS block opened; because event_end_ts is exclusive, that is exactly "no
+overlap" and no artificial gap is added. A classical post-test embargo is not
+required in forward chaining, since no training observation lies after the OOS
+block. Every builder asserts its own contract.
 """
 
 from __future__ import annotations

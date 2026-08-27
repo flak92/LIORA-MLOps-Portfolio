@@ -45,13 +45,13 @@ dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory dashboard
 
-ml-bars:         ## canonical 1m -> 15m/1h/4h bars + research data hash (single DB writer)
+ml-bars:         ## canonical 15m/1h/4h bars + Binance 1h (single DB writer)
 	$(PY) -m ml.bars
 
-ml-features:     ## fixed hierarchical 16-column feature matrix per asset
+ml-features:     ## fixed hierarchical 15-column feature matrix per asset
 	OMP_NUM_THREADS=1 $(PY) -m ml.features
 
-ml-labels:       ## triple-barrier labels on the 1m path + uniqueness weights
+ml-labels:       ## triple-barrier labels on the Binance 1m path + uniqueness weights
 	OMP_NUM_THREADS=1 $(PY) -m ml.labels
 
 ml-hpo:          ## Optuna TPE per asset (sequential)
@@ -60,10 +60,10 @@ ml-hpo:          ## Optuna TPE per asset (sequential)
 ml-hpo-par:      ## Optuna HPO, 4 assets in parallel x nthread=1
 	printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P 4 -I{} $(PY) -m ml.hpo --tickers {}
 
-ml-train:        ## OOF predictions + locked test report per asset
+ml-train:        ## OOF predictions + final-OOS report per asset
 	OMP_NUM_THREADS=1 $(PY) -m ml.train
 
-ml-strategy:     ## tau selection on OOF splits, locked-test PnL
+ml-strategy:     ## tau selection on the validation folds, final-OOS PnL
 	OMP_NUM_THREADS=1 $(PY) -m ml.strategy
 
 ml-status:       ## aggregate ML artifacts -> dashboard/ml_status.json

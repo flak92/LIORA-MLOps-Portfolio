@@ -28,6 +28,15 @@ indicator calculation and ML pipelines operate exclusively on a continuous
 canonical t,O,H,L,C,V series whose every printed price existed on a real
 exchange, and require no exchange-specific gap-handling logic.
 
+**Scope of the canonical series: it is a continuity layer for market
+observation, not an execution feed.** No price in it is an average of two
+venues — averaging would print quotes that never traded anywhere — but a
+position cannot follow a source switch either, so anything execution-side
+(triple-barrier labels, fills, PnL) reads one venue's table directly; see
+[ML_README.md](ML_README.md) §2. The Bybit-side statistics below are
+**quality control on the failover source**, never model inputs: no
+cross-exchange quantity, `rel_divergence` included, is a feature.
+
 ## 2. Sources & endpoints
 
 **Binance USDS-M futures** — `GET https://fapi.binance.com/fapi/v1/klines`
@@ -151,7 +160,20 @@ files.
   market dislocations; the per-symbol distribution (mean / p99 / max) is
   exposed in monitoring.
 
-## 7. Changelog
+## 7. Known data-quality observations (current window)
+
+Two per-symbol numbers stand out in `make status` and are documented rather
+than smoothed away. Bybit **LINKUSDT** has exactly **one** OHLC-violating
+minute out of 2 970 720; the row fails `bybit_valid`, so the canonical series
+takes the Binance candle for that minute and the violation never reaches an
+export. **ZECUSDT** shows **2 368 source switches** against 16–44 for every
+other symbol, with 0.043 % of minutes served by Bybit (the highest share in
+the basket) — a thin-liquidity symbol whose Binance feed prints no-trade
+minutes often enough to hand the tier to Bybit repeatedly. The largest 1m move
+at any ZEC switch is 0.67 %, in line with the rest of the basket, so the
+switching is frequent but not violent.
+
+## 8. Changelog
 
 - **v2 (2026-08-26, WO-ML-001 v2).** The v1 canonical series was a per-minute
   notional-weighted index of both venues. Measured on the full window it

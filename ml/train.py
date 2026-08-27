@@ -65,7 +65,7 @@ def split_metrics(y_cls, proba, weight, prior_train) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="frozen-parameter training and the locked test report")
+    ap = argparse.ArgumentParser(description="frozen-parameter training and the final-OOS report")
     ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
     args = ap.parse_args()
 

@@ -2,7 +2,7 @@
 
 Observation only, and the single place where the dashboard payload is
 assembled: the blocks below follow the experiment flow (sample -> segments ->
-search -> validation -> locked test -> attribution -> strategy). The file is
+search -> validation -> final OOS -> attribution -> strategy). The file is
 written with sorted keys, so reading order lives in the dashboard and in
 ML_README, never in key names. The experiment is described once, globally, by
 its research window and seed — library versions are in requirements.lock and

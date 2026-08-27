@@ -1,9 +1,9 @@
 """Optuna HPO per asset: TPE(seed), sequential, in-memory study.
 
 Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
-validation splits (expanding training, purge + gap before every OOS block).
-The locked test fold is never touched here. The full trial history goes into
-hpo_<T>.json so the search itself is auditable.
+validation splits F2-F4 (expanding training, purged before every OOS block).
+The final OOS fold is never touched here. hpo_<T>.json keeps the winner and
+the trial count; the trajectory of 50 trials is a search diary, not a result.
 """
 
 from __future__ import annotations
