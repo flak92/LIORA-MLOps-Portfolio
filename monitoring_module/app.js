@@ -78,7 +78,7 @@ function num(x, d) {
 
 initPills(document);
 
-function renderVenue(tableId, list) {
+function renderRawSource(tableId, list) {
   const tbody = document.querySelector("#" + tableId + " tbody");
   for (const v of list) {
     const tr = document.createElement("tr");
@@ -107,8 +107,8 @@ fetch("status.json", { cache: "no-store" })
       "database:  " + fmtBytes(s.db_bytes) + "  (duckdb " + s.duckdb_version + ")";
     const f = s.flow;
     document.getElementById("flow").textContent =
-      "flow: " + fmt(f.zips_binance) + " binance zips + " + fmt(f.zips_bybit) + " bybit zips" +
-      " -> " + fmt(f.rows_binance) + " + " + fmt(f.rows_bybit) + " venue rows" +
+      "flow: " + fmt(f.zips_binance + f.zips_bybit) + " raw ZIPs" +
+      " -> " + fmt(f.rows_binance + f.rows_bybit) + " raw rows" +
       " -> " + fmt(f.rows_canonical) + " canonical rows -> " + fmt(f.parquet_rows) + " parquet rows";
 
     const table = document.getElementById("symbols");
@@ -125,8 +125,8 @@ fetch("status.json", { cache: "no-store" })
     }
     table.hidden = false;
 
-    renderVenue("venue-binance", s.venues.binance);
-    renderVenue("venue-bybit", s.venues.bybit);
+    renderRawSource("raw-binance", s.venues.binance);
+    renderRawSource("raw-bybit", s.venues.bybit);
 
     const ftbody = document.querySelector("#canonical-source tbody");
     for (const y of s.canonical_source) {

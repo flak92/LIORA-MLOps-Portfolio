@@ -69,7 +69,7 @@ function headerLine(a, s) {
 }
 
 function labelFrame(a) {
-  const f = frameEl("LABEL — triple barrier on the Binance 1m path");
+  const f = frameEl("LABEL — triple barrier on the canonical 1m path");
   const c = a.sample.class_counts;
   const total = c.short + c.neutral + c.long;
   f.body.appendChild(makeTable(["class", "count", "share"], CLASS_NAMES.map((n) => [

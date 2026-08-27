@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>1m Crypto Data Pipeline — Status</title>
+  <title>1m Crypto Research Dataset — Status</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>1m crypto data pipeline — status</h1>
-  <p class="sub">Binance USDS-M + Bybit Linear 1m klines &rarr; Lean ZIPs &rarr; DuckDB primary-failover canonical &rarr; per-asset Parquet</p>
+  <h1>1m crypto research dataset — status</h1>
+  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB &rarr; per-asset Parquet &rarr; research</p>
 
   <nav id="tabs" class="pills" data-pills="tab">
     <button class="pill pill--active" data-key="pipeline">Pipeline</button>
@@ -32,8 +32,8 @@
   </section>
 
   <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
-    <h2>Venue: Binance USDS-M</h2>
-    <table id="venue-binance">
+    <h2>Raw source: Binance USDS-M</h2>
+    <table id="raw-binance">
       <thead>
         <tr>
           <th>symbol</th><th>zips</th><th>rows</th><th>coverage</th><th>gaps</th><th>gaps (listed)</th>
@@ -42,8 +42,8 @@
       </thead>
       <tbody></tbody>
     </table>
-    <h2>Venue: Bybit Linear</h2>
-    <table id="venue-bybit">
+    <h2>Raw source: Bybit Linear</h2>
+    <table id="raw-bybit">
       <thead>
         <tr>
           <th>symbol</th><th>zips</th><th>rows</th><th>coverage</th><th>gaps</th><th>gaps (listed)</th>
@@ -52,17 +52,20 @@
       </thead>
       <tbody></tbody>
     </table>
-    <h2>Canonical source (primary-failover)</h2>
+    <h2>Canonical dataset construction</h2>
     <table id="canonical-source">
       <thead>
         <tr>
-          <th>symbol</th><th>rows</th><th>binance</th><th>bybit</th><th>ffill</th>
+          <th>symbol</th><th>rows</th><th>primary</th><th>secondary</th><th>ffill</th>
           <th>zero-vol</th><th>switches</th><th>max |ret| at switch</th><th>ohlc bad</th>
           <th>flat run (min)</th><th>max |ret| 1m</th><th>div mean</th><th>div p99</th><th>div max</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+    <p class="foot">the two sources above are the only place a provider is named: from the
+      canonical table onwards the dataset is one market object. Tier order, the verbatim-candle
+      rule and the reason it beats averaging are in DATA_README.</p>
   </section>
 
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
