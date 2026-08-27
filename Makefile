@@ -59,13 +59,13 @@ dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory monitoring_module
 
-ml-bars:         ## canonical 15m/1h/4h bars + Binance 1h (single DB writer)
+ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
 	$(PY) -m ml_module.bars
 
 ml-features:     ## fixed hierarchical 15-column feature matrix per asset
 	$(call fanout,$(PY),ml_module.features)
 
-ml-labels:       ## triple-barrier labels on the Binance 1m path + uniqueness weights
+ml-labels:       ## triple-barrier labels on the canonical 1m path + uniqueness weights
 	$(call fanout,$(PY),ml_module.labels)
 
 ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)

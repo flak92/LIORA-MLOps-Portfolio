@@ -1,4 +1,4 @@
-"""Top-down gated strategy on the Binance execution path.
+"""Top-down gated strategy on the canonical research path.
 
     edge = p_long - p_short;  side = sign(edge)
     n_agree = #{level in {15m, 1h, 4h} : sign(trend_level) == side}
@@ -48,7 +48,7 @@ def load_inputs(ticker: str) -> dict:
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
     close1m = con.execute(
-        f"""SELECT close FROM ohlcv_1m_binance
+        f"""SELECT close FROM ohlcv_1m_canonical
             WHERE symbol = '{sym}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}

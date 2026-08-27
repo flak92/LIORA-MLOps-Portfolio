@@ -1,8 +1,13 @@
-"""Triple-barrier labels on the executable Binance USD-M path, per asset.
+"""Triple-barrier labels on the canonical research series, per asset.
 
-Market observation (X) comes from the canonical series; the label and the PnL
-must describe the *same instrument*, so both come from Binance alone — one
-position cannot hop between venues just because the canonical source switched.
+One market object, two directions in time: X reads the canonical series up to
+the decision, Y reads the same series after it —
+
+    X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})       M = canonical series
+
+so the features and the target describe the same instrument by construction.
+The sources that built M end at the ingest boundary; nothing below that line
+knows which of them printed a given minute.
 
 Timing, once and for all:
 
@@ -10,8 +15,8 @@ Timing, once and for all:
     t_0 = entry_ts = t_d + 1m  the first fully tradable minute after the signal
     event = [t_0, t_v),        t_v = t_0 + 240 min
 
-The barrier examines minutes t_0 … t_0+239. Entry is the Binance 1m open at
-t_0; the barriers are P0 ± 2·ATR14 of the last closed Binance 1h bar. The first
+The barrier examines minutes t_0 … t_0+239. Entry is the canonical 1m open at
+t_0; the barriers are P0 ± 2·ATR14 of the last closed canonical 1h bar. The first
 minute whose high touches the upper barrier gives y = +1, whose low touches the
 lower gives y = -1, neither gives y = 0 with the exit at the close of the last
 event minute. `event_end_ts` is the EXCLUSIVE end of the event, which makes the
@@ -50,17 +55,17 @@ Y_COLUMNS = {
 }
 
 
-def load_venue_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.ndarray]:
-    """Binance 1m over the research window — the executable path."""
+def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.ndarray]:
+    """The canonical 1m series over the research window — the market object."""
     arrs = con.execute(
-        f"""SELECT open, high, low, close, volume FROM ohlcv_1m_binance
+        f"""SELECT open, high, low, close, volume FROM ohlcv_1m_canonical
             WHERE symbol = '{sym}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
     expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MINUTE_MS
-    assert arrs["open"].size == expected, "Binance 1m grid incomplete inside the research window"
+    assert arrs["open"].size == expected, "canonical 1m grid incomplete inside the research window"
     return arrs
 
 
@@ -132,12 +137,12 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
 
 
 def main() -> int:
-    args = config.ticker_parser("triple-barrier labels on the Binance 1m path").parse_args()
+    args = config.ticker_parser("triple-barrier labels on the canonical 1m path").parse_args()
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
     for t in config.parse_tickers(args.tickers):
         sym = config.symbol(t)
         bars_1h = con.execute(
-            f"""SELECT timestamp_ms, high, low, close FROM ohlcv_1h_binance
+            f"""SELECT timestamp_ms, high, low, close FROM ohlcv_1h_canonical
                 WHERE symbol = '{sym}' ORDER BY timestamp_ms"""
         ).fetchnumpy()
         ts15 = con.execute(
@@ -157,7 +162,7 @@ def main() -> int:
                                              config.TF_MS["1h"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all()
 
-        m1 = load_venue_1m(con, sym)
+        m1 = load_research_1m(con, sym)
         y, t_res, reason, p0, upper, lower, exit_ref = triple_barrier(m1, entry_ts, sigma)
         event_end_ts = entry_ts + np.minimum(t_res + 1, W) * MINUTE_MS   # exclusive
         assert np.all(event_end_ts > entry_ts)
