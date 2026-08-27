@@ -1,4 +1,4 @@
-"""DATA INGEST quality monitoring: stdout tables + dashboard/status.json.
+"""Data-layer quality monitoring: stdout tables + monitoring_module/status.json.
 
 Three full scans (one per venue table, one over the canonical series) feed the
 whole report: per-venue availability (coverage, gaps, duplicates, OHLC
@@ -205,8 +205,8 @@ def main() -> int:
         "canonical_source": canonical,
     }
 
-    config.DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
-    out = config.DASHBOARD_DIR / "status.json"
+    config.MONITORING_DIR.mkdir(parents=True, exist_ok=True)
+    out = config.MONITORING_DIR / "status.json"
     out.write_text(json.dumps(status, indent=1) + "\n", encoding="utf-8")
 
     f = status["flow"]

@@ -18,7 +18,7 @@ Bybit API ───> raw_downloaded_1m_data/cryptofuture/bybit/...            �
                                               assets/Asset_<TICKER>/ <────────────┤ export
                                               1m_<TICKER>_data.parquet            │
                                               (continuous t,OHLCV)                v
-                                                                             dashboard/status.json
+                                                                    monitoring_module/status.json
                                                                              multiple tabs simple HTML, CSS, JS dashboard
 ```
 
@@ -81,7 +81,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 |           | `make download-binance` / `make download-bybit` | one venue at a time                | independently parallelizable      |
 | ingest    | `make ingest`          | ZIPs → venue tables → `ohlcv_1m_canonical` (failover)       | idempotent; deterministic rebuild |
 | export    | `make export`          | canonical → `assets/Asset_<T>/1m_<T>_data.parquet`          | atomic write + read-back count    |
-| status    | `make status`          | DuckDB → stdout tables + `dashboard/status.json`            | read-only; 3 full scans           |
+| status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
@@ -117,7 +117,7 @@ parquet rows`) and feeds the dashboard:
 
 ## ML research layer
 
-`ml/` builds — per asset, deterministically — a fixed 15-column hierarchical
+`ml_module/` builds — per asset, deterministically — a fixed 15-column hierarchical
 feature matrix (15m/1h/4h) **from the canonical series**, triple-barrier
 labels resolved on the **Binance** 1-minute path with uniqueness sample
 weights, a purged walk-forward protocol with Optuna hyper-parameter search

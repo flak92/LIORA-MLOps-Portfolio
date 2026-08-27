@@ -3,7 +3,7 @@
 The dashboard is a static dial-up-minimal page; keep it one.
 
 - Plain HTML + CSS + JS only — no frameworks, no build step, no external
-  resources (fonts, CDNs, trackers). Everything ships in `dashboard/`.
+  resources (fonts, CDNs, trackers). Everything ships in `monitoring_module/`.
 - Served on **loopback only** (`127.0.0.1`); remote viewing goes through an
   SSH tunnel, never a bind to a public interface.
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;

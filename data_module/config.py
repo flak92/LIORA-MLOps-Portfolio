@@ -44,7 +44,7 @@ VENUES = ("binance", "bybit")
 RAW_DIR = REPO_ROOT / "raw_downloaded_1m_data"
 DB_PATH = REPO_ROOT / "db" / "1m_raw_data_db.duckdb"
 ASSETS_DIR = REPO_ROOT / "assets"
-DASHBOARD_DIR = REPO_ROOT / "dashboard"
+MONITORING_DIR = REPO_ROOT / "monitoring_module"
 
 
 def symbol(ticker: str) -> str:

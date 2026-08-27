@@ -270,7 +270,7 @@ Per asset in `assets/Asset_<T>/` (gitignored, reconstructable):
 `metrics_<T>.json`, `strategy_<T>.json`. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
 computed** — no provenance envelope, no hashes, no manifests. The experiment
-is identified once, globally, in `dashboard/ml_status.json`: research window
+is identified once, globally, in `monitoring_module/ml_status.json`: research window
 and seed. Library versions live in `requirements.lock`, model parameters in
 `hpo_<T>.json`. Runs are reproducible by construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
@@ -278,15 +278,16 @@ because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
 product.
 
-Module layout: `ml/config` (frozen constants) · `ml/indicators`,
-`ml/validation`, `ml/model` (pure numpy / xgboost kernels) · `ml/dataset`
-(artifact IO: X/Y loading, the one parquet writer, canonical JSON) ·
-`ml/bars` (single DB writer) · `ml/features`,
-`ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`, `ml/status` (CLI stages,
-`python -m ml.<stage> [--tickers …]`). Constant convention:
-**experiment-semantic constants live in `ml/config.py`; implementation
+Module layout: `ml_module/config` (frozen constants) · `ml_module/indicators`,
+`ml_module/validation`, `ml_module/model` (pure numpy / xgboost kernels) ·
+`ml_module/dataset` (artifact IO: X/Y loading, the one parquet writer, canonical
+JSON) · `ml_module/bars` (single DB writer) · `ml_module/features`,
+`ml_module/labels`, `ml_module/hpo`, `ml_module/train`, `ml_module/strategy`,
+`ml_module/status` (CLI stages, `python -m ml_module.<stage> [--tickers …]`).
+Constant convention: **experiment-semantic constants live in
+`ml_module/config.py`; implementation
 constants** (chunk sizes, `MINUTE_MS`, equity-curve stride) **may stay local
-to their module**. The export invariants of `pipeline/export.py` are the
+to their module**. The export invariants of `data_module/export.py` are the
 canonical-series gate; the documented order runs `make ml-all` after
 `make export`.
 

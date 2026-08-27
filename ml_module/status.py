@@ -1,4 +1,4 @@
-"""Aggregate the per-asset artifacts into dashboard/ml_status.json.
+"""Aggregate the per-asset artifacts into monitoring_module/ml_status.json.
 
 Observation only, and the single place where the dashboard payload is
 assembled: the blocks below follow the experiment flow (sample -> search ->
@@ -112,7 +112,7 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 
 
 def main() -> int:
-    args = config.ticker_parser("aggregate ML artifacts -> dashboard/ml_status.json").parse_args()
+    args = config.ticker_parser("aggregate ML artifacts -> monitoring_module/ml_status.json").parse_args()
 
     assets = []
     for t in config.parse_tickers(args.tickers):
@@ -133,7 +133,7 @@ def main() -> int:
         "gate_min_agree": config.AGREE_MIN,
         "assets": assets,
     }
-    out = config.ASSETS_DIR.parent / "dashboard" / "ml_status.json"
+    out = config.MONITORING_DIR / "ml_status.json"
     dataset.write_json(out, payload)
 
     for a in assets:
