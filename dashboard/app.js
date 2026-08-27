@@ -43,14 +43,38 @@ function cell(row, content, warn) {
   return td;
 }
 
-/* tabs */
-document.querySelectorAll("#tabs button").forEach((b) =>
-  b.addEventListener("click", () => {
-    document.querySelectorAll("#tabs button")
-      .forEach((x) => x.classList.toggle("active", x === b));
-    document.querySelectorAll("section[id^='tab-']")
-      .forEach((s) => { s.hidden = s.id !== "tab-" + b.dataset.tab; });
-  }));
+/* One pill component for every group: top tabs, summary views, ticker rows.
+   A group is [data-pills="NAME"]; its panels carry data-panel="NAME" and a
+   matching data-key. Groups without static panels drive a hook instead, so
+   pills injected after a fetch work through event delegation. */
+const PILL_HOOKS = {};
+
+function initPills(root) {
+  root.querySelectorAll("[data-pills]").forEach((group) => {
+    if (group.dataset.bound === "1") return;
+    group.dataset.bound = "1";
+    const name = group.dataset.pills;
+    const select = (key) => {
+      group.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
+      document.querySelectorAll("[data-panel='" + name + "']")
+        .forEach((p) => { p.hidden = p.dataset.key !== key; });
+      if (PILL_HOOKS[name]) PILL_HOOKS[name](key);
+    };
+    group.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-key]");
+      if (b && group.contains(b)) select(b.dataset.key);
+    });
+    const first = group.querySelector("button.active") || group.querySelector("button");
+    if (first) select(first.dataset.key);
+  });
+}
+
+/* null-safe formatting: canon() writes null for non-finite floats */
+function num(x, d) {
+  return x === null || x === undefined ? "-" : x.toFixed(d);
+}
+
+initPills(document);
 
 function renderVenue(tableId, list) {
   const tbody = document.querySelector("#" + tableId + " tbody");

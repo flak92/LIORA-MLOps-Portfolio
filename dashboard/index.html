@@ -10,13 +10,13 @@
   <h1>1m crypto data pipeline — status</h1>
   <p class="sub">Binance USDS-M + Bybit Linear 1m klines &rarr; Lean ZIPs &rarr; DuckDB primary-failover canonical &rarr; per-asset Parquet</p>
 
-  <nav id="tabs">
-    <button data-tab="pipeline" class="active">Pipeline</button>
-    <button data-tab="quality">Data Quality</button>
-    <button data-tab="ml">ML Research</button>
+  <nav id="tabs" class="pills" data-pills="tab">
+    <button class="pill active" data-key="pipeline">Pipeline</button>
+    <button class="pill" data-key="quality">Data Quality</button>
+    <button class="pill" data-key="ml">ML Research</button>
   </nav>
 
-  <section id="tab-pipeline">
+  <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
     <div id="meta" class="box">loading status.json&hellip;</div>
     <div id="flow" class="box"></div>
     <table id="symbols" hidden>
@@ -30,7 +30,7 @@
     </table>
   </section>
 
-  <section id="tab-quality" hidden>
+  <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
     <h2>Venue: Binance USDS-M</h2>
     <table id="venue-binance">
       <thead>
@@ -64,7 +64,7 @@
     </table>
   </section>
 
-  <section id="tab-ml" hidden>
+  <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
     <div id="ml-meta" class="box">loading ml_status.json&hellip;</div>
     <table id="ml-assets" hidden>
       <thead>
