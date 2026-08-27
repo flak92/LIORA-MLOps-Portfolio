@@ -90,7 +90,7 @@ function renderRawSource(tableId, list) {
     cell(tr, fmt(v.gaps_after_first_observation), v.gaps_after_first_observation > 0);
     cell(tr, fmt(v.duplicates), v.duplicates > 0);
     cell(tr, fmt(v.ohlc_violations), v.ohlc_violations > 0);
-    cell(tr, fmt(v.zero_volume));
+    cell(tr, fmt(v.zero_volume_bars));
     cell(tr, fmt(v.flat_bars));
     cell(tr, v.first_ts || "-");
     cell(tr, v.last_ts || "-");
@@ -109,7 +109,7 @@ fetch("status.json", { cache: "no-store" })
     document.getElementById("flow").textContent =
       "flow: " + fmt(f.zips_binance + f.zips_bybit) + " raw ZIPs" +
       " -> " + fmt(f.rows_binance + f.rows_bybit) + " raw rows" +
-      " -> " + fmt(f.rows_canonical) + " canonical rows -> " + fmt(f.parquet_rows) + " parquet rows";
+      " -> " + fmt(f.rows_canonical) + " canonical rows -> " + fmt(f.rows_parquet) + " parquet rows";
 
     const table = document.getElementById("symbols");
     const tbody = table.querySelector("tbody");
@@ -117,9 +117,9 @@ fetch("status.json", { cache: "no-store" })
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
       cell(tr, fmt(row.rows));
-      cell(tr, pctCell(row.data_pct));
+      cell(tr, pctCell(row.real_data_pct));
       cell(tr, fmt(row.ffill_bars), row.ffill_bars > 0);
-      cell(tr, fmt(row.parquet_rows), row.parquet_rows !== row.rows);
+      cell(tr, fmt(row.rows_parquet), row.rows_parquet !== row.rows);
       cell(tr, fmtBytes(row.parquet_bytes));
       tbody.appendChild(tr);
     }
@@ -133,14 +133,14 @@ fetch("status.json", { cache: "no-store" })
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
       cell(tr, fmt(row.rows));
-      cell(tr, pctCell(row.pct_binance));
-      cell(tr, row.pct_bybit.toFixed(2) + "%");
-      cell(tr, fmt(row.ffill_bars) + " (" + row.pct_ffill.toFixed(3) + "%)", row.ffill_bars > 0);
+      cell(tr, pctCell(row.binance_pct));
+      cell(tr, row.bybit_pct.toFixed(2) + "%");
+      cell(tr, fmt(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
       cell(tr, fmt(row.zero_volume_bars));
       cell(tr, fmt(row.source_switches));
       cell(tr, row.max_abs_ret_at_switch === null ? "-" : (100 * row.max_abs_ret_at_switch).toFixed(2) + "%");
       cell(tr, fmt(row.ohlc_violations), row.ohlc_violations > 0);
-      cell(tr, fmt(row.longest_flat_run_min));
+      cell(tr, fmt(row.longest_flat_run_minutes));
       cell(tr, row.max_abs_ret_1m === null ? "-" : (100 * row.max_abs_ret_1m).toFixed(2) + "%");
       cell(tr, fmtDiv(row.div_mean));
       cell(tr, fmtDiv(row.div_p99));

@@ -116,7 +116,7 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
-        "hpo": hpo_block(hpo),
+        "hyperparameter_search": hpo_block(hpo),
         "validation": validation,
         "final_holdout": final_holdout,
         "gain_importance": gain,
@@ -320,6 +320,7 @@ def experiment_configuration(ticker: str) -> dict:
                 "count": len(config.ENTRY_EDGE_THRESHOLD_GRID),
             },
             "minimum_trades_per_validation_fold": config.MINIMUM_TRADES_PER_VALIDATION_FOLD,
+            "trend_gate_timeframe": config.TREND_GATE_TIMEFRAME,
             "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
             "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
         },
@@ -353,7 +354,8 @@ def main() -> int:
 
     payload = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
-        "research_window": [config.RESEARCH_START_UTC, config.RESEARCH_END_UTC],
+        "research_window": {"start_utc": config.RESEARCH_START_UTC,
+                            "end_utc": config.RESEARCH_END_UTC},
         "seed": config.SEED,
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,

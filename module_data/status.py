@@ -38,7 +38,7 @@ SELECT symbol,
        count(*)                              AS rows,
        count(*) FILTER (source = 'binance')  AS n_binance,
        count(*) FILTER (source = 'bybit')    AS n_bybit,
-       count(*) FILTER (source = 'ffill')    AS n_ffill,
+       count(*) FILTER (source = 'ffill')    AS ffill_bars,
        count(*) FILTER (zero_volume)         AS zero_volume_bars,
        avg(rel_divergence)                   AS div_mean,
        quantile_cont(rel_divergence, 0.99)   AS div_p99,
@@ -143,7 +143,7 @@ def main() -> int:
                     ) if r and window_end_ms else 0,
                     "duplicates": rows - distinct_ts,
                     "ohlc_violations": int(r[5]) if r else 0,
-                    "zero_volume": int(r[6]) if r else 0,
+                    "zero_volume_bars": int(r[6]) if r else 0,
                     "flat_bars": int(r[7]) if r else 0,
                     "first_ts": iso(r[3]) if r else None,
                     "last_ts": iso(r[4]) if r else None,
@@ -155,16 +155,16 @@ def main() -> int:
     for t in tickers:
         symbol = config.symbol(t)
         r = canonical_rows[symbol]
-        rows, n_ffill = r[1], int(r[4])
+        rows, ffill_bars = r[1], int(r[4])
         switches, max_ret_switch = canon_extra[symbol][2]
         canonical.append(
             {
                 "symbol": symbol,
                 "rows": rows,
-                "pct_binance": pct(int(r[2]), rows),
-                "pct_bybit": pct(int(r[3]), rows),
-                "pct_ffill": pct(n_ffill, rows),
-                "ffill_bars": n_ffill,
+                "binance_pct": pct(int(r[2]), rows),
+                "bybit_pct": pct(int(r[3]), rows),
+                "ffill_pct": pct(ffill_bars, rows),
+                "ffill_bars": ffill_bars,
                 "zero_volume_bars": int(r[5]),
                 "source_switches": int(switches),
                 "max_abs_ret_at_switch": round(float(max_ret_switch), 6) if max_ret_switch is not None else None,
@@ -173,7 +173,7 @@ def main() -> int:
                 "div_max": round(float(r[8]), 8) if r[8] is not None else None,
                 "ohlc_violations": int(r[10]),
                 "max_abs_ret_1m": round(float(canon_extra[symbol][0]), 6) if canon_extra[symbol][0] is not None else None,
-                "longest_flat_run_min": int(canon_extra[symbol][1]),
+                "longest_flat_run_minutes": int(canon_extra[symbol][1]),
             }
         )
         pq = config.canonical_parquet(t)
@@ -186,9 +186,9 @@ def main() -> int:
             {
                 "symbol": symbol,
                 "rows": rows,
-                "ffill_bars": n_ffill,
-                "data_pct": pct(rows - n_ffill, rows),
-                "parquet_rows": pq_rows,
+                "ffill_bars": ffill_bars,
+                "real_data_pct": pct(rows - ffill_bars, rows),
+                "rows_parquet": pq_rows,
                 "parquet_bytes": pq.stat().st_size if pq.exists() else 0,
             }
         )
@@ -205,7 +205,7 @@ def main() -> int:
             "rows_binance": sum(r[1] for r in venue_rows["binance"].values()),
             "rows_bybit": sum(r[1] for r in venue_rows["bybit"].values()),
             "rows_canonical": sum(s["rows"] for s in symbols),
-            "parquet_rows": sum(s["parquet_rows"] for s in symbols),
+            "rows_parquet": sum(s["rows_parquet"] for s in symbols),
         },
         "symbols": symbols,
         "venues": venues,
@@ -220,21 +220,21 @@ def main() -> int:
     print(f"window [{status['window_start']} .. {status['window_end']})  "
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
     print(f"flow: zips {f['zips_binance']}+{f['zips_bybit']} -> rows {f['rows_binance']}+{f['rows_bybit']} "
-          f"-> canonical {f['rows_canonical']} -> parquet {f['parquet_rows']}")
+          f"-> canonical {f['rows_canonical']} -> parquet {f['rows_parquet']}")
     for venue in config.SOURCE_VENUES:
         print(f"[venue {venue}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")
         for s in venues[venue]:
             print(f"{s['symbol']:9} {s['zip_count']:>5} {s['rows']:>9} {s['coverage_pct']:>8.3f} "
-                  f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume']:>6} {s['flat_bars']:>6}")
+                  f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume_bars']:>6} {s['flat_bars']:>6}")
     print("[canonical source]")
     print(f"{'symbol':9} {'rows':>9} {'bin%':>7} {'byb%':>6} {'ffill':>6} {'v0':>6} {'switch':>7} "
           f"{'ret@sw':>8} {'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'div_p99':>10} {'div_max':>10}")
     for s in canonical:
-        print(f"{s['symbol']:9} {s['rows']:>9} {s['pct_binance']:>7.2f} {s['pct_bybit']:>6.2f} "
+        print(f"{s['symbol']:9} {s['rows']:>9} {s['binance_pct']:>7.2f} {s['bybit_pct']:>6.2f} "
               f"{s['ffill_bars']:>6} {s['zero_volume_bars']:>6} {s['source_switches']:>7} "
               f"{s['max_abs_ret_at_switch'] if s['max_abs_ret_at_switch'] is not None else '-':>8} "
-              f"{s['ohlc_violations']:>4} {s['longest_flat_run_min']:>7} "
+              f"{s['ohlc_violations']:>4} {s['longest_flat_run_minutes']:>7} "
               f"{s['max_abs_ret_1m'] if s['max_abs_ret_1m'] is not None else '-':>8} "
               f"{s['div_p99'] if s['div_p99'] is not None else '-':>10} "
               f"{s['div_max'] if s['div_max'] is not None else '-':>10}")

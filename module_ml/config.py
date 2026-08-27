@@ -43,6 +43,7 @@ FAMILIES = (
     "log_volume_zscore_50",
 )
 TREND_FAMILY = FAMILIES[0]          # the family the strategy hierarchy reads
+TREND_GATE_TIMEFRAME = HIERARCHY_TIMEFRAMES[-1]   # the top timeframe that vetoes a side
 # the 2-of-3 trend agreement the strategy needs is a rule over these columns,
 # not a sixteenth feature: it carries nothing the three trend columns lack
 FEATURE_COLUMNS = tuple(f"{family}_{timeframe}"

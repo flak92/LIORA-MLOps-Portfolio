@@ -154,7 +154,8 @@
   },
   "execution_cost_rate_per_trade_side": 0.0006,
   "minimum_agreeing_trend_timeframes": 2,
-  "minimum_trades_per_validation_fold": 30
+  "minimum_trades_per_validation_fold": 30,
+  "trend_gate_timeframe": "4h"
  },
  "ticker": "DOGE"
 }

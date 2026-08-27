@@ -63,8 +63,8 @@ function foot(text) {
 function headerLine(a, s) {
   const d = document.createElement("p");
   d.className = "sub";
-  d.textContent = a.ticker + " · " + s.research_window[0].slice(0, 7) + " → "
-    + s.research_window[1].slice(0, 7) + " · " + fmt(a.sample.rows) + " decisions";
+  d.textContent = a.ticker + " · " + s.research_window.start_utc.slice(0, 7) + " → "
+    + s.research_window.end_utc.slice(0, 7) + " · " + fmt(a.sample.rows) + " decisions";
   return d;
 }
 
@@ -87,12 +87,12 @@ function labelFrame(a) {
 
 function modelFrame(a, s) {
   const f = frameEl("MODEL — skill against the training class prior");
-  const p = a.hpo.best_params;
+  const p = a.hyperparameter_search.best_params;
   f.body.appendChild(kvBox([
     ["parameters", "depth " + p.max_depth + " · eta " + p.eta.toFixed(4)
       + " · rounds " + p.num_boost_round + " · subsample " + p.subsample.toFixed(2)],
-    ["search", a.hpo.trial_count + " Optuna trials · best mean F2-F4 log-loss "
-      + a.hpo.best_logloss.toFixed(6)],
+    ["search", a.hyperparameter_search.trial_count + " Optuna trials · best mean F2-F4 log-loss "
+      + a.hyperparameter_search.best_logloss.toFixed(6)],
   ]));
   const rows = validationFolds(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
   rows.push(["F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.final_holdout]);

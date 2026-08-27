@@ -90,7 +90,7 @@ def signals_for_fold(inputs: dict, fold_id: int) -> dict:
     gate = (
         (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
-        & (side == np.sign(inputs["trend"]["4h"][pos]))
+        & (side == np.sign(inputs["trend"][config.TREND_GATE_TIMEFRAME][pos]))
         & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     return {

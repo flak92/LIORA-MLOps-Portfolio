@@ -97,7 +97,7 @@ def main() -> int:
         trainable = xy["sample_valid"]
         gain = model.gain_importance(booster)
         payload = {
-            "params": best,
+            "best_params": best,
             "validation": per_fold,
             "final_holdout": final_holdout,
             "gain_importance": gain,
@@ -118,7 +118,7 @@ def main() -> int:
             "segments": {
                 **segments,
                 "warmup_excluded_decision_count": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
-                // config.TIMEFRAME_DURATION_MS["15m"],
+                // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME],
             },
         }
         dataset.write_json(adir / "model_evaluation.json", payload)

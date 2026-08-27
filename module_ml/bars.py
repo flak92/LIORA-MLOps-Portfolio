@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS ohlcv_{timeframe}_canonical (
   symbol       VARCHAR NOT NULL,
   timestamp_ms BIGINT  NOT NULL,   -- bar OPEN, UTC epoch ms
   open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE, volume DOUBLE,
-  n_ffill          INTEGER,        -- forward-filled minutes inside the bar
+  ffill_bars          INTEGER,        -- forward-filled minutes inside the bar
   zero_volume_bars INTEGER         -- valid no-trade minutes inside the bar
 );
 """
@@ -37,7 +37,7 @@ SELECT symbol,
        min(low)                                 AS low,
        arg_max(close, timestamp_ms)             AS close,
        sum(volume)                              AS volume,
-       count(*) FILTER (source = 'ffill')       AS n_ffill,
+       count(*) FILTER (source = 'ffill')       AS ffill_bars,
        count(*) FILTER (zero_volume)            AS zero_volume_bars
 FROM ohlcv_1m_canonical
 WHERE symbol = ? AND timestamp_ms >= {start_ms} AND timestamp_ms < {end_ms}

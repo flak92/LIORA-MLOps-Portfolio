@@ -55,7 +55,7 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
     feats = {timeframe: timeframe_features(timeframes[timeframe])
              for timeframe in config.HIERARCHY_TIMEFRAMES}
 
-    ts_15m = timeframes["15m"]["timestamp_ms"].astype(np.int64)
+    ts_15m = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
     decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
 
     cols: dict[str, np.ndarray] = {}

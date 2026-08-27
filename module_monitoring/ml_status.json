@@ -24,7 +24,7 @@
     "range_position_20_1h": 1857.2,
     "range_position_20_4h": 1077.7
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.810968,
     "best_params": {
      "alpha": 0.7831030940448331,
@@ -257,7 +257,7 @@
     "range_position_20_1h": 1904.2,
     "range_position_20_4h": 1957.2
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.814319,
     "best_params": {
      "alpha": 0.9970682275036435,
@@ -490,7 +490,7 @@
     "range_position_20_1h": 304.7,
     "range_position_20_4h": 439.1
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.791758,
     "best_params": {
      "alpha": 0.4544383960336014,
@@ -723,7 +723,7 @@
     "range_position_20_1h": 1469.4,
     "range_position_20_4h": 1301.9
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.774423,
     "best_params": {
      "alpha": 0.051795519365237415,
@@ -956,7 +956,7 @@
     "range_position_20_1h": 704.4,
     "range_position_20_4h": 1001.1
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.778915,
     "best_params": {
      "alpha": 0.11379092841622865,
@@ -1189,7 +1189,7 @@
     "range_position_20_1h": 64.7,
     "range_position_20_4h": 772.7
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.801825,
     "best_params": {
      "alpha": 0.7617773613444665,
@@ -1422,7 +1422,7 @@
     "range_position_20_1h": 1340.9,
     "range_position_20_4h": 1325.1
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.789115,
     "best_params": {
      "alpha": 0.0933068416661099,
@@ -1655,7 +1655,7 @@
     "range_position_20_1h": 430.1,
     "range_position_20_4h": 715.2
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.771464,
     "best_params": {
      "alpha": 0.1698294515955395,
@@ -1888,7 +1888,7 @@
     "range_position_20_1h": 898.1,
     "range_position_20_4h": 948.0
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.77444,
     "best_params": {
      "alpha": 0.9519166043499317,
@@ -2121,7 +2121,7 @@
     "range_position_20_1h": 336.0,
     "range_position_20_4h": 1087.7
    },
-   "hpo": {
+   "hyperparameter_search": {
     "best_logloss": 0.771437,
     "best_params": {
      "alpha": 0.99822291493646,
@@ -2332,11 +2332,11 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-08-27 23:17:36",
+ "generated_at_utc": "2026-08-27 23:53:09",
  "minimum_agreeing_trend_timeframes": 2,
- "research_window": [
-  "2021-01-01",
-  "2026-08-26"
- ],
+ "research_window": {
+  "end_utc": "2026-08-26",
+  "start_utc": "2021-01-01"
+ },
  "seed": 42
 }

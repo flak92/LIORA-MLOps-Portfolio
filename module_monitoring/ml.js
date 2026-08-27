@@ -66,8 +66,8 @@ function renderResearch(s) {
     cell(tr, fmt(a.sample.rows));
     cell(tr, fmt(a.sample.class_counts.short) + "/" + fmt(a.sample.class_counts.neutral) +
              "/" + fmt(a.sample.class_counts.long));
-    cell(tr, a.hpo.best_params.max_depth + " / " + a.hpo.best_params.eta.toFixed(3) +
-             " / " + a.hpo.best_params.num_boost_round);
+    cell(tr, a.hyperparameter_search.best_params.max_depth + " / " + a.hyperparameter_search.best_params.eta.toFixed(3) +
+             " / " + a.hyperparameter_search.best_params.num_boost_round);
     cell(tr, a.final_holdout.prior_logloss.toFixed(4));
     cell(tr, a.final_holdout.model_logloss.toFixed(4));
     cell(tr, (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%");
@@ -155,11 +155,11 @@ function renderSearch(s) {
     ["asset", "trials", "best LL", "depth", "eta",
      "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
     s.assets.map((a) => {
-      const p = a.hpo.best_params;
+      const p = a.hyperparameter_search.best_params;
       return [
         [tickerLink(a.ticker)],
-        a.hpo.trial_count,
-        a.hpo.best_logloss.toFixed(4),
+        a.hyperparameter_search.trial_count,
+        a.hyperparameter_search.best_logloss.toFixed(4),
         p.max_depth,
         p.eta.toFixed(4),
         p.min_child_weight,
@@ -193,7 +193,7 @@ fetch("ml_status.json", { cache: "no-store" })
   .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
   .then((s) => {
     const envelope =
-      "research window: [" + s.research_window[0] + " .. " + s.research_window[1] + ") UTC\n" +
+      "research window: [" + s.research_window.start_utc + " .. " + s.research_window.end_utc + ") UTC\n" +
       "seed:            " + s.seed + "\n" +
       "generated:       " + s.generated_at_utc + " UTC";
     document.getElementById("ml-meta").textContent = envelope;
