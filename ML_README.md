@@ -1,17 +1,17 @@
 # ML_README — Research layer on the 1-minute series
 
-Per asset, independently: a fixed 15-column hierarchical feature matrix from
-the canonical series, a triple-barrier label resolved on the executable
-Binance 1-minute path, a purged walk-forward protocol with Optuna
-hyper-parameter search, a historical final out-of-sample fold, and a top-down
-gated strategy evaluation. The experiment is described by its research window
-and seed; the git commit records which code produced a result.
+Per asset, independently, and all of it on one market object — the canonical
+research series: a fixed 15-column hierarchical feature matrix, a triple-barrier
+label resolved on the canonical 1-minute path, a purged walk-forward protocol
+with Optuna hyper-parameter search, a historical final out-of-sample fold, and a
+top-down gated strategy evaluation. The experiment is described by its research
+window and seed; the git commit records which code produced a result.
 
 ## 1. The nine rules the code implements
 
 1. `X` is a function of **closed** historical OHLCV only.
 2. The decision is taken at a 15m bar close; **execution happens one minute later**.
-3. `Y` comes from the **executable Binance USD-M path** only.
+3. `Y` comes from the **canonical research series** only — the same object as `X`.
 4. `Y` is a first-touch triple barrier on the 1m path; **ambiguity is not a class**.
 5. Overlapping labels carry **average-uniqueness** weights.
 6. A training event may **not cross the start of its OOS block**.
@@ -30,37 +30,41 @@ general-purpose learner for tabular financial features [3][10], short-horizon
 crypto predictability from technical features is documented in [1][2], and the
 top-down multi-timeframe gate follows the classic triple-screen hierarchy
 [11]. The protocol as a whole is built against backtest overfitting [9]:
-parameters frozen before the first run, selection statistics separated from
-the final report, one read of the final fold.
+parameters frozen before the first run, and selection statistics kept strictly
+apart from the final report.
 
-## 2. Two series, two roles
+## 2. One series, one object
 
 ```
-BINANCE 1m ──┐
-             ├── canonical OHLCV ──► 15m / 1h / 4h bars ──► X   (market observation)
-BYBIT 1m ────┘
-
-BINANCE 1m ──────────────────────────► triple barrier ─────► Y   (execution)
-                                                              │
-X + Y ──► purged walk-forward ──► XGBoost ────────────────────┘
+market source A ──┐
+                  ├── canonical 1m series (M) ──┬── 15m / 1h / 4h bars ──► X   (M up to t)
+market source B ──┘                             │
+                                                └── triple barrier ─────► Y   (M after t)
+X + Y ──► purged walk-forward ──► XGBoost
                                       │
                               class probabilities
                                       │
                              fixed strategy rules
                                       │
-                             Binance execution path
+                            canonical research path
                                       │
-                                 equity / PnL ──► dashboard
+                                 equity / PnL ──► monitoring
 ```
 
-**Observation** may use the failover series: a continuous market picture is
-what indicators need, and the canonical bar is always some venue's real
-candle. **Execution may not.** A label and the PnL that replays it must
-describe one instrument — a position cannot hop to another exchange because
-the canonical source switched for a minute — so the barrier walk, the fills
-and the equity path read `ohlcv_1m_binance` and nothing else. The `activity`
-feature therefore follows the canonical source across a failover (Bybit
-supplies 0.004–0.043 % of minutes); the traded path never does.
+The providers end at the ingest boundary. What crosses it is one continuous
+series whose every candle is a real observation of one of them (bar an explicit
+forward fill), and the research layer studies that series and nothing else:
+
+```
+X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
+```
+
+Features and target therefore describe the same instrument by construction —
+the split that made `X` observation and `Y` execution is gone, and with it the
+claim that this repository simulates trading on a named exchange. It does not:
+it simulates a strategy on a canonical market model, with the costs stated.
+`DATA_README` §1 and §4 carry the construction rule and why verbatim candles
+beat an average.
 
 ## 3. Time semantics
 
@@ -68,7 +72,7 @@ supplies 0.004–0.043 % of minutes); the traded path never does.
 … ─┤ 12:45 ── 15M bar ── 13:00 ├─ 13:00 ── 15M bar ── 13:15 ├─ …
                                 ▲ t_d = decision_ts = 13:00
 features: bars with close_ts <= 13:00  (15M 12:45–13:00, 1H 12:00–13:00, 4H 08:00–12:00)
-entry:    t_0 = entry_ts = 13:01, at the Binance 1m OPEN of that minute
+entry:    t_0 = entry_ts = 13:01, at the canonical 1m OPEN of that minute
 event:    [t_0, t_v) = [13:01, 17:01)  — the barrier examines minutes 13:01 … 17:00
 ```
 
@@ -82,10 +86,9 @@ Higher-level features come from the last **closed** bar of their level
 (`asof_index`: `searchsorted` on close times, causality asserted in code, not
 assumed). Bars are exact UTC-aligned aggregations of the canonical 1m series
 (O first, H max, L min, C last, V sum; `arg_min` / `arg_max` by timestamp for
-determinism). **Native-bar equivalence (one-off verification):** aggregating
-raw Binance 1m to 1h for 2021-02 (672 bars, BTCUSDT) against native fapi 1h
-klines gives **0 OHLC mismatches** and a maximum relative volume difference of
-**7.1e-16** (float64 epsilon).
+determinism). That the minute grid reproduces a venue's own higher timeframes
+exactly is a property of the data layer, verified once and recorded in
+`DATA_README` §5.
 
 ## 4. Features — fixed contract, 15 columns
 
@@ -114,35 +117,37 @@ rolling statistics use `sliding_window_view`; no NaN survives the warm-up
 ## 5. Labels
 
 Triple barrier [4] on every 15m boundary after the warm-up. Entry
-`P0 = Binance 1m open(t_0)`; horizontal barriers `P0 ± 2.0 × ATR14` of the
-last closed **Binance** 1h bar; vertical barrier 240 minutes. Resolution walks
-the Binance 1m path: the first minute whose high touches the upper barrier
+`P0 = canonical 1m open(t_0)`; horizontal barriers `P0 ± 2.0 × ATR14` of the
+last closed **canonical** 1h bar; vertical barrier 240 minutes. Resolution walks
+the canonical 1m path: the first minute whose high touches the upper barrier
 gives `y = +1`, whose low touches the lower gives `y = −1`, neither gives
 `y = 0` with the exit at the close of the last event minute.
 
 **A touch requires a trade.** A zero-volume minute is a carried-forward price,
-not an execution, so both hit conditions are gated on `volume > 0`:
+not an observed transaction, so both hit conditions are gated on `volume > 0`:
 
 ```
 upper_hit = (volume > 0) & (high >= upper)
 lower_hit = (volume > 0) & (low  <= lower)
 ```
 
-An entry minute with `volume = 0` has no executable entry, and a minute
-touching **both** barriers leaves their order unknowable from OHLC — both are
-`label_valid = false`, never relabelled `0`. Ambiguity is a missing
+A minute touching **both** barriers leaves their order unknowable from OHLC, so
+the row is `label_valid = false` — never relabelled `0`. Ambiguity is a missing
 observation, not a third outcome.
 
-**`label_valid` is not a trading eligibility flag:**
+**Two conditions that look alike and must not be merged:**
 
 ```
-label_valid  governs ONLY : training · HPO scoring · classification metrics
-label_valid  NEVER        : blocks an entry in the backtest
+entry_observable = volume(entry_ts) > 0   known at t_0        MAY gate an entry
+label_valid      = event classifiable     known afterwards    NEVER gates an entry
 ```
 
-Validity is knowable only after the event resolves, so using it as an entry
-condition would be look-ahead. A signal whose event later turns out ambiguous
-**is a trade**, settled at the barrier adverse to the position.
+Whether the entry minute traded at all is visible at the time, so the strategy
+may refuse it. Whether the event will resolve ambiguously is not, so using
+`label_valid` as an entry condition would be look-ahead: it governs training,
+HPO scoring and classification metrics, and nothing else. A signal whose event
+later turns out ambiguous **is a trade**, settled at the barrier adverse to the
+position.
 
 Sample weight = **average uniqueness** [4, ch. 4]: the mean over the event's
 minutes of `1 / (concurrently open events)`, exact via prefix sums, computed
@@ -160,7 +165,7 @@ the label instead of recomputing it.
 ```
 2021-01-01     warmup_end     2022-01-01     2023-01-01     2024-01-01     2025-01-01          2026-08-26
 |-- WARMUP --|----- F1 -----|----- F2 -----|----- F3 -----|----- F4 -----|-------- F5 ---------|
-                                                                          (final OOS, read once)
+                                                                            (final OOS fold)
 Split 2: TRAIN = F1            | PURGE | OOS = F2
 Split 3: TRAIN = F1–F2         | PURGE | OOS = F3
 Split 4: TRAIN = F1–F3         | PURGE | OOS = F4
@@ -174,10 +179,14 @@ without removing leakage. A classical post-test embargo [4, ch. 7] is not
 required in forward chaining: no training observation lies after the OOS
 block. Each segment builder asserts its own contract.
 
-**F5 is a historical final OOS period, evaluated once.** The invariant is a
-sentence, not a guard: *F5 never selects a feature, a hyper-parameter, `τ` or
-a strategy rule.* A deterministic recomputation of the same numbers is not a
-second look.
+**F5 is the historical final OOS fold.** The contract is a sentence, not a
+guard, and it is about selection rather than counting: *F5 never participates
+in feature definition, hyper-parameter selection, `τ` selection or
+strategy-rule selection.* F2–F4 carry every research decision; F5 is evaluated
+against them. Recomputing F5 deterministically — after a refactor, on another
+machine, in a later run — changes nothing, because nothing was chosen by
+looking at it. What the contract forbids is the loop: read F5, change the
+model, call the same fold out-of-sample again.
 
 ## 7. Hyper-parameter search
 
@@ -256,10 +265,12 @@ over a strategy that actually trades. If no `τ` on the 0.00–0.60 grid meets
 it, the run falls back to `τ = 0` and reports `tau_constraint_met = false`.
 
 **Sharpe and drawdown come from one equity process sampled two ways.** The
-backtest writes a continuous 1-minute equity path; the Sharpe is annualised
-(`×√(96·365)`) from that path sampled at **15m bar closes**, the maximum
-drawdown is measured on the **1m** path — a 15-minute sampling would report a
-1.00 → 0.91 → 0.99 excursion as −1 % instead of −9 %. `exposure` is
+backtest writes a continuous 1-minute equity path starting at `E₀ = 1`; the
+Sharpe is annualised (`×√(96·365)`) from that path sampled at **15m bar
+closes**, starting from `E₀` itself so the first quarter-hour of a fold is not
+silently dropped; the maximum drawdown is measured on the **1m** path, also
+from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excursion as
+−1 % instead of −9 %. `exposure` is
 `Σ(exit − entry) / fold length`. The reported result is
 **execution-cost-adjusted PnL, excluding funding**.
 
@@ -278,7 +289,11 @@ because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
 product.
 
-Module layout: `ml_module/config` (frozen constants) · `ml_module/indicators`,
+Module layout — three top-level modules, in the order the data moves:
+`data_module` (sources → normalized raw 1m → one canonical DuckDB → published
+parquet) · `ml_module` (this document) · `monitoring_module` (presentation of
+what each module measured about itself). Inside `ml_module`:
+`ml_module/config` (frozen constants) · `ml_module/indicators`,
 `ml_module/validation`, `ml_module/model` (pure numpy / xgboost kernels) ·
 `ml_module/dataset` (artifact IO: X/Y loading, the one parquet writer, canonical
 JSON) · `ml_module/bars` (single DB writer) · `ml_module/features`,
@@ -320,16 +335,25 @@ stage, and most edits do not touch it:
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
 | a strategy rule, the cost, the tau grid | `ml-strategy ml-status` |
-| the dashboard payload | `ml-status` |
+| the monitoring payload | `ml-status` |
 
 ## 12. What this is, and what it is not
 
-This is a **causally correct, internally consistent 1-minute bar-based
-perpetual-futures research backtest with explicit execution-cost
-assumptions**. It is not a realistic simulation of trading: 1m OHLCV contains
-no order book, no latency distribution, no partial fills, no spread, no queue
-position and no funding payments. Every one of those would move the result,
-and none of them is guessed at here.
+This is a **bar-based research strategy simulation on the canonical market
+series, with explicit execution-cost assumptions** — a canonical-market
+research backtest. It is not a realistic simulation of trading on any exchange:
+1m OHLCV contains no order book, no latency distribution, no partial fills, no
+spread, no queue position and no funding payments. Every one of those would
+move the result, and none of them is guessed at here.
+
+One boundary belongs to the market model itself. The canonical series can
+change provider between two minutes, and the two providers quote a real basis
+(measured on this window: the largest 1m move at a switch is 0.23–1.05 % per
+symbol, and ZEC switches 2368 times against 16–44 elsewhere). A single barrier
+touch can therefore come from a source switch rather than from the market
+moving. That is a property of a constructed market object, not a defect hidden
+by it: `source_switches` and `rel_divergence` are monitored per symbol
+precisely so the effect is visible and countable.
 
 Known limitations of this version: no regime-conditional gating, no per-asset
 feature selection, no CUSUM event sampling, no meta-labeling, no fractional

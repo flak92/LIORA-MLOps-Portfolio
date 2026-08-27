@@ -1,4 +1,4 @@
-# Skill: computing optimalization
+# Skill: parallelism
 
 Parallelism matters for wall-clock time, with one governing rule:
 
@@ -7,7 +7,7 @@ Parallelism matters for wall-clock time, with one governing rule:
 
 - Speed comes exclusively from **external parallelism**: independent,
   separately-seeded processes side by side (one asset per process). Never
-  from raising thread caps inside a worker — see `Determinism.md`.
+  from raising thread caps inside a worker — see `determinism.md`.
 - Width is **measured at invocation, never hardcoded**: `JOBS = min(cores,
   available GiB)` in the Makefile. The machine changes size; a literal
   written for one size is silently wrong on every other. `JOBS=n` overrides.

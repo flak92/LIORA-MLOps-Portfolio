@@ -55,7 +55,7 @@ FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",
                    "2025-01-01", RESEARCH_END_UTC)
 FOLD_BOUNDS_MS = tuple(_utc_ms(d) for d in FOLD_BOUNDS_UTC)
 VALIDATION_SPLITS = (2, 3, 4)       # OOS = F2, F3, F4 (expanding training)
-TEST_SPLIT = 5                      # final OOS fold F5, read once
+TEST_SPLIT = 5                      # final OOS fold F5: evaluated, never selected on
 
 # ---- HPO (Optuna TPE, sequential, in-memory)
 N_TRIALS = 50

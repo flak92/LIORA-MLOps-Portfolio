@@ -28,14 +28,20 @@ indicator calculation and ML pipelines operate exclusively on a continuous
 canonical t,O,H,L,C,V series whose every printed price existed on a real
 exchange, and require no exchange-specific gap-handling logic.
 
-**Scope of the canonical series: it is a continuity layer for market
-observation, not an execution feed.** No price in it is an average of two
-venues — averaging would print quotes that never traded anywhere — but a
-position cannot follow a source switch either, so anything execution-side
-(triple-barrier labels, fills, PnL) reads one venue's table directly; see
-[ML_README.md](ML_README.md) §2. The Bybit-side statistics below are
-**quality control on the failover source**, never model inputs: no
-cross-exchange quantity, `rel_divergence` included, is a feature.
+**What the canonical series is: a continuous canonical research-market
+representation, constructed deterministically from the available market
+observations.** Every candle in it is a real observation printed by one
+provider — the only exception is an explicit forward fill, flagged as such. No
+price is an average of two sources, because an average prints quotes that
+existed nowhere. This series, and nothing upstream of it, is the object the
+research layer studies: features, labels, validation, modelling and the
+strategy simulation all read it and none of them knows which provider printed
+a given minute ([ML_README.md](ML_README.md) §2).
+
+The provenance columns (`source`, `zero_volume`, `binance_valid`,
+`bybit_valid`, `rel_divergence`) and the per-source statistics below are
+**provenance and data quality — never model inputs.** No cross-source
+quantity, `rel_divergence` included, is a feature.
 
 ## 2. Sources & endpoints
 
@@ -132,6 +138,19 @@ per symbol on every `make ingest`; what exports and ML read:
 | `zero_volume` | BOOLEAN | tier 3/4: valid candle without trades |
 | `binance_valid`, `bybit_valid` | BOOLEAN | candle present with intact OHLC |
 | `rel_divergence` | DOUBLE | cross-venue close divergence when both valid (QC only) |
+
+`ohlcv_15m_canonical`, `ohlcv_1h_canonical`, `ohlcv_4h_canonical` — exact
+UTC-aligned aggregations of the canonical 1m series, rebuilt by `make ml-bars`
+inside the frozen research window (O first, H max, L min, C last, V sum;
+`arg_min`/`arg_max` by timestamp for determinism), plus `n_ffill` and
+`zero_volume_bars` — how many minutes inside the bar were forward-filled or
+traded nothing. Closed bars only: the window ends at a UTC midnight.
+
+**Aggregation fidelity (one-off verification):** aggregating the raw Binance 1m
+rows to 1h for 2021-02 (672 bars, BTCUSDT) and diffing against the venue's own
+native 1h klines gives **0 OHLC mismatches** and a maximum relative volume
+difference of **7.1e-16** — float64 epsilon. The minute grid this database is
+built on reproduces the exchange's own higher timeframes exactly.
 
 **Exports**: `assets/Asset_<TICKER>/1m_<TICKER>_data.parquet` (zstd) carries
 only `timestamp_ms, open, high, low, close, volume` — identical row counts for

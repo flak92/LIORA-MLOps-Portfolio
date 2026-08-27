@@ -9,33 +9,52 @@ through the repo is `AGENTS.md → module names → Skills_For_The_Project → c
 this README is the general overview.
 
 ```
-Binance API ──> raw_downloaded_1m_data/cryptofuture/binance/...         ─┐
-(keyless, stdlib)      QC Lean ZIPs, 1 full UTC day = 1 zip              ├─> db/1m_raw_data_db.duckdb
-                                                                         │   ohlcv_1m_binance
-Bybit API ───> raw_downloaded_1m_data/cryptofuture/bybit/...            ─┘   ohlcv_1m_bybit
-(keyless, stdlib)      same Lean ZIP format                                  ohlcv_1m_canonical (failover)
-                                                                                  │
-                                              assets/Asset_<TICKER>/ <────────────┤ export
-                                              1m_<TICKER>_data.parquet            │
-                                              (continuous t,OHLCV)                v
-                                                                    monitoring_module/status.json
-                                                                             multiple tabs simple HTML, CSS, JS dashboard
+                 ┌── market source A ──┐
+MARKET DATA ─────┤                     ├──► NORMALIZED RAW 1m OHLCV  (QC Lean ZIPs)
+                 └── market source B ──┘              │
+                                                      ▼
+                                          ONE CANONICAL DuckDB
+                                       (primary-failover, full grid)
+                                                      │
+                                    ┌─────────────────┼─────────────────┐
+                                    ▼                 ▼                 ▼
+                                   15m                1h                4h
+                                    └─────────────────┬─────────────────┘
+                                                      ▼
+                                                  FEATURES X
+                                                      │
+                   canonical 1m ───────────────────── ┼──► TRIPLE BARRIER Y
+                                                      ▼
+                                            PURGED WALK-FORWARD
+                                                      ▼
+                                                   XGBOOST
+                                                      ▼
+                                                PROBABILITIES
+                                                      ▼
+                                               STRATEGY RULES
+                                                      ▼
+                                            RESEARCH PnL / EQUITY
+                                                      ▼
+                                                  MONITORING
 ```
 
-## Primary-failover canonical series (why two venues)
+Providers deliver observations; the canonical database defines the research
+object. Everything below it describes the method, not the data provider.
 
-Every single exchange feed has occasional missing minutes. Instead of pushing
+## Primary-failover canonical series (why two sources)
+
+Every single market feed has occasional missing minutes. Instead of pushing
 gap-handling into every downstream indicator, the pipeline consolidates two
-independent venues into one canonical series — and **every canonical bar is one
-venue's candle copied verbatim**, never a blend: per minute the highest-priority
+independent sources into one canonical series — and **every canonical bar is one
+source's candle copied verbatim**, never a blend: per minute the highest-priority
 existing tier wins (traded Binance candle, then traded Bybit candle, then a
-valid no-trade candle from either venue in the same order), and only a minute
-with no valid candle on both venues is a canonical gap, forward-filled with the
-previous close and zero volume. Source shares, source switches, cross-exchange
+valid no-trade candle from either source in the same order), and only a minute
+with no valid candle on both sources is a canonical gap, forward-filled with the
+previous close and zero volume. Source shares, source switches, cross-source
 divergence and every other anomaly are recorded by the monitoring layer and
 shown on the dashboard. Downstream ML code reads a continuous `t,O,H,L,C,V`
-series whose every printed price existed on a real exchange, and needs no
-exchange-specific logic. Full methodology, endpoints and schema:
+series whose every printed price existed on a real market, and needs no
+source-specific logic. Full methodology, endpoints and schema:
 [DATA_README.md](DATA_README.md).
 
 ## The basket
@@ -78,8 +97,8 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
 | download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; full UTC days only    |
-|           | `make download-binance` / `make download-bybit` | one venue at a time                | independently parallelizable      |
-| ingest    | `make ingest`          | ZIPs → venue tables → `ohlcv_1m_canonical` (failover)       | idempotent; deterministic rebuild |
+|           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelizable      |
+| ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
 | export    | `make export`          | canonical → `assets/Asset_<T>/1m_<T>_data.parquet`          | atomic write + read-back count    |
 | status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
@@ -88,7 +107,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 - **Raw ZIPs** are byte-compatible with the QC Lean `cryptofuture` minute
   format (verified byte-identical against an independent production
-  downloader), one tree per venue. Headerless CSV rows:
+  downloader), one tree per source. Headerless CSV rows:
   `offset_ms_from_utc_midnight,open,high,low,close,volume`.
 - **Timestamps** are bar OPEN times, UTC epoch milliseconds, strict 60 000 ms
   grid. **Volume** is base-asset volume, never quote turnover.
@@ -97,42 +116,35 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`).
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
   same row count for every asset, continuous, no NULLs, values exactly as the
-  winning venue printed them (no rounding at any layer).
+  winning source printed them (no rounding at any layer).
 - **Semantics**: `1m_<T>_data.parquet` is a **canonical primary-failover
-  series**, not the raw feed of a single venue — use it for ML and indicators;
-  for Lean backtests use the per-venue raw ZIP trees. Step-by-step build
+  series**, not the raw feed of a single source — use it for ML and indicators;
+  for Lean backtests use the per-source raw ZIP trees. Step-by-step build
   description: [DATA_README.md](DATA_README.md).
 
 ## Monitoring
 
-`make status` reports the full flow (`zips → venue rows → canonical rows →
+`make status` reports the full flow (`zips → raw rows → canonical rows →
 parquet rows`) and feeds the dashboard:
 
 - **Pipeline** — canonical rows, real-data share, forward-filled bars and
   Parquet artifacts per asset;
-- **Data Quality** — per-venue coverage, gaps, duplicates, OHLC violations and
-  zero-volume bars for Binance and Bybit separately, plus canonical-source
-  provenance (per-venue shares, forward fills, source switches, the largest 1m
-  move at a switch, cross-exchange divergence mean/p99/max).
+- **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
+  zero-volume bars for each provider separately, then canonical construction:
+  primary/secondary/forward-fill shares, source switches, the largest 1m move at
+  a switch, cross-source divergence mean/p99/max.
 
 ## ML research layer
 
 `ml_module/` builds — per asset, deterministically — a fixed 15-column hierarchical
-feature matrix (15m/1h/4h) **from the canonical series**, triple-barrier
-labels resolved on the **Binance** 1-minute path with uniqueness sample
+feature matrix (15m/1h/4h) from the canonical series, triple-barrier
+labels resolved on the **canonical** 1-minute path with uniqueness sample
 weights, a purged walk-forward protocol with Optuna hyper-parameter search
-(XGBoost), a final out-of-sample fold read exactly once, and a top-down gated
+(XGBoost), a final out-of-sample fold that selects nothing, and a top-down gated
 strategy evaluation with explicit costs:
 
-```
-canonical OHLCV ──► 15m/1h/4h bars ──► X    (market observation)
-Kline_1m      ──► triple barrier  ──► Y    (execution)
-X + Y ──► purged walk-forward ──► XGBoost ──► probabilities
-      ──► fixed strategy rules ──► execution path ──► equity / PnL
-```
-
-Observation may use the failover series; execution may not — a position cannot
-change exchange because the canonical source switched for one minute. The
+Both `X` and `Y` read the canonical series — `X` before the decision, `Y` after
+it — so features and target describe the same instrument by construction. The
 decision is taken at a 15m close and filled one minute later. Stages:
 `make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
 (or `make ml-all`) — every per-asset stage runs `JOBS = min(cores, available
