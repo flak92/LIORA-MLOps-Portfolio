@@ -59,7 +59,18 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `docker-ml-<stage>` targets); each computational module (`module_data`,
   `module_ml`) measures its own domain state in `status.py`, and
   `module_monitoring` presents their snapshots;
-- short, predictable paths; no decorative prefixes or suffixes;
+- **the kind comes first, so siblings sort together.** A listing is read by
+  eye before it is parsed: `module_data`, `module_ml`, `module_monitoring`,
+  `module_skills_for_the_project`, then `store_db`, `store_raw_1m`,
+  `store_research_artifacts` — two blocks, not seven scattered entries. If
+  renaming would put things of one kind next to each other, rename them.
+  Checked with `ls -1d */`: one kind, one contiguous block;
+- short, predictable paths, built only in a module's `config.py` — never
+  assembled at the point of use; one asset is one folder,
+  `store_research_artifacts/<TICKER>/`, one file per distinct artifact
+  responsibility. The artifact folder is the ticker in capitals, the raw tree
+  is the symbol in lower case because Lean demands it — that difference is a
+  boundary, not an inconsistency to tidy away;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 
@@ -81,6 +92,23 @@ data-driven selection of model hyper-parameters and the entry edge threshold —
 the barrier width, the horizon, the cost and the feature set are frozen a
 priori, not selected — and `FINAL_HOLDOUT_FOLD_ID` is F5, which only
 evaluates. The word "test" never names a fold.
+
+Every layer has a closed grammar, the way CSS has BEM. A name is **derived**
+from its layer's grammar, never invented:
+
+| layer | grammar | in this repo | what it forbids |
+|---|---|---|---|
+| constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `RSI_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
+| functions that act or cross a boundary | `<verb>_<object>`, verb from the closed list `load_`, `write_`, `fetch_`, `parse_`, `to_`, `build_` | `load_xy`, `write_parquet`, `fetch_klines`, `to_class` | `get_`, `process_`, `handle_` |
+| functions that *are* a quantity | no verb — the name is what it returns | `rsi`, `atr`, `sharpe_annualised`, `triple_barrier` | `calculate_rsi` |
+| populations of rows | `<population>_set` / `_window` | `training_set`, `scoring_set`, `prediction_window` | `get_train_indices` |
+| report fragments | `<section>_block` | `sample_block`, `hpo_block` | `make_sample_dict` |
+| quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `returns_15m` | `n_min`, `off` |
+| index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
+| booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_` | `entry_observable`, `label_valid`, `is_full_utc_day()` | `flag`, `ok`, `check` |
+| artifact keys | snake_case, the same word as the identifier that produced it, suffixes `_count`, `_ms`, `_pct`, `_utc` | `scored_row_count`, `generated_at_utc` | a separate vocabulary for JSON |
+| directories | `<kind>_<detail>/` | `module_*`, `store_*` | a kind scattered through the alphabet |
+| CSS | BEM `block__element--modifier` | `frame__head`, `pill--active` | `.red` |
 
 Constants that carry a numeric quantity — a count, a rate, a duration, a
 size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the
