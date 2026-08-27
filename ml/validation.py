@@ -34,10 +34,23 @@ def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
 
 def oos_indices(decision_ts: np.ndarray, mask_ok: np.ndarray,
                 start_ms: int, end_ms: int) -> np.ndarray:
+    """Label-valid OOS rows — the scoring set for metrics and the HPO objective."""
     keep = mask_ok & (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
     assert decision_ts[idx].min() >= max(start_ms, config.WARMUP_END_MS)
+    return idx
+
+
+def window_indices(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np.ndarray:
+    """Every decision row of a window, masked or not — the prediction set.
+
+    Label validity (mask_ok) is knowable only after the event resolves, so it
+    may govern training and scoring but never which rows receive predictions.
+    """
+    keep = (decision_ts >= max(start_ms, config.WARMUP_END_MS)) & (decision_ts < end_ms)
+    idx = np.flatnonzero(keep)
+    assert idx.size > 0, "empty prediction window"
     return idx
 
 

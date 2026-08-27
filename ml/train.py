@@ -93,35 +93,46 @@ def main() -> int:
             continue
 
         pred_rows: list[tuple] = []
-        per_split = {}
-        for split in config.VALIDATION_SPLITS:
+        per_split, segments = {}, {}
+
+        def run_split(split: int) -> tuple[dict, "np.ndarray"]:
+            """Fit before the split's window, predict the FULL window, score the
+            label-valid subset only. Returns (metrics, booster's test proba)."""
             oos_start, oos_end = validation.split_bounds(split)
             tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
                                           xy["mask_ok"], oos_start)
-            oo = validation.oos_indices(xy["decision_ts"], xy["mask_ok"], oos_start, oos_end)
+            wi = validation.window_indices(xy["decision_ts"], oos_start, oos_end)
+            oi = validation.oos_indices(xy["decision_ts"], xy["mask_ok"], oos_start, oos_end)
             booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
-            proba = model.predict_proba(booster, xy["x"][oo])
-            per_split[f"split_{split}"] = split_metrics(y_cls[oo], proba, xy["weight"][oo])
-            pred_rows += [
-                (xy["decision_ts"][i], split, proba[k, 0], proba[k, 1], proba[k, 2])
-                for k, i in enumerate(oo)
-            ]
+            proba_w = model.predict_proba(booster, xy["x"][wi])
+            pos = np.searchsorted(wi, oi)          # oi is a subset of wi
+            assert np.array_equal(wi[pos], oi)
+            metrics = split_metrics(y_cls[oi], proba_w[pos], xy["weight"][oi])
+            pred_rows.extend(
+                (xy["decision_ts"][i], split, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
+                for k, i in enumerate(wi)
+            )
+            eligible = int((xy["mask_ok"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
+                            & (xy["decision_ts"] < oos_start)).sum())
+            segments[f"split_{split}"] = {
+                "n_train": int(tr.size),
+                "n_purged": eligible - int(tr.size),
+                "n_window": int(wi.size),
+                "n_scored": int(oi.size),
+            }
+            return metrics, booster
+
+        for split in config.VALIDATION_SPLITS:
+            per_split[f"split_{split}"], _ = run_split(split)
 
         # locked test fold: fitted on everything before it, evaluated exactly once
-        test_start, test_end = validation.split_bounds(config.TEST_SPLIT)
-        tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                      xy["mask_ok"], test_start)
-        te = validation.oos_indices(xy["decision_ts"], xy["mask_ok"], test_start, test_end)
-        booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
+        test, booster = run_split(config.TEST_SPLIT)
+        te = validation.oos_indices(xy["decision_ts"], xy["mask_ok"],
+                                    *validation.split_bounds(config.TEST_SPLIT))
         proba_te = model.predict_proba(booster, xy["x"][te])
-        test = split_metrics(y_cls[te], proba_te, xy["weight"][te])
         test["confusion"] = validation.confusion_matrix(
             y_cls[te], proba_te.argmax(axis=1).astype(np.int32)
         )
-        pred_rows += [
-            (xy["decision_ts"][i], config.TEST_SPLIT, proba_te[k, 0], proba_te[k, 1], proba_te[k, 2])
-            for k, i in enumerate(te)
-        ]
         write_predictions(t, pred_rows)
 
         gain = booster.get_score(importance_type="total_gain")
@@ -143,8 +154,9 @@ def main() -> int:
                     "ambiguous": int((xy["exit_reason"] == 9).sum()),
                 },
                 "segments": {
-                    "train_final": int(tr.size),
-                    "test_locked": int(te.size),
+                    **segments,
+                    "n_warmup_excluded": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
+                    // config.TF_MS["15m"],
                 },
                 "uniqueness_weight_mean": float(xy["weight"].mean()),
             }

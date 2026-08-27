@@ -1,10 +1,13 @@
 """Top-down gated strategy: the model decides the side, the hierarchy gates it.
 
-enter = mask_ok  AND  |p_long - p_short| >= tau  AND  max(p_long, p_short) > p_neutral
+enter = |p_long - p_short| >= tau  AND  max(p_long, p_short) > p_neutral
         AND side == sign(trend_4h)
         AND n_agree >= 2,  where n_agree counts levels with sign(trend) == side
 
-Entries additionally require the label to be valid (mask_ok).
+The entry condition uses only information available at decision_ts — label
+validity (mask_ok) is knowable only after the event resolves and therefore
+never gates an entry. A trade whose event turns out ambiguous (exit_reason=9)
+is settled stop-first: the barrier adverse to the position at the tie minute.
 
 One unit position at a time; new signals are ignored while a position is open.
 Exits replay the label event: the same +-K*ATR14(1h) barriers on the same 1m
@@ -82,8 +85,7 @@ def rows_for_split(d: dict, split: int) -> dict:
         (np.sign(d["trend"][tf][pos]) == side).astype(np.int64) for tf in config.LEVELS
     )
     gate = (
-        d["xy"]["mask_ok"][pos]
-        & (np.maximum(p_long, p_short) > p_neutral)
+        (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
         & (side == np.sign(d["trend"]["4h"][pos]))
         & (n_agree >= config.AGREE_MIN)
@@ -104,7 +106,7 @@ def backtest(d: dict, rows: dict, tau: float) -> dict:
     close15 = d["close15"]
     r = np.zeros(bar_hi - bar_lo)
     trades, busy, in_pos_bars = [], -1, 0
-    exit_counts = {"upper": 0, "lower": 0, "vertical": 0}
+    exit_counts = {"upper": 0, "lower": 0, "vertical": 0, "adverse": 0}
     for k in range(rows["bar"].size):
         i = int(rows["bar"][k])
         if i <= busy or not enter[k]:
@@ -113,7 +115,9 @@ def backtest(d: dict, rows: dict, tau: float) -> dict:
         p0 = float(rows["p0"][k])
         reason = int(rows["reason"][k])
         j = int(rows["exit_bar"][k])
-        if reason == 1:
+        if reason == 9:   # ambiguous minute: settle stop-first (adverse for either side)
+            px, key = p0 - s * config.K_BARRIER * float(rows["sigma"][k]), "adverse"
+        elif reason == 1:
             px, key = p0 + config.K_BARRIER * float(rows["sigma"][k]), "upper"
         elif reason == -1:
             px, key = p0 - config.K_BARRIER * float(rows["sigma"][k]), "lower"
