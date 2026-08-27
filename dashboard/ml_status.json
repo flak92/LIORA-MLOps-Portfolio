@@ -1,0 +1,821 @@
+{
+ "assets": [
+  {
+   "ambiguous": 6,
+   "artifact_sha256": {
+    "hpo": "6c0baeda53706fce98cdc66069fc2868c466c2a1ab49ee088c5d59b5b87218a5",
+    "metrics": "0b184c5fc9e3e52e037c441497cf20be6aee8f1cf64712f3d7afa35f605462c5",
+    "strategy": "21efb7ea2b7453c1a7a8a90329fc6e818f06ceedcb7c6412876db861a7e2a310"
+   },
+   "best_params": {
+    "eta": 0.01126919237428642,
+    "max_depth": 5,
+    "num_boost_round": 450
+   },
+   "class_counts": {
+    "long": 24224,
+    "neutral": 144059,
+    "short": 26550
+   },
+   "hpo_best_logloss": 0.806302,
+   "masked_pct": 0.003,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 19,
+     "n_scored": 35039,
+     "n_train": 31821,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35035,
+     "n_train": 66847,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101882,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 26,
+     "n_scored": 57777,
+     "n_train": 137024,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0373,
+    "gate_share": 0.0278,
+    "hit_rate": 0.4503,
+    "max_drawdown": 0.2016,
+    "n_trades": 191,
+    "sharpe": -0.977,
+    "tau": 0.3,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3545,
+    "logloss": 0.796891,
+    "mcc": 0.0895
+   },
+   "ticker": "BTC",
+   "top_gain": {
+    "activity_15m": 19412.51171875,
+    "activity_1h": 5671.21923828125,
+    "momentum_15m": 9793.8203125,
+    "volatility_1h": 5143.9404296875,
+    "volatility_4h": 2889.157470703125
+   },
+   "uniqueness_weight_mean": 0.0762,
+   "validation_logloss": {
+    "split_2": 0.817831,
+    "split_3": 0.810333,
+    "split_4": 0.790743
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 11,
+   "artifact_sha256": {
+    "hpo": "3ede354d7882e1b6cc98634be1a19a38b54a68eeaa3805d6376a0c04408b9b02",
+    "metrics": "4aaaada214dfc79ed2546e7f34048ba04579adefce120a0b6a45f1ab2108421c",
+    "strategy": "b5060ec6e7f2f6b6d798e365eeb28bd8b2be64d7b524a4cb652907e8eec5f298"
+   },
+   "best_params": {
+    "eta": 0.011360808906186085,
+    "max_depth": 6,
+    "num_boost_round": 450
+   },
+   "class_counts": {
+    "long": 23857,
+    "neutral": 143296,
+    "short": 27680
+   },
+   "hpo_best_logloss": 0.809552,
+   "masked_pct": 0.006,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 19,
+     "n_scored": 35036,
+     "n_train": 31821,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35039,
+     "n_train": 66844,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101883,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 25,
+     "n_scored": 57771,
+     "n_train": 137026,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0094,
+    "gate_share": 0.0119,
+    "hit_rate": 0.4898,
+    "max_drawdown": 0.0779,
+    "n_trades": 49,
+    "sharpe": -0.109,
+    "tau": 0.35,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3453,
+    "logloss": 0.796028,
+    "mcc": 0.0695
+   },
+   "ticker": "ETH",
+   "top_gain": {
+    "activity_15m": 15347.56640625,
+    "activity_1h": 3373.436767578125,
+    "momentum_15m": 8467.0771484375,
+    "trend_4h": 2935.07958984375,
+    "volatility_1h": 3996.98583984375
+   },
+   "uniqueness_weight_mean": 0.0755,
+   "validation_logloss": {
+    "split_2": 0.815841,
+    "split_3": 0.822473,
+    "split_4": 0.790341
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 6,
+   "artifact_sha256": {
+    "hpo": "a8e297b96c071da504d261b05e32abd48ada7a23ed6ec0c87b7dbab9b2bc9541",
+    "metrics": "ecc837a01b997baf88d6de7cf1519fe61d237353c56ffdbc47b442d41d190ff1",
+    "strategy": "76223308aa7945d2cb5b6e82340d23db2fd19187cf9cada732ecc7373ec9b387"
+   },
+   "best_params": {
+    "eta": 0.024731934386589254,
+    "max_depth": 2,
+    "num_boost_round": 400
+   },
+   "class_counts": {
+    "long": 22841,
+    "neutral": 144847,
+    "short": 27145
+   },
+   "hpo_best_logloss": 0.78768,
+   "masked_pct": 0.003,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 24,
+     "n_scored": 35034,
+     "n_train": 31816,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66842,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101882,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 26,
+     "n_scored": 57777,
+     "n_train": 137024,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0144,
+    "gate_share": 0.0153,
+    "hit_rate": 0.4805,
+    "max_drawdown": 0.106,
+    "n_trades": 77,
+    "sharpe": -0.48,
+    "tau": 0.32,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3442,
+    "logloss": 0.80079,
+    "mcc": 0.0648
+   },
+   "ticker": "BNB",
+   "top_gain": {
+    "activity_15m": 5449.27294921875,
+    "activity_1h": 1286.0302734375,
+    "momentum_15m": 3826.00390625,
+    "structure_15m": 892.6149291992188,
+    "trend_4h": 719.9095458984375
+   },
+   "uniqueness_weight_mean": 0.0746,
+   "validation_logloss": {
+    "split_2": 0.785683,
+    "split_3": 0.782347,
+    "split_4": 0.795011
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 1,
+   "artifact_sha256": {
+    "hpo": "572512a9d61776ab60d355d8c5c94303cbc1372e763bc1837c4c8f28976c38b5",
+    "metrics": "761a00b30771e9cde9baa44f1bb15b88fbff87b581d0a6468139ed37d869f53f",
+    "strategy": "76376f76018630593adb1437c39d3df734c3a05d592f7a07d56506e1ac0ad5e5"
+   },
+   "best_params": {
+    "eta": 0.011958960092973302,
+    "max_depth": 5,
+    "num_boost_round": 350
+   },
+   "class_counts": {
+    "long": 22015,
+    "neutral": 146601,
+    "short": 26217
+   },
+   "hpo_best_logloss": 0.770754,
+   "masked_pct": 0.001,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 19,
+     "n_scored": 35040,
+     "n_train": 31821,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66848,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35135,
+     "n_train": 101888,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 30,
+     "n_scored": 57777,
+     "n_train": 137025,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0521,
+    "gate_share": 0.0149,
+    "hit_rate": 0.4962,
+    "max_drawdown": 0.2797,
+    "n_trades": 266,
+    "sharpe": 0.688,
+    "tau": 0.23,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3477,
+    "logloss": 0.771955,
+    "mcc": 0.0837
+   },
+   "ticker": "XRP",
+   "top_gain": {
+    "activity_15m": 16373.0400390625,
+    "activity_1h": 2660.330078125,
+    "momentum_15m": 13442.5322265625,
+    "trend_4h": 2644.331787109375,
+    "volatility_1h": 3283.433837890625
+   },
+   "uniqueness_weight_mean": 0.0747,
+   "validation_logloss": {
+    "split_2": 0.77442,
+    "split_3": 0.755003,
+    "split_4": 0.78284
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 9,
+   "artifact_sha256": {
+    "hpo": "baff65d8f59e544b9443e9f09da17951a15b72b77a5e436fdf0791844cebd374",
+    "metrics": "5a8e04ef2b2b7cf9dd64fc7fec1e075df5bd36db353820c293ce5f5f66a35ced",
+    "strategy": "99b367463e620d99d42c36b649b392ba910f360eb55fbc617b1c67e835235bd7"
+   },
+   "best_params": {
+    "eta": 0.01645170499190329,
+    "max_depth": 4,
+    "num_boost_round": 250
+   },
+   "class_counts": {
+    "long": 23861,
+    "neutral": 145754,
+    "short": 25218
+   },
+   "hpo_best_logloss": 0.774275,
+   "masked_pct": 0.005,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 21,
+     "n_scored": 35031,
+     "n_train": 31819,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66839,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101879,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 26,
+     "n_scored": 57777,
+     "n_train": 137021,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0442,
+    "gate_share": 0.007,
+    "hit_rate": 0.4644,
+    "max_drawdown": 0.3121,
+    "n_trades": 239,
+    "sharpe": -0.814,
+    "tau": 0.05,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.339,
+    "logloss": 0.785014,
+    "mcc": 0.0503
+   },
+   "ticker": "SOL",
+   "top_gain": {
+    "activity_15m": 7258.13427734375,
+    "activity_1h": 2258.0986328125,
+    "momentum_15m": 3742.172119140625,
+    "structure_15m": 1292.422607421875,
+    "volatility_1h": 1660.110107421875
+   },
+   "uniqueness_weight_mean": 0.0737,
+   "validation_logloss": {
+    "split_2": 0.787745,
+    "split_3": 0.770091,
+    "split_4": 0.76499
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 1,
+   "artifact_sha256": {
+    "hpo": "53f1964d1536c3ca8046c6ef9177c541d3d21c38d17d0f7dbed87ff7fec2b7de",
+    "metrics": "aaae9970b264ae5cac72d5e1ea47def19a31d76ea08b6fa198667b566ef7f681",
+    "strategy": "57b82ca9b6767edf41d45154d17c9d1730ea2e03b37c09b338e04f0536bd0be0"
+   },
+   "best_params": {
+    "eta": 0.014082584710204496,
+    "max_depth": 2,
+    "num_boost_round": 300
+   },
+   "class_counts": {
+    "long": 23989,
+    "neutral": 143367,
+    "short": 27477
+   },
+   "hpo_best_logloss": 0.800944,
+   "masked_pct": 0.001,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 18,
+     "n_scored": 35039,
+     "n_train": 31822,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66847,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 29,
+     "n_scored": 35136,
+     "n_train": 101890,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 31,
+     "n_scored": 57777,
+     "n_train": 137024,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0281,
+    "gate_share": 0.0072,
+    "hit_rate": 0.4408,
+    "max_drawdown": 0.1459,
+    "n_trades": 152,
+    "sharpe": -1.22,
+    "tau": 0.28,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3392,
+    "logloss": 0.832484,
+    "mcc": 0.0471
+   },
+   "ticker": "TRX",
+   "top_gain": {
+    "activity_15m": 9212.296875,
+    "activity_1h": 1517.8939208984375,
+    "momentum_15m": 7301.8955078125,
+    "momentum_1h": 1235.1707763671875,
+    "structure_15m": 1160.1962890625
+   },
+   "uniqueness_weight_mean": 0.0744,
+   "validation_logloss": {
+    "split_2": 0.797341,
+    "split_3": 0.777404,
+    "split_4": 0.828088
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 0,
+   "artifact_sha256": {
+    "hpo": "e5d80172baa5a4492413fae07aad2cede1471b52504b88433081a5016ac13fe9",
+    "metrics": "aab6a9eb9e6015cde36136af1afdcc89b78a6bca56e077065cd9626506ada37c",
+    "strategy": "8a8eeb43bfa291fa62393571b37f5585385323e8d1e4fd32cc81772c020e56ed"
+   },
+   "best_params": {
+    "eta": 0.01241504710703519,
+    "max_depth": 5,
+    "num_boost_round": 300
+   },
+   "class_counts": {
+    "long": 23322,
+    "neutral": 145184,
+    "short": 26327
+   },
+   "hpo_best_logloss": 0.787059,
+   "masked_pct": 0.0,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 18,
+     "n_scored": 35040,
+     "n_train": 31822,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66848,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101888,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 25,
+     "n_scored": 57777,
+     "n_train": 137031,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0345,
+    "gate_share": 0.0126,
+    "hit_rate": 0.48,
+    "max_drawdown": 0.2432,
+    "n_trades": 175,
+    "sharpe": 0.752,
+    "tau": 0.26,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3426,
+    "logloss": 0.790273,
+    "mcc": 0.0636
+   },
+   "ticker": "DOGE",
+   "top_gain": {
+    "activity_15m": 13951.26953125,
+    "activity_1h": 2928.799072265625,
+    "momentum_15m": 9017.150390625,
+    "momentum_1h": 2386.344482421875,
+    "volatility_4h": 2134.358642578125
+   },
+   "uniqueness_weight_mean": 0.0752,
+   "validation_logloss": {
+    "split_2": 0.780212,
+    "split_3": 0.790211,
+    "split_4": 0.790754
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 0,
+   "artifact_sha256": {
+    "hpo": "28003539f8e6b38d77cdd5cbb5647419233b715259afdb4622e3b70d7f2d8410",
+    "metrics": "c698a57acb2ba3db287db396b00cef43d40b07237d19355b5ffb6edfa935dcaf",
+    "strategy": "7da00b07fa41a66116ac6c80caf448820d971b499c2ea356b49d221504b406db"
+   },
+   "best_params": {
+    "eta": 0.01931527023378969,
+    "max_depth": 3,
+    "num_boost_round": 250
+   },
+   "class_counts": {
+    "long": 22496,
+    "neutral": 148169,
+    "short": 24168
+   },
+   "hpo_best_logloss": 0.77045,
+   "masked_pct": 0.0,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 19,
+     "n_scored": 35040,
+     "n_train": 31821,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66848,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101888,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 31,
+     "n_scored": 57777,
+     "n_train": 137025,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0148,
+    "gate_share": 0.0016,
+    "hit_rate": 0.4937,
+    "max_drawdown": 0.1514,
+    "n_trades": 79,
+    "sharpe": 0.898,
+    "tau": 0.0,
+    "tau_constraint_met": false
+   },
+   "test": {
+    "balanced_accuracy": 0.3348,
+    "logloss": 0.757251,
+    "mcc": 0.0248
+   },
+   "ticker": "ZEC",
+   "top_gain": {
+    "activity_15m": 6025.52587890625,
+    "activity_1h": 1356.429931640625,
+    "momentum_15m": 3535.010009765625,
+    "structure_15m": 920.8878173828125,
+    "volatility_1h": 958.8949584960938
+   },
+   "uniqueness_weight_mean": 0.0727,
+   "validation_logloss": {
+    "split_2": 0.793749,
+    "split_3": 0.762326,
+    "split_4": 0.755276
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 2,
+   "artifact_sha256": {
+    "hpo": "c1b3df28542d54447286ec9d7f96f8ed7f6d9ca519d4906e0744723662e8f415",
+    "metrics": "a83b528671d730d2ca4d457548dc5c00af4c7b86cde4ee97cc3bca928d7d53ac",
+    "strategy": "7cff4ff8152ef5037b5106a7fa9d38b16470468c57273e9948ed13954988ff6a"
+   },
+   "best_params": {
+    "eta": 0.0165717775808125,
+    "max_depth": 5,
+    "num_boost_round": 250
+   },
+   "class_counts": {
+    "long": 22949,
+    "neutral": 146799,
+    "short": 25085
+   },
+   "hpo_best_logloss": 0.772531,
+   "masked_pct": 0.001,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 20,
+     "n_scored": 35038,
+     "n_train": 31820,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 32,
+     "n_scored": 35040,
+     "n_train": 66846,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101886,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 26,
+     "n_scored": 57777,
+     "n_train": 137028,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0348,
+    "gate_share": 0.005,
+    "hit_rate": 0.4419,
+    "max_drawdown": 0.2133,
+    "n_trades": 172,
+    "sharpe": -0.823,
+    "tau": 0.16,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3366,
+    "logloss": 0.77363,
+    "mcc": 0.0353
+   },
+   "ticker": "LINK",
+   "top_gain": {
+    "activity_15m": 8649.6376953125,
+    "activity_1h": 2222.993408203125,
+    "momentum_15m": 3405.57763671875,
+    "structure_15m": 1657.05126953125,
+    "volatility_1h": 2072.545654296875
+   },
+   "uniqueness_weight_mean": 0.073,
+   "validation_logloss": {
+    "split_2": 0.778075,
+    "split_3": 0.777529,
+    "split_4": 0.761989
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  },
+  {
+   "ambiguous": 12,
+   "artifact_sha256": {
+    "hpo": "b63269c438dc3dad7fe55da69704647bcde0c95cce2c03baf2c0f039e8a86fba",
+    "metrics": "9183ca91f34b6d6f254f92f7d9485523c325805ad569d4aea855f62165676e73",
+    "strategy": "88908170c9c5065b5da49baa3bb93a67a581ac6b9edddce8fc8a0e588f3a34b9"
+   },
+   "best_params": {
+    "eta": 0.011009602062264822,
+    "max_depth": 4,
+    "num_boost_round": 350
+   },
+   "class_counts": {
+    "long": 21983,
+    "neutral": 147573,
+    "short": 25277
+   },
+   "hpo_best_logloss": 0.770748,
+   "masked_pct": 0.006,
+   "rows": 194833,
+   "segments": {
+    "n_warmup_excluded": 3200,
+    "split_2": {
+     "n_purged": 21,
+     "n_scored": 35038,
+     "n_train": 31819,
+     "n_window": 35040
+    },
+    "split_3": {
+     "n_purged": 31,
+     "n_scored": 35040,
+     "n_train": 66847,
+     "n_window": 35040
+    },
+    "split_4": {
+     "n_purged": 32,
+     "n_scored": 35136,
+     "n_train": 101886,
+     "n_window": 35136
+    },
+    "split_5": {
+     "n_purged": 26,
+     "n_scored": 57767,
+     "n_train": 137028,
+     "n_window": 57777
+    }
+   },
+   "strategy": {
+    "exposure": 0.0128,
+    "gate_share": 0.0051,
+    "hit_rate": 0.5571,
+    "max_drawdown": 0.1469,
+    "n_trades": 70,
+    "sharpe": 0.455,
+    "tau": 0.25,
+    "tau_constraint_met": true
+   },
+   "test": {
+    "balanced_accuracy": 0.3385,
+    "logloss": 0.764298,
+    "mcc": 0.0488
+   },
+   "ticker": "ADA",
+   "top_gain": {
+    "activity_15m": 11909.46484375,
+    "activity_1h": 2587.79638671875,
+    "momentum_15m": 8422.6240234375,
+    "structure_15m": 1561.799560546875,
+    "volatility_1h": 1988.4097900390625
+   },
+   "uniqueness_weight_mean": 0.0734,
+   "validation_logloss": {
+    "split_2": 0.770957,
+    "split_3": 0.767313,
+    "split_4": 0.773974
+   },
+   "warnings": {
+    "test_logloss_above_uniform": false,
+    "too_few_trades": false
+   }
+  }
+ ],
+ "config_sha256": "7c2f33f480600df96072c7464f3c6bdd25e871f872f0bf211be0367440209510",
+ "data_sha256": "af07e001761429bb88effbf13c9e0d01dff7268c4e213bc163a90269fefaaddc",
+ "generated_at_utc": "2026-08-26 22:58:11",
+ "research_window": [
+  "2021-01-01",
+  "2026-08-26"
+ ]
+}
