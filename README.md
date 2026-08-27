@@ -55,8 +55,15 @@ full minute grid — equal row counts by construction.
 
 Requirements: **Python 3.11+** and `make`; Docker optional.
 
+Four direct dependencies and nothing else — `duckdb` (storage and query),
+`numpy` (mathematics), `optuna` (hyper-parameter search) and `xgboost-cpu`
+(model). Anything else in the environment is a transitive dependency of those
+four, and the CPU wheel of XGBoost is deliberate: the research layer trains
+with `tree_method=hist` and `nthread=1`, so the GPU stack would be weight
+without function.
+
 ```bash
-make setup            # create .venv with pinned DuckDB
+make setup            # create .venv with the four pinned libraries
 make download         # backfill/top-up raw 1m ZIPs from both exchanges
 make ingest           # load ZIPs into DuckDB, rebuild the canonical series
 make export           # write per-asset Parquet files

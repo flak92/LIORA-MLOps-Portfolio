@@ -1,7 +1,5 @@
 PY         := .venv/bin/python
 PORT       ?= 8900
-DUCKDB_PIN := duckdb==1.5.4
-ML_PINS    := numpy==2.5.2 xgboost==3.4.1 optuna==4.9.0
 COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
 TICKER_LIST = $(shell python3 -c "from pipeline.config import TICKERS; print(' '.join(TICKERS))")
 
