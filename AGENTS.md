@@ -1,7 +1,8 @@
 # AGENTS — the contract of this repository
 
 The governing contract for every change, human or agent. Read the repo in
-this order: **AGENTS.md → README → module names → code.** If a change
+this order: **AGENTS.md → module names → Skills_For_The_Project → code.**
+(README is general information, not part of the working path.) If a change
 conflicts with this file, the change is wrong.
 
 ## Values

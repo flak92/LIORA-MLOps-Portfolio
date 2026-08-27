@@ -10,8 +10,9 @@
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
-skills in [Skills_For_The_Project/](Skills_For_The_Project/). Read the repo as
-`AGENTS.md → README → module names → code`.
+skills in [Skills_For_The_Project/](Skills_For_The_Project/). The working path
+through the repo is `AGENTS.md → module names → Skills_For_The_Project → code`;
+this README is the general overview.
 
 ```
 Binance USDS-M API ──> raw_downloaded_1m_data/cryptofuture/binance/...  ─┐
