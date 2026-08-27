@@ -1,7 +1,7 @@
 # AGENTS — the contract of this repository
 
 The governing contract for every change, human or agent. Read the repo in
-this order: **AGENTS.md → module names → Skills_For_The_Project → code.**
+this order: **AGENTS.md → module names → module_skills_for_the_project → code.**
 (README is general information, not part of the working path.) If a change
 conflicts with this file, the change is wrong.
 
@@ -45,9 +45,9 @@ conflicts with this file, the change is wrong.
 Three modules, in the order the data moves through them:
 
 ```
-data_module/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
-ml_module/           canonical dataset → X, Y → search → model → research simulation
-monitoring_module/   presentation of what the two modules measured about themselves
+module_data/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
+module_ml/           canonical dataset → X, Y → search → model → research simulation
+module_monitoring/   presentation of what the two modules measured about themselves
 ```
 
 Regular, predictable, symmetrical, easy to scan — the structure should be
@@ -55,10 +55,10 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `research_artifacts/<TICKER>/<artifact>.<ext>`, `ml-<stage>` ↔
-  `docker-ml-<stage>` targets); each computational module (`data_module`,
-  `ml_module`) measures its own domain state in `status.py`, and
-  `monitoring_module` presents their snapshots;
+  `download_bybit.py`, `store_research_artifacts/<TICKER>/<artifact>.<ext>`, `ml-<stage>` ↔
+  `docker-ml-<stage>` targets); each computational module (`module_data`,
+  `module_ml`) measures its own domain state in `status.py`, and
+  `module_monitoring` presents their snapshots;
 - short, predictable paths; no decorative prefixes or suffixes;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
@@ -70,7 +70,7 @@ standard domain terminology. A glossary confirms meaning; it must not be
 required to decode an obscure name.**
 
 One concept, one name — in the code, in the artifacts and in the interface. The
-register is `Skills_For_The_Project/glossary.md`, and a new name enters it in
+register is `module_skills_for_the_project/glossary.md`, and a new name enters it in
 the same commit that introduces it. The fold vocabulary it fixes: `fold` (one
 chronological segment), `WARMUP_END_MS` (before any decision is allowed),
 training rows (everything that finished before the evaluated block), `purge`
@@ -104,7 +104,7 @@ throughout the prose (`-ise`, `-isation`); language keywords keep their own spel
 For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
-Project-specific agent instructions live in `Skills_For_The_Project/` — the
+Project-specific agent instructions live in `module_skills_for_the_project/` — the
 only other place agent guidance may exist in this tree. It holds the naming
 register (`glossary.md`), the five skills, and the two methodology documents:
 `DATA_README.md` (how the canonical dataset is built) and `ML_README.md` (the

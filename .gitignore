@@ -1,11 +1,11 @@
 .venv/
 __pycache__/
-raw_downloaded_1m_data/
-db/
+store_raw_1m/
+store_db/
 # the artifacts themselves are reconstructable, but each folder's experiment
 # configuration and its README are the two files that make them readable
 # without a run
-research_artifacts/**
-!research_artifacts/*/
-!research_artifacts/*/experiment_configuration.json
-!research_artifacts/*/README.md
+store_research_artifacts/**
+!store_research_artifacts/*/
+!store_research_artifacts/*/experiment_configuration.json
+!store_research_artifacts/*/README.md

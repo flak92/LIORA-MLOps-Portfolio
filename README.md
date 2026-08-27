@@ -10,8 +10,8 @@ XGBoost → research strategy simulation → monitoring.
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
 skills, the naming register and the two methodology documents in
-[Skills_For_The_Project/](Skills_For_The_Project/). The working path
-through the repo is `AGENTS.md → module names → Skills_For_The_Project → code`;
+[module_skills_for_the_project/](module_skills_for_the_project/). The working path
+through the repo is `AGENTS.md → module names → module_skills_for_the_project → code`;
 this README is the general overview.
 
 ```
@@ -61,7 +61,7 @@ divergence and every other anomaly are recorded by the monitoring layer and
 shown on the dashboard. Downstream ML code reads a continuous `t,O,H,L,C,V`
 series whose every printed price existed on a real market, and needs no
 source-specific logic. Full methodology, endpoints and schema:
-[Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
+[module_skills_for_the_project/DATA_README.md](module_skills_for_the_project/DATA_README.md).
 
 ## The basket
 
@@ -104,11 +104,11 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
+| download  | `make download`        | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | fail-closed: read-back invariants before the atomic replace |
-| status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
+| export    | `make export`          | canonical → `store_research_artifacts/<T>/canonical_1m.parquet`   | fail-closed: read-back invariants before the atomic replace |
+| status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
@@ -119,7 +119,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   `offset_ms_from_utc_midnight,open,high,low,close,volume`.
 - **Timestamps** are bar OPEN times, UTC epoch milliseconds, strict 60 000 ms
   grid. **Volume** is base-asset volume, never quote turnover.
-- **DuckDB** `db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
+- **DuckDB** `store_db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
   (raw), `ohlcv_1m_canonical` (primary-failover, with provenance columns
   `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`),
   and the exact aggregations `ohlcv_15m_canonical`, `ohlcv_1h_canonical`,
@@ -127,10 +127,10 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
   same row count for every asset, continuous, no NULLs, values exactly as the
   winning source printed them (no rounding at any layer).
-- **Semantics**: `research_artifacts/<T>/canonical_1m.parquet` is a **canonical
+- **Semantics**: `store_research_artifacts/<T>/canonical_1m.parquet` is a **canonical
   primary-failover series**, not the raw feed of a single source — use it for ML and indicators;
   for Lean backtests use the per-source raw ZIP trees. Step-by-step build
-  description: [Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
+  description: [module_skills_for_the_project/DATA_README.md](module_skills_for_the_project/DATA_README.md).
 
 ## Monitoring
 
@@ -146,7 +146,7 @@ parquet rows`) and feeds the dashboard:
 
 ## ML research layer
 
-`ml_module/` builds — per asset, deterministically — a fixed 15-column hierarchical
+`module_ml/` builds — per asset, deterministically — a fixed 15-column hierarchical
 feature matrix (15m/1h/4h) from the canonical series, triple-barrier
 labels resolved on the **canonical** 1-minute path, a purged walk-forward
 protocol with average-uniqueness sample weights and Optuna hyper-parameter search
@@ -164,5 +164,5 @@ cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
 describes itself: `experiment_configuration.json` records the configuration
 the run used, and its `README.md` says what came out. Full methodology:
-[Skills_For_The_Project/ML_README.md](Skills_For_The_Project/ML_README.md).
+[module_skills_for_the_project/ML_README.md](module_skills_for_the_project/ML_README.md).
 

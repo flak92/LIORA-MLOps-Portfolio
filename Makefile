@@ -1,7 +1,7 @@
 PY         := .venv/bin/python
 PORT       ?= 8900
 COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
-TICKER_LIST = $(shell python3 -c "from data_module.config import TICKERS; print(' '.join(TICKERS))")
+TICKER_LIST = $(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))")
 
 # ML stages are one independent process per asset. The only speed-up allowed
 # here is that external parallelism: OMP_NUM_THREADS and nthread stay at 1,
@@ -21,7 +21,7 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 .DEFAULT_GOAL := help
 
 # every target is a command, not a file — without this `make dashboard` would
-# be "up to date" because the monitoring_module/ directory exists
+# be "up to date" because the module_monitoring/ directory exists
 .PHONY: help all setup download download-binance download-bybit ingest export status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-download \
@@ -39,48 +39,48 @@ setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 download:        ## fetch Binance + Bybit 1m klines (UTC calendar-day files, idempotent)
-	$(PY) -m data_module.download_binance
-	$(PY) -m data_module.download_bybit
+	$(PY) -m module_data.download_binance
+	$(PY) -m module_data.download_bybit
 
 download-binance: ## Binance USDS-M only
-	$(PY) -m data_module.download_binance
+	$(PY) -m module_data.download_binance
 
 download-bybit:  ## Bybit Linear only
-	$(PY) -m data_module.download_bybit
+	$(PY) -m module_data.download_bybit
 
-ingest:          ## load both ZIP trees into db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
-	$(PY) -m data_module.ingest
+ingest:          ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
+	$(PY) -m module_data.ingest
 
-export:          ## write research_artifacts/<T>/canonical_1m.parquet from the canonical series
-	$(PY) -m data_module.export
+export:          ## write store_research_artifacts/<T>/canonical_1m.parquet from the canonical series
+	$(PY) -m module_data.export
 
-status:          ## data & DB monitoring -> stdout + monitoring_module/status.json
-	$(PY) -m data_module.status
+status:          ## data & DB monitoring -> stdout + module_monitoring/status.json
+	$(PY) -m module_data.status
 
 dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
-	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory monitoring_module
+	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory module_monitoring
 
 ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
-	$(PY) -m ml_module.bars
+	$(PY) -m module_ml.bars
 
 ml-features:     ## fixed hierarchical 15-column feature matrix per asset
-	$(call fanout,$(PY),ml_module.features)
+	$(call fanout,$(PY),module_ml.features)
 
 ml-labels:       ## triple-barrier labels on the canonical 1m path
-	$(call fanout,$(PY),ml_module.labels)
+	$(call fanout,$(PY),module_ml.labels)
 
 ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)
-	$(call fanout,$(PY),ml_module.hpo)
+	$(call fanout,$(PY),module_ml.hpo)
 
 ml-train:        ## out-of-fold predictions + final-holdout report per asset
-	$(call fanout,$(PY),ml_module.train)
+	$(call fanout,$(PY),module_ml.train)
 
 ml-strategy:     ## entry edge threshold on the validation folds, final-holdout PnL
-	$(call fanout,$(PY),ml_module.strategy)
+	$(call fanout,$(PY),module_ml.strategy)
 
-ml-status:       ## aggregate ML artifacts -> monitoring_module/ml_status.json
-	$(PY) -m ml_module.status
+ml-status:       ## aggregate ML artifacts -> module_monitoring/ml_status.json
+	$(PY) -m module_ml.status
 
 ml-all:          ## the whole ML chain in order
 	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status
@@ -89,38 +89,38 @@ docker-build:    ## build the pipeline image
 	$(COMPOSE) build
 
 docker-download: ## run both download stages inside the container
-	$(COMPOSE) run --rm pipeline python -m data_module.download_binance
-	$(COMPOSE) run --rm pipeline python -m data_module.download_bybit
+	$(COMPOSE) run --rm pipeline python -m module_data.download_binance
+	$(COMPOSE) run --rm pipeline python -m module_data.download_bybit
 
 docker-ingest:   ## run the ingest stage inside the container
-	$(COMPOSE) run --rm pipeline python -m data_module.ingest
+	$(COMPOSE) run --rm pipeline python -m module_data.ingest
 
 docker-export:   ## run the export stage inside the container
-	$(COMPOSE) run --rm pipeline python -m data_module.export
+	$(COMPOSE) run --rm pipeline python -m module_data.export
 
 docker-status:   ## run the status stage inside the container
-	$(COMPOSE) run --rm pipeline python -m data_module.status
+	$(COMPOSE) run --rm pipeline python -m module_data.status
 
-docker-ml-bars:      ## ml_module.bars inside the container
-	$(COMPOSE) run --rm pipeline python -m ml_module.bars
+docker-ml-bars:      ## module_ml.bars inside the container
+	$(COMPOSE) run --rm pipeline python -m module_ml.bars
 
-docker-ml-features:  ## ml_module.features inside the container
-	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.features)"
+docker-ml-features:  ## module_ml.features inside the container
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,module_ml.features)"
 
-docker-ml-labels:    ## ml_module.labels inside the container
-	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.labels)"
+docker-ml-labels:    ## module_ml.labels inside the container
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,module_ml.labels)"
 
-docker-ml-hpo:       ## ml_module.hpo inside the container
-	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.hpo)"
+docker-ml-hpo:       ## module_ml.hpo inside the container
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,module_ml.hpo)"
 
-docker-ml-train:     ## ml_module.train inside the container
-	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.train)"
+docker-ml-train:     ## module_ml.train inside the container
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,module_ml.train)"
 
-docker-ml-strategy:  ## ml_module.strategy inside the container
-	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.strategy)"
+docker-ml-strategy:  ## module_ml.strategy inside the container
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,module_ml.strategy)"
 
-docker-ml-status:    ## ml_module.status inside the container
-	$(COMPOSE) run --rm pipeline python -m ml_module.status
+docker-ml-status:    ## module_ml.status inside the container
+	$(COMPOSE) run --rm pipeline python -m module_ml.status
 
 docker-ml-all:       ## the whole ML chain inside the container
 	$(MAKE) docker-ml-bars docker-ml-features docker-ml-labels docker-ml-hpo \
