@@ -14,6 +14,7 @@
     <button class="pill active" data-key="pipeline">Pipeline</button>
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="ml">ML Research</button>
+    <button class="pill" data-key="asset">ML Assets</button>
   </nav>
 
   <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
@@ -80,8 +81,31 @@
       test log-loss at or above the uniform baseline (ln 3) or fewer than 30 trades.</p>
   </section>
 
+  <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
+    <div id="asset-meta" class="box">loading ml_status.json&hellip;</div>
+
+    <div class="frame">
+      <div class="frame-head">
+        <span class="frame-title">cross-section &mdash; ten assets</span>
+        <span class="pills" data-pills="mlview">
+          <button class="pill active" data-key="labels">Labels &amp; data</button>
+          <button class="pill" data-key="classification">Classification</button>
+          <button class="pill" data-key="strategy">Strategy</button>
+          <button class="pill" data-key="search">Search &amp; provenance</button>
+        </span>
+      </div>
+      <div class="frame-body">
+        <div data-panel="mlview" data-key="labels"><table id="cs-labels"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="classification" hidden><table id="cs-classification"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="strategy" hidden><table id="cs-strategy"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="search" hidden><table id="cs-search"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
   <p class="foot">static page &middot; data from <code>status.json</code> / <code>ml_status.json</code>
     (regenerate with <code>make status</code> / <code>make ml-status</code>)</p>
   <script src="app.js"></script>
+  <script src="ml.js"></script>
 </body>
 </html>

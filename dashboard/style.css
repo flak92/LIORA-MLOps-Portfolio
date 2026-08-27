@@ -55,3 +55,14 @@ td:first-child, th:first-child { text-align: left; }
 .warn { background: #fff3b0; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
+
+.linkish {
+  font-family: inherit;
+  font-size: 14px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: #111;
+  text-decoration: underline;
+  cursor: pointer;
+}
