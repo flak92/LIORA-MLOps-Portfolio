@@ -7,10 +7,10 @@ function frameEl(title) {
   const f = document.createElement("div");
   f.className = "frame";
   const h = document.createElement("div");
-  h.className = "frame-head";
+  h.className = "frame__head";
   h.textContent = title;
   const b = document.createElement("div");
-  b.className = "frame-body";
+  b.className = "frame__body";
   f.append(h, b);
   return { frame: f, body: b };
 }
@@ -45,9 +45,9 @@ function sparkline(values, baseline, caption) {
   base.setAttribute("x2", W);
   base.setAttribute("y1", y(baseline));
   base.setAttribute("y2", y(baseline));
-  base.setAttribute("class", "spark-base");
+  base.setAttribute("class", "spark__base");
   const line = document.createElementNS(NS, "polyline");
-  line.setAttribute("class", "spark-line");
+  line.setAttribute("class", "spark__line");
   line.setAttribute("points", values.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" "));
   svg.append(tip, base, line);
   return svg;
@@ -176,7 +176,7 @@ function buildAssetPills(s) {
   const group = document.getElementById("asset-pills");
   s.assets.forEach((a, i) => {
     const b = document.createElement("button");
-    b.className = "pill" + (i === 0 ? " active" : "");
+    b.className = "pill" + (i === 0 ? " pill--active" : "");
     b.dataset.key = a.ticker;
     b.textContent = a.ticker;
     group.appendChild(b);

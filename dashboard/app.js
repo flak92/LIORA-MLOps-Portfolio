@@ -21,9 +21,9 @@ function fmtDiv(x) {
 
 function bar(pctValue) {
   const track = document.createElement("span");
-  track.className = "bar-track";
+  track.className = "bar";
   const fill = document.createElement("span");
-  fill.className = "bar-fill";
+  fill.className = "bar__fill";
   fill.style.width = Math.max(0, Math.min(100, pctValue)) + "%";
   track.appendChild(fill);
   return track;
@@ -57,7 +57,7 @@ function initPills(root) {
     group.dataset.bound = "1";
     const name = group.dataset.pills;
     const select = (key) => {
-      group.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.key === key));
+      group.querySelectorAll("button").forEach((b) => b.classList.toggle("pill--active", b.dataset.key === key));
       document.querySelectorAll("[data-panel='" + name + "']")
         .forEach((p) => { p.hidden = p.dataset.key !== key; });
       if (PILL_HOOKS[name]) PILL_HOOKS[name](key);
@@ -66,7 +66,7 @@ function initPills(root) {
       const b = e.target.closest("button[data-key]");
       if (b && group.contains(b)) select(b.dataset.key);
     });
-    const first = group.querySelector("button.active") || group.querySelector("button");
+    const first = group.querySelector("button.pill--active") || group.querySelector("button");
     if (first) select(first.dataset.key);
   });
 }

@@ -11,7 +11,7 @@
   <p class="sub">Binance USDS-M + Bybit Linear 1m klines &rarr; Lean ZIPs &rarr; DuckDB primary-failover canonical &rarr; per-asset Parquet</p>
 
   <nav id="tabs" class="pills" data-pills="tab">
-    <button class="pill active" data-key="pipeline">Pipeline</button>
+    <button class="pill pill--active" data-key="pipeline">Pipeline</button>
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
@@ -85,16 +85,16 @@
     <div id="asset-meta" class="box">loading ml_status.json&hellip;</div>
 
     <div class="frame">
-      <div class="frame-head">
-        <span class="frame-title">cross-section &mdash; ten assets</span>
+      <div class="frame__head">
+        <span class="frame__title">cross-section &mdash; ten assets</span>
         <span class="pills" data-pills="mlview">
-          <button class="pill active" data-key="labels">Labels &amp; data</button>
+          <button class="pill pill--active" data-key="labels">Labels &amp; data</button>
           <button class="pill" data-key="classification">Classification</button>
           <button class="pill" data-key="strategy">Strategy</button>
           <button class="pill" data-key="search">Search</button>
         </span>
       </div>
-      <div class="frame-body">
+      <div class="frame__body">
         <div data-panel="mlview" data-key="labels"><table id="cs-labels"><thead></thead><tbody></tbody></table></div>
         <div data-panel="mlview" data-key="classification" hidden><table id="cs-classification"><thead></thead><tbody></tbody></table></div>
         <div data-panel="mlview" data-key="strategy" hidden><table id="cs-strategy"><thead></thead><tbody></tbody></table></div>
@@ -102,8 +102,8 @@
       </div>
     </div>
     <div class="frame">
-      <div class="frame-head">
-        <span class="frame-title">asset</span>
+      <div class="frame__head">
+        <span class="frame__title">asset</span>
         <span class="pills" id="asset-pills" data-pills="asset"></span>
       </div>
     </div>
