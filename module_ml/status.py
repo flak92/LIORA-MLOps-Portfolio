@@ -26,7 +26,7 @@ ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluat
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
 
-def _r(x, ndigits):
+def _rounded(x, ndigits):
     """round() that tolerates the nulls to_json_safe() writes for non-finite floats."""
     return None if x is None else round(x, ndigits)
 
@@ -52,7 +52,7 @@ def hpo_block(hpo: dict) -> dict:
     }
 
 
-def _cls(v: dict) -> dict:
+def _rounded_classification(v: dict) -> dict:
     return {
         "prior_logloss": round(v["prior_logloss"], 6),
         "model_logloss": round(v["model_logloss"], 6),
@@ -63,8 +63,8 @@ def _cls(v: dict) -> dict:
 
 def classification_block(metrics: dict) -> tuple[dict, dict]:
     """(validation per fold, final holdout)."""
-    validation = {k: _cls(v) for k, v in sorted(metrics["validation"].items())}
-    return validation, _cls(metrics["final_holdout"])
+    validation = {k: _rounded_classification(v) for k, v in sorted(metrics["validation"].items())}
+    return validation, _rounded_classification(metrics["final_holdout"])
 
 
 def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS) -> dict:
@@ -81,15 +81,15 @@ def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_CURVE_DOWN
     return {"equity": values, "final_equity": end}
 
 
-def _pnl(block: dict) -> dict:
+def _rounded_pnl(block: dict) -> dict:
     return {
-        "sharpe": _r(block["sharpe"], 3),
-        "max_drawdown": _r(block["max_drawdown"], 4),
+        "sharpe": _rounded(block["sharpe"], 3),
+        "max_drawdown": _rounded(block["max_drawdown"], 4),
         "trade_count": block["trade_count"],
-        "hit_rate": _r(block["hit_rate"], 4),
-        "avg_trade_ret": _r(block["avg_trade_ret"], 6),
-        "exposure": _r(block["exposure"], 4),
-        "final_equity": _r(block["final_equity"], 4),
+        "hit_rate": _rounded(block["hit_rate"], 4),
+        "avg_trade_ret": _rounded(block["avg_trade_ret"], 6),
+        "exposure": _rounded(block["exposure"], 4),
+        "final_equity": _rounded(block["final_equity"], 4),
         "exit_counts": dict(block["exit_counts"]),
     }
 
@@ -100,10 +100,10 @@ def strategy_block(strategy: dict) -> dict:
         "entry_edge_threshold": strategy["entry_edge_threshold"],
         "entry_edge_threshold_constraint_met":
             strategy["entry_edge_threshold_constraint_met"],
-        "selection_score_mean_sharpe": _r(strategy["selection_score_mean_sharpe"], 3),
+        "selection_score_mean_sharpe": _rounded(strategy["selection_score_mean_sharpe"], 3),
         "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
-        "validation": {k: _pnl(v) for k, v in sorted(strategy["validation"].items())},
-        "final_holdout": _pnl(final_holdout),
+        "validation": {k: _rounded_pnl(v) for k, v in sorted(strategy["validation"].items())},
+        "final_holdout": _rounded_pnl(final_holdout),
         "equity_curve": thin_curve(final_holdout["equity_curve"],
                                    final_holdout["final_equity"]),
     }

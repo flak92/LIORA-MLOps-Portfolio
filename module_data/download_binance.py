@@ -40,7 +40,7 @@ def _iso_day(epoch_ms: int) -> str:
     return datetime.fromtimestamp(epoch_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
 
 
-def _get(params: dict, retries: int = 6) -> list[list]:
+def fetch_klines(params: dict, retries: int = 6) -> list[list]:
     url = f"{config.BINANCE_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
     for attempt in range(retries):
@@ -67,7 +67,7 @@ def _get(params: dict, retries: int = 6) -> list[list]:
 
 def probe_oldest(sym: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
-    batch = _get({"symbol": sym, "interval": config.SOURCE_CANDLE_INTERVAL,
+    batch = fetch_klines({"symbol": sym, "interval": config.SOURCE_CANDLE_INTERVAL,
                   "startTime": 0, "limit": 1})
     if not batch:
         raise SystemExit(f"probe failed: no candles returned for {sym}")
@@ -76,7 +76,7 @@ def probe_oldest(sym: str) -> int:
 
 def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as (offset_ms, o, h, l, c, base_volume)."""
-    batch = _get(
+    batch = fetch_klines(
         {
             "symbol": sym,
             "interval": config.SOURCE_CANDLE_INTERVAL,

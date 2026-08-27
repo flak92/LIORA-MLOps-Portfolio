@@ -38,7 +38,7 @@ from .download_binance import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc
 KLINE_REQUEST_WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
 
 
-def _get(params: dict, retries: int = 6) -> list[list]:
+def fetch_klines(params: dict, retries: int = 6) -> list[list]:
     url = f"{config.BYBIT_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
     for attempt in range(retries):
@@ -66,7 +66,7 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as ascending (offset_ms, o, h, l, c, base_volume)."""
     rows = []
     for window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
-        batch = _get(
+        batch = fetch_klines(
             {
                 "category": config.BYBIT_CATEGORY,
                 "symbol": sym,
