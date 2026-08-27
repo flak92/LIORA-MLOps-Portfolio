@@ -7,6 +7,15 @@ TICKER_LIST = $(shell python3 -c "from pipeline.config import TICKERS; print(' '
 
 .DEFAULT_GOAL := help
 
+# every target is a command, not a file — without this `make dashboard` would
+# be "up to date" because the dashboard/ directory exists
+.PHONY: help setup download download-binance download-bybit ingest export status \
+        dashboard ml-bars ml-features ml-labels ml-hpo ml-hpo-par ml-train \
+        ml-strategy ml-finalize ml-status ml-all docker-build docker-download \
+        docker-ingest docker-export docker-status docker-ml-bars \
+        docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
+        docker-ml-strategy docker-ml-finalize docker-ml-status docker-up docker-down
+
 help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
 
