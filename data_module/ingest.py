@@ -191,6 +191,12 @@ def main() -> int:
     ap = config.ticker_parser("Lean ZIPs (both venues) -> DuckDB + canonical fused series")
     args = ap.parse_args()
     tickers = config.parse_tickers(args.tickers)
+    # The canonical grid ends at the global maximum of the raw tables, so
+    # rebuilding a subset leaves the other symbols on an older horizon — one
+    # database with different observation windows per asset. Acquisition may be
+    # per ticker; the canonical dataset is defined for the basket as a whole.
+    if set(tickers) != set(config.TICKERS):
+        raise SystemExit("canonical ingest is basket-wide — run `make ingest`")
 
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(config.DB_PATH))
@@ -225,12 +231,6 @@ def main() -> int:
         ).fetchall()
     }
     if old_cols and "source" not in old_cols:          # pre-failover schema
-        # the drop takes every symbol with it, so a subset run would silently
-        # truncate the dataset to whatever --tickers happened to name
-        if set(tickers) != set(config.TICKERS):
-            raise SystemExit(
-                "canonical schema migration requires a full dataset rebuild — run `make ingest`"
-            )
         con.execute("DROP TABLE ohlcv_1m_canonical")
     con.execute(CANONICAL_DDL)
     for t in tickers:

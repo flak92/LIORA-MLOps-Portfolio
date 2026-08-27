@@ -133,7 +133,12 @@ def main() -> int:
                     "rows": rows,
                     "coverage_pct": pct(distinct_ts, expected),
                     "gaps": expected - distinct_ts,
-                    "gaps_after_listing": ((r[4] - r[3]) // config.GRID_STEP_MS + 1 - distinct_ts) if r else 0,
+                    # measured from the first observation to the END OF THE WINDOW:
+                    # a span anchored on the symbol's own last row shrinks together
+                    # with a truncated tail and reports zero for a stale feed
+                    "gaps_after_first_observation": (
+                        (window_end_ms - r[3]) // config.GRID_STEP_MS - distinct_ts
+                    ) if r and window_end_ms else 0,
                     "duplicates": rows - distinct_ts,
                     "ohlc_violations": int(r[5]) if r else 0,
                     "zero_volume": int(r[6]) if r else 0,

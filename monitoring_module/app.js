@@ -87,7 +87,7 @@ function renderRawSource(tableId, list) {
     cell(tr, fmt(v.rows));
     cell(tr, pctCell(v.coverage_pct));
     cell(tr, fmt(v.gaps));
-    cell(tr, fmt(v.gaps_after_listing), v.gaps_after_listing > 0);
+    cell(tr, fmt(v.gaps_after_first_observation), v.gaps_after_first_observation > 0);
     cell(tr, fmt(v.duplicates), v.duplicates > 0);
     cell(tr, fmt(v.ohlc_violations), v.ohlc_violations > 0);
     cell(tr, fmt(v.zero_volume));
