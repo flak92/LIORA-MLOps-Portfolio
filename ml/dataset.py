@@ -59,13 +59,17 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
     y_ts = yy["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
-    out = {
+    return {
         "decision_ts": y_ts,
+        "entry_ts": yy["entry_ts"].astype(np.int64),
         "x": np.column_stack([x[c][pos] for c in config.FEATURE_COLUMNS]),
         "y": yy["y"].astype(np.int8),
         "event_end_ts": yy["event_end_ts"].astype(np.int64),
-        "mask_ok": yy["mask_ok"].astype(bool),
+        "label_valid": yy["label_valid"].astype(bool),
         "weight": yy["weight"].astype(np.float64),
         "exit_reason": yy["exit_reason"].astype(np.int8),
+        "p0": yy["p0"].astype(np.float64),
+        "upper": yy["upper"].astype(np.float64),
+        "lower": yy["lower"].astype(np.float64),
+        "exit_ref": yy["exit_ref"].astype(np.float64),
     }
-    return out

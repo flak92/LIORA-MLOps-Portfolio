@@ -52,7 +52,6 @@ FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",
 FOLD_BOUNDS_MS = tuple(_utc_ms(d) for d in FOLD_BOUNDS_UTC)
 VALIDATION_SPLITS = (2, 3, 4)       # OOS = F2, F3, F4 (expanding training)
 TEST_SPLIT = 5                      # locked F5, read once
-PRETEST_GAP_BARS = 16               # conservative gap on top of the event purge
 
 # ---- HPO (Optuna TPE, sequential, in-memory)
 N_TRIALS = 50

@@ -5,7 +5,7 @@ enter = |p_long - p_short| >= tau  AND  max(p_long, p_short) > p_neutral
         AND n_agree >= 2,  where n_agree counts levels with sign(trend) == side
 
 The entry condition uses only information available at decision_ts — label
-validity (mask_ok) is knowable only after the event resolves and therefore
+validity (label_valid) is knowable only after the event resolves and therefore
 never gates an entry. A trade whose event turns out ambiguous (exit_reason=9)
 is settled stop-first: the barrier adverse to the position at the tie minute.
 

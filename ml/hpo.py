@@ -26,8 +26,8 @@ def objective_factory(xy: dict[str, np.ndarray]):
         for split in config.VALIDATION_SPLITS:
             oos_start, oos_end = validation.split_bounds(split)
             tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                          xy["mask_ok"], oos_start)
-            oo = validation.oos_indices(xy["decision_ts"], xy["mask_ok"], oos_start, oos_end)
+                                          xy["label_valid"], oos_start)
+            oo = validation.oos_indices(xy["decision_ts"], xy["label_valid"], oos_start, oos_end)
             booster = model.fit(params, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
             proba = model.predict_proba(booster, xy["x"][oo])
             losses.append(validation.multiclass_logloss(y_cls[oo], proba, xy["weight"][oo]))

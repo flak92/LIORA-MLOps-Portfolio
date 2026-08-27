@@ -13,8 +13,6 @@ import numpy as np
 
 from . import config
 
-GAP_MS = config.PRETEST_GAP_BARS * config.TF_MS["15m"]
-
 
 def split_bounds(split: int) -> tuple[int, int]:
     """OOS bounds of a split: split k tests fold Fk (1-based fold table)."""
@@ -22,20 +20,25 @@ def split_bounds(split: int) -> tuple[int, int]:
 
 
 def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
-                  mask_ok: np.ndarray, oos_start_ms: int) -> np.ndarray:
-    cutoff = oos_start_ms - GAP_MS
-    keep = mask_ok & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts < cutoff)
+                  label_valid: np.ndarray, oos_start_ms: int) -> np.ndarray:
+    """Training rows whose event finished before the OOS block opened.
+
+    event_end_ts is the exclusive end of the event, so `event_end_ts <=
+    oos_start` is exactly "no overlap" — no extra gap is needed, and forward
+    chaining needs no post-test embargo because no training row lies after the
+    OOS block.
+    """
+    keep = label_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty training segment"
-    assert decision_ts[idx].max() < oos_start_ms
-    assert event_end_ts[idx].max() < cutoff, "an event leaks past the pre-test cutoff"
+    assert event_end_ts[idx].max() <= oos_start_ms, "a training event overlaps the OOS block"
     return idx
 
 
-def oos_indices(decision_ts: np.ndarray, mask_ok: np.ndarray,
+def oos_indices(decision_ts: np.ndarray, label_valid: np.ndarray,
                 start_ms: int, end_ms: int) -> np.ndarray:
     """Label-valid OOS rows — the scoring set for metrics and the HPO objective."""
-    keep = mask_ok & (decision_ts >= start_ms) & (decision_ts < end_ms)
+    keep = label_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
     assert decision_ts[idx].min() >= max(start_ms, config.WARMUP_END_MS)
@@ -45,8 +48,9 @@ def oos_indices(decision_ts: np.ndarray, mask_ok: np.ndarray,
 def window_indices(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np.ndarray:
     """Every decision row of a window, masked or not — the prediction set.
 
-    Label validity (mask_ok) is knowable only after the event resolves, so it
-    may govern training and scoring but never which rows receive predictions.
+    Label validity is knowable only after the event resolves, so it may govern
+    training and scoring but never which rows receive predictions — and never
+    which rows the strategy is allowed to trade.
     """
     keep = (decision_ts >= max(start_ms, config.WARMUP_END_MS)) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)

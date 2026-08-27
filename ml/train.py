@@ -72,7 +72,7 @@ def main() -> int:
         y_cls = model.to_class(xy["y"])
 
         if args.finalize:
-            keep = np.flatnonzero(xy["mask_ok"] & (xy["decision_ts"] >= config.WARMUP_END_MS))
+            keep = np.flatnonzero(xy["label_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS))
             booster = model.fit(best, xy["x"][keep], xy["y"][keep], xy["weight"][keep])
             payload = {
                 "role": "deployment",
@@ -93,9 +93,9 @@ def main() -> int:
             label-valid subset only. Returns (metrics, booster's test proba)."""
             oos_start, oos_end = validation.split_bounds(split)
             tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                          xy["mask_ok"], oos_start)
+                                          xy["label_valid"], oos_start)
             wi = validation.window_indices(xy["decision_ts"], oos_start, oos_end)
-            oi = validation.oos_indices(xy["decision_ts"], xy["mask_ok"], oos_start, oos_end)
+            oi = validation.oos_indices(xy["decision_ts"], xy["label_valid"], oos_start, oos_end)
             booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
             proba_w = model.predict_proba(booster, xy["x"][wi])
             pos = np.searchsorted(wi, oi)          # oi is a subset of wi
@@ -105,7 +105,7 @@ def main() -> int:
                 (xy["decision_ts"][i], split, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
                 for k, i in enumerate(wi)
             )
-            eligible = int((xy["mask_ok"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
+            eligible = int((xy["label_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
                             & (xy["decision_ts"] < oos_start)).sum())
             segments[f"split_{split}"] = {
                 "n_train": int(tr.size),
@@ -120,7 +120,7 @@ def main() -> int:
 
         # locked test fold: fitted on everything before it, evaluated exactly once
         test, booster = run_split(config.TEST_SPLIT)
-        te = validation.oos_indices(xy["decision_ts"], xy["mask_ok"],
+        te = validation.oos_indices(xy["decision_ts"], xy["label_valid"],
                                     *validation.split_bounds(config.TEST_SPLIT))
         proba_te = model.predict_proba(booster, xy["x"][te])
         test["confusion"] = validation.confusion_matrix(
@@ -141,7 +141,7 @@ def main() -> int:
             },
             "mask": {
                 "rows": int(xy["y"].size),
-                "masked": int((~xy["mask_ok"]).sum()),
+                "masked": int((~xy["label_valid"]).sum()),
                 "ambiguous": int((xy["exit_reason"] == 9).sum()),
             },
             "segments": {
