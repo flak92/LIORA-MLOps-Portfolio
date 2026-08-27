@@ -6,7 +6,8 @@ Parallelism matters for wall-clock time, with one governing rule:
 > deterministic correctness.**
 
 - Speed comes exclusively from **external parallelism**: independent,
-  separately-seeded processes side by side (one asset per process). Never
+  processes side by side (one asset per process), all under the same fixed
+  `SEED`. Never
   from raising thread caps inside a worker — see `determinism.md`.
 - Width is **measured at invocation, never hardcoded**: `JOBS = max(1,
   min(cores, available GiB))` in the Makefile — the floor matters, because

@@ -4,8 +4,10 @@ The dashboard is a static dial-up-minimal page; keep it one.
 
 - Plain HTML + CSS + JS only — no frameworks, no build step, no external
   resources (fonts, CDNs, trackers). Everything ships in `monitoring_module/`.
-- Served on **loopback only** (`127.0.0.1`); remote viewing goes through an
-  SSH tunnel, never a bind to a public interface.
+- Reachable on **loopback only** (`127.0.0.1`): `make dashboard` binds it
+  directly, and the container binds `0.0.0.0` inside its own namespace while
+  compose publishes it on `127.0.0.1` alone. Remote viewing goes through an
+  SSH tunnel, never a bind to a public interface of the host.
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold

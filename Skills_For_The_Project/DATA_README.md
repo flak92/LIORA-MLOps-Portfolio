@@ -1,9 +1,9 @@
 **IMPORTANT: TO KEEP DATA GAPS OUT OF THE ML LAYER AND MAINTAIN HIGH DATA
 QUALITY WITHOUT INVENTING EXTRA TECHNIQUES AND WORKAROUNDS, WE BUILD ONE
 PRIMARY-FAILOVER CANONICAL SERIES FROM THE 1-MINUTE DATA OF TWO EXCHANGES —
-BINANCE AND BYBIT — IN A SINGLE DATABASE, USING THE QUANTCONNECT LEAN DATA
-FORMAT. AS A RESULT, ML MODELS CONSUME ONE CANONICAL, CONTINUOUS DATA
-SERIES.**
+BINANCE AND BYBIT — STORED IN THE QUANTCONNECT LEAN DATA FORMAT AND
+CONSOLIDATED IN ONE DUCKDB DATABASE. AS A RESULT, ML MODELS CONSUME ONE
+CANONICAL, CONTINUOUS DATA SERIES.**
 
 # DATA_README — Canonical 1m OHLCV Database
 
@@ -23,8 +23,9 @@ either venue in the same order), and only a minute with no valid candle on
 both venues is a canonical gap, deterministically forward-filled with the
 previous canonical close and zero volume. Data-source shares, source
 switches, the largest move at a switch, cross-exchange divergence and every
-other integrity anomaly are recorded by the DATA INGEST quality-monitoring
-layer and exposed through the project dashboard. Consequently, downstream
+other integrity anomaly are recorded by the data-layer quality monitoring
+(`data_module/status.py`, run by `make status`) and exposed through the
+project dashboard. Consequently, downstream
 indicator calculation and ML pipelines operate exclusively on a continuous
 canonical t,O,H,L,C,V series whose every printed price existed on a real
 exchange, and require no exchange-specific gap-handling logic.
@@ -71,7 +72,7 @@ begin at the first traded minute and hold a partial file — a property of raw
 per-day storage, not a canonical gap: the canonical grid is rebuilt downstream
 from both providers, and every later day must be complete.
 
-Both downloaders write identical QC Lean-exact day ZIPs
+Both downloaders write identical Lean-exact day ZIPs
 (`YYYYMMDD_trade.zip` → `YYYYMMDD_<symbol>_minute_trade_perp.csv`, headerless
 `offset_ms_from_utc_midnight,open,high,low,close,volume`) into
 `raw_downloaded_1m_data/cryptofuture/<venue>/minute/<symbol>/` — verified

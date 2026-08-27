@@ -16,7 +16,7 @@ this README is the general overview.
 
 ```
                  ┌── market source A ──┐
-MARKET DATA ─────┤                     ├──► NORMALISED RAW 1m OHLCV  (QC Lean ZIPs)
+MARKET DATA ─────┤                     ├──► NORMALISED RAW 1m OHLCV  (Lean ZIPs)
                  └── market source B ──┘              │
                                                       ▼
                                           ONE CANONICAL DuckDB
@@ -91,11 +91,13 @@ make dashboard        # serve http://127.0.0.1:8900/  (loopback only)
 ```
 
 Every stage also runs on its own (`make setup download ingest export status`
-for the data half, `make ml-all` for the ML half) — see the stage table below.
+for the data half, `make ml-all` for the ML half) — the data stages are in the
+table below, the ML chain in *ML research layer*.
 
 The same stages run inside Docker: `make docker-build`, then
-`make docker-download / docker-ingest / docker-export / docker-status`,
-and `make docker-up` / `make docker-down` for the dashboard container.
+`make docker-download / docker-ingest / docker-export / docker-status` for the
+data half and `make docker-ml-all` (or any single `docker-ml-<stage>`) for the
+ML half, and `make docker-up` / `make docker-down` for the dashboard container.
 Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 ## Stages
@@ -105,13 +107,13 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | atomic write + read-back count    |
+| export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | fail-closed: read-back invariants before the atomic replace |
 | status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
 
-- **Raw ZIPs** are byte-compatible with the QC Lean `cryptofuture` minute
+- **Raw ZIPs** are byte-compatible with the Lean `cryptofuture` minute
   format (verified byte-identical against an independent production
   downloader), one tree per source. Headerless CSV rows:
   `offset_ms_from_utc_midnight,open,high,low,close,volume`.
@@ -119,7 +121,9 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   grid. **Volume** is base-asset volume, never quote turnover.
 - **DuckDB** `db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
   (raw), `ohlcv_1m_canonical` (primary-failover, with provenance columns
-  `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`).
+  `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`),
+  and the exact aggregations `ohlcv_15m_canonical`, `ohlcv_1h_canonical`,
+  `ohlcv_4h_canonical` written by `make ml-bars`.
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
   same row count for every asset, continuous, no NULLs, values exactly as the
   winning source printed them (no rounding at any layer).

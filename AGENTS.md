@@ -84,17 +84,20 @@ evaluates. The word "test" never names a fold.
 
 Constants that carry a numeric quantity — a count, a rate, a duration, a
 size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the
-unit is explicit: `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`,
-`_FOLD_ID`, `_RATE` or `_COUNT`. Enumerations, paths, names, collections and
-mappings carry no unit, and no name is invented just to satisfy the schema.
-The parameter word follows the mechanics — `SPAN` for an EMA,
+unit is explicit — `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_ROWS`,
+`_FOLD_ID`, `_RATE`, `_COUNT` — unless the name already says what is counted
+(`MINIMUM_TRADES_PER_VALIDATION_FOLD`). Enumerations, paths and names carry no
+unit; a collection whose values are quantities keeps theirs
+(`TIMEFRAME_DURATION_MS`, `FOLD_BOUNDS_MS`, `VALIDATION_FOLD_IDS`). No name is
+invented just to satisfy the schema. The parameter word follows the mechanics
+— `SPAN` for an EMA,
 `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
 window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
 Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
 and are spelled out on first use in the documentation; local ones (`N`, `W`,
-`TF`, `MIN`, `MAX`, `K`, `XGB`) never appear. Write "QuantConnect Lean" on
-first use, "Lean" afterwards. British spelling throughout the prose
-(`-ise`, `-isation`); language keywords keep their own spelling.
+`TF`, `MIN`, `MAX`, `K`, `XGB`) never cross a function boundary. Write
+"QuantConnect Lean" on first use, "Lean" afterwards. British spelling
+throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling.
 
 ## The default choice
 
@@ -104,5 +107,5 @@ implementation that correctly closes the full pipeline.**
 Project-specific agent instructions live in `Skills_For_The_Project/` — the
 only other place agent guidance may exist in this tree. It holds the naming
 register (`glossary.md`), the five skills, and the two methodology documents:
-`DATA_README.md` (how the canonical dataset is built, with the citations) and
-`ML_README.md` (the research layer, equation by equation).
+`DATA_README.md` (how the canonical dataset is built) and `ML_README.md` (the
+research layer, equation by equation, with the citations).

@@ -1,4 +1,4 @@
-"""Download Bybit Linear USDT 1m klines into QC Lean minute-trade ZIPs.
+"""Download Bybit Linear USDT 1m klines into QuantConnect Lean minute-trade ZIPs.
 
 Keyless public v5 API, stdlib only. Mirrors the Binance downloader: the unit of
 work is one full UTC day = one ZIP, existing ZIPs are skipped (idempotent

@@ -57,8 +57,10 @@ Entry edge threshold **0.0** — **fallback**, no threshold reaches 30 trades in
 
 Final-holdout exits: upper_barrier 16, lower_barrier 18, vertical 39, ambiguous 0.
 
-## Reproducing this folder
+## Reproducing the ML artifacts in this folder
 
     python -m ml_module.features --tickers ZEC && python -m ml_module.labels --tickers ZEC && python -m ml_module.hpo --tickers ZEC && python -m ml_module.train --tickers ZEC && python -m ml_module.strategy --tickers ZEC && python -m ml_module.status --tickers ZEC
+
+`canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.

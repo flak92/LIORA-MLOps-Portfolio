@@ -57,8 +57,10 @@ Entry edge threshold **0.19**. Cost 0.06% per side; the hierarchy gate requires 
 
 Final-holdout exits: upper_barrier 71, lower_barrier 75, vertical 139, ambiguous 0.
 
-## Reproducing this folder
+## Reproducing the ML artifacts in this folder
 
     python -m ml_module.features --tickers DOGE && python -m ml_module.labels --tickers DOGE && python -m ml_module.hpo --tickers DOGE && python -m ml_module.train --tickers DOGE && python -m ml_module.strategy --tickers DOGE && python -m ml_module.status --tickers DOGE
+
+`canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.

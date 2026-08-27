@@ -1,4 +1,4 @@
-# Skill: glossary — one concept, one name
+# Glossary — one concept, one name
 
 **Names must be self-explanatory before they are project-specific. Prefer
 standard domain terminology. A glossary confirms meaning; it must not be
@@ -14,7 +14,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| one chronological segment of the research window | `fold`, `fold_id` | `fold_2` … `fold_4` | `F1` … `F5` | split, period, chunk |
+| one chronological segment of the research window | `fold`, `fold_id` | `fold_2` … `fold_5` | `F1` … `F5` | split, period, chunk |
 | the segment boundaries | `fold_bounds()`, `FOLD_BOUNDS_MS` | `folds.bounds_utc` | — | split_bounds |
 | the folds used for the data-driven selection of model hyper-parameters and the entry edge threshold | `VALIDATION_FOLD_IDS` = (2, 3, 4) | `validation` | `F2`–`F4` | test folds, CV folds, "the folds that choose every parameter" |
 | the fold that is only ever evaluated | `FINAL_HOLDOUT_FOLD_ID` = 5 | `final_holdout`, `final_holdout_fold_id` | `F5 — final holdout (out-of-sample)` | test, test set, locked test, final OOS |
@@ -32,10 +32,10 @@ confirmation; the rest of the concept column states what the name means.
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
 | a data provider, above the ingest boundary only | `binance` / `bybit`, in `data_module` | `venues.*`, `pct_binance` | Raw source | venue or exchange used below ingest |
-| which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / forward fill | — |
+| which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / ffill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-volume bars | carried-forward price (true only of forward-filled minutes) |
-| a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | forward fill | gap, missing bar |
-| quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | same | — | signal, feature |
+| a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | ffill | gap, missing bar |
+| quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | — (database columns; `rel_divergence` is published only as `div_mean` / `div_p99` / `div_max`) | — | signal, feature |
 
 ## Event and sample
 
@@ -95,6 +95,8 @@ Every count says what it counts; a bare `n` names nothing.
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
+| share of a fold's trades that ended positive | `hit_rate` | `hit_rate` | hit | win rate |
+| mean cost-adjusted return of a trade | `avg_trade_ret` | `avg_trade_ret` | avg trade | expectancy |
 | equity at the end of the fold, starting from 1.0 | `final_equity` | `final_equity` | final equity | PnL |
 
 ## Artifacts
@@ -108,7 +110,7 @@ each file named after what it holds.
 | `canonical_1m.parquet` | `data_module/export.py` | the published canonical series |
 | `features.parquet` | `ml_module/features.py` | X — 15 causal columns |
 | `label_events.parquet` | `ml_module/labels.py` | Y — labels, the event flags and the event prices |
-| `hyperparameter_search.json` | `ml_module/hpo.py` | the search space and its winner |
+| `hyperparameter_search.json` | `ml_module/hpo.py` | the winning point of the search and the trial count |
 | `oos_predictions.parquet` | `ml_module/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
 | `model_evaluation.json` | `ml_module/train.py` | classification metrics per fold |
 | `strategy_evaluation.json` | `ml_module/strategy.py` | the entry edge threshold and the PnL |

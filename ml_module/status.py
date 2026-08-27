@@ -237,9 +237,11 @@ Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost
 
 Final-holdout exits: {exits}.
 
-## Reproducing this folder
+## Reproducing the ML artifacts in this folder
 
     {reproduce}
+
+`canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
 
 F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
 """

@@ -1,4 +1,4 @@
-"""Download Binance USDS-M 1m klines into QC Lean minute-trade ZIPs.
+"""Download Binance USDS-M 1m klines into QuantConnect Lean minute-trade ZIPs.
 
 Keyless public API, stdlib only, no Docker required. The unit of work is one
 full UTC day = one ZIP; days whose ZIP already exists are skipped, so the same

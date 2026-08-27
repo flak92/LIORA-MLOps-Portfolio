@@ -263,8 +263,7 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 ```
 
 `relative_logloss_skill` answers one question — does the model add information beyond knowing
-how often each class occurs? — and is **a result, not a gate**; balanced
-accuracy answers the same question and is not reported. Metrics score the
+how often each class occurs? — and is **a result, not a gate**. Metrics score the
 supervised subset of a fold
 whose maximum horizon fits inside it — the same t₀-decidable rule that governs
 strategy eligibility (§9); predictions cover the full fold.
@@ -275,14 +274,17 @@ strategy eligibility (§9); predictions cover the full fold.
 edge = directional_probability_edge = p_long − p_short;  side = sign(edge)
 agreeing_trend_timeframe_count =
     #{timeframe ∈ {15m, 1h, 4h} : sign(ema20_minus_ema50_over_atr14_<timeframe>) = side}
-enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
+enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral ∧ side ≠ 0
         ∧ side = sign(ema20_minus_ema50_over_atr14_4h)
         ∧ agreeing_trend_timeframe_count ≥ 2
+        ∧ entry_observable
 ```
 
 The **model decides the side; the 4H hierarchy gates it**. One unit position
-at a time, new signals ignored while in a position, and a trade must finish
-inside its fold.
+at a time, new signals ignored while in a position, and a signal is eligible
+only where its whole 240-minute horizon fits inside the fold
+(`entry_ts + LABEL_HORIZON_MS <= fold_end`) — decided at t₀, never by where the
+trade actually ended.
 
 **PnL — one formula.** The simulation applies USDT-perpetual PnL algebra to the
 canonical price path: a position held at a fixed
@@ -352,8 +354,9 @@ answers the only question the folder could not otherwise answer — which
 settings this run used — which is what makes the artifacts reproducible
 without reading the source. The
 experiment is still identified once, globally, in
-`monitoring_module/ml_status.json`: research window and seed. Library versions live in `requirements.txt`, model parameters in
-`hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
+`monitoring_module/ml_status.json`: research window and seed. Library versions are pinned in `requirements.txt` and the versions a run
+resolved are recorded per asset in `experiment_configuration.json`
+(`runtime.libraries`); model parameters live in `hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
@@ -389,7 +392,7 @@ because it is the only writer to the database.
 Thread caps stay at one — `nthread = 1`, `OMP_NUM_THREADS = 1` — and are not
 negotiable: multi-threaded float summation reorders, two runs of the same
 experiment produce different models, and out-of-sample results stop being
-comparable. Measured on 4 cores: the four per-asset stages take 1 min 29 s
+comparable. Measured on 4 cores: the four per-asset stages outside the search take 1 min 29 s
 instead of 4 min 13 s (2.8x) and every artifact is bit-identical either way.
 The search itself is 88 % of the chain and is CPU-bound; one asset's Optuna
 study is sequential by construction, so the wall-clock floor of `ml-hpo` is

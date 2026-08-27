@@ -67,7 +67,7 @@ td:first-child, th:first-child { text-align: left; }
   cursor: pointer;
 }
 
-/* per-asset detail: sparklines, confusion emphasis, compact share bars */
+/* per-asset detail: sparklines, final-holdout emphasis, compact share bars */
 .spark {
   display: block; width: 100%; height: 8em;
   border: 1px solid #111; background: #fff;
