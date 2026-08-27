@@ -1,8 +1,10 @@
 """Top-down gated strategy: the model decides the side, the hierarchy gates it.
 
-enter = mask_ok  AND  |p_long - p_short| >= tau
-        AND max(p_long, p_short) > p_neutral
-        AND side == sign(trend_4h) AND |alignment| >= 2 AND sign(alignment) == side
+enter = mask_ok  AND  |p_long - p_short| >= tau  AND  max(p_long, p_short) > p_neutral
+        AND side == sign(trend_4h)
+        AND n_agree >= 2,  where n_agree counts levels with sign(trend) == side
+
+Entries additionally require the label to be valid (mask_ok).
 
 One unit position at a time; new signals are ignored while a position is open.
 Exits replay the label event: the same +-K*ATR14(1h) barriers on the same 1m
@@ -55,14 +57,13 @@ def load_inputs(ticker: str) -> dict:
                                          config.TF_MS["1h"])]
     exit_bar = np.searchsorted(ts15, xy["event_end_ts"] - 60_000, side="right") - 1
 
-    x_ts = xy["decision_ts"]
-    trend_4h = xy["x"][:, config.FEATURE_COLUMNS.index("trend_4h")]
-    alignment = xy["x"][:, config.FEATURE_COLUMNS.index("alignment")]
+    trend = {
+        tf: xy["x"][:, config.FEATURE_COLUMNS.index(f"trend_{tf}")] for tf in config.LEVELS
+    }
     return {
         "xy": xy, "ts15": ts15, "open15": bars15["open"], "close15": bars15["close"],
         "bar_of": bar_of, "exit_bar": exit_bar, "sigma": sigma,
-        "trend_4h": trend_4h, "alignment": alignment,
-        "preds": preds, "x_ts": x_ts,
+        "trend": trend, "preds": preds, "x_ts": xy["decision_ts"],
     }
 
 
@@ -77,13 +78,15 @@ def rows_for_split(d: dict, split: int) -> dict:
     p_neutral = d["preds"]["p_neutral"][m]
     edge = p_long - p_short
     side = np.sign(edge)
+    n_agree = sum(
+        (np.sign(d["trend"][tf][pos]) == side).astype(np.int64) for tf in config.LEVELS
+    )
     gate = (
         d["xy"]["mask_ok"][pos]
         & (np.maximum(p_long, p_short) > p_neutral)
-        & (side == np.sign(d["trend_4h"][pos]))
-        & (np.abs(d["alignment"][pos]) >= config.ALIGNMENT_MIN)
-        & (np.sign(d["alignment"][pos]) == side)
         & (side != 0)
+        & (side == np.sign(d["trend"]["4h"][pos]))
+        & (n_agree >= config.AGREE_MIN)
     )
     return {
         "idx": pos, "edge": edge, "side": side, "gate": gate,

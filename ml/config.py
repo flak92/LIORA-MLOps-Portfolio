@@ -82,7 +82,7 @@ COST_PER_SIDE = 0.0006              # taker + slippage, per entry and per exit
 TAU_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
 MIN_TRADES_PER_SPLIT = 30
 BARS_PER_YEAR_15M = 96 * 365        # crypto trades 24/7
-ALIGNMENT_MIN = 2                   # |alignment| >= 2 required by the gate
+AGREE_MIN = 2                       # levels whose trend sign must agree with the side
 
 _CONSTANTS = {
     k: v
