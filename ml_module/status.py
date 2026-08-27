@@ -248,17 +248,17 @@ F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-
 PINNED = ("duckdb", "numpy", "optuna", "xgboost-cpu")
 
 
-def experiment_configuration(ticker: str, hpo: dict, strategy: dict) -> dict:
-    """The configuration this run was executed under.
+def experiment_configuration(ticker: str) -> dict:
+    """The frozen, a-priori configuration this run was executed under.
 
     Read from ml_module/config.py when the folder is written, not recovered
     from the artifacts, so it describes the experiment and proves nothing
     about any particular file. It answers the one question the folder cannot
     otherwise answer — which settings this run used — so the artifacts can be
-    reproduced without reading the source.
+    reproduced without reading the source. Everything the run *chose* — the
+    winning hyper-parameters, the entry edge threshold — lives in the result
+    files, never here.
     """
-    booster = {k: v for k, v in hpo["best_params"].items() if k != "num_boost_round"}
-    booster.update(config.XGBOOST_FIXED_PARAMETERS)          # fixed wins on collision, as in model.fit
     return {
         "ticker": ticker,
         "research_window": {
@@ -306,14 +306,7 @@ def experiment_configuration(ticker: str, hpo: dict, strategy: dict) -> dict:
                          + ", ".join(f"F{i}" for i in config.VALIDATION_FOLD_IDS),
             "space": {k: list(v) for k, v in config.HYPERPARAMETER_SEARCH_SPACE.items()},
             "xgboost_fixed_parameters": dict(config.XGBOOST_FIXED_PARAMETERS),
-            "best_params": dict(sorted(hpo["best_params"].items())),
-            "best_logloss": hpo["best_logloss"],
         },
-        # what actually trained: model.fit pops num_boost_round and lets the
-        # fixed parameters overwrite the searched ones, so neither dict alone
-        # describes the booster
-        "effective_booster_params": dict(sorted(booster.items())),
-        "num_boost_round": hpo["best_params"]["num_boost_round"],
         "strategy": {
             "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
             "entry_edge_threshold_grid": {
@@ -326,9 +319,6 @@ def experiment_configuration(ticker: str, hpo: dict, strategy: dict) -> dict:
             "minimum_trades_per_validation_fold": config.MINIMUM_TRADES_PER_VALIDATION_FOLD,
             "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
             "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
-            "entry_edge_threshold": strategy["entry_edge_threshold"],
-            "entry_edge_threshold_constraint_met":
-                strategy["entry_edge_threshold_constraint_met"],
         },
         "runtime": {
             "libraries": {name: version(name) for name in PINNED},
@@ -353,7 +343,7 @@ def main() -> int:
         strategy = loaded["strategy_evaluation"]
         assets.append(asset_report(t, hpo, metrics, strategy))
         dataset.write_json(adir / "experiment_configuration.json",
-                           experiment_configuration(t, hpo, strategy))
+                           experiment_configuration(t))
         (adir / "README.md").write_text(asset_readme(t, hpo, metrics, strategy),
                                         encoding="utf-8")
     assert assets, "no complete artifact set found — run the ML chain first"
