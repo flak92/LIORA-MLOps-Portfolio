@@ -1,8 +1,9 @@
 **IMPORTANT: TO KEEP DATA GAPS OUT OF THE ML LAYER AND MAINTAIN HIGH DATA
-QUALITY WITHOUT INVENTING EXTRA TECHNIQUES AND WORKAROUNDS, WE COMBINE
-1-MINUTE DATA FROM TWO EXCHANGES — BINANCE AND BYBIT — IN A SINGLE DATABASE,
-USING THE QUANTCONNECT LEAN DATA FORMAT. AS A RESULT, ML MODELS CONSUME ONE
-CANONICAL, CONTINUOUS DATA SERIES.**
+QUALITY WITHOUT INVENTING EXTRA TECHNIQUES AND WORKAROUNDS, WE BUILD ONE
+PRIMARY-FAILOVER CANONICAL SERIES FROM THE 1-MINUTE DATA OF TWO EXCHANGES —
+BINANCE AND BYBIT — IN A SINGLE DATABASE, USING THE QUANTCONNECT LEAN DATA
+FORMAT. AS A RESULT, ML MODELS CONSUME ONE CANONICAL, CONTINUOUS DATA
+SERIES.**
 
 # DATA_README — Canonical 1m OHLCV Database
 
@@ -65,7 +66,10 @@ base-asset quantity (contract multiplier 1) — verified against Binance:
 per-symbol total-volume ratios are 0.07–0.37, i.e. the same unit. The list is
 returned newest-first and is sorted ascending before writing. A day with no
 data (before the symbol's Bybit listing) is stored as a ZIP with an empty CSV,
-so the question is asked once and never again.
+so the question is asked once and never again. The listing day itself may
+begin at the first traded minute and hold a partial file — a property of raw
+per-day storage, not a canonical gap: the canonical grid is rebuilt downstream
+from both providers, and every later day must be complete.
 
 Both downloaders write identical QC Lean-exact day ZIPs
 (`YYYYMMDD_trade.zip` → `YYYYMMDD_<symbol>_minute_trade_perp.csv`, headerless

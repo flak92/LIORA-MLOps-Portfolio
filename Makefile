@@ -35,7 +35,7 @@ help:            ## list targets
 all:             ## full pipeline from a fresh clone: venv, data, canonical, ML, snapshots
 	$(MAKE) setup download ingest export status ml-all
 
-setup:           ## create .venv and install the locked dependency set
+setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 download:        ## fetch Binance + Bybit 1m klines (full UTC days, idempotent)

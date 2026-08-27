@@ -192,7 +192,7 @@ def spool_symbol(ticker: str, venue: str, spool_csv: Path) -> int:
 
 
 def main() -> int:
-    ap = config.ticker_parser("Lean ZIPs (both venues) -> DuckDB + canonical fused series")
+    ap = config.ticker_parser("Lean ZIPs (both venues) -> DuckDB + primary-failover canonical series")
     args = ap.parse_args()
     tickers = config.parse_tickers(args.tickers)
     # The canonical grid ends at the global maximum of the raw tables, so

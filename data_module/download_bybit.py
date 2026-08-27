@@ -10,7 +10,7 @@ Bybit specifics handled here:
   - rate limiting is retCode 10006 (not HTTP 429) -> exponential backoff;
   - a day before the symbol's listing returns no rows -> an empty CSV is still
     written, so the day is answered once and skipped forever (pre-listing
-    minutes become Binance-only in the fusion, never forward-fills).
+    minutes become Binance-only in the canonical series, never forward-fills).
 
 Output tree (Lean-exact, same format as the Binance tree):
   raw_downloaded_1m_data/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
