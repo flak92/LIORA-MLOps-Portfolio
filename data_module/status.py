@@ -95,7 +95,7 @@ def main() -> int:
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
 
     con.execute("SET memory_limit='4GB'")
-    con.execute("SET threads=2")
+    con.execute("SET threads=1")   # float summation must not be reordered
     venue_rows = {v: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=v)).fetchall()} for v in config.VENUES}
     canonical_rows = {r[0]: r for r in con.execute(CANONICAL_SCAN).fetchall()}
     canon_extra = {

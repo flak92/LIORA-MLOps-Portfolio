@@ -202,7 +202,7 @@ def main() -> int:
     con = duckdb.connect(str(config.DB_PATH))
     # small-host safety: spill early instead of hitting the allocator ceiling
     con.execute("SET memory_limit='4GB'")
-    con.execute("SET threads=2")
+    con.execute("SET threads=1")   # float summation must not be reordered
     con.execute("SET preserve_insertion_order=false")
     for venue in config.VENUES:
         con.execute(VENUE_DDL.format(venue=venue))

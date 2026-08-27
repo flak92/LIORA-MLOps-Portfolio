@@ -52,7 +52,7 @@ def main() -> int:
 
     con = duckdb.connect(str(config.DB_PATH))
     con.execute("SET memory_limit='4GB'")
-    con.execute("SET threads=2")
+    con.execute("SET threads=1")   # float summation must not be reordered
     for tf, tf_ms in config.TF_MS.items():
         con.execute(BAR_DDL.format(tf=tf))
         for t in tickers:
