@@ -29,9 +29,11 @@ LEVELS = ("15m", "1h", "4h")
 TF_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
 DECISION_TF = "15m"
 
-# ---- feature contract: 5 families x 3 levels + alignment = 16 columns
+# ---- feature contract: 5 families x 3 levels = 15 columns
 FAMILIES = ("trend", "momentum", "volatility", "structure", "activity")
-FEATURE_COLUMNS = tuple(f"{fam}_{lvl}" for lvl in LEVELS for fam in FAMILIES) + ("alignment",)
+# the 2-of-3 trend agreement the strategy needs is a rule over these columns,
+# not a sixteenth feature: it carries nothing the three trend columns lack
+FEATURE_COLUMNS = tuple(f"{fam}_{lvl}" for lvl in LEVELS for fam in FAMILIES)
 EMA_FAST = 20
 EMA_SLOW = 50
 ATR_N = 14

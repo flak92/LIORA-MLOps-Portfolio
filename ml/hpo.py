@@ -52,10 +52,6 @@ def main() -> int:
             "best_params": study.best_trial.params,
             "best_value": study.best_value,
             "n_trials": config.N_TRIALS,
-            "trials": [
-                {"number": tr.number, "value": tr.value, "params": tr.params}
-                for tr in study.trials
-            ],
         }
         out = config.ASSETS_DIR / f"Asset_{t}" / f"hpo_{t}.json"
         dataset.write_json(out, payload)

@@ -1,12 +1,15 @@
-"""Fixed hierarchical feature matrix X — 16 causal columns per asset.
+"""Fixed hierarchical feature matrix X — 15 causal columns per asset.
 
-Five families per level (trend, momentum, volatility, structure, activity on
-15m/1h/4h) plus the cross-level alignment. Identical definition for every
-asset; no per-asset selection. Every value at decision_ts comes from the last
-CLOSED bar of its level (asof_index asserts causality); the 15m level thus
-uses the bar that closes exactly at decision_ts.
+Five families on three time scales (trend, momentum, volatility, structure,
+activity on 15m/1h/4h). Identical definition for every asset; no per-asset
+selection. Cross-level trend agreement is a strategy rule over these columns,
+not a feature: it would carry no information the three trend columns lack.
 
-Output: assets/Asset_<T>/X_<T>.parquet with decision_ts + 16 float64 columns,
+Every value at decision_ts comes from the last CLOSED bar of its level
+(asof_index asserts causality); the 15m level uses the bar closing exactly at
+decision_ts.
+
+Output: assets/Asset_<T>/X_<T>.parquet with decision_ts + 15 float64 columns,
 rows from the global research warm-up onward, no NaN (asserted).
 """
 
@@ -56,16 +59,13 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
     decision_ts = ts15[ts15 >= config.WARMUP_END_MS]
 
     cols: dict[str, np.ndarray] = {}
-    trend_at = {}
     for tf in config.LEVELS:
         idx = indicators.asof_index(decision_ts, levels[tf]["timestamp_ms"].astype(np.int64), config.TF_MS[tf])
         for fam in config.FAMILIES:
             cols[f"{fam}_{tf}"] = feats[tf][fam][idx]
-        trend_at[tf] = feats[tf]["trend"][idx]
-    cols["alignment"] = sum(np.sign(trend_at[tf]) for tf in config.LEVELS)
 
     x = np.column_stack([cols[c] for c in config.FEATURE_COLUMNS])
-    assert x.shape[1] == 16, "feature contract broken: X must have 16 columns"
+    assert x.shape[1] == len(config.FEATURE_COLUMNS), "feature contract broken"
     assert np.isfinite(x).all(), "NaN/inf in X after the research warm-up"
     return decision_ts, x
 

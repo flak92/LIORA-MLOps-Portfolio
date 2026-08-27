@@ -46,25 +46,20 @@ def hpo_block(hpo: dict) -> dict:
     }
 
 
-def _cls(v: dict, extra: dict | None = None) -> dict:
-    out = {
+def _cls(v: dict) -> dict:
+    return {
         "prior_logloss": round(v["prior_logloss"], 6),
         "model_logloss": round(v["model_logloss"], 6),
         "skill": round(v["skill"], 6),
         "mcc": round(v["mcc"], 4),
         "n": v["n"],
     }
-    out.update(extra or {})
-    return out
 
 
 def classification_block(metrics: dict) -> tuple[dict, dict]:
-    """(validation per split, final OOS) — confusion rows are true classes."""
+    """(validation per split, final OOS)."""
     validation = {k: _cls(v) for k, v in sorted(metrics["validation"].items())}
-    t = metrics["test"]
-    confusion = t["confusion"]
-    assert sum(sum(row) for row in confusion) == t["n"], "confusion does not sum to scored rows"
-    return validation, _cls(t, {"confusion": confusion})
+    return validation, _cls(metrics["test"])
 
 
 def thin_curve(curve: dict, stride: int = EQUITY_STRIDE) -> dict:

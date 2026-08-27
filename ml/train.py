@@ -1,20 +1,16 @@
-"""Frozen-parameter training: OOF predictions, the locked test report, finalize.
+"""Frozen-parameter training: out-of-fold predictions and the final OOS report.
 
-1. With the HPO-frozen parameters, refit the expanding splits and store their
-   out-of-fold probabilities (predictions_<T>.parquet) — the only inputs the
-   strategy layer may use to choose its threshold.
-2. Fit on everything before the locked test fold and evaluate that fold ONCE;
-   the classification numbers are frozen in metrics_<T>.json. The model that
-   produced them is not persisted — the numbers are.
-3. --finalize: fit on the whole research window and persist model_<T>.json
-   labelled role=deployment, unbiased_estimate=false.
+With the parameters chosen by HPO, refit the expanding splits and store their
+out-of-fold probabilities (predictions_<T>.parquet) — the only inputs the
+strategy layer may use to choose its threshold — then fit on everything before
+the final fold and evaluate that fold. The numbers are persisted; the model is
+not, because nothing in this repo performs inference yet.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import json
 import os
 import tempfile
 from pathlib import Path
@@ -71,7 +67,6 @@ def split_metrics(y_cls, proba, weight, prior_train) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description="frozen-parameter training and the locked test report")
     ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    ap.add_argument("--finalize", action="store_true", help="fit the deployment model on the full window")
     args = ap.parse_args()
 
     for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
@@ -79,20 +74,6 @@ def main() -> int:
         best = dataset.read_json(adir / f"hpo_{t}.json")["best_params"]
         xy = dataset.load_xy(t)
         y_cls = model.to_class(xy["y"])
-
-        if args.finalize:
-            keep = np.flatnonzero(xy["label_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS))
-            booster = model.fit(best, xy["x"][keep], xy["y"][keep], xy["weight"][keep])
-            payload = {
-                "role": "deployment",
-                "unbiased_estimate": False,
-                "params": best,
-                "n_train": int(keep.size),
-                "booster": json.loads(booster.save_raw("json").decode()),
-            }
-            dataset.write_json(adir / f"model_{t}.json", payload)
-            print(f"model_{t}.json: deployment fit on {keep.size} rows", flush=True)
-            continue
 
         pred_rows: list[tuple] = []
         per_split, segments = {}, {}
@@ -131,12 +112,6 @@ def main() -> int:
 
         # final OOS fold: fitted on everything before it, never used for any choice
         test, booster = run_split(config.TEST_SPLIT)
-        te = validation.oos_indices(xy["decision_ts"], xy["label_valid"],
-                                    *validation.split_bounds(config.TEST_SPLIT))
-        proba_te = model.predict_proba(booster, xy["x"][te])
-        test["confusion"] = validation.confusion_matrix(
-            y_cls[te], proba_te.argmax(axis=1).astype(np.int32)
-        )
         write_predictions(t, pred_rows)
 
         gain = booster.get_score(importance_type="total_gain")

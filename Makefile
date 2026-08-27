@@ -11,10 +11,10 @@ TICKER_LIST = $(shell python3 -c "from pipeline.config import TICKERS; print(' '
 # be "up to date" because the dashboard/ directory exists
 .PHONY: help setup download download-binance download-bybit ingest export status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-hpo-par ml-train \
-        ml-strategy ml-finalize ml-status ml-all docker-build docker-download \
+        ml-strategy ml-status ml-all docker-build docker-download \
         docker-ingest docker-export docker-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
-        docker-ml-strategy docker-ml-finalize docker-ml-status docker-up docker-down
+        docker-ml-strategy docker-ml-status docker-up docker-down
 
 help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
@@ -66,14 +66,11 @@ ml-train:        ## OOF predictions + locked test report per asset
 ml-strategy:     ## tau selection on OOF splits, locked-test PnL
 	OMP_NUM_THREADS=1 $(PY) -m ml.strategy
 
-ml-finalize:     ## deployment model fitted on the full research window
-	OMP_NUM_THREADS=1 $(PY) -m ml.train --finalize
-
 ml-status:       ## aggregate ML artifacts -> dashboard/ml_status.json
 	$(PY) -m ml.status
 
 ml-all:          ## the whole ML chain in order
-	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-finalize ml-status
+	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status
 
 docker-build:    ## build the pipeline image
 	$(COMPOSE) build
@@ -108,9 +105,6 @@ docker-ml-train:     ## ml.train inside the container
 
 docker-ml-strategy:  ## ml.strategy inside the container
 	$(COMPOSE) run --rm pipeline python -m ml.strategy
-
-docker-ml-finalize:  ## ml.train --finalize inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.train --finalize
 
 docker-ml-status:    ## ml.status inside the container
 	$(COMPOSE) run --rm pipeline python -m ml.status

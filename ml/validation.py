@@ -93,12 +93,6 @@ def matthews_corrcoef(y_cls: np.ndarray, pred_cls: np.ndarray) -> float:
     return float(num / den) if den > 0 else 0.0
 
 
-def confusion_matrix(y_cls: np.ndarray, pred_cls: np.ndarray) -> list[list[int]]:
-    cm = np.zeros((3, 3), dtype=np.int64)
-    np.add.at(cm, (y_cls, pred_cls), 1)
-    return cm.tolist()
-
-
 def sharpe_annualised(bar_returns: np.ndarray) -> float:
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:
