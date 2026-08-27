@@ -77,22 +77,6 @@ function foot(text) {
   return p;
 }
 
-function warningsFrame(a) {
-  const active = [];
-  if (a.warnings.test_logloss_above_uniform) {
-    active.push("locked-test log-loss is at or above the uniform baseline (ln 3)");
-  }
-  if (a.warnings.too_few_trades) active.push("fewer than 30 trades on the locked test fold");
-  if (a.warnings.tau_fallback) {
-    active.push("no threshold met the trade-count constraint — deterministic tau = 0 fallback");
-  }
-  if (!active.length) return null;
-  const d = document.createElement("div");
-  d.className = "box warn";
-  d.textContent = active.map((t) => "! " + t).join("\n");
-  return d;
-}
-
 function sampleFrame(a) {
   const f = frameEl("1. sample contract");
   const c = a.sample.class_counts;
@@ -132,8 +116,8 @@ function segmentsFrame(a, s) {
   });
   f.body.appendChild(makeTable(
     ["fold", "window (UTC)", "train rows", "purged", "window rows", "scored", "scored share"], rows));
-  f.body.appendChild(foot("purge drops training events whose path reaches the pre-test cutoff; "
-    + "scored rows exclude label-invalid decisions."));
+  f.body.appendChild(foot("purge drops training events that had not finished when the "
+    + "out-of-sample block opened; scored rows exclude label-invalid decisions."));
   return f.frame;
 }
 
@@ -153,24 +137,26 @@ function hpoFrame(a) {
 }
 
 
-function validationFrame(a, s) {
-  const ln3 = s.baseline_logloss_uniform;
+function validationFrame(a) {
   const f = frameEl("4. validation (out-of-sample, threshold selection)");
   f.body.appendChild(makeTable(
-    ["fold", "log-loss", "&Delta; vs ln 3", "balanced accuracy", "MCC", "scored rows"],
+    ["fold", "prior log-loss", "model log-loss", "skill", "MCC", "scored rows"],
     valSplits(a).map((k) => {
       const m = a.validation[k];
       return [
         "F" + k.split("_")[1],
-        [m.logloss.toFixed(6), m.logloss >= ln3],
-        (m.logloss - ln3).toFixed(4),
-        m.balanced_accuracy.toFixed(4),
+        m.prior_logloss.toFixed(6),
+        m.model_logloss.toFixed(6),
+        (100 * m.skill).toFixed(2) + "%",
         m.mcc.toFixed(4),
         fmt(m.n),
       ];
     })));
+  f.body.appendChild(foot("skill = 1 - model / prior: the information the model adds "
+    + "beyond knowing how often each class occurs. The prior comes from the training rows."));
   return f.frame;
 }
+
 
 function renderConfusion(cm) {
   const colSum = (j) => cm.reduce((acc, r) => acc + r[j], 0) || 1;
@@ -191,22 +177,22 @@ function renderConfusion(cm) {
   return makeTable(["true \\ predicted", "short", "neutral", "long", "recall"], rows);
 }
 
-function testFrame(a, s) {
-  const ln3 = s.baseline_logloss_uniform;
-  const mean = meanOf(valSplits(a).map((k) => a.validation[k].logloss));
-  const f = frameEl("5. locked test (read once, frozen)");
+function testFrame(a) {
+  const meanSkill = meanOf(valSplits(a).map((k) => a.validation[k].skill));
+  const f = frameEl("5. final out-of-sample fold");
   f.body.appendChild(kvBox([
     ["scored rows", fmt(a.test.n)],
-    ["log-loss", a.test.logloss.toFixed(6) + "  (uniform baseline " + ln3.toFixed(6) + ")"],
-    ["delta vs baseline", (a.test.logloss - ln3).toFixed(6)],
-    ["gap vs mean validation", (a.test.logloss - mean >= 0 ? "+" : "") + (a.test.logloss - mean).toFixed(6)],
-    ["balanced accuracy", a.test.balanced_accuracy.toFixed(4)],
+    ["prior log-loss", a.test.prior_logloss.toFixed(6)],
+    ["model log-loss", a.test.model_logloss.toFixed(6)],
+    ["skill", (100 * a.test.skill).toFixed(2) + "%"],
+    ["mean validation skill", (100 * meanSkill).toFixed(2) + "%"],
     ["MCC", a.test.mcc.toFixed(4)],
   ]));
   f.body.appendChild(subhead("confusion matrix (bar length = share of the true class)"));
   f.body.appendChild(renderConfusion(a.test.confusion));
   return f.frame;
 }
+
 
 function pnlRow(label, m, isTest) {
   const name = document.createElement("span");
@@ -218,10 +204,9 @@ function pnlRow(label, m, isTest) {
     (100 * m.max_drawdown).toFixed(1) + "%",
     fmt(m.n_trades),
     (100 * m.hit_rate).toFixed(1) + "%",
-    (100 * m.avg_trade_ret).toFixed(3) + "%",
+    m.avg_trade_ret === null ? "-" : (100 * m.avg_trade_ret).toFixed(3) + "%",
     (100 * m.exposure).toFixed(2) + "%",
-    (100 * m.turnover).toFixed(3) + "%",
-    (100 * m.gate_share).toFixed(2) + "%",
+    num(m.final_equity, 4),
   ];
 }
 
@@ -230,15 +215,15 @@ function strategyFrame(a, s) {
   f.body.appendChild(kvBox([
     ["tau", a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : "  (fallback)")],
     ["selection score", num(a.strategy.selection_score_mean_sharpe, 3) + "  (mean validation Sharpe)"],
-    ["cost per side", (100 * a.strategy.costs_per_side).toFixed(2) + "%"],
+    ["cost per side", (100 * a.strategy.costs_per_side).toFixed(2) + "%  (execution-cost-adjusted, excluding funding)"],
     ["gate", "side = sign(trend_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
   ]));
   const rows = valSplits(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
   rows.push(pnlRow("F" + s.folds.test + " (locked)", a.strategy.test, true));
   f.body.appendChild(makeTable(
-    ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "turnover", "gate share"],
+    ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "final equity"],
     rows));
-  f.body.appendChild(subhead("locked-test exits"));
+  f.body.appendChild(subhead("final-OOS exits"));
   const e = a.strategy.test.exit_counts;
   const total = e.upper + e.lower + e.vertical + e.adverse || 1;
   f.body.appendChild(makeTable(["exit", "count", "share"],
@@ -251,9 +236,9 @@ function strategyFrame(a, s) {
 
 function equityFrame(a) {
   const c = a.strategy.equity_curve;
-  const f = frameEl("7. locked-test equity (unit position, costs included)");
+  const f = frameEl("7. final-OOS equity (fixed quantity, costs included)");
   f.body.appendChild(sparkline(c.equity, 1.0, null,
-    "equity on the locked test fold; dashed line = 1.0 (flat)"));
+    "equity on the final OOS fold; dashed line = 1.0 (flat)"));
   const lo = Math.min(...c.equity);
   f.body.appendChild(foot(
     "start " + c.equity[0].toFixed(3)
@@ -285,10 +270,8 @@ function renderAsset(ticker) {
   const a = s.assets.find((x) => x.ticker === ticker);
   if (!a) return;
   host.textContent = "";
-  const banner = warningsFrame(a);
-  if (banner) host.appendChild(banner);
-  [sampleFrame(a), segmentsFrame(a, s), hpoFrame(a), validationFrame(a, s),
-   testFrame(a, s), strategyFrame(a, s), equityFrame(a), importanceFrame(a)]
+  [sampleFrame(a), segmentsFrame(a, s), hpoFrame(a), validationFrame(a),
+   testFrame(a), strategyFrame(a, s), equityFrame(a), importanceFrame(a)]
     .forEach((el) => host.appendChild(el));
 }
 

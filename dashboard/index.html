@@ -70,15 +70,15 @@
     <table id="ml-assets" hidden>
       <thead>
         <tr>
-          <th>asset</th><th>rows</th><th>masked</th><th>classes &minus;/0/+</th>
-          <th>depth/eta/trees</th><th>val logloss</th><th>test logloss</th><th>bAcc</th><th>MCC</th>
+          <th>asset</th><th>rows</th><th>classes &minus;/0/+</th>
+          <th>depth/eta/trees</th><th>prior LL</th><th>model LL</th><th>skill</th><th>MCC</th>
           <th>&tau;</th><th>Sharpe</th><th>maxDD</th><th>trades</th><th>hit</th><th>exposure</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
     <p class="foot">locked-test numbers are computed once with frozen parameters; warnings mark a
-      test log-loss at or above the uniform baseline (ln 3) or fewer than 30 trades.</p>
+      the final OOS fold is never used to choose features, hyper-parameters, tau or strategy rules.</p>
   </section>
 
   <section id="tab-asset" data-panel="tab" data-key="asset" hidden>

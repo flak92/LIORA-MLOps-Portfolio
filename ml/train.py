@@ -49,11 +49,20 @@ def write_predictions(ticker: str, rows: list[tuple]) -> Path:
     return out
 
 
-def split_metrics(y_cls, proba, weight) -> dict:
+def split_metrics(y_cls, proba, weight, prior_train) -> dict:
+    """Model log-loss against the log-loss of the training class prior.
+
+    skill = 1 - model/prior answers exactly one question: does the model add
+    information beyond knowing how often each class occurs? The prior comes
+    from the rows the model was fitted on, never from the scored fold.
+    """
     pred = proba.argmax(axis=1).astype(np.int32)
+    model_ll = validation.multiclass_logloss(y_cls, proba, weight)
+    prior_ll = validation.prior_logloss(prior_train, y_cls, weight)
     return {
-        "logloss_weighted": validation.multiclass_logloss(y_cls, proba, weight),
-        "balanced_accuracy": validation.balanced_accuracy(y_cls, pred),
+        "prior_logloss": prior_ll,
+        "model_logloss": model_ll,
+        "skill": 1.0 - model_ll / prior_ll,
         "mcc": validation.matthews_corrcoef(y_cls, pred),
         "n": int(y_cls.size),
     }
@@ -96,11 +105,13 @@ def main() -> int:
                                           xy["label_valid"], oos_start)
             wi = validation.window_indices(xy["decision_ts"], oos_start, oos_end)
             oi = validation.oos_indices(xy["decision_ts"], xy["label_valid"], oos_start, oos_end)
+            prior_train = validation.weighted_class_prior(y_cls[tr], xy["weight"][tr])
+            assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
             booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
             proba_w = model.predict_proba(booster, xy["x"][wi])
             pos = np.searchsorted(wi, oi)          # oi is a subset of wi
             assert np.array_equal(wi[pos], oi)
-            metrics = split_metrics(y_cls[oi], proba_w[pos], xy["weight"][oi])
+            metrics = split_metrics(y_cls[oi], proba_w[pos], xy["weight"][oi], prior_train)
             pred_rows.extend(
                 (xy["decision_ts"][i], split, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
                 for k, i in enumerate(wi)
@@ -118,7 +129,7 @@ def main() -> int:
         for split in config.VALIDATION_SPLITS:
             per_split[f"split_{split}"], _ = run_split(split)
 
-        # locked test fold: fitted on everything before it, evaluated exactly once
+        # final OOS fold: fitted on everything before it, never used for any choice
         test, booster = run_split(config.TEST_SPLIT)
         te = validation.oos_indices(xy["decision_ts"], xy["label_valid"],
                                     *validation.split_bounds(config.TEST_SPLIT))
@@ -132,7 +143,7 @@ def main() -> int:
         payload = {
             "params": best,
             "validation": per_split,
-            "test_locked": test,
+            "test": test,
             "gain_importance": {k: gain.get(k, 0.0) for k in config.FEATURE_COLUMNS},
             "class_counts": {
                 "short": int((xy["y"] == -1).sum()),
@@ -152,8 +163,9 @@ def main() -> int:
             "uniqueness_weight_mean": float(xy["weight"].mean()),
         }
         dataset.write_json(adir / f"metrics_{t}.json", payload)
-        print(f"metrics_{t}.json: test logloss {test['logloss_weighted']:.6f} "
-              f"bAcc {test['balanced_accuracy']:.4f} mcc {test['mcc']:.4f}", flush=True)
+        print(f"metrics_{t}.json: prior {test['prior_logloss']:.6f} "
+              f"model {test['model_logloss']:.6f} skill {test['skill']:+.4f} "
+              f"mcc {test['mcc']:.4f}", flush=True)
     return 0
 
 

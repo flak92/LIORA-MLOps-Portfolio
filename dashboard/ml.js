@@ -61,24 +61,21 @@ function renderResearch(s) {
   const tbody = table.querySelector("tbody");
   for (const a of s.assets) {
     const st = a.strategy.test;
-    const warn = a.warnings.test_logloss_above_uniform || a.warnings.too_few_trades;
     const tr = tbody.insertRow();
-    cell(tr, a.ticker, warn);
+    cell(tr, a.ticker);
     cell(tr, fmt(a.sample.rows));
-    cell(tr, a.sample.masked_pct.toFixed(3) + "%");
     cell(tr, fmt(a.sample.class_counts.short) + "/" + fmt(a.sample.class_counts.neutral) +
              "/" + fmt(a.sample.class_counts.long));
     cell(tr, a.hpo.best_params.max_depth + " / " + a.hpo.best_params.eta.toFixed(3) +
              " / " + a.hpo.best_params.num_boost_round);
-    cell(tr, a.hpo.best_logloss.toFixed(4));
-    cell(tr, a.test.logloss.toFixed(4), a.warnings.test_logloss_above_uniform);
-    cell(tr, a.test.balanced_accuracy.toFixed(3));
+    cell(tr, a.test.prior_logloss.toFixed(4));
+    cell(tr, a.test.model_logloss.toFixed(4));
+    cell(tr, (100 * a.test.skill).toFixed(2) + "%");
     cell(tr, a.test.mcc.toFixed(3));
-    cell(tr, a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : " !"),
-         a.warnings.tau_fallback);
+    cell(tr, a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : " !"));
     cell(tr, num(st.sharpe, 2));
     cell(tr, (100 * st.max_drawdown).toFixed(1) + "%");
-    cell(tr, fmt(st.n_trades), a.warnings.too_few_trades);
+    cell(tr, fmt(st.n_trades));
     cell(tr, (100 * st.hit_rate).toFixed(1) + "%");
     cell(tr, (100 * st.exposure).toFixed(1) + "%");
   }
@@ -98,8 +95,7 @@ function viewLabels(s) {
         [tickerLink(a.ticker)],
         fmt(a.sample.rows),
         fmt(a.sample.n_warmup_excluded),
-        [fmt(a.sample.masked) + " (" + a.sample.masked_pct.toFixed(3) + "%)",
-         a.sample.masked_pct > 0.1],
+        fmt(a.sample.masked) + " (" + a.sample.masked_pct.toFixed(3) + "%)",
         fmt(a.sample.ambiguous),
         fmt(c.short),
         [shareCell(c.neutral, total)],
@@ -111,23 +107,19 @@ function viewLabels(s) {
 }
 
 function viewClassification(s) {
-  const ln3 = s.baseline_logloss_uniform;
   fillTable("cs-classification",
-    ["asset", "val LL F2", "F3", "F4", "mean val LL", "test LL", "&Delta; vs ln 3",
-     "gap (test&minus;val)", "bAcc", "MCC"],
+    ["asset", "val skill F2", "F3", "F4", "mean val skill", "test prior LL",
+     "test model LL", "test skill", "MCC"],
     s.assets.map((a) => {
       const splits = valSplits(a);
-      const vals = splits.map((k) => a.validation[k].logloss);
-      const mean = meanOf(vals);
-      const gap = a.test.logloss - mean;
+      const vs = splits.map((k) => a.validation[k].skill);
       return [
         [tickerLink(a.ticker)],
-        ...vals.map((v) => [v.toFixed(4), v >= ln3]),
-        mean.toFixed(4),
-        [a.test.logloss.toFixed(4), a.warnings.test_logloss_above_uniform],
-        (a.test.logloss - ln3).toFixed(4),
-        (gap >= 0 ? "+" : "") + gap.toFixed(4),
-        a.test.balanced_accuracy.toFixed(3),
+        ...vs.map((v) => (100 * v).toFixed(2) + "%"),
+        (100 * meanOf(vs)).toFixed(2) + "%",
+        a.test.prior_logloss.toFixed(4),
+        a.test.model_logloss.toFixed(4),
+        (100 * a.test.skill).toFixed(2) + "%",
         a.test.mcc.toFixed(3),
       ];
     }));
@@ -136,7 +128,7 @@ function viewClassification(s) {
 function viewStrategy(s) {
   fillTable("cs-strategy",
     ["asset", "&tau;", "&tau; met", "selection score", "test Sharpe", "degradation",
-     "maxDD", "trades", "hit", "avg trade", "exposure", "turnover", "gate share",
+     "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
      "exits U/L/V/A"],
     s.assets.map((a) => {
       const st = a.strategy.test;
@@ -146,17 +138,16 @@ function viewStrategy(s) {
       return [
         [tickerLink(a.ticker)],
         a.strategy.tau.toFixed(2),
-        [a.strategy.tau_constraint_met ? "yes" : "fallback", a.warnings.tau_fallback],
+        a.strategy.tau_constraint_met ? "yes" : "fallback",
         num(sel, 2),
         num(st.sharpe, 2),
         deg === null ? "-" : (deg >= 0 ? "+" : "") + deg.toFixed(2),
         (100 * st.max_drawdown).toFixed(1) + "%",
-        [fmt(st.n_trades), a.warnings.too_few_trades],
+        fmt(st.n_trades),
         (100 * st.hit_rate).toFixed(1) + "%",
-        (100 * st.avg_trade_ret).toFixed(3) + "%",
+        st.avg_trade_ret === null ? "-" : (100 * st.avg_trade_ret).toFixed(3) + "%",
         (100 * st.exposure).toFixed(1) + "%",
-        (100 * st.turnover).toFixed(2) + "%",
-        (100 * st.gate_share).toFixed(2) + "%",
+        num(st.final_equity, 3),
         e.upper + "/" + e.lower + "/" + e.vertical + "/" + e.adverse,
       ];
     }));

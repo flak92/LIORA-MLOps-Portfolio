@@ -17,7 +17,6 @@ from datetime import UTC, datetime
 from . import config, dataset
 
 ARTIFACT_KINDS = ("hpo", "metrics", "strategy")
-LN3 = 1.0986122886681098   # uniform 3-class baseline (replaced by the training prior in a later commit)
 EQUITY_STRIDE = 7          # daily equity grid -> weekly points for the sparkline
 
 
@@ -47,28 +46,25 @@ def hpo_block(hpo: dict) -> dict:
     }
 
 
-def classification_block(metrics: dict) -> tuple[dict, dict]:
-    """(validation per split, locked test) — confusion rows are true classes."""
-    validation = {
-        k: {
-            "logloss": round(v["logloss_weighted"], 6),
-            "balanced_accuracy": round(v["balanced_accuracy"], 4),
-            "mcc": round(v["mcc"], 4),
-            "n": v["n"],
-        }
-        for k, v in sorted(metrics["validation"].items())
+def _cls(v: dict, extra: dict | None = None) -> dict:
+    out = {
+        "prior_logloss": round(v["prior_logloss"], 6),
+        "model_logloss": round(v["model_logloss"], 6),
+        "skill": round(v["skill"], 6),
+        "mcc": round(v["mcc"], 4),
+        "n": v["n"],
     }
-    t = metrics["test_locked"]
+    out.update(extra or {})
+    return out
+
+
+def classification_block(metrics: dict) -> tuple[dict, dict]:
+    """(validation per split, final OOS) — confusion rows are true classes."""
+    validation = {k: _cls(v) for k, v in sorted(metrics["validation"].items())}
+    t = metrics["test"]
     confusion = t["confusion"]
     assert sum(sum(row) for row in confusion) == t["n"], "confusion does not sum to scored rows"
-    test = {
-        "n": t["n"],
-        "logloss": round(t["logloss_weighted"], 6),
-        "balanced_accuracy": round(t["balanced_accuracy"], 4),
-        "mcc": round(t["mcc"], 4),
-        "confusion": confusion,
-    }
-    return validation, test
+    return validation, _cls(t, {"confusion": confusion})
 
 
 def thin_curve(curve: dict, stride: int = EQUITY_STRIDE) -> dict:
@@ -112,18 +108,8 @@ def strategy_block(strategy: dict) -> dict:
     }
 
 
-def warnings_block(test: dict, strategy: dict) -> dict:
-    """Protocol conditions only — never an unfavourable result."""
-    return {
-        "test_logloss_above_uniform": test["logloss"] >= LN3,
-        "too_few_trades": strategy["test"]["n_trades"] < config.TAU_MIN_TRADES,
-        "tau_fallback": not strategy["tau_constraint_met"],
-    }
-
-
 def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     validation, test = classification_block(metrics)
-    strat = strategy_block(strategy)
     gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
     assert len(gain) == len(config.FEATURE_COLUMNS), "gain importance misses the feature contract"
     segments = {k: v for k, v in sorted(metrics["segments"].items()) if k.startswith("split_")}
@@ -137,8 +123,7 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
         "validation": validation,
         "test": test,
         "gain_importance": gain,
-        "strategy": strat,
-        "warnings": warnings_block(test, strat),
+        "strategy": strategy_block(strategy),
     }
 
 
@@ -161,7 +146,6 @@ def main() -> int:
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "research_window": [config.RESEARCH_START_UTC, config.RESEARCH_END_UTC],
         "seed": config.SEED,
-        "baseline_logloss_uniform": round(LN3, 6),
         # structural parameters the page needs to label folds without hardcoding them
         "folds": {
             "bounds_utc": list(config.FOLD_BOUNDS_UTC),
@@ -175,7 +159,7 @@ def main() -> int:
     dataset.write_json(out, payload)
 
     for a in assets:
-        print(f"{a['ticker']:5} test_logloss={a['test']['logloss']:.4f} "
+        print(f"{a['ticker']:5} skill={a['test']['skill']:+.4f} "
               f"mcc={a['test']['mcc']:.3f} tau={a['strategy']['tau']} "
               f"sharpe={a['strategy']['test']['sharpe']} "
               f"trades={a['strategy']['test']['n_trades']}")

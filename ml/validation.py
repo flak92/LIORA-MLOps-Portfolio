@@ -65,13 +65,22 @@ def multiclass_logloss(y_cls: np.ndarray, proba: np.ndarray, weight: np.ndarray)
     return float(-(weight * np.log(p)).sum() / weight.sum())
 
 
-def balanced_accuracy(y_cls: np.ndarray, pred_cls: np.ndarray) -> float:
-    recalls = []
-    for c in range(3):
-        m = y_cls == c
-        if m.any():
-            recalls.append((pred_cls[m] == c).mean())
-    return float(np.mean(recalls))
+def weighted_class_prior(y_cls: np.ndarray, weight: np.ndarray) -> np.ndarray:
+    """Weight-normalised class frequencies — the baseline a model must beat."""
+    prior = np.array([weight[y_cls == c].sum() for c in range(3)], dtype=np.float64)
+    total = prior.sum()
+    assert total > 0.0, "empty or zero-weight segment"
+    return prior / total
+
+
+def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> float:
+    """Log-loss of predicting the training prior everywhere.
+
+    Delegates to multiclass_logloss, so the weighting is the same function by
+    construction rather than by convention.
+    """
+    assert prior.shape == (3,)
+    return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 
 def matthews_corrcoef(y_cls: np.ndarray, pred_cls: np.ndarray) -> float:
