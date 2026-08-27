@@ -1,14 +1,11 @@
 """Frozen experiment configuration — the only source of ML constants.
 
-Every run of the ML chain is a pure function of (data_sha256, config_sha256,
-SEED). All parameters below are fixed a priori and never tuned: changing any
-of them changes config_sha256 and therefore defines a different experiment.
+Every parameter below is fixed a priori and never tuned; changing one defines a
+different experiment, and the git commit is the record of which one ran.
 """
 
 from __future__ import annotations
 
-import hashlib
-import json
 from datetime import UTC, datetime
 
 from pipeline.config import ASSETS_DIR, DB_PATH, TICKERS, symbol  # noqa: F401  (re-exported)
@@ -83,15 +80,3 @@ TAU_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
 MIN_TRADES_PER_SPLIT = 30
 BARS_PER_YEAR_15M = 96 * 365        # crypto trades 24/7
 AGREE_MIN = 2                       # levels whose trend sign must agree with the side
-
-_CONSTANTS = {
-    k: v
-    for k, v in sorted(globals().items())
-    if k.isupper() and isinstance(v, (int, float, str, tuple, list, dict))
-}
-
-
-def config_sha256() -> str:
-    return hashlib.sha256(
-        json.dumps(_CONSTANTS, sort_keys=True, default=list).encode()
-    ).hexdigest()

@@ -112,11 +112,11 @@ function sampleFrame(a) {
 
 function segmentsFrame(a, s) {
   const f = frameEl("2. splits and segments");
-  const bounds = s.config.fold_bounds_utc;
+  const bounds = s.folds.bounds_utc;
   const rows = Object.keys(a.segments).sort().map((k) => {
     const split = parseInt(k.split("_")[1], 10);
     const g = a.segments[k];
-    const isTest = split === s.config.test_split;
+    const isTest = split === s.folds.test;
     const label = document.createElement("span");
     label.textContent = "F" + split + (isTest ? " (locked test)" : "");
     if (isTest) label.className = "diag";
@@ -137,12 +137,11 @@ function segmentsFrame(a, s) {
   return f.frame;
 }
 
-function hpoFrame(a, s) {
+function hpoFrame(a) {
   const f = frameEl("3. hyper-parameter search");
   const p = a.hpo.best_params;
   f.body.appendChild(kvBox([
     ["trials (TPE, sequential)", a.hpo.n_trials],
-    ["best trial", "#" + a.hpo.best_trial],
     ["best objective", a.hpo.best_logloss.toFixed(6) + "  (mean weighted OOS log-loss)"],
     ["max_depth / eta", p.max_depth + " / " + p.eta.toFixed(5)],
     ["min_child_weight", p.min_child_weight],
@@ -150,16 +149,9 @@ function hpoFrame(a, s) {
     ["lambda / alpha", p.lambda.toFixed(3) + " / " + p.alpha.toFixed(3)],
     ["boosting rounds", p.num_boost_round],
   ]));
-  const v = a.hpo.trial_values;
-  const sorted = v.slice().sort((x, y) => x - y);
-  f.body.appendChild(sparkline(v, s.baseline_logloss_uniform, a.hpo.best_trial,
-    "objective per trial in TPE order; dashed line = uniform baseline ln 3"));
-  f.body.appendChild(foot("objective per trial in TPE order · dashed = uniform baseline (ln 3) · "
-    + "vertical = best trial · min " + sorted[0].toFixed(4)
-    + " · median " + sorted[Math.floor(sorted.length / 2)].toFixed(4)
-    + " · max " + sorted[sorted.length - 1].toFixed(4)));
   return f.frame;
 }
+
 
 function validationFrame(a, s) {
   const ln3 = s.baseline_logloss_uniform;
@@ -239,10 +231,10 @@ function strategyFrame(a, s) {
     ["tau", a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : "  (fallback)")],
     ["selection score", num(a.strategy.selection_score_mean_sharpe, 3) + "  (mean validation Sharpe)"],
     ["cost per side", (100 * a.strategy.costs_per_side).toFixed(2) + "%"],
-    ["gate", "side = sign(trend_4h) and at least " + s.config.agree_min + " of 3 levels agree"],
+    ["gate", "side = sign(trend_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
   ]));
   const rows = valSplits(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
-  rows.push(pnlRow("F" + s.config.test_split + " (locked)", a.strategy.test, true));
+  rows.push(pnlRow("F" + s.folds.test + " (locked)", a.strategy.test, true));
   f.body.appendChild(makeTable(
     ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "turnover", "gate share"],
     rows));
@@ -295,7 +287,7 @@ function renderAsset(ticker) {
   host.textContent = "";
   const banner = warningsFrame(a);
   if (banner) host.appendChild(banner);
-  [sampleFrame(a), segmentsFrame(a, s), hpoFrame(a, s), validationFrame(a, s),
+  [sampleFrame(a), segmentsFrame(a, s), hpoFrame(a), validationFrame(a, s),
    testFrame(a, s), strategyFrame(a, s), equityFrame(a), importanceFrame(a)]
     .forEach((el) => host.appendChild(el));
 }

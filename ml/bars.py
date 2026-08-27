@@ -1,23 +1,17 @@
-"""Causal 15m/1h/4h bars from the canonical 1m series + the research data hash.
+"""Causal 15m/1h/4h bars from the canonical 1m series.
 
 The ONLY writer of the ML layer: builds ohlcv_{15m,1h,4h}_canonical inside the
-frozen research window and stores data_sha256 in the _ml_meta table. Every
-other ML stage opens the database read-only.
+frozen research window. Every other ML stage opens the database read-only.
 
 Bars are exact UTC-aligned aggregations (O first, H max, L min, C last, V sum;
 arg_min/arg_max by timestamp for determinism) — closed bars only, because the
 window ends at a UTC midnight. `--verify` aggregates the raw Binance table
 alone for one month of BTCUSDT and compares it against native fapi 1h klines.
-
-data_sha256 = SHA-256 over the canonical rows inside the window, symbols in
-basket order, rows ascending, columns as little-endian bytes
-(timestamp int64, then O/H/L/C/V float64).
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import urllib.request
 
@@ -56,29 +50,6 @@ ORDER BY 2;
 META_DDL = "CREATE TABLE IF NOT EXISTS _ml_meta (key VARCHAR PRIMARY KEY, value VARCHAR NOT NULL);"
 
 
-def compute_data_sha256(con: duckdb.DuckDBPyConnection) -> str:
-    """Hash every canonical column the ML chain reads: OHLCV and `source`
-    (labels mask on ffill minutes, so provenance is part of the input)."""
-    h = hashlib.sha256()
-    for t in config.TICKERS:
-        where = (f"symbol = '{config.symbol(t)}' "
-                 f"AND timestamp_ms >= {config.RESEARCH_START_MS} "
-                 f"AND timestamp_ms < {config.RESEARCH_END_MS}")
-        arrs = con.execute(
-            f"""SELECT timestamp_ms, open, high, low, close, volume
-                FROM ohlcv_1m_canonical WHERE {where} ORDER BY timestamp_ms"""
-        ).fetchnumpy()
-        h.update(arrs["timestamp_ms"].astype("<i8").tobytes())
-        for col in ("open", "high", "low", "close", "volume"):
-            h.update(arrs[col].astype("<f8").tobytes())
-        sources = con.execute(
-            f"""SELECT string_agg(source, chr(10) ORDER BY timestamp_ms)
-                FROM ohlcv_1m_canonical WHERE {where}"""
-        ).fetchone()[0]
-        h.update(sources.encode("utf-8"))
-    return h.hexdigest()
-
-
 def verify_native_1h(con: duckdb.DuckDBPyConnection, month: str = "2021-02") -> dict:
     """Aggregate raw Binance 1m to 1h for one month of BTCUSDT and diff vs fapi klines."""
     start = int(np.datetime64(f"{month}-01T00:00").astype("datetime64[ms]").astype(np.int64))
@@ -114,7 +85,7 @@ def verify_native_1h(con: duckdb.DuckDBPyConnection, month: str = "2021-02") -> 
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="canonical 1m -> 15m/1h/4h bars + data_sha256")
+    ap = argparse.ArgumentParser(description="canonical 1m -> 15m/1h/4h bars")
     ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
     ap.add_argument("--verify", action="store_true", help="compare aggregated 1h vs native fapi klines")
     args = ap.parse_args()
@@ -138,11 +109,8 @@ def main() -> int:
             n = con.execute(f"SELECT count(*) FROM ohlcv_{tf}_canonical WHERE symbol = ?", [sym]).fetchone()[0]
             print(f"{tf} {sym}: {n} bars", flush=True)
 
-    digest = compute_data_sha256(con)
-    con.execute("INSERT OR REPLACE INTO _ml_meta VALUES ('data_sha256', ?)", [digest])
     con.execute("INSERT OR REPLACE INTO _ml_meta VALUES ('research_start', ?)", [config.RESEARCH_START_UTC])
     con.execute("INSERT OR REPLACE INTO _ml_meta VALUES ('research_end', ?)", [config.RESEARCH_END_UTC])
-    print(f"data_sha256 = {digest}", flush=True)
 
     if args.verify:
         result = verify_native_1h(con)

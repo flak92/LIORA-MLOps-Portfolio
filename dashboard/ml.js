@@ -4,7 +4,6 @@
    fmt, num, initPills, PILL_HOOKS) defined in app.js. */
 "use strict";
 
-const ML_SCHEMA = 2;
 const CLASS_NAMES = ["short", "neutral", "long"];
 let ML_STATUS = null;
 
@@ -106,7 +105,7 @@ function viewLabels(s) {
         [shareCell(c.neutral, total)],
         fmt(c.long),
         a.sample.uniqueness_weight_mean.toFixed(4),
-        fmt(a.segments["split_" + s.config.test_split].n_scored),
+        fmt(a.segments["split_" + s.folds.test].n_scored),
       ];
     }));
 }
@@ -165,20 +164,14 @@ function viewStrategy(s) {
 
 function viewSearch(s) {
   fillTable("cs-search",
-    ["asset", "trials", "best #", "best LL", "trial min/med/max", "depth", "eta",
-     "min child", "subsample", "colsample", "lambda", "alpha", "rounds",
-     "sha hpo/metrics/strategy"],
+    ["asset", "trials", "best LL", "depth", "eta",
+     "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
     s.assets.map((a) => {
-      const v = a.hpo.trial_values.slice().sort((x, y) => x - y);
-      const med = v[Math.floor(v.length / 2)];
       const p = a.hpo.best_params;
-      const sha = a.artifact_sha256;
       return [
         [tickerLink(a.ticker)],
         a.hpo.n_trials,
-        "#" + a.hpo.best_trial,
         a.hpo.best_logloss.toFixed(4),
-        v[0].toFixed(3) + " / " + med.toFixed(3) + " / " + v[v.length - 1].toFixed(3),
         p.max_depth,
         p.eta.toFixed(4),
         p.min_child_weight,
@@ -187,7 +180,6 @@ function viewSearch(s) {
         p.lambda.toFixed(3),
         p.alpha.toFixed(3),
         p.num_boost_round,
-        sha.hpo.slice(0, 8) + "/" + sha.metrics.slice(0, 8) + "/" + sha.strategy.slice(0, 8),
       ];
     }));
 }
@@ -212,15 +204,10 @@ function selectAsset(ticker) {
 fetch("ml_status.json", { cache: "no-store" })
   .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
   .then((s) => {
-    if (s.schema_version !== ML_SCHEMA) {
-      throw new Error("schema v" + s.schema_version + ", expected v" + ML_SCHEMA);
-    }
     const envelope =
       "research window: [" + s.research_window[0] + " .. " + s.research_window[1] + ") UTC\n" +
-      "data_sha256:    " + s.data_sha256 + "\n" +
-      "config_sha256:  " + s.config_sha256 + "\n" +
-      "versions:       " + Object.entries(s.versions).map((kv) => kv.join(" ")).join(", ") + "\n" +
-      "generated:      " + s.generated_at_utc + " UTC";
+      "seed:            " + s.seed + "\n" +
+      "generated:       " + s.generated_at_utc + " UTC";
     document.getElementById("ml-meta").textContent = envelope;
     document.getElementById("asset-meta").textContent = envelope;
 

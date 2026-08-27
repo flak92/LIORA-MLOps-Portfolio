@@ -2,9 +2,10 @@
 
 Per asset, independently: a fixed 16-column hierarchical feature matrix, a
 triple-barrier label resolved on the 1-minute path, a purged walk-forward
-protocol with Optuna hyper-parameter search, a locked out-of-sample test read
-exactly once, and a top-down gated strategy evaluation. Every run is a pure
-function of `(data_sha256, config_sha256, seed)`.
+protocol with Optuna hyper-parameter search, a historical final out-of-sample
+fold, and a top-down gated strategy evaluation. The experiment is described by
+its research window and seed; the git commit records which code produced a
+result.
 
 ## 1. Methodology
 
@@ -152,37 +153,22 @@ exposure, turnover, exit-reason distribution, gate share — is computed once.
 
 Per asset in `assets/Asset_<T>/` (gitignored, reconstructable):
 `X_<T>.parquet`, `Y_<T>.parquet`, `hpo_<T>.json`, `predictions_<T>.parquet`,
-`metrics_<T>.json`, `strategy_<T>.json`, `model_<T>.json`. Every JSON carries
-the envelope `{data_sha256, config_sha256, seed, versions}` — canonical JSON
-(sorted keys, numpy→python scalars), written atomically, with **no wall-clock
-time, hostname or absolute path**. `data_sha256` = SHA-256 over the canonical
-rows of the frozen research window (symbols in basket order, rows ascending,
-little-endian int64/float64 bytes). Determinism is proven, not assumed: two
-full runs must produce identical SHA-256 for X/Y/hpo/predictions/metrics/
-strategy artifacts (`nthread = 1`, parallelism across assets only, pinned
-`requirements.lock`).
+`metrics_<T>.json`, `strategy_<T>.json`. Every JSON is canonical (sorted keys,
+numpy scalars converted, written atomically) and carries **only what it
+computed** — no provenance envelope, no hashes, no manifests. The experiment is
+identified once, globally, in `dashboard/ml_status.json`: research window and
+seed. Library versions live in `requirements.lock`, model parameters in
+`hpo_<T>.json`. Runs are reproducible by construction — fixed seed,
+`nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
+because such a gate proves the metadata, not the mathematics.
 
-The dashboard snapshot `dashboard/ml_status.json` (schema v2) carries, per
-asset: the sample contract, split segments, the search summary with the
-50-trial objective trajectory, validation metrics, the locked-test metrics and
-confusion matrix, all 16 total-gain importances, strategy PnL per fold with
-exit breakdowns and a weekly-thinned locked-test equity curve, plus the
-warnings and artifact hashes. A global `config` block and
-`baseline_logloss_uniform` keep the page self-describing. Its
-`generated_at_utc` is monitoring metadata and sits **outside** the determinism
-claim, which covers the per-asset artifacts; with unchanged artifacts a
-regeneration diffs by that one line.
-
-Module layout: `ml/config` (frozen constants) · `ml/artifacts` (an IO
-utility: canonical serialization and atomic writes) · `ml/indicators`,
+Module layout: `ml/config` (frozen constants) · `ml/indicators`,
 `ml/validation`, `ml/model` (pure numpy / xgboost kernels) · `ml/dataset`
-(artifact loading) · `ml/report` (pure snapshot assembly) · `ml/bars`
-(single DB writer) · `ml/features`,
+(artifact loading and JSON IO) · `ml/bars` (single DB writer) · `ml/features`,
 `ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`, `ml/status` (CLI stages,
-`python -m ml.<stage> [--tickers …]`). Constant convention as it actually
-is: **experiment-semantic constants live in `ml/config.py` and enter
-`config_sha256`; implementation constants** (chunk sizes, `MINUTE_MS`,
-equity-curve stride) **may stay local to their module**. The export
+`python -m ml.<stage> [--tickers …]`). Constant convention: **experiment-semantic
+constants live in `ml/config.py`; implementation constants** (chunk sizes,
+`MINUTE_MS`, equity-curve stride) **may stay local to their module**. The export
 invariants of `pipeline/export.py` are the canonical-series gate; the
 documented order runs `make ml-all` after `make export`.
 

@@ -22,7 +22,7 @@ from pathlib import Path
 import duckdb
 import numpy as np
 
-from . import artifacts, config, dataset, model, validation
+from . import config, dataset, model, validation
 
 
 def write_predictions(ticker: str, rows: list[tuple]) -> Path:
@@ -65,30 +65,23 @@ def main() -> int:
     ap.add_argument("--finalize", action="store_true", help="fit the deployment model on the full window")
     args = ap.parse_args()
 
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    data_sha, config_sha = dataset.run_ids(con)
-    con.close()
-
     for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
         adir = config.ASSETS_DIR / f"Asset_{t}"
-        best = artifacts.read_json(adir / f"hpo_{t}.json")["best_params"]
+        best = dataset.read_json(adir / f"hpo_{t}.json")["best_params"]
         xy = dataset.load_xy(t)
         y_cls = model.to_class(xy["y"])
 
         if args.finalize:
             keep = np.flatnonzero(xy["mask_ok"] & (xy["decision_ts"] >= config.WARMUP_END_MS))
             booster = model.fit(best, xy["x"][keep], xy["y"][keep], xy["weight"][keep])
-            payload = artifacts.envelope(data_sha, config_sha, config.SEED, dataset.versions())
-            payload.update(
-                {
-                    "role": "deployment",
-                    "unbiased_estimate": False,
-                    "params": best,
-                    "n_train": int(keep.size),
-                    "booster": json.loads(booster.save_raw("json").decode()),
-                }
-            )
-            artifacts.write_json(adir / f"model_{t}.json", payload)
+            payload = {
+                "role": "deployment",
+                "unbiased_estimate": False,
+                "params": best,
+                "n_train": int(keep.size),
+                "booster": json.loads(booster.save_raw("json").decode()),
+            }
+            dataset.write_json(adir / f"model_{t}.json", payload)
             print(f"model_{t}.json: deployment fit on {keep.size} rows", flush=True)
             continue
 
@@ -136,32 +129,29 @@ def main() -> int:
         write_predictions(t, pred_rows)
 
         gain = booster.get_score(importance_type="total_gain")
-        payload = artifacts.envelope(data_sha, config_sha, config.SEED, dataset.versions())
-        payload.update(
-            {
-                "params": best,
-                "validation": per_split,
-                "test_locked": test,
-                "gain_importance": {k: gain.get(k, 0.0) for k in config.FEATURE_COLUMNS},
-                "class_counts": {
-                    "short": int((xy["y"] == -1).sum()),
-                    "neutral": int((xy["y"] == 0).sum()),
-                    "long": int((xy["y"] == 1).sum()),
-                },
-                "mask": {
-                    "rows": int(xy["y"].size),
-                    "masked": int((~xy["mask_ok"]).sum()),
-                    "ambiguous": int((xy["exit_reason"] == 9).sum()),
-                },
-                "segments": {
-                    **segments,
-                    "n_warmup_excluded": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
-                    // config.TF_MS["15m"],
-                },
-                "uniqueness_weight_mean": float(xy["weight"].mean()),
-            }
-        )
-        artifacts.write_json(adir / f"metrics_{t}.json", payload)
+        payload = {
+            "params": best,
+            "validation": per_split,
+            "test_locked": test,
+            "gain_importance": {k: gain.get(k, 0.0) for k in config.FEATURE_COLUMNS},
+            "class_counts": {
+                "short": int((xy["y"] == -1).sum()),
+                "neutral": int((xy["y"] == 0).sum()),
+                "long": int((xy["y"] == 1).sum()),
+            },
+            "mask": {
+                "rows": int(xy["y"].size),
+                "masked": int((~xy["mask_ok"]).sum()),
+                "ambiguous": int((xy["exit_reason"] == 9).sum()),
+            },
+            "segments": {
+                **segments,
+                "n_warmup_excluded": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
+                // config.TF_MS["15m"],
+            },
+            "uniqueness_weight_mean": float(xy["weight"].mean()),
+        }
+        dataset.write_json(adir / f"metrics_{t}.json", payload)
         print(f"metrics_{t}.json: test logloss {test['logloss_weighted']:.6f} "
               f"bAcc {test['balanced_accuracy']:.4f} mcc {test['mcc']:.4f}", flush=True)
     return 0

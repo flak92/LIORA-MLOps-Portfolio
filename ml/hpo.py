@@ -14,7 +14,7 @@ import duckdb
 import numpy as np
 import optuna
 
-from . import artifacts, config, dataset, model, validation
+from . import config, dataset, model, validation
 
 
 def objective_factory(xy: dict[str, np.ndarray]):
@@ -42,30 +42,23 @@ def main() -> int:
     args = ap.parse_args()
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    data_sha, config_sha = dataset.run_ids(con)
-    con.close()
-
     for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
         xy = dataset.load_xy(t)
         study = optuna.create_study(
             direction="minimize", sampler=optuna.samplers.TPESampler(seed=config.SEED)
         )
         study.optimize(objective_factory(xy), n_trials=config.N_TRIALS, n_jobs=1)
-        payload = artifacts.envelope(data_sha, config_sha, config.SEED, dataset.versions())
-        payload.update(
-            {
-                "best_params": study.best_trial.params,
-                "best_value": study.best_value,
-                "n_trials": config.N_TRIALS,
-                "trials": [
-                    {"number": tr.number, "value": tr.value, "params": tr.params}
-                    for tr in study.trials
-                ],
-            }
-        )
+        payload = {
+            "best_params": study.best_trial.params,
+            "best_value": study.best_value,
+            "n_trials": config.N_TRIALS,
+            "trials": [
+                {"number": tr.number, "value": tr.value, "params": tr.params}
+                for tr in study.trials
+            ],
+        }
         out = config.ASSETS_DIR / f"Asset_{t}" / f"hpo_{t}.json"
-        artifacts.write_json(out, payload)
+        dataset.write_json(out, payload)
         print(f"{out.name}: best logloss {study.best_value:.6f} "
               f"(trial {study.best_trial.number})", flush=True)
     return 0

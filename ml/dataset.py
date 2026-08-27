@@ -1,11 +1,16 @@
-"""Shared read-only loading of per-asset X/Y artifacts and run identifiers.
+"""Shared IO for the ML layer: per-asset artifacts in, canonical JSON out.
 
-X may contain tail rows that the label stage dropped (vertical barrier past
-the research end); the join keeps exactly Y's decision grid and asserts the
-alignment instead of assuming it.
+Loading X/Y and writing JSON are the only two things every stage needs from a
+common place, so they live together here. There is no provenance envelope: the
+git commit records which code produced a result, and ml_status.json carries the
+research window and the seed once, not in every file.
 """
 
 from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
 
 import duckdb
 import numpy as np
@@ -13,26 +18,38 @@ import numpy as np
 from . import config
 
 
-def run_ids(con: duckdb.DuckDBPyConnection) -> tuple[str, str]:
-    """(data_sha256 from _ml_meta, config_sha256) for artifact envelopes."""
-    row = con.execute("SELECT value FROM _ml_meta WHERE key = 'data_sha256'").fetchone()
-    assert row is not None, "run `make ml-bars` first (data_sha256 missing)"
-    return row[0], config.config_sha256()
+def canon(obj):
+    """Recursively convert numpy containers/scalars to canonical Python."""
+    if isinstance(obj, dict):
+        return {str(k): canon(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [canon(v) for v in obj]
+    if isinstance(obj, np.ndarray):
+        return [canon(v) for v in obj.tolist()]
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    if isinstance(obj, float) and not np.isfinite(obj):
+        return None
+    return obj
 
 
-def versions() -> dict:
-    import optuna
-    import xgboost
+def write_json(path: Path, payload: dict) -> None:
+    text = json.dumps(canon(payload), sort_keys=True, indent=1) + "\n"
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
 
-    return {
-        "duckdb": duckdb.__version__,
-        "numpy": np.__version__,
-        "optuna": optuna.__version__,
-        "xgboost": xgboost.__version__,
-    }
+
+def read_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_xy(ticker: str) -> dict[str, np.ndarray]:
+    """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
     adir = config.ASSETS_DIR / f"Asset_{ticker}"
     con = duckdb.connect()
     x = con.execute(f"SELECT * FROM read_parquet('{adir}/X_{ticker}.parquet') ORDER BY decision_ts").fetchnumpy()
@@ -42,7 +59,7 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
     y_ts = yy["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
-    return {
+    out = {
         "decision_ts": y_ts,
         "x": np.column_stack([x[c][pos] for c in config.FEATURE_COLUMNS]),
         "y": yy["y"].astype(np.int8),
@@ -51,3 +68,4 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
         "weight": yy["weight"].astype(np.float64),
         "exit_reason": yy["exit_reason"].astype(np.int8),
     }
+    return out

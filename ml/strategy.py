@@ -26,7 +26,7 @@ import argparse
 import duckdb
 import numpy as np
 
-from . import artifacts, config, dataset, indicators, validation
+from . import config, dataset, indicators, validation
 
 EQUITY_EVERY = 96   # one equity point per day of 15m bars
 
@@ -156,10 +156,6 @@ def main() -> int:
     ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
     args = ap.parse_args()
 
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    data_sha, config_sha = dataset.run_ids(con)
-    con.close()
-
     for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
         d = load_inputs(t)
         val_rows = {s: rows_for_split(d, s) for s in config.VALIDATION_SPLITS}
@@ -182,30 +178,27 @@ def main() -> int:
         test = backtest(d, test_rows, best_tau)
         ts15 = d["ts15"]
         curve_idx = np.arange(0, test["equity"].size, EQUITY_EVERY)
-        payload = artifacts.envelope(data_sha, config_sha, config.SEED, dataset.versions())
-        payload.update(
-            {
-                "tau": best_tau,
-                "tau_constraint_met": constraint_met,
-                "selection_score_mean_sharpe": best_score,
-                "validation": {
-                    f"split_{s}": {k: v for k, v in res.items()
-                                   if k not in ("bar_returns", "equity", "bar_lo")}
-                    for s, res in best_detail.items()
+        payload = {
+            "tau": best_tau,
+            "tau_constraint_met": constraint_met,
+            "selection_score_mean_sharpe": best_score,
+            "validation": {
+                f"split_{s}": {k: v for k, v in res.items()
+                               if k not in ("bar_returns", "equity", "bar_lo")}
+                for s, res in best_detail.items()
+            },
+            "test_locked": {
+                **{k: v for k, v in test.items()
+                   if k not in ("bar_returns", "equity", "bar_lo")},
+                "equity_curve": {
+                    "timestamp_ms": ts15[test["bar_lo"] + curve_idx].tolist(),
+                    "equity": np.round(test["equity"][curve_idx], 6).tolist(),
                 },
-                "test_locked": {
-                    **{k: v for k, v in test.items()
-                       if k not in ("bar_returns", "equity", "bar_lo")},
-                    "equity_curve": {
-                        "timestamp_ms": ts15[test["bar_lo"] + curve_idx].tolist(),
-                        "equity": np.round(test["equity"][curve_idx], 6).tolist(),
-                    },
-                },
-                "costs_per_side": config.COST_PER_SIDE,
-            }
-        )
+            },
+            "costs_per_side": config.COST_PER_SIDE,
+        }
         out = config.ASSETS_DIR / f"Asset_{t}" / f"strategy_{t}.json"
-        artifacts.write_json(out, payload)
+        dataset.write_json(out, payload)
         print(f"{out.name}: tau={best_tau} test sharpe {test['sharpe']:.3f} "
               f"trades {test['n_trades']} maxDD {test['max_drawdown']:.3f}", flush=True)
     return 0
