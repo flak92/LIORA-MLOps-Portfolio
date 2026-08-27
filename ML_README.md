@@ -108,23 +108,36 @@ trial history is stored in `hpo_<T>.json`.
 ## 7. Locked test vs deployment model
 
 With frozen parameters the expanding splits are refitted and their
-out-of-fold probabilities stored (`predictions_<T>.parquet`) — the only input
-the strategy layer may use for threshold selection. The locked test fold is
-then evaluated **once** (fit on F1–F4, predict F5) and its classification
-numbers frozen in `metrics_<T>.json`; that model is not persisted — the
-numbers are. Only afterwards `--finalize` fits F1–F5 and persists
-`model_<T>.json` with `role = deployment, unbiased_estimate = false`.
+probabilities for the **full** split windows stored
+(`predictions_<T>.parquet`) — the only input the strategy layer may use for
+threshold selection; classification metrics score the label-valid subset
+only. The locked test fold is then evaluated **once** (fit on F1–F4, predict
+F5) and its classification numbers frozen in `metrics_<T>.json`; that model
+is not persisted — the numbers are. Only afterwards `--finalize` fits F1–F5
+and persists `model_<T>.json` with `role = deployment,
+unbiased_estimate = false`.
+
+**The locked-test invariant is a sentence, not a guard: F5 is never used to
+select a model, threshold, feature set or strategy. A deterministic
+recomputation of the same numbers is not a second look.**
 
 ## 8. Strategy
 
 ```
 edge = p_long − p_short;  side = sign(edge)
-enter = mask_ok ∧ |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
-        ∧ side = sign(trend_4h) ∧ |alignment| ≥ 2 ∧ sign(alignment) = side
+n_agree = #{level ∈ {15m, 1h, 4h} : sign(trend_level) = side}
+enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
+        ∧ side = sign(trend_4h) ∧ n_agree ≥ 2
 ```
 
-The **model decides the side; the 4H hierarchy gates it**. One unit position
-at a time, new signals ignored while in a position. Exits replay the label
+The **model decides the side; the 4H hierarchy gates it** (direction filter
+plus at least two of three levels trending with the side). The entry condition
+uses only information available at `decision_ts`: **label validity**
+(`mask_ok`) is knowable only after the event resolves, so it governs training
+and scoring but never an entry — predictions cover the *full* OOS and test
+windows, and a trade whose event turns out ambiguous is settled **stop-first**
+(the barrier adverse to the position at the tie minute). One unit position at
+a time, new signals ignored while in a position. Exits replay the label
 event: the same barriers on the same 1m path (barrier price for horizontal
 exits, the 15m close of the final horizon bar for vertical exits — equal to
 the 1m values by construction). Costs `0.0006` per side on entry and exit.
@@ -149,11 +162,17 @@ full runs must produce identical SHA-256 for X/Y/hpo/predictions/metrics/
 strategy artifacts (`nthread = 1`, parallelism across assets only, pinned
 `requirements.lock`).
 
-Module layout: `ml/config` (frozen constants) · `ml/artifacts` (canonical
-serialization) · `ml/indicators`, `ml/validation`, `ml/model` (pure numpy /
-xgboost kernels) · `ml/dataset` (artifact loading) · `ml/bars` (single DB
-writer) · `ml/features`, `ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`,
-`ml/status` (CLI stages, `python -m ml.<stage> [--tickers …]`).
+Module layout: `ml/config` (frozen constants) · `ml/artifacts` (an IO
+utility: canonical serialization and atomic writes) · `ml/indicators`,
+`ml/validation`, `ml/model` (pure numpy / xgboost kernels) · `ml/dataset`
+(artifact loading) · `ml/bars` (single DB writer) · `ml/features`,
+`ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`, `ml/status` (CLI stages,
+`python -m ml.<stage> [--tickers …]`). Constant convention as it actually
+is: **experiment-semantic constants live in `ml/config.py` and enter
+`config_sha256`; implementation constants** (chunk sizes, `MINUTE_MS`,
+equity-curve stride) **may stay local to their module**. The export
+invariants of `pipeline/export.py` are the canonical-series gate; the
+documented order runs `make ml-all` after `make export`.
 
 ## 10. Limitations (v1 of the ML layer)
 
@@ -161,7 +180,12 @@ No regime-conditional gating, no per-asset feature selection, no CUSUM event
 sampling, no meta-labeling, no fractional differentiation, fixed costs, unit
 position sizing. The class distribution is dominated by `y = 0` (the k = 2
 barrier is rarely hit within one 4H block) — reported per asset, not
-resampled. Candidates for WO-ML-002 are listed in the work order.
+resampled. **Barrier-price fills are an explicit modelling assumption**:
+optimistic for a stop that gaps through the barrier inside one minute, and
+identical to the label's semantics, so X↔Y↔PnL stay consistent. The
+`activity` feature follows the canonical source, so it switches venue with a
+failover (Bybit supplies 0.004–0.043 % of minutes) — a known limitation, not
+a defect. Candidates for WO-ML-002 are listed in the work order.
 
 ## 11. References (verified online 2026-08-26; DOIs resolve)
 
