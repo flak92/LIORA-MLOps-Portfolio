@@ -11,7 +11,7 @@ Every value at decision_ts comes from the last CLOSED bar of its timeframe
 decision_ts.
 
 Output: research_artifacts/<TICKER>/features.parquet with decision_ts + 15
-rows from the global research warm-up onward, no NaN (asserted).
+feature columns, from the global research warm-up onward, no NaN (asserted).
 """
 
 from __future__ import annotations

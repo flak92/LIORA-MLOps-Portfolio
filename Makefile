@@ -101,25 +101,25 @@ docker-export:   ## run the export stage inside the container
 docker-status:   ## run the status stage inside the container
 	$(COMPOSE) run --rm pipeline python -m data_module.status
 
-docker-ml-bars:      ## ml.bars inside the container
+docker-ml-bars:      ## ml_module.bars inside the container
 	$(COMPOSE) run --rm pipeline python -m ml_module.bars
 
-docker-ml-features:  ## ml.features inside the container
+docker-ml-features:  ## ml_module.features inside the container
 	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.features)"
 
-docker-ml-labels:    ## ml.labels inside the container
+docker-ml-labels:    ## ml_module.labels inside the container
 	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.labels)"
 
-docker-ml-hpo:       ## ml.hpo inside the container
+docker-ml-hpo:       ## ml_module.hpo inside the container
 	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.hpo)"
 
-docker-ml-train:     ## ml.train inside the container
+docker-ml-train:     ## ml_module.train inside the container
 	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.train)"
 
-docker-ml-strategy:  ## ml.strategy inside the container
+docker-ml-strategy:  ## ml_module.strategy inside the container
 	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml_module.strategy)"
 
-docker-ml-status:    ## ml.status inside the container
+docker-ml-status:    ## ml_module.status inside the container
 	$(COMPOSE) run --rm pipeline python -m ml_module.status
 
 docker-ml-all:       ## the whole ML chain inside the container

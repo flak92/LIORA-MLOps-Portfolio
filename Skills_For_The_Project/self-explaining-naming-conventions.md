@@ -14,6 +14,11 @@ must explain itself, so an agent never has to guess.
 - **Self-explaining names are the interface.** Agents understand and extend
   this repository through its names; a name that needs a lookup turns every
   reader into an archaeologist.
+- **Units belong to quantities.** A name holding a number says its unit —
+  counts, rates, durations, sizes, intervals — while enumerations, paths and
+  names carry none, a collection keeps the unit of its values, and a local
+  abbreviation is free inside one function. `AGENTS.md` fixes the schema; this
+  skill only says why it exists.
 - **One concept, one name.** A synonym forces the reader to decide whether two
   names are one thing or two — a thought the code should never demand.
 - **The glossary confirms, it never decodes.** `glossary.md` registers what a
