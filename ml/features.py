@@ -15,16 +15,12 @@ rows from the global research warm-up onward, no NaN (asserted).
 
 from __future__ import annotations
 
-import argparse
-import csv
-import os
-import tempfile
 from pathlib import Path
 
 import duckdb
 import numpy as np
 
-from . import config, indicators
+from . import config, dataset, indicators
 
 
 def load_level(con: duckdb.DuckDBPyConnection, sym: str, tf: str) -> dict[str, np.ndarray]:
@@ -70,35 +66,19 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
 
 
 def write_x(ticker: str, decision_ts: np.ndarray, x: np.ndarray) -> Path:
-    out = config.ASSETS_DIR / f"Asset_{ticker}" / f"X_{ticker}.parquet"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
-        w = csv.writer(f)
-        for i in range(decision_ts.size):
-            w.writerow([int(decision_ts[i])] + [repr(float(v)) for v in x[i]])
-        spool = Path(f.name)
-    try:
-        cols = ", ".join(f"'{c}': 'DOUBLE'" for c in config.FEATURE_COLUMNS)
-        con = duckdb.connect()
-        con.execute(
-            f"""COPY (SELECT * FROM read_csv('{spool}', header=false,
-                       columns={{'decision_ts': 'BIGINT', {cols}}})
-                     ORDER BY decision_ts)
-                TO '{out}.tmp' (FORMAT PARQUET, COMPRESSION zstd)"""
-        )
-        con.close()
-        os.replace(f"{out}.tmp", out)
-    finally:
-        spool.unlink(missing_ok=True)
-    return out
+    return dataset.write_parquet(
+        config.ASSETS_DIR / f"Asset_{ticker}" / f"X_{ticker}.parquet",
+        {"decision_ts": "BIGINT", **{c: "DOUBLE" for c in config.FEATURE_COLUMNS}},
+        ([int(decision_ts[i])] + [repr(float(v)) for v in x[i]]
+         for i in range(decision_ts.size)),
+        order_by="decision_ts",
+    )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="hierarchical feature matrix X per asset")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("hierarchical feature matrix X per asset").parse_args()
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         decision_ts, x = build_x(con, t)
         out = write_x(t, decision_ts, x)
         print(f"{out.name}: {decision_ts.size} rows x {x.shape[1]} features", flush=True)

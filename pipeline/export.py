@@ -16,7 +16,6 @@ invariant leaves the previously published Parquet untouched:
 
 from __future__ import annotations
 
-import argparse
 import os
 
 import duckdb
@@ -38,10 +37,9 @@ FROM read_parquet('{path}')
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="ohlcv_1m_canonical -> assets/Asset_<T>/1m_<T>_data.parquet")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("ohlcv_1m_canonical -> assets/Asset_<T>/1m_<T>_data.parquet")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
     grid_rows = con.execute(

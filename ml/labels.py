@@ -31,27 +31,23 @@ event that produced the label instead of recomputing it.
 
 from __future__ import annotations
 
-import argparse
-import csv
-import os
-import tempfile
 from pathlib import Path
 
 import duckdb
 import numpy as np
 
-from . import config, indicators
+from . import config, dataset, indicators
 
 CHUNK = 16384
 MINUTE_MS = 60_000
 W = config.HORIZON_MS // MINUTE_MS   # horizon in minutes (240)
 
-Y_COLUMNS = (
-    "{'decision_ts': 'BIGINT', 'entry_ts': 'BIGINT', 'y': 'TINYINT', "
-    "'event_end_ts': 'BIGINT', 'label_valid': 'BOOLEAN', 'weight': 'DOUBLE', "
-    "'exit_reason': 'TINYINT', 'p0': 'DOUBLE', 'upper': 'DOUBLE', "
-    "'lower': 'DOUBLE', 'exit_ref': 'DOUBLE'}"
-)
+Y_COLUMNS = {
+    "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
+    "event_end_ts": "BIGINT", "label_valid": "BOOLEAN", "weight": "DOUBLE",
+    "exit_reason": "TINYINT", "p0": "DOUBLE", "upper": "DOUBLE",
+    "lower": "DOUBLE", "exit_ref": "DOUBLE",
+}
 
 
 def load_venue_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.ndarray]:
@@ -121,40 +117,24 @@ def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
 
 
 def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
-    out = config.ASSETS_DIR / f"Asset_{ticker}" / f"Y_{ticker}.parquet"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
-        w = csv.writer(f)
-        n = cols["decision_ts"].size
-        for i in range(n):
-            w.writerow([
-                int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
-                int(cols["event_end_ts"][i]), int(cols["label_valid"][i]),
-                repr(float(cols["weight"][i])), int(cols["exit_reason"][i]),
-                repr(float(cols["p0"][i])), repr(float(cols["upper"][i])),
-                repr(float(cols["lower"][i])), repr(float(cols["exit_ref"][i])),
-            ])
-        spool = Path(f.name)
-    try:
-        con = duckdb.connect()
-        con.execute(
-            f"""COPY (SELECT * FROM read_csv('{spool}', header=false, columns={Y_COLUMNS})
-                      ORDER BY decision_ts)
-                TO '{out}.tmp' (FORMAT PARQUET, COMPRESSION zstd)"""
-        )
-        con.close()
-        os.replace(f"{out}.tmp", out)
-    finally:
-        spool.unlink(missing_ok=True)
-    return out
+    return dataset.write_parquet(
+        config.ASSETS_DIR / f"Asset_{ticker}" / f"Y_{ticker}.parquet",
+        Y_COLUMNS,
+        ([
+            int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
+            int(cols["event_end_ts"][i]), int(cols["label_valid"][i]),
+            repr(float(cols["weight"][i])), int(cols["exit_reason"][i]),
+            repr(float(cols["p0"][i])), repr(float(cols["upper"][i])),
+            repr(float(cols["lower"][i])), repr(float(cols["exit_ref"][i])),
+        ] for i in range(cols["decision_ts"].size)),
+        order_by="decision_ts",
+    )
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="triple-barrier labels on the Binance 1m path")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("triple-barrier labels on the Binance 1m path").parse_args()
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         sym = config.symbol(t)
         bars_1h = con.execute(
             f"""SELECT timestamp_ms, high, low, close FROM ohlcv_1h_binance

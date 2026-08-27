@@ -21,7 +21,6 @@ data-quality signal only.
 
 from __future__ import annotations
 
-import argparse
 import csv
 import io
 import re
@@ -189,10 +188,9 @@ def spool_symbol(ticker: str, venue: str, tmp: Path) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Lean ZIPs (both venues) -> DuckDB + canonical fused series")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("Lean ZIPs (both venues) -> DuckDB + canonical fused series")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(config.DB_PATH))

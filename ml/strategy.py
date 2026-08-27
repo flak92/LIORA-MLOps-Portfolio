@@ -32,8 +32,6 @@ resolved towards the smaller tau.
 
 from __future__ import annotations
 
-import argparse
-
 import duckdb
 import numpy as np
 
@@ -174,11 +172,9 @@ def equity_curve(eq: np.ndarray, fold_start_ms: int) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="tau selection on validation folds, final-OOS PnL")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("tau selection on validation folds, final-OOS PnL").parse_args()
 
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         d = load_inputs(t)
         val_rows = {s: rows_for_split(d, s) for s in config.VALIDATION_SPLITS}
         val_bounds = {s: validation.split_bounds(s) for s in config.VALIDATION_SPLITS}

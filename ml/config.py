@@ -8,7 +8,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from pipeline.config import ASSETS_DIR, DB_PATH, TICKERS, symbol  # noqa: F401  (re-exported)
+from pipeline.config import (  # noqa: F401  (re-exported)
+    ASSETS_DIR, DB_PATH, TICKERS, parse_tickers, symbol, ticker_parser,
+)
 
 SEED = 42
 

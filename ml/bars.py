@@ -13,8 +13,6 @@ bars against native fapi klines gave 0 OHLC mismatches (see ML_README).
 
 from __future__ import annotations
 
-import argparse
-
 import duckdb
 
 from . import config
@@ -72,10 +70,8 @@ ORDER BY 2;
 """
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="canonical 1m -> 15m/1h/4h bars")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    args = config.ticker_parser("canonical 1m -> 15m/1h/4h bars").parse_args()
+    tickers = config.parse_tickers(args.tickers)
 
     con = duckdb.connect(str(config.DB_PATH))
     con.execute("SET memory_limit='4GB'")

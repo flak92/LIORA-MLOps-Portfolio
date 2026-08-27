@@ -23,7 +23,6 @@ column 5 (BASE volume) is written, matching the Binance tree.
 
 from __future__ import annotations
 
-import argparse
 import json
 import time
 import urllib.error
@@ -80,11 +79,10 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Bybit Linear 1m klines -> Lean minute-trade ZIPs")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("Bybit Linear 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)

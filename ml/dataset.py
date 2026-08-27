@@ -8,8 +8,10 @@ research window and the seed once, not in every file.
 
 from __future__ import annotations
 
+import csv
 import json
 import os
+import tempfile
 from pathlib import Path
 
 import duckdb
@@ -46,6 +48,32 @@ def write_json(path: Path, payload: dict) -> None:
 
 def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> Path:
+    """Atomic zstd parquet from an iterable of rows, via a CSV spool.
+
+    numpy -> repr(float) -> read_csv round-trips float64 exactly, and DuckDB
+    sorts and compresses; os.replace makes the artifact appear whole or not at
+    all. Every per-asset artifact writer is this function with its own rows.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
+        csv.writer(f).writerows(rows)
+        spool = Path(f.name)
+    try:
+        spec = ", ".join(f"'{name}': '{sqltype}'" for name, sqltype in columns.items())
+        con = duckdb.connect()
+        con.execute(
+            f"""COPY (SELECT * FROM read_csv('{spool}', header=false, columns={{{spec}}})
+                      ORDER BY {order_by})
+                TO '{path}.tmp' (FORMAT PARQUET, COMPRESSION zstd)"""
+        )
+        con.close()
+        os.replace(f"{path}.tmp", path)
+    finally:
+        spool.unlink(missing_ok=True)
+    return path
 
 
 def load_xy(ticker: str) -> dict[str, np.ndarray]:

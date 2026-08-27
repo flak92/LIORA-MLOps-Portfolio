@@ -9,40 +9,21 @@ not, because nothing in this repo performs inference yet.
 
 from __future__ import annotations
 
-import argparse
-import csv
-import os
-import tempfile
 from pathlib import Path
 
-import duckdb
 import numpy as np
 
 from . import config, dataset, model, validation
 
 
 def write_predictions(ticker: str, rows: list[tuple]) -> Path:
-    out = config.ASSETS_DIR / f"Asset_{ticker}" / f"predictions_{ticker}.parquet"
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
-        w = csv.writer(f)
-        for r in rows:
-            w.writerow([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]])
-        spool = Path(f.name)
-    try:
-        con = duckdb.connect()
-        con.execute(
-            f"""COPY (SELECT * FROM read_csv('{spool}', header=false,
-                      columns={{'decision_ts': 'BIGINT', 'split': 'TINYINT',
-                                'p_short': 'DOUBLE', 'p_neutral': 'DOUBLE',
-                                'p_long': 'DOUBLE'}})
-                      ORDER BY split, decision_ts)
-                TO '{out}.tmp' (FORMAT PARQUET, COMPRESSION zstd)"""
-        )
-        con.close()
-        os.replace(f"{out}.tmp", out)
-    finally:
-        spool.unlink(missing_ok=True)
-    return out
+    return dataset.write_parquet(
+        config.ASSETS_DIR / f"Asset_{ticker}" / f"predictions_{ticker}.parquet",
+        {"decision_ts": "BIGINT", "split": "TINYINT",
+         "p_short": "DOUBLE", "p_neutral": "DOUBLE", "p_long": "DOUBLE"},
+        ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in rows),
+        order_by="split, decision_ts",
+    )
 
 
 def split_metrics(y_cls, proba, weight, prior_train) -> dict:
@@ -65,11 +46,9 @@ def split_metrics(y_cls, proba, weight, prior_train) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="frozen-parameter training and the final-OOS report")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("frozen-parameter training and the final-OOS report").parse_args()
 
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         adir = config.ASSETS_DIR / f"Asset_{t}"
         best = dataset.read_json(adir / f"hpo_{t}.json")["best_params"]
         xy = dataset.load_xy(t)

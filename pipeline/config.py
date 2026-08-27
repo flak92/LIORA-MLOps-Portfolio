@@ -6,6 +6,8 @@ fresh clone reproduces the exact same dataset from the public exchange APIs.
 
 from __future__ import annotations
 
+import argparse
+
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -56,3 +58,14 @@ def raw_symbol_dir(ticker: str, venue: str = MARKET) -> Path:
 
 def asset_parquet(ticker: str) -> Path:
     return ASSETS_DIR / f"Asset_{ticker}" / f"1m_{ticker}_data.parquet"
+
+
+def ticker_parser(description: str) -> "argparse.ArgumentParser":
+    """The one CLI every stage shares: --tickers with the full basket default."""
+    ap = argparse.ArgumentParser(description=description)
+    ap.add_argument("--tickers", default=",".join(TICKERS), help="comma-separated subset")
+    return ap
+
+
+def parse_tickers(csv: str) -> list[str]:
+    return [t.strip().upper() for t in csv.split(",") if t.strip()]

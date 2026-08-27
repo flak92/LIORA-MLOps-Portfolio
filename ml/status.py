@@ -11,7 +11,6 @@ model parameters in hpo_<T>.json.
 
 from __future__ import annotations
 
-import argparse
 from datetime import UTC, datetime
 
 from . import config, dataset
@@ -113,12 +112,10 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="aggregate ML artifacts -> dashboard/ml_status.json")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("aggregate ML artifacts -> dashboard/ml_status.json").parse_args()
 
     assets = []
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         adir = config.ASSETS_DIR / f"Asset_{t}"
         paths = {k: adir / f"{k}_{t}.json" for k in ARTIFACT_KINDS}
         if not all(p.exists() for p in paths.values()):

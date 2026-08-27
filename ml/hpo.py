@@ -8,8 +8,6 @@ the trial count; the trajectory of 50 trials is a search diary, not a result.
 
 from __future__ import annotations
 
-import argparse
-
 import numpy as np
 import optuna
 
@@ -36,12 +34,10 @@ def objective_factory(xy: dict[str, np.ndarray]):
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Optuna TPE hyper-parameter search per asset")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
-    args = ap.parse_args()
+    args = config.ticker_parser("Optuna TPE hyper-parameter search per asset").parse_args()
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    for t in [x.strip().upper() for x in args.tickers.split(",") if x.strip()]:
+    for t in config.parse_tickers(args.tickers):
         xy = dataset.load_xy(t)
         study = optuna.create_study(
             direction="minimize", sampler=optuna.samplers.TPESampler(seed=config.SEED)

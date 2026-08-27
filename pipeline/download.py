@@ -18,7 +18,6 @@ VOLUME UNITS: klines column 5 = BASE volume (e.g. BTC), not quote turnover.
 
 from __future__ import annotations
 
-import argparse
 import io
 import json
 import time
@@ -96,11 +95,10 @@ def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Binance USDS-M 1m klines -> Lean minute-trade ZIPs")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("Binance USDS-M 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
