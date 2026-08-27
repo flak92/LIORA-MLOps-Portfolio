@@ -32,6 +32,8 @@ from pathlib import Path
 from . import config
 
 DAY_MS = 86_400_000
+MINUTE_MS = 60_000
+MINUTES_PER_DAY = DAY_MS // MINUTE_MS
 
 
 def _iso_day(epoch_ms: int) -> str:
@@ -85,6 +87,20 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     return [(int(row[0]) - day_ms, row[1], row[2], row[3], row[4], row[5]) for row in batch]
 
 
+def is_full_utc_day(rows: list[tuple]) -> bool:
+    """Exactly the 1440 minutes of one UTC day, in order, with no hole.
+
+    One expression covers completeness, ordering, uniqueness and the exact
+    60 000 ms grid from 00:00 to 23:59, because the offsets of a full day are
+    the sequence 0, 60000, ... by definition. A short answer is a truncated
+    response, and writing it would make the gap permanent: the ZIP exists, so
+    the day is skipped forever.
+    """
+    return len(rows) == MINUTES_PER_DAY and all(
+        row[0] == i * MINUTE_MS for i, row in enumerate(rows)
+    )
+
+
 def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     csv_name = f"{day}_{sym.lower()}_minute_trade_perp.csv"
@@ -131,11 +147,14 @@ def main() -> int:
                 skipped += 1
             else:
                 rows = fetch_day(sym, day_ms)
-                if not rows:
-                    # the listing probe guarantees data exists for every day of the
-                    # window, so an empty 200 is a transient API failure — abort
-                    # instead of persisting a skip-forever empty ZIP
-                    raise SystemExit(f"{sym} {day}: empty response for a post-listing day — retry the download")
+                # the listing probe guarantees every day of the window is
+                # post-listing, so anything short of a full day is a truncated
+                # response, not a fact about the market
+                if not is_full_utc_day(rows):
+                    raise SystemExit(
+                        f"{sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        "incomplete response for a post-listing day, retry the download"
+                    )
                 write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:

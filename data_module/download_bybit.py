@@ -33,7 +33,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
-from .download_binance import DAY_MS, write_lean_zip
+from .download_binance import DAY_MS, MINUTES_PER_DAY, is_full_utc_day, write_lean_zip
 
 WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
 
@@ -132,9 +132,15 @@ def main() -> int:
             else:
                 rows = fetch_day(sym, day_ms)
                 if rows and (earliest is None or day < earliest):
-                    earliest = day
-                elif not rows and earliest is not None and day > earliest:
-                    raise SystemExit(f"bybit {sym} {day}: empty response after listing — retry the download")
+                    earliest = day                       # first traded day may be partial
+                elif earliest is not None and day > earliest and not is_full_utc_day(rows):
+                    # after the first traded day every day is a full one; a short
+                    # answer here is a truncated response, and this day is assembled
+                    # from two 720-minute windows, so half of it can arrive alone
+                    raise SystemExit(
+                        f"bybit {sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        "incomplete response after listing, retry the download"
+                    )
                 write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:
