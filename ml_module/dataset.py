@@ -99,7 +99,11 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
         "x": np.column_stack([x[c][pos] for c in config.FEATURE_COLUMNS]),
         "y": yy["y"].astype(np.int8),
         "event_end_ts": yy["event_end_ts"].astype(np.int64),
+        "entry_observable": yy["entry_observable"].astype(bool),
         "label_valid": yy["label_valid"].astype(bool),
+        # the supervised population: an entry that could be observed and an
+        # event that resolves unambiguously
+        "sample_valid": yy["entry_observable"].astype(bool) & yy["label_valid"].astype(bool),
         "weight": yy["weight"].astype(np.float64),
         "exit_reason": yy["exit_reason"].astype(np.int8),
         "p0": yy["p0"].astype(np.float64),

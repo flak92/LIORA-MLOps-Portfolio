@@ -20,7 +20,7 @@ def split_bounds(split: int) -> tuple[int, int]:
 
 
 def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
-                  label_valid: np.ndarray, oos_start_ms: int) -> np.ndarray:
+                  sample_valid: np.ndarray, oos_start_ms: int) -> np.ndarray:
     """Training rows whose event finished before the OOS block opened.
 
     event_end_ts is the exclusive end of the event, so `event_end_ts <=
@@ -28,17 +28,17 @@ def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
     chaining needs no post-test embargo because no training row lies after the
     OOS block.
     """
-    keep = label_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
+    keep = sample_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty training segment"
     assert event_end_ts[idx].max() <= oos_start_ms, "a training event overlaps the OOS block"
     return idx
 
 
-def oos_indices(decision_ts: np.ndarray, label_valid: np.ndarray,
+def oos_indices(decision_ts: np.ndarray, sample_valid: np.ndarray,
                 start_ms: int, end_ms: int) -> np.ndarray:
-    """Label-valid OOS rows — the scoring set for metrics and the HPO objective."""
-    keep = label_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
+    """Trainable OOS rows — the scoring set for metrics and the HPO objective."""
+    keep = sample_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
     return idx

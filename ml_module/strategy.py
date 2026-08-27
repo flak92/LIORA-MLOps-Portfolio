@@ -52,13 +52,13 @@ def load_inputs(ticker: str) -> dict:
     sym = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    m1 = con.execute(
-        f"""SELECT close, volume FROM ohlcv_1m_canonical
+    close1m = con.execute(
+        f"""SELECT close FROM ohlcv_1m_canonical
             WHERE symbol = '{sym}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
-    ).fetchnumpy()
+    ).fetchnumpy()["close"]
     con.close()
     c2 = duckdb.connect()
     preds = c2.execute(
@@ -67,8 +67,7 @@ def load_inputs(ticker: str) -> dict:
     c2.close()
 
     trend = {tf: xy["x"][:, config.FEATURE_COLUMNS.index(f"trend_{tf}")] for tf in config.LEVELS}
-    return {"xy": xy, "close1m": m1["close"], "vol1m": m1["volume"],
-            "trend": trend, "preds": preds}
+    return {"xy": xy, "close1m": close1m, "trend": trend, "preds": preds}
 
 
 def rows_for_split(d: dict, split: int) -> dict:
@@ -89,12 +88,10 @@ def rows_for_split(d: dict, split: int) -> dict:
         & (side == np.sign(d["trend"]["4h"][pos]))
         & (n_agree >= config.AGREE_MIN)
     )
-    entry_ts = xy["entry_ts"][pos]
-    entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
     return {
         "edge": edge, "side": side, "gate": gate,
-        "entry_observable": d["vol1m"][entry_idx] > 0,
-        "entry_ts": entry_ts, "event_end_ts": xy["event_end_ts"][pos],
+        "entry_observable": xy["entry_observable"][pos],
+        "entry_ts": xy["entry_ts"][pos], "event_end_ts": xy["event_end_ts"][pos],
         "reason": xy["exit_reason"][pos], "p0": xy["p0"][pos],
         "upper": xy["upper"][pos], "lower": xy["lower"][pos], "exit_ref": xy["exit_ref"][pos],
     }

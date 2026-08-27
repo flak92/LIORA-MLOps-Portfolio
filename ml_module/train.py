@@ -62,9 +62,9 @@ def main() -> int:
             label-valid subset only. Returns (metrics, booster's test proba)."""
             oos_start, oos_end = validation.split_bounds(split)
             tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                          xy["label_valid"], oos_start)
+                                          xy["sample_valid"], oos_start)
             wi = validation.window_indices(xy["decision_ts"], oos_start, oos_end)
-            oi = validation.oos_indices(xy["decision_ts"], xy["label_valid"], oos_start, oos_end)
+            oi = validation.oos_indices(xy["decision_ts"], xy["sample_valid"], oos_start, oos_end)
             prior_train = validation.weighted_class_prior(y_cls[tr], xy["weight"][tr])
             assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
             booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
@@ -76,7 +76,7 @@ def main() -> int:
                 (xy["decision_ts"][i], split, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
                 for k, i in enumerate(wi)
             )
-            eligible = int((xy["label_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
+            eligible = int((xy["sample_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
                             & (xy["decision_ts"] < oos_start)).sum())
             segments[f"split_{split}"] = {
                 "n_train": int(tr.size),
@@ -93,27 +93,33 @@ def main() -> int:
         test, booster = run_split(config.TEST_SPLIT)
         write_predictions(t, pred_rows)
 
+        trainable = xy["sample_valid"]
         gain = booster.get_score(importance_type="total_gain")
         payload = {
             "params": best,
             "validation": per_split,
             "test": test,
             "gain_importance": {k: gain.get(k, 0.0) for k in config.FEATURE_COLUMNS},
+            # classes over the supervised population only: an ambiguous event
+            # carries y = 0 in the file and would otherwise be counted as a
+            # neutral observation, which is exactly what it is not
             "class_counts": {
-                "short": int((xy["y"] == -1).sum()),
-                "neutral": int((xy["y"] == 0).sum()),
-                "long": int((xy["y"] == 1).sum()),
+                "short": int((trainable & (xy["y"] == -1)).sum()),
+                "neutral": int((trainable & (xy["y"] == 0)).sum()),
+                "long": int((trainable & (xy["y"] == 1)).sum()),
             },
             "labels": {
                 "rows": int(xy["y"].size),
                 "ambiguous": int((~xy["label_valid"]).sum()),
+                "unobservable": int((~xy["entry_observable"]).sum()),
+                "trainable": int(trainable.sum()),
             },
             "segments": {
                 **segments,
                 "n_warmup_excluded": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
                 // config.TF_MS["15m"],
             },
-            "uniqueness_weight_mean": float(xy["weight"].mean()),
+            "uniqueness_weight_mean": float(xy["weight"][trainable].mean()),
         }
         dataset.write_json(adir / f"metrics_{t}.json", payload)
         print(f"metrics_{t}.json: prior {test['prior_logloss']:.6f} "

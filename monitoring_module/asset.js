@@ -76,7 +76,10 @@ function labelFrame(a) {
     n, fmt(c[n]), [shareCell(c[n], total)],
   ])));
   f.body.appendChild(kvBox([
-    ["ambiguous labels", fmt(a.sample.ambiguous) + " (" + a.sample.ambiguous_pct.toFixed(3) + "%)"],
+    ["trainable rows", fmt(a.sample.trainable) + " of " + fmt(a.sample.rows)
+      + " (" + a.sample.trainable_pct.toFixed(3) + "%)"],
+    ["excluded", fmt(a.sample.ambiguous) + " ambiguous · "
+      + fmt(a.sample.unobservable) + " unobservable entry"],
     ["warm-up excluded", fmt(a.sample.n_warmup_excluded) + " decisions"],
     ["mean uniqueness weight", a.sample.uniqueness_weight_mean.toFixed(4)],
   ]));
@@ -124,10 +127,10 @@ function strategyFrame(a, s) {
   const c = a.strategy.equity_curve;
   f.body.appendChild(sparkline(c.equity, 1.0,
     "equity on the final OOS fold; dashed line = 1.0 (flat)"));
-  f.body.appendChild(foot("final OOS equity: start 1.000 · low "
-    + Math.min(...c.equity).toFixed(3) + " · end " + c.equity_final.toFixed(3)
-    + " · dashed line = 1.0. Sharpe is annualised from the 15m equity series, "
-    + "the drawdown is measured on the 1m path."));
+  f.body.appendChild(foot("final OOS equity: start 1.000 · end "
+    + c.equity_final.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
+    + "from the 15m equity series and the drawdown measured on the 1m path, "
+    + "both from the starting capital; the curve above is weekly-sampled."));
   return f.frame;
 }
 

@@ -29,7 +29,9 @@ def sample_block(metrics: dict) -> dict:
     return {
         "rows": labels["rows"],
         "ambiguous": labels["ambiguous"],
-        "ambiguous_pct": round(100.0 * labels["ambiguous"] / labels["rows"], 4),
+        "unobservable": labels["unobservable"],
+        "trainable": labels["trainable"],
+        "trainable_pct": round(100.0 * labels["trainable"] / labels["rows"], 4),
         "n_warmup_excluded": metrics["segments"]["n_warmup_excluded"],
         "uniqueness_weight_mean": round(metrics["uniqueness_weight_mean"], 4),
         "class_counts": dict(metrics["class_counts"]),

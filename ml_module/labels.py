@@ -27,8 +27,19 @@ an observed transaction, so hits are gated on `volume > 0`. Both barriers
 inside one minute leave the order unknowable from OHLC, so the row is
 `label_valid = false` — never relabelled 0. That flag answers exactly one
 question, "can this event be classified?", and it is knowable only after the
-event resolves. Whether an entry minute was tradable at all is a different,
-present-tense question the strategy answers from the same volume column.
+event resolves.
+
+`entry_observable` answers a different, present-tense question: did the entry
+minute trade at all? Both travel in Y, because both are properties of the
+event, and downstream they combine into one population:
+
+    sample_valid = entry_observable & label_valid
+
+An unobservable entry is not merely untradable — its P0 is a carried-forward
+price, so the barriers around it are anchored to a quote that never traded.
+Such a row is neither an executable decision nor a sound measurement, so it
+carries no weight and trains nothing. The strategy still gates on
+`entry_observable` alone and never on `label_valid`.
 Average uniqueness [Lopez de Prado, ch. 4] is computed over the *valid* events
 only, so a masked row cannot dilute the weights of the rows actually trained on.
 
@@ -52,7 +63,8 @@ W = config.HORIZON_MS // MINUTE_MS   # horizon in minutes (240)
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
-    "event_end_ts": "BIGINT", "label_valid": "BOOLEAN", "weight": "DOUBLE",
+    "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
+    "label_valid": "BOOLEAN", "weight": "DOUBLE",
     "exit_reason": "TINYINT", "p0": "DOUBLE", "upper": "DOUBLE",
     "lower": "DOUBLE", "exit_ref": "DOUBLE",
 }
@@ -130,7 +142,8 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
-            int(cols["event_end_ts"][i]), int(cols["label_valid"][i]),
+            int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
+            int(cols["label_valid"][i]),
             repr(float(cols["weight"][i])), int(cols["exit_reason"][i]),
             repr(float(cols["p0"][i])), repr(float(cols["upper"][i])),
             repr(float(cols["lower"][i])), repr(float(cols["exit_ref"][i])),
@@ -171,22 +184,26 @@ def main() -> int:
         assert np.all(event_end_ts > entry_ts)
 
         entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
+        entry_observable = m1["volume"][entry_idx] > 0
         label_valid = reason != 9
+        sample_valid = entry_observable & label_valid
 
         weight = np.zeros(decision_ts.size)
-        v = np.flatnonzero(label_valid)
+        v = np.flatnonzero(sample_valid)
         weight[v] = uniqueness_weights(entry_ts[v], event_end_ts[v])
 
         out = write_y(t, {
             "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
-            "event_end_ts": event_end_ts, "label_valid": label_valid, "weight": weight,
+            "event_end_ts": event_end_ts, "entry_observable": entry_observable,
+            "label_valid": label_valid, "weight": weight,
             "exit_reason": reason, "p0": p0, "upper": upper, "lower": lower,
             "exit_ref": exit_ref,
         })
         print(f"{out.name}: {decision_ts.size} rows  classes(-1/0/+1)="
               f"{int((y == -1).sum())}/{int((y == 0).sum())}/{int((y == 1).sum())}  "
               f"ambiguous={int((~label_valid).sum())}  "
-              f"unobservable entries={int((m1['volume'][entry_idx] == 0).sum())}  "
+              f"unobservable={int((~entry_observable).sum())}  "
+              f"trainable={int(sample_valid.sum())}  "
               f"vertical={int((t_res == W).sum())}", flush=True)
     con.close()
     return 0
