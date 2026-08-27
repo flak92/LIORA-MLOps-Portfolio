@@ -8,8 +8,9 @@ Parallelism matters for wall-clock time, with one governing rule:
 - Speed comes exclusively from **external parallelism**: independent,
   separately-seeded processes side by side (one asset per process). Never
   from raising thread caps inside a worker — see `determinism.md`.
-- Width is **measured at invocation, never hardcoded**: `JOBS = min(cores,
-  available GiB)` in the Makefile. The machine changes size; a literal
+- Width is **measured at invocation, never hardcoded**: `JOBS = max(1,
+  min(cores, available GiB))` in the Makefile — the floor matters, because
+  `xargs -P 0` means no limit at all. The machine changes size; a literal
   written for one size is silently wrong on every other. `JOBS=n` overrides.
 - Before optimizing, **measure the time distribution** — the bottleneck is
   rarely where intuition points. After optimizing, compare against the

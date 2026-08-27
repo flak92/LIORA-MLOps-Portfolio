@@ -109,6 +109,12 @@ exactly is a property of the data layer, verified once and recorded in
 | `structure` | `(close − min(low,20)) / (max(high,20) − min(low,20))` | [0, 1] | [2] |
 | `activity` | z-score of `log1p(volume)` over 50 bars | dimensionless | [1][6] |
 
+`activity` measures the activity of the **canonical observation process**, not
+venue-independent market activity: the sources differ in liquidity level, so a
+source switch may induce a volume-level discontinuity. Normalising per source
+would push provider knowledge back below the ingest boundary, so the limitation
+is stated rather than engineered away.
+
 Five families on 15m / 1h / 4h — **15 columns**, identical for every asset,
 **no per-asset selection** (a deliberate overfitting control). Cross-level
 trend agreement is **not** a feature: `sign(trend_15m) + sign(trend_1h) +
@@ -139,6 +145,11 @@ not an observed transaction, so both hit conditions are gated on `volume > 0`:
 upper_hit = (volume > 0) & (high >= upper)
 lower_hit = (volume > 0) & (low  <= lower)
 ```
+
+If the vertical-barrier minute contains no trade, its canonical close is a
+**last-observed-price mark** used by the research simulation, not an observed
+execution fill: the volume gate applies to barrier touches and to the entry,
+not to the mark that closes an unresolved event.
 
 A minute touching **both** barriers leaves their order unknowable from OHLC, so
 the row is `label_valid = false` — never relabelled `0`. Ambiguity is a missing

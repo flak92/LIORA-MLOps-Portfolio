@@ -1,6 +1,11 @@
-# LIORA - MLOps - Portfolio
+# LIORA — 1m Crypto Research Pipeline
 
-**An academic 1-minute crypto research pipeline: public market observations → Lean-compatible raw data → deterministic canonical DuckDB → features and labels → purged walk-forward XGBoost → research strategy simulation → monitoring.**
+**Deterministic multi-venue OHLCV research pipeline with purged walk-forward
+validation, a frozen final out-of-sample holdout, and a static results dashboard.**
+
+Public market observations → QuantConnect Lean-compatible raw data → one
+deterministic canonical DuckDB → features and labels → purged walk-forward
+XGBoost → research strategy simulation → monitoring.
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent

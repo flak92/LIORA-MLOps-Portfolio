@@ -103,9 +103,13 @@ Properties:
 - A traded candle on either venue outranks a no-trade candle (an exchange
   maintenance placeholder on Binance never outranks a real Bybit minute);
   a valid no-trade candle still outranks fabrication.
-- Prices and volume are **copied verbatim** from the winning venue — no
+- Prices and volume are **copied verbatim** from the winning source — no
   weighting, no averaging, no rounding. Every canonical price existed on a
-  real exchange, so cross-venue "phantom returns" are zero by construction.
+  real market, so **no averaged synthetic price is introduced** and the
+  weight-shift artifact of the v1 index is gone. That is a statement about
+  blending *within* a minute: a return that *spans* a source switch may still
+  carry the cross-source basis, which is exactly what `source_switches` and
+  `max_abs_ret_at_switch` measure.
 - The only place a cross-venue basis difference can enter the series is a
   minute whose source differs from the previous minute — monitored as
   `source_switches` and `max_abs_ret_at_switch` per symbol.
@@ -199,7 +203,8 @@ switching is frequent but not violent.
   produced weight-shift "phantom returns" up to 7.8 % in one minute (SOL,
   2022-11-09) — moves no venue printed — and rounded prices to present-day
   tick sizes. Replaced by the primary-failover definition above: verbatim
-  venue candles, no weighting, no rounding, phantom returns zero by
-  construction; `max_phantom_ret` monitoring retired, `source_switches` /
-  `max_abs_ret_at_switch` added.
+  venue candles, no weighting, no rounding, no synthetic averaged
+  price; `max_phantom_ret` monitoring retired, `source_switches` /
+  `max_abs_ret_at_switch` added — a switch can still carry the basis from one
+  minute to the next, and those two metrics are how it stays visible.
 - **v1 (2026-08-26).** Notional-weighted two-venue index (superseded).
