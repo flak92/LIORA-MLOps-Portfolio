@@ -102,7 +102,12 @@ def main() -> int:
             if (out_dir / f"{day}_trade.zip").exists():
                 skipped += 1
             else:
-                write_lean_zip(out_dir, sym, day, fetch_day(sym, day_ms))
+                rows = fetch_day(sym, day_ms)
+                if not rows and any(p.stat().st_size > 200 for p in out_dir.glob("*_trade.zip")):
+                    # the symbol already has traded days -> an empty response is a
+                    # transient failure, not a pre-listing day; do not persist a hole
+                    raise SystemExit(f"bybit {sym} {day}: empty response after listing — retry the download")
+                write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:
                     print(f"  bybit {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
