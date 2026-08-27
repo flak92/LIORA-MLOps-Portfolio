@@ -38,7 +38,7 @@ all:             ## full pipeline from a fresh clone: venv, data, canonical, ML,
 setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
-download:        ## fetch Binance + Bybit 1m klines (full UTC days, idempotent)
+download:        ## fetch Binance + Bybit 1m klines (UTC calendar-day files, idempotent)
 	$(PY) -m data_module.download_binance
 	$(PY) -m data_module.download_bybit
 

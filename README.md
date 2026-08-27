@@ -102,7 +102,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; full UTC days only    |
+| download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
 | export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | atomic write + read-back count    |

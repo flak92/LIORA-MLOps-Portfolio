@@ -83,9 +83,10 @@ re-download of a historical day (exchanges do not restate klines).
 UTC everywhere; timestamps are **bar OPEN** epoch milliseconds on a strict
 60 000 ms grid; the data window is `2021-01-01 00:00 UTC` (inclusive) to the
 most recent UTC midnight (exclusive); volume is **base-asset volume**, never
-quote turnover; the unit of download work is one full UTC day = one ZIP
-(idempotent backfill and top-up with the same command). Prices and volumes
-are stored exactly as the exchanges printed them — no rounding at any layer.
+quote turnover; the unit of download work is one UTC calendar day = one ZIP
+(idempotent backfill and top-up with the same command); a listing-day ZIP may
+begin at the first available minute. Prices and volumes are stored exactly as
+the exchanges printed them — no rounding at any layer.
 
 ## 4. Canonical source priority
 
