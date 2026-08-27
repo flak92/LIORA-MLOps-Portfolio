@@ -1,6 +1,6 @@
 # SOL — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per stage; `calibration.json` next to this file records the settings every number below was computed under.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `calibration.json` next to this file records the settings every number below was computed under.
 
 ## Files
 
@@ -8,9 +8,9 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | --- | --- | --- |
 | `canonical_1m.parquet` | the published canonical 1m series | 43,691 KB |
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,967 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,956 KB |
+| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,957 KB |
 | `oos_predictions.parquet` | out-of-fold class probabilities | 2,368 KB |
-| `hyperparameter_search.json` | the winning point of the search | 318 B |
+| `hyperparameter_search.json` | the winning point of the search | 320 B |
 | `model_evaluation.json` | classification metrics per fold | 2 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 | `calibration.json` | the settings all of the above were computed under | 4 KB |
@@ -24,7 +24,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Model
 
-Search: 50 Optuna trials, best objective 0.779188. Winner: depth 3, eta 0.0111, 550 rounds, subsample 0.871, colsample 0.668, min_child_weight 25, lambda 0.1750, alpha 0.3189.
+Search: 50 Optuna trials, best log-loss 0.779188. Winner: depth 3, eta 0.0111, 550 rounds, subsample 0.871, colsample 0.668, min_child_weight 25, lambda 0.1750, alpha 0.3189.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
@@ -55,10 +55,10 @@ Entry edge threshold **0.31**. Cost 0.06% per side; the hierarchy gate requires 
 | F4 | +0.041 | 11.4% | 50 | 42.0% | 1.72% | 0.9986 |
 | **F5 — final holdout** | +0.585 | 13.5% | 89 | 53.9% | 1.63% | 1.1024 |
 
-Final-holdout exits: adverse 0, lower 35, upper 17, vertical 37.
+Final-holdout exits: upper_barrier 17, lower_barrier 35, vertical 37, ambiguous 0.
 
 ## Reproducing this folder
 
     python -m ml_module.features --tickers SOL && python -m ml_module.labels --tickers SOL && python -m ml_module.hpo --tickers SOL && python -m ml_module.train --tickers SOL && python -m ml_module.strategy --tickers SOL && python -m ml_module.status --tickers SOL
 
-F5 never participates in feature definition, hyper-parameter selection, threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.

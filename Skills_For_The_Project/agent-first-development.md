@@ -14,8 +14,9 @@ How to work on this repository as an agent.
 - **Stable, unambiguous names are part of the economy.** Several names for one
   concept multiply the context an agent has to load and vectorise, and force it
   to decide whether `test`, `test_fold` and `F5` are one thing or three. One
-  concept, one name — one vector. Every new name goes into `glossary.md` in the
-  same commit that introduces it; a synonym never enters.
+  concept, one name — one vector, and the name must be self-explanatory before
+  it is project-specific. Every new name goes into `glossary.md` in the same
+  commit that introduces it; a synonym never enters.
 - Before writing, check whether an existing module already owns the
   responsibility; extend it rather than wrapping it.
 - Prove a change by running the affected stages, not by adding a framework

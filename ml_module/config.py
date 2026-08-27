@@ -63,8 +63,14 @@ EVENT_RESOLUTION_LOWER_BARRIER = -1
 EVENT_RESOLUTION_VERTICAL = 0
 EVENT_RESOLUTION_UPPER_BARRIER = 1
 EVENT_RESOLUTION_AMBIGUOUS = 9
-HORIZON_BARS = 16                   # vertical barrier: 16 x 15m = 240 minutes
-HORIZON_MS = HORIZON_BARS * TF_MS["15m"]
+EVENT_RESOLUTION_NAME = {                # the name of each code, used wherever
+    EVENT_RESOLUTION_UPPER_BARRIER: "upper_barrier",     # events are counted or
+    EVENT_RESOLUTION_LOWER_BARRIER: "lower_barrier",     # reported
+    EVENT_RESOLUTION_VERTICAL: "vertical",
+    EVENT_RESOLUTION_AMBIGUOUS: "ambiguous",
+}
+HORIZON_MINUTES = 240               # vertical barrier (240 min = 16 x 15m bars)
+HORIZON_MS = HORIZON_MINUTES * 60_000
 
 # ---- folds: WARMUP | TRAIN | PURGE | OOS validation | final holdout
 FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",
@@ -95,8 +101,8 @@ XGB_FIXED = {
 
 # ---- strategy (evaluation only)
 COST_PER_SIDE = 0.0006              # taker + slippage, per entry and per exit
-# tau: the entry edge threshold, i.e. how much directional probability edge a
-# signal must carry before it is traded
+# how much directional probability edge a signal must carry before it is traded
+# (written as the symbol τ in the equations)
 ENTRY_EDGE_THRESHOLD_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
 MIN_TRADES_PER_VALIDATION_FOLD = 30  # selection guardrail, not an acceptance gate
 BARS_PER_YEAR_15M = 96 * 365        # crypto trades 24/7

@@ -17,14 +17,16 @@ Timing, once and for all:
 
 The barrier examines minutes t_0 … t_0+239. Entry is the canonical 1m open at
 t_0; the barriers are P0 ± 2·ATR14 of the last closed canonical 1h bar. The first
-minute whose high touches the upper barrier gives y = +1, whose low touches the
-lower gives y = -1, neither gives y = 0 with the exit at the close of the last
-event minute. `event_end_ts` is the EXCLUSIVE end of the event, which makes the
-purge rule exactly `event_end_ts <= oos_start`.
+minute whose high touches `upper_barrier` gives y = +1, whose low touches
+`lower_barrier` gives y = -1, neither gives y = 0 with the exit at the close of
+the last event minute. `event_end_ts` is the EXCLUSIVE end of the event, which
+makes the purge rule exactly `event_end_ts <= oos_start`.
 
-A touch requires a trade: a zero-volume minute is a carried-forward price, not
-an observed transaction, so hits are gated on `volume > 0`. Both barriers
-inside one minute leave the order unknowable from OHLC, so the row is
+A touch requires a trade: `volume = 0` means no observed trade in that minute,
+so hits are gated on `volume > 0`. Whether the minute was a provider candle
+that printed nothing or a synthesized continuity row is a provenance question,
+answered in the canonical table, not here. Both barriers inside one minute
+leave the order unknowable from OHLC, so the row is
 `label_valid = false` — never relabelled 0. That flag answers exactly one
 question, "can this event be classified?", and it is knowable only after the
 event resolves.
@@ -35,13 +37,15 @@ event, and downstream they combine into one population:
 
     sample_valid = entry_observable & label_valid
 
-An unobservable entry is not merely untradable — its P0 is a carried-forward
-price, so the barriers around it are anchored to a quote that never traded.
+An unobservable entry is not merely untradable — its `entry_price` is the open
+of a minute that printed no trade, so the barriers around it are anchored to a
+quote nothing traded at.
 Such a row is neither an executable decision nor a sound measurement, so it
 carries no weight and trains nothing. The strategy still gates on
 `entry_observable` alone and never on `label_valid`.
-Average uniqueness [Lopez de Prado, ch. 4] is computed over the *valid* events
-only, so a masked row cannot dilute the weights of the rows actually trained on.
+Average uniqueness [Lopez de Prado, ch. 4] is computed over the supervised
+events only, so an excluded row cannot dilute the weights of the rows actually
+trained on.
 
 Y also carries the prices the strategy needs (entry, both barriers, and the
 reference price of the resolving minute), so the backtest replays exactly the
@@ -59,14 +63,15 @@ from . import config, dataset, indicators
 
 CHUNK = 16384
 MINUTE_MS = 60_000
-HORIZON_MINUTES = config.HORIZON_MS // MINUTE_MS   # 240
+HORIZON_MINUTES = config.HORIZON_MINUTES
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
     "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
     "label_valid": "BOOLEAN", "weight": "DOUBLE",
-    "event_resolution": "TINYINT", "entry_price": "DOUBLE", "upper": "DOUBLE",
-    "lower": "DOUBLE", "exit_reference_price": "DOUBLE",
+    "event_resolution": "TINYINT", "entry_price": "DOUBLE",
+    "upper_barrier": "DOUBLE", "lower_barrier": "DOUBLE",
+    "exit_reference_price": "DOUBLE",
 }
 
 
@@ -87,13 +92,13 @@ def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.n
 def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.ndarray):
     """Walk the 1m path in chunks.
 
-    Returns (y, t_res, event_resolution, entry_price, upper, lower,
-    exit_reference_price).
+    Returns (y, t_res, event_resolution, entry_price, upper_barrier,
+    lower_barrier, exit_reference_price).
     """
     idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
     entry_price = m1["open"][idx]
-    upper = entry_price + config.K_BARRIER * sigma
-    lower = entry_price - config.K_BARRIER * sigma
+    upper_barrier = entry_price + config.K_BARRIER * sigma
+    lower_barrier = entry_price - config.K_BARRIER * sigma
     high, low, vol, opn, close = m1["high"], m1["low"], m1["volume"], m1["open"], m1["close"]
 
     n = idx.size
@@ -104,9 +109,9 @@ def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.nd
     for a in range(0, n, CHUNK):
         b = min(a + CHUNK, n)
         win = idx[a:b, None] + offsets[None, :]
-        traded = vol[win] > 0                       # a carried-forward price is not a trade
-        up_hit = traded & (high[win] >= upper[a:b, None])
-        dn_hit = traded & (low[win] <= lower[a:b, None])
+        traded = vol[win] > 0                       # volume = 0 means no observed trade
+        up_hit = traded & (high[win] >= upper_barrier[a:b, None])
+        dn_hit = traded & (low[win] <= lower_barrier[a:b, None])
         t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), HORIZON_MINUTES)
         t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), HORIZON_MINUTES)
         amb = (t_up == t_dn) & (t_up < HORIZON_MINUTES)
@@ -123,7 +128,7 @@ def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.nd
         opn[idx + np.minimum(t_res, HORIZON_MINUTES - 1)],
         close[idx + HORIZON_MINUTES - 1],
     )
-    return y, t_res, event_resolution, entry_price, upper, lower, exit_reference_price
+    return y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier, exit_reference_price
 
 
 def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
@@ -153,8 +158,9 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
             int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
             int(cols["label_valid"][i]),
             repr(float(cols["weight"][i])), int(cols["event_resolution"][i]),
-            repr(float(cols["entry_price"][i])), repr(float(cols["upper"][i])),
-            repr(float(cols["lower"][i])), repr(float(cols["exit_reference_price"][i])),
+            repr(float(cols["entry_price"][i])), repr(float(cols["upper_barrier"][i])),
+            repr(float(cols["lower_barrier"][i])),
+            repr(float(cols["exit_reference_price"][i])),
         ] for i in range(cols["decision_ts"].size)),
         order_by="decision_ts",
     )
@@ -187,7 +193,7 @@ def main() -> int:
         assert np.isfinite(sigma).all() and (sigma > 0).all()
 
         m1 = load_research_1m(con, sym)
-        (y, t_res, event_resolution, entry_price, upper, lower,
+        (y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier,
          exit_reference_price) = triple_barrier(m1, entry_ts, sigma)
         event_end_ts = entry_ts + np.minimum(t_res + 1, HORIZON_MINUTES) * MINUTE_MS   # exclusive
         assert np.all(event_end_ts > entry_ts)
@@ -206,7 +212,7 @@ def main() -> int:
             "event_end_ts": event_end_ts, "entry_observable": entry_observable,
             "label_valid": label_valid, "weight": weight,
             "event_resolution": event_resolution, "entry_price": entry_price,
-            "upper": upper, "lower": lower,
+            "upper_barrier": upper_barrier, "lower_barrier": lower_barrier,
             "exit_reference_price": exit_reference_price,
         })
         print(f"{t} {out.name}: {decision_ts.size} rows  classes(-1/0/+1)="

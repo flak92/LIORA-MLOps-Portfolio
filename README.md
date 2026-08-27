@@ -123,8 +123,8 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
   same row count for every asset, continuous, no NULLs, values exactly as the
   winning source printed them (no rounding at any layer).
-- **Semantics**: `1m_<T>_data.parquet` is a **canonical primary-failover
-  series**, not the raw feed of a single source — use it for ML and indicators;
+- **Semantics**: `research_artifacts/<T>/canonical_1m.parquet` is a **canonical
+  primary-failover series**, not the raw feed of a single source — use it for ML and indicators;
   for Lean backtests use the per-source raw ZIP trees. Step-by-step build
   description: [Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
 
@@ -153,8 +153,8 @@ Both `X` and `Y` read the canonical series — `X` before the decision, `Y` afte
 it — so features and target describe the same canonical research object. The
 decision is taken at a 15m close and filled one minute later. Stages:
 `make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
-(or `make ml-all`) — every per-asset stage runs `JOBS = min(cores, available
-GiB)` assets in parallel, one process each, with the thread caps pinned at one;
+(or `make ml-all`) — every per-asset stage runs `JOBS = max(1, min(cores,
+available GiB))` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also

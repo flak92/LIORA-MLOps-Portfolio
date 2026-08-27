@@ -109,7 +109,7 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
         "weight": yy["weight"].astype(np.float64),
         "event_resolution": yy["event_resolution"].astype(np.int8),
         "entry_price": yy["entry_price"].astype(np.float64),
-        "upper": yy["upper"].astype(np.float64),
-        "lower": yy["lower"].astype(np.float64),
+        "upper_barrier": yy["upper_barrier"].astype(np.float64),
+        "lower_barrier": yy["lower_barrier"].astype(np.float64),
         "exit_reference_price": yy["exit_reference_price"].astype(np.float64),
     }

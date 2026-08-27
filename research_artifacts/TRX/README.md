@@ -1,6 +1,6 @@
 # TRX — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per stage; `calibration.json` next to this file records the settings every number below was computed under.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `calibration.json` next to this file records the settings every number below was computed under.
 
 ## Files
 
@@ -10,7 +10,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,635 KB |
 | `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,875 KB |
 | `oos_predictions.parquet` | out-of-fold class probabilities | 2,330 KB |
-| `hyperparameter_search.json` | the winning point of the search | 318 B |
+| `hyperparameter_search.json` | the winning point of the search | 320 B |
 | `model_evaluation.json` | classification metrics per fold | 2 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 | `calibration.json` | the settings all of the above were computed under | 4 KB |
@@ -24,7 +24,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Model
 
-Search: 50 Optuna trials, best objective 0.801648. Winner: depth 2, eta 0.0206, 200 rounds, subsample 0.529, colsample 0.712, min_child_weight 20, lambda 0.3941, alpha 0.3585.
+Search: 50 Optuna trials, best log-loss 0.801648. Winner: depth 2, eta 0.0206, 200 rounds, subsample 0.529, colsample 0.712, min_child_weight 20, lambda 0.3941, alpha 0.3585.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
@@ -55,10 +55,10 @@ Entry edge threshold **0.21**. Cost 0.06% per side; the hierarchy gate requires 
 | F4 | +1.412 | 15.1% | 119 | 53.8% | 3.59% | 1.2384 |
 | **F5 — final holdout** | -1.546 | 24.0% | 212 | 44.8% | 3.95% | 0.7703 |
 
-Final-holdout exits: adverse 0, lower 53, upper 62, vertical 97.
+Final-holdout exits: upper_barrier 62, lower_barrier 53, vertical 97, ambiguous 0.
 
 ## Reproducing this folder
 
     python -m ml_module.features --tickers TRX && python -m ml_module.labels --tickers TRX && python -m ml_module.hpo --tickers TRX && python -m ml_module.train --tickers TRX && python -m ml_module.strategy --tickers TRX && python -m ml_module.status --tickers TRX
 
-F5 never participates in feature definition, hyper-parameter selection, threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.

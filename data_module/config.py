@@ -58,7 +58,7 @@ def raw_symbol_dir(ticker: str, venue: str = LEAN_MARKET_FOLDER) -> Path:
 
 
 def artifact_dir(ticker: str) -> Path:
-    """One directory per ticker; inside it one file per stage, named for it."""
+    """One directory per ticker; inside it one file per artifact, named for it."""
     return RESEARCH_ARTIFACTS_DIR / ticker
 
 

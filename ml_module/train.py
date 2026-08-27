@@ -1,7 +1,7 @@
-"""Frozen-parameter training: out-of-fold predictions and the final OOS report.
+"""Frozen-parameter training: out-of-fold predictions and the final-holdout report.
 
 With the parameters chosen by HPO, refit the expanding folds and store their
-out-of-fold probabilities (predictions_<T>.parquet) — the only inputs the
+out-of-fold probabilities (oos_predictions.parquet) — the only inputs the
 strategy layer may use to choose its threshold — then fit on everything before
 the final fold and evaluate that fold. The numbers are persisted; the model is
 not, because nothing in this repo performs inference yet.

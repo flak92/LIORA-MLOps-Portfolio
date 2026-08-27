@@ -16,7 +16,8 @@ window and seed; the git commit records which code produced a result.
 5. Overlapping labels carry **average-uniqueness** weights.
 6. A training event may **not cross the start of its OOS block**.
 7. HPO and the entry edge threshold `τ` see **F2–F4 only**.
-8. **F5 changes no decision** — not a feature, not a hyper-parameter, not `τ`, not a rule.
+8. **F5 changes no decision** — not a feature, not a hyper-parameter, not the
+   entry edge threshold, not a rule.
 9. PnL is **linear fixed-quantity research PnL on canonical prices**, with an
    explicit cost and without funding.
 
@@ -61,7 +62,7 @@ X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 
 Features and target therefore describe the same canonical research object by
 construction —
-the split that made `X` observation and `Y` execution is gone, and with it the
+the division that made `X` observation and `Y` execution is gone, and with it the
 claim that this repository simulates trading on a named exchange. It does not:
 it simulates a strategy on a canonical market model, with the costs stated.
 `DATA_README` §1 and §4 carry the construction rule and why verbatim candles
@@ -117,8 +118,8 @@ is stated rather than engineered away.
 
 Five families on 15m / 1h / 4h — **15 columns**, identical for every asset,
 **no per-asset selection** (a deliberate overfitting control). Cross-level
-trend agreement is **not** a feature: the sum of the three trend signs +
-the three trend signs is a deterministic function of columns the model already
+trend agreement is **not** a feature: the count of levels whose trend sign
+matches a given side is a deterministic function of columns the model already
 has, so it can only add representation, never information; the 2-of-3
 agreement lives where it is actually used, in the strategy gate. Five families
 per level exceeds the four-per-level multi-timeframe guideline by one:
@@ -132,18 +133,22 @@ rolling statistics use `sliding_window_view`; no NaN survives the warm-up
 ## 5. Labels
 
 Triple barrier [4] on every 15m boundary after the warm-up. Entry
-`P0 = canonical 1m open(t_0)`; horizontal barriers `P0 ± 2.0 × ATR14` of the
-last closed **canonical** 1h bar; vertical barrier 240 minutes. Resolution walks
-the canonical 1m path: the first minute whose high touches the upper barrier
-gives `y = +1`, whose low touches the lower gives `y = −1`, neither gives
+`P₀ = entry_price = canonical 1m open(t_0)`; horizontal barriers
+`P₀ ± 2.0 × ATR14` of the last closed **canonical** 1h bar; vertical barrier
+`HORIZON_MINUTES` = 240 minutes (16 × 15m bars). Resolution walks
+the canonical 1m path: the first minute whose high touches `upper_barrier`
+gives `y = +1`, whose low touches `lower_barrier` gives `y = −1`, neither gives
 `y = 0` with the exit at the close of the last event minute.
 
-**A touch requires a trade.** A zero-volume minute is a carried-forward price,
-not an observed transaction, so both hit conditions are gated on `volume > 0`:
+**A touch requires a trade.** `volume = 0` means no observed trade in that
+minute, so both hit conditions are gated on `volume > 0`. Whether such a minute
+is a provider candle that printed nothing or a synthesized continuity row is a
+provenance question, answered in the canonical table and in `DATA_README.md`,
+not here:
 
 ```
-upper_hit = (volume > 0) & (high >= upper)
-lower_hit = (volume > 0) & (low  <= lower)
+upper_hit = (volume > 0) & (high >= upper_barrier)
+lower_hit = (volume > 0) & (low  <= lower_barrier)
 ```
 
 If the vertical-barrier minute contains no trade, its canonical close is a
@@ -169,9 +174,8 @@ may refuse it. Whether the event will resolve ambiguously is not, so using
 later turns out ambiguous **is a trade**, settled at the barrier adverse to the
 position.
 
-Supervision uses both. An unobservable entry gives `P0 = open` of a minute that
-printed no trade — a carried-forward price — so its barriers are anchored to a
-quote that never existed: not an executable decision and not a sound
+Supervision uses both. An unobservable entry gives `P₀ = open` of a minute that
+printed no trade, so its barriers are anchored to a quote nothing traded at: not an executable decision and not a sound
 measurement. `sample_valid` therefore governs the uniqueness weights, the
 training rows, the HPO objective and the classification metrics, while the
 strategy gates on `entry_observable` alone.
@@ -184,32 +188,33 @@ additional class re-weighting. Rows whose vertical barrier would cross the
 research end are dropped.
 
 `label_events.parquet` also carries the prices the backtest needs —
-`entry_price`, `upper`, `lower`, `exit_reference_price` — so the strategy replays exactly the event that produced
-the label instead of recomputing it.
+`entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` — so the
+strategy replays exactly the event that produced the label instead of
+recomputing it.
 
-## 6. Split — WARMUP | TRAIN | PURGE | OOS | final OOS
+## 6. Folds — WARMUP | TRAIN | PURGE | OOS | final holdout
 
 ```
 2021-01-01     warmup_end     2022-01-01     2023-01-01     2024-01-01     2025-01-01          2026-08-26
 |-- WARMUP --|----- F1 -----|----- F2 -----|----- F3 -----|----- F4 -----|-------- F5 ---------|
-                                                                            (final OOS fold)
-Split 2: TRAIN = F1            | PURGE | OOS = F2
-Split 3: TRAIN = F1–F2         | PURGE | OOS = F3
-Split 4: TRAIN = F1–F3         | PURGE | OOS = F4
+                                                                         (final holdout fold)
+Fold 2:  TRAIN = F1            | PURGE | OOS = F2
+Fold 3:  TRAIN = F1–F2         | PURGE | OOS = F3
+Fold 4:  TRAIN = F1–F3         | PURGE | OOS = F4
 Holdout: TRAIN = F1–F4         | PURGE | F5   (frozen params, frozen threshold)
 ```
 
 **Purge** keeps a training row only if `event_end_ts <= oos_start`. Because
 `event_end_ts` is exclusive, that inequality *is* "no overlap" — no artificial
 gap is added, since a gap wider than the event horizon removes information
-without removing leakage. A classical post-test embargo [4, ch. 7] is not
-required in forward chaining: no training observation lies after the OOS
-block. Each segment builder asserts its own contract.
+without removing leakage. A classical embargo after the evaluated block
+[4, ch. 7] is not required in forward chaining: no training observation lies
+after the OOS block. Each segment builder asserts its own contract.
 
-**F5 is the historical final OOS fold.** The contract is a sentence, not a
+**F5 is the historical final holdout fold.** The contract is a sentence, not a
 guard, and it is about selection rather than counting: *F5 never participates
-in feature definition, hyper-parameter selection, `τ` selection or
-strategy-rule selection.* F2–F4 carry every research decision; F5 is evaluated
+in feature definition, hyper-parameter selection, entry-edge-threshold
+selection or strategy-rule selection.* F2–F4 carry every research decision; F5 is evaluated
 against them. Recomputing F5 deterministically — after a refactor, on another
 machine, in a later run — changes nothing, because nothing was chosen by
 looking at it. What the contract forbids is the loop: read F5, change the
@@ -219,11 +224,11 @@ model, call the same fold out-of-sample again.
 
 Optuna TPE (`seed = 42`), 50 sequential trials, in-memory study. Objective =
 mean **uniqueness-weighted** multiclass log-loss over the three OOS validation
-splits F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight`
+folds F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight`
 1–50, `subsample` 0.5–1, `colsample_bytree` 0.5–1, `lambda` log 0.1–10,
 `alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`, no
-early stopping. Label parameters, costs and the `τ` grid are **never** in the
+early stopping. Label parameters, costs and the entry-edge-threshold grid are **never** in the
 space. `hyperparameter_search.json` keeps the winner and the trial count; the trajectory of
 50 trials is a search diary, not a result.
 
@@ -231,7 +236,7 @@ space. `hyperparameter_search.json` keeps the winner and the trial count; the tr
 
 With `y = 0` dominant, a uniform `ln 3` baseline flatters any model that
 merely learns the class frequencies. The baseline is therefore the
-**uniqueness-weighted class prior of the split's own training rows**,
+**uniqueness-weighted class prior of the fold's own training rows**,
 `p_c = Σ wᵢ·1(yᵢ = c) / Σ wᵢ`, and the reported numbers are
 
 ```
@@ -247,7 +252,7 @@ predictions cover the full fold.
 ## 9. Strategy
 
 ```
-edge = p_long − p_short;  side = sign(edge)
+edge = directional_probability_edge = p_long − p_short;  side = sign(edge)
 n_agree = #{level ∈ {15m, 1h, 4h} : sign(ema20_minus_ema50_over_atr14_<level>) = side}
 enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
         ∧ side = sign(ema20_minus_ema50_over_atr14_4h) ∧ n_agree ≥ 2
@@ -275,11 +280,11 @@ returns 0 %. Compounding per-bar returns instead — `Π(1 + s·r_t)` — return
 
 **Fills acknowledge that 1m OHLC hides the tick path.** A take-profit fills at
 the barrier. A stop fills at the *worse* of the barrier and the open of the
-minute that touched it (`long: min(lower, open)`, `short: max(upper, open)`),
+minute that touched it (`long: min(lower_barrier, open)`, `short: max(upper_barrier, open)`),
 which is also how the adverse side of an ambiguous minute is settled. Without
 that rule a bar-based backtest silently assumes every gap fills at the barrier.
 
-**`τ` is chosen on F2–F4 only**, by an explicit rule:
+**The entry edge threshold `τ` is chosen on F2–F4 only**, by an explicit rule:
 
 ```
 τ* = argmax_τ  mean( Sharpe_F2(τ), Sharpe_F3(τ), Sharpe_F4(τ) )
@@ -288,9 +293,10 @@ that rule a bar-based backtest silently assumes every gap fills at the barrier.
 ```
 
 The trade floor is a **selection guardrail, not an acceptance gate**: without
-it a `τ` producing three or five trades with an accidentally high Sharpe wins
-over a strategy that actually trades. If no `τ` on the 0.00–0.60 grid meets
-it, the run falls back to `τ = 0` and reports `tau_constraint_met = false`.
+it a threshold producing three or five trades with an accidentally high Sharpe
+wins over a strategy that actually trades. If no threshold on the 0.00–0.60
+grid meets it, the run falls back to `τ = 0` and reports
+`entry_edge_threshold_constraint_met = false`.
 
 **Sharpe and drawdown come from one equity process sampled two ways.** The
 backtest writes a continuous 1-minute equity path starting at `E₀ = 1`; the
@@ -304,8 +310,9 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `research_artifacts/<TICKER>/` — one file per stage, named for the
-stage: `canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
+Per asset in `research_artifacts/<TICKER>/` — **one file per distinct artifact
+responsibility, no duplicate representations of the same result**, each named
+for what it holds: `canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
 `hyperparameter_search.json`, `oos_predictions.parquet`,
 `model_evaluation.json`, `strategy_evaluation.json`. The data files are
 gitignored and reconstructable; two text files are not, because they are what
@@ -350,7 +357,7 @@ canonical-series gate; the documented order runs `make ml-all` after
 Every stage takes `--tickers`, so the chain parallelises the only way an
 experiment with frozen thread caps may — **externally**, one asset per
 process. `make ml-features / ml-labels / ml-hpo / ml-train / ml-strategy` fan
-out `JOBS` assets at a time, where `JOBS = min(cores, available GiB)` is
+out `JOBS` assets at a time, where `JOBS = max(1, min(cores, available GiB))` is
 measured at each invocation rather than written down (the machine this runs on
 changes size); override with `make ml-hpo JOBS=2`. `ml-bars` stays sequential
 because it is the only writer to the database.

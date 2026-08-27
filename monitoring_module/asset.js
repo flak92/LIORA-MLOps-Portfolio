@@ -114,9 +114,9 @@ function modelFrame(a, s) {
 function strategyFrame(a, s) {
   const f = frameEl("STRATEGY — model picks the side, the hierarchy gates it");
   f.body.appendChild(kvBox([
-    ["entry edge threshold (tau)", a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
+    ["entry edge threshold (\u03c4)", a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
     ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
-    ["cost per side", (100 * a.strategy.costs_per_side).toFixed(2)
+    ["cost per side", (100 * a.strategy.cost_per_side).toFixed(2)
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
   const rows = validationFolds(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
@@ -126,9 +126,9 @@ function strategyFrame(a, s) {
     rows));
   const c = a.strategy.equity_curve;
   f.body.appendChild(sparkline(c.equity, 1.0,
-    "equity on the final OOS fold; dashed line = 1.0 (flat)"));
-  f.body.appendChild(foot("final OOS equity: start 1.000 · end "
-    + c.equity_final.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
+    "equity on the final holdout fold; dashed line = 1.0 (flat)"));
+  f.body.appendChild(foot("final holdout equity: start 1.000 · end "
+    + c.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
     + "from the 15m equity series and the drawdown measured on the 1m path, "
     + "both from the starting capital; the curve above is weekly-sampled."));
   return f.frame;
@@ -159,10 +159,10 @@ function renderAsset(ticker) {
     .forEach((el) => host.appendChild(el));
 }
 
-function pnlRow(label, m, isTest) {
+function pnlRow(label, m, isFinalHoldout) {
   const name = document.createElement("span");
   name.textContent = label;
-  if (isTest) name.className = "diag";
+  if (isFinalHoldout) name.className = "diag";
   return [
     [name],
     num(m.sharpe, 2),

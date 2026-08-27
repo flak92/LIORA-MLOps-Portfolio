@@ -54,7 +54,7 @@
     "unobservable": 0
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.28,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -147,14 +147,14 @@
       0.8422,
       0.8696
      ],
-     "equity_final": 0.8696
+     "final_equity": 0.8696
     },
     "final_holdout": {
      "avg_trade_ret": -0.000719,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 43,
-      "upper": 54,
+      "ambiguous": 0,
+      "lower_barrier": 43,
+      "upper_barrier": 54,
       "vertical": 89
      },
      "exposure": 0.0348,
@@ -169,9 +169,9 @@
      "fold_2": {
       "avg_trade_ret": 0.002441,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 21,
-       "upper": 10,
+       "ambiguous": 0,
+       "lower_barrier": 21,
+       "upper_barrier": 10,
        "vertical": 27
       },
       "exposure": 0.0178,
@@ -184,9 +184,9 @@
      "fold_3": {
       "avg_trade_ret": -0.001212,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 25,
-       "upper": 21,
+       "ambiguous": 0,
+       "lower_barrier": 25,
+       "upper_barrier": 21,
        "vertical": 41
       },
       "exposure": 0.0253,
@@ -199,9 +199,9 @@
      "fold_4": {
       "avg_trade_ret": -0.000608,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 24,
-       "upper": 28,
+       "ambiguous": 0,
+       "lower_barrier": 24,
+       "upper_barrier": 28,
        "vertical": 52
       },
       "exposure": 0.0319,
@@ -292,7 +292,7 @@
     "unobservable": 4
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.25,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -385,14 +385,14 @@
       0.787,
       0.8365
      ],
-     "equity_final": 0.8365
+     "final_equity": 0.8365
     },
     "final_holdout": {
      "avg_trade_ret": -0.000828,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 46,
-      "upper": 52,
+      "ambiguous": 0,
+      "lower_barrier": 46,
+      "upper_barrier": 52,
       "vertical": 96
      },
      "exposure": 0.0376,
@@ -407,9 +407,9 @@
      "fold_2": {
       "avg_trade_ret": 0.000646,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 52,
-       "upper": 37,
+       "ambiguous": 0,
+       "lower_barrier": 52,
+       "upper_barrier": 37,
        "vertical": 69
       },
       "exposure": 0.0486,
@@ -422,9 +422,9 @@
      "fold_3": {
       "avg_trade_ret": -0.001528,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 43,
-       "upper": 36,
+       "ambiguous": 0,
+       "lower_barrier": 43,
+       "upper_barrier": 36,
        "vertical": 82
       },
       "exposure": 0.052,
@@ -437,9 +437,9 @@
      "fold_4": {
       "avg_trade_ret": 0.001097,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 26,
-       "upper": 31,
+       "ambiguous": 0,
+       "lower_barrier": 26,
+       "upper_barrier": 31,
        "vertical": 53
       },
       "exposure": 0.0345,
@@ -530,7 +530,7 @@
     "unobservable": 5
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.34,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -623,14 +623,14 @@
       0.8594,
       0.8574
      ],
-     "equity_final": 0.8574
+     "final_equity": 0.8574
     },
     "final_holdout": {
      "avg_trade_ret": -0.00286,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 12,
-      "upper": 17,
+      "ambiguous": 0,
+      "lower_barrier": 12,
+      "upper_barrier": 17,
       "vertical": 23
      },
      "exposure": 0.0097,
@@ -645,9 +645,9 @@
      "fold_2": {
       "avg_trade_ret": 0.001785,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 26,
-       "upper": 14,
+       "ambiguous": 0,
+       "lower_barrier": 26,
+       "upper_barrier": 14,
        "vertical": 37
       },
       "exposure": 0.0241,
@@ -660,9 +660,9 @@
      "fold_3": {
       "avg_trade_ret": -1.2e-05,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 21,
-       "upper": 12,
+       "ambiguous": 0,
+       "lower_barrier": 21,
+       "upper_barrier": 12,
        "vertical": 21
       },
       "exposure": 0.0142,
@@ -675,9 +675,9 @@
      "fold_4": {
       "avg_trade_ret": 0.001194,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 12,
-       "upper": 14,
+       "ambiguous": 0,
+       "lower_barrier": 12,
+       "upper_barrier": 14,
        "vertical": 13
       },
       "exposure": 0.0102,
@@ -768,7 +768,7 @@
     "unobservable": 4
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.0,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -861,14 +861,14 @@
       0.9228,
       1.0234
      ],
-     "equity_final": 1.0234
+     "final_equity": 1.0234
     },
     "final_holdout": {
      "avg_trade_ret": 0.000278,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 97,
-      "upper": 103,
+      "ambiguous": 0,
+      "lower_barrier": 97,
+      "upper_barrier": 103,
       "vertical": 147
      },
      "exposure": 0.0635,
@@ -883,9 +883,9 @@
      "fold_2": {
       "avg_trade_ret": -0.000802,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 75,
-       "upper": 45,
+       "ambiguous": 0,
+       "lower_barrier": 75,
+       "upper_barrier": 45,
        "vertical": 118
       },
       "exposure": 0.0788,
@@ -898,9 +898,9 @@
      "fold_3": {
       "avg_trade_ret": -0.001066,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 87,
-       "upper": 79,
+       "ambiguous": 0,
+       "lower_barrier": 87,
+       "upper_barrier": 79,
        "vertical": 95
       },
       "exposure": 0.0669,
@@ -913,9 +913,9 @@
      "fold_4": {
       "avg_trade_ret": 0.000159,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 67,
-       "upper": 74,
+       "ambiguous": 0,
+       "lower_barrier": 67,
+       "upper_barrier": 74,
        "vertical": 87
       },
       "exposure": 0.0634,
@@ -1006,7 +1006,7 @@
     "unobservable": 4
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.31,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -1099,14 +1099,14 @@
       1.2159,
       1.1024
      ],
-     "equity_final": 1.1024
+     "final_equity": 1.1024
     },
     "final_holdout": {
      "avg_trade_ret": 0.001231,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 35,
-      "upper": 17,
+      "ambiguous": 0,
+      "lower_barrier": 35,
+      "upper_barrier": 17,
       "vertical": 37
      },
      "exposure": 0.0163,
@@ -1121,9 +1121,9 @@
      "fold_2": {
       "avg_trade_ret": -0.002535,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 19,
-       "upper": 12,
+       "ambiguous": 0,
+       "lower_barrier": 19,
+       "upper_barrier": 12,
        "vertical": 28
       },
       "exposure": 0.0196,
@@ -1136,9 +1136,9 @@
      "fold_3": {
       "avg_trade_ret": 0.001231,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 23,
-       "upper": 19,
+       "ambiguous": 0,
+       "lower_barrier": 23,
+       "upper_barrier": 19,
        "vertical": 34
       },
       "exposure": 0.0227,
@@ -1151,9 +1151,9 @@
      "fold_4": {
       "avg_trade_ret": 8.3e-05,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 10,
-       "upper": 8,
+       "ambiguous": 0,
+       "lower_barrier": 10,
+       "upper_barrier": 8,
        "vertical": 32
       },
       "exposure": 0.0172,
@@ -1244,7 +1244,7 @@
     "unobservable": 4
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.21,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -1337,14 +1337,14 @@
       0.7618,
       0.7703
      ],
-     "equity_final": 0.7703
+     "final_equity": 0.7703
     },
     "final_holdout": {
      "avg_trade_ret": -0.001191,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 53,
-      "upper": 62,
+      "ambiguous": 0,
+      "lower_barrier": 53,
+      "upper_barrier": 62,
       "vertical": 97
      },
      "exposure": 0.0395,
@@ -1359,9 +1359,9 @@
      "fold_2": {
       "avg_trade_ret": -0.002337,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 38,
-       "upper": 27,
+       "ambiguous": 0,
+       "lower_barrier": 38,
+       "upper_barrier": 27,
        "vertical": 72
       },
       "exposure": 0.0451,
@@ -1374,9 +1374,9 @@
      "fold_3": {
       "avg_trade_ret": -0.000382,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 31,
-       "upper": 29,
+       "ambiguous": 0,
+       "lower_barrier": 31,
+       "upper_barrier": 29,
        "vertical": 35
       },
       "exposure": 0.0245,
@@ -1389,9 +1389,9 @@
      "fold_4": {
       "avg_trade_ret": 0.001915,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 35,
-       "upper": 35,
+       "ambiguous": 0,
+       "lower_barrier": 35,
+       "upper_barrier": 35,
        "vertical": 49
       },
       "exposure": 0.0359,
@@ -1482,7 +1482,7 @@
     "unobservable": 6
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.31,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -1575,14 +1575,14 @@
       1.1832,
       1.2242
      ],
-     "equity_final": 1.2242
+     "final_equity": 1.2242
     },
     "final_holdout": {
      "avg_trade_ret": 0.001947,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 33,
-      "upper": 21,
+      "ambiguous": 0,
+      "lower_barrier": 33,
+      "upper_barrier": 21,
       "vertical": 59
      },
      "exposure": 0.0221,
@@ -1597,9 +1597,9 @@
      "fold_2": {
       "avg_trade_ret": 0.003018,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 46,
-       "upper": 40,
+       "ambiguous": 0,
+       "lower_barrier": 46,
+       "upper_barrier": 40,
        "vertical": 83
       },
       "exposure": 0.0537,
@@ -1612,9 +1612,9 @@
      "fold_3": {
       "avg_trade_ret": -0.000736,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 47,
-       "upper": 42,
+       "ambiguous": 0,
+       "lower_barrier": 47,
+       "upper_barrier": 42,
        "vertical": 80
       },
       "exposure": 0.0518,
@@ -1627,9 +1627,9 @@
      "fold_4": {
       "avg_trade_ret": 0.003686,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 24,
-       "upper": 22,
+       "ambiguous": 0,
+       "lower_barrier": 24,
+       "upper_barrier": 22,
        "vertical": 46
       },
       "exposure": 0.0313,
@@ -1720,7 +1720,7 @@
     "unobservable": 109
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.0,
     "entry_edge_threshold_constraint_met": false,
     "equity_curve": {
@@ -1813,14 +1813,14 @@
       0.8793,
       0.8459
      ],
-     "equity_final": 0.8459
+     "final_equity": 0.8459
     },
     "final_holdout": {
      "avg_trade_ret": -0.001024,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 31,
-      "upper": 29,
+      "ambiguous": 0,
+      "lower_barrier": 31,
+      "upper_barrier": 29,
       "vertical": 60
      },
      "exposure": 0.0228,
@@ -1835,9 +1835,9 @@
      "fold_2": {
       "avg_trade_ret": 0.001764,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 6,
-       "upper": 0,
+       "ambiguous": 0,
+       "lower_barrier": 6,
+       "upper_barrier": 0,
        "vertical": 12
       },
       "exposure": 0.0072,
@@ -1850,9 +1850,9 @@
      "fold_3": {
       "avg_trade_ret": -0.004807,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 24,
-       "upper": 22,
+       "ambiguous": 0,
+       "lower_barrier": 24,
+       "upper_barrier": 22,
        "vertical": 40
       },
       "exposure": 0.0256,
@@ -1865,9 +1865,9 @@
      "fold_4": {
       "avg_trade_ret": -0.003032,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 15,
-       "upper": 16,
+       "ambiguous": 0,
+       "lower_barrier": 15,
+       "upper_barrier": 16,
        "vertical": 21
       },
       "exposure": 0.0159,
@@ -1958,7 +1958,7 @@
     "unobservable": 0
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.23,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -2051,14 +2051,14 @@
       0.7671,
       0.7425
      ],
-     "equity_final": 0.7425
+     "final_equity": 0.7425
     },
     "final_holdout": {
      "avg_trade_ret": -0.001567,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 41,
-      "upper": 48,
+      "ambiguous": 0,
+      "lower_barrier": 41,
+      "upper_barrier": 48,
       "vertical": 89
      },
      "exposure": 0.0353,
@@ -2073,9 +2073,9 @@
      "fold_2": {
       "avg_trade_ret": -0.005437,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 8,
-       "upper": 5,
+       "ambiguous": 0,
+       "lower_barrier": 8,
+       "upper_barrier": 5,
        "vertical": 17
       },
       "exposure": 0.011,
@@ -2088,9 +2088,9 @@
      "fold_3": {
       "avg_trade_ret": -0.000114,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 25,
-       "upper": 19,
+       "ambiguous": 0,
+       "lower_barrier": 25,
+       "upper_barrier": 19,
        "vertical": 55
       },
       "exposure": 0.0338,
@@ -2103,9 +2103,9 @@
      "fold_4": {
       "avg_trade_ret": -0.001146,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 23,
-       "upper": 25,
+       "ambiguous": 0,
+       "lower_barrier": 23,
+       "upper_barrier": 25,
        "vertical": 40
       },
       "exposure": 0.0277,
@@ -2196,7 +2196,7 @@
     "unobservable": 4
    },
    "strategy": {
-    "costs_per_side": 0.0006,
+    "cost_per_side": 0.0006,
     "entry_edge_threshold": 0.24,
     "entry_edge_threshold_constraint_met": true,
     "equity_curve": {
@@ -2289,14 +2289,14 @@
       0.9944,
       0.907
      ],
-     "equity_final": 0.907
+     "final_equity": 0.907
     },
     "final_holdout": {
      "avg_trade_ret": -0.001256,
      "exit_counts": {
-      "adverse": 0,
-      "lower": 15,
-      "upper": 20,
+      "ambiguous": 0,
+      "lower_barrier": 15,
+      "upper_barrier": 20,
       "vertical": 30
      },
      "exposure": 0.0122,
@@ -2311,9 +2311,9 @@
      "fold_2": {
       "avg_trade_ret": 0.000118,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 18,
-       "upper": 15,
+       "ambiguous": 0,
+       "lower_barrier": 18,
+       "upper_barrier": 15,
        "vertical": 36
       },
       "exposure": 0.0216,
@@ -2326,9 +2326,9 @@
      "fold_3": {
       "avg_trade_ret": 0.000208,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 23,
-       "upper": 30,
+       "ambiguous": 0,
+       "lower_barrier": 23,
+       "upper_barrier": 30,
        "vertical": 49
       },
       "exposure": 0.0324,
@@ -2341,9 +2341,9 @@
      "fold_4": {
       "avg_trade_ret": 0.003174,
       "exit_counts": {
-       "adverse": 0,
-       "lower": 8,
-       "upper": 14,
+       "ambiguous": 0,
+       "lower_barrier": 8,
+       "upper_barrier": 14,
        "vertical": 17
       },
       "exposure": 0.0128,
@@ -2383,7 +2383,7 @@
  ],
  "final_holdout_fold_id": 5,
  "gate_min_agree": 2,
- "generated_at_utc": "2026-08-27 14:31:20",
+ "generated_at_utc": "2026-08-27 15:34:45",
  "research_window": [
   "2021-01-01",
   "2026-08-26"

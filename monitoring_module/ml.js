@@ -110,8 +110,8 @@ function viewClassification(s) {
     ["asset", "val skill F2", "F3", "F4", "mean val skill", "holdout prior LL",
      "holdout model LL", "holdout skill", "MCC"],
     s.assets.map((a) => {
-      const splits = validationFolds(a);
-      const vs = splits.map((k) => a.validation[k].relative_logloss_skill);
+      const folds = validationFolds(a);
+      const vs = folds.map((k) => a.validation[k].relative_logloss_skill);
       return [
         [tickerLink(a.ticker)],
         ...vs.map((v) => (100 * v).toFixed(2) + "%"),
@@ -126,9 +126,9 @@ function viewClassification(s) {
 
 function viewStrategy(s) {
   fillTable("cs-strategy",
-    ["asset", "&tau;", "&tau; met", "selection score", "holdout Sharpe", "degradation",
+    ["asset", "entry edge threshold", "constraint met", "selection score", "holdout Sharpe", "degradation",
      "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
-     "exits U/L/V/A"],
+     "exits: upper/lower/vertical/ambiguous"],
     s.assets.map((a) => {
       const st = a.strategy.final_holdout;
       const sel = a.strategy.selection_score_mean_sharpe;
@@ -147,7 +147,7 @@ function viewStrategy(s) {
         st.avg_trade_ret === null ? "-" : (100 * st.avg_trade_ret).toFixed(3) + "%",
         (100 * st.exposure).toFixed(1) + "%",
         num(st.final_equity, 3),
-        e.upper + "/" + e.lower + "/" + e.vertical + "/" + e.adverse,
+        e.upper_barrier + "/" + e.lower_barrier + "/" + e.vertical + "/" + e.ambiguous,
       ];
     }));
 }

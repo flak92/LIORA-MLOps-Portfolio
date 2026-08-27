@@ -1,10 +1,10 @@
-"""Split contract and metrics: WARMUP | TRAIN | PURGE | OOS | final holdout.
+"""Fold contract and metrics: WARMUP | TRAIN | PURGE | OOS | final holdout.
 
 Pure numpy — no I/O. Training keeps only the rows whose event finished before
 the OOS block opened; because event_end_ts is exclusive, that is exactly "no
-overlap" and no artificial gap is added. A classical post-test embargo is not
-required in forward chaining, since no training observation lies after the OOS
-block. Every builder asserts its own contract.
+overlap" and no artificial gap is added. A classical embargo after the evaluated block is
+not required in forward chaining, since no training observation lies after the
+OOS block. Every builder asserts its own contract.
 """
 
 from __future__ import annotations
@@ -25,8 +25,8 @@ def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
 
     event_end_ts is the exclusive end of the event, so `event_end_ts <=
     oos_start` is exactly "no overlap" — no extra gap is needed, and forward
-    chaining needs no post-test embargo because no training row lies after the
-    OOS block.
+    chaining needs no embargo after the evaluated block, because no training row
+    lies after the OOS block.
     """
     keep = sample_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)

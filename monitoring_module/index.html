@@ -75,13 +75,13 @@
         <tr>
           <th>asset</th><th>rows</th><th>classes &minus;/0/+</th>
           <th>depth/eta/trees</th><th>prior LL</th><th>model LL</th><th>skill</th><th>MCC</th>
-          <th>&tau;</th><th>Sharpe</th><th>maxDD</th><th>trades</th><th>hit</th><th>exposure</th>
+          <th>&tau; (entry edge threshold)</th><th>Sharpe</th><th>maxDD</th><th>trades</th><th>hit</th><th>exposure</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
     <p class="foot">final-holdout numbers are computed with parameters frozen on F2–F4: fold F5
-      never participates in feature, hyper-parameter, tau or strategy-rule selection.</p>
+      never participates in feature, hyper-parameter, entry-edge-threshold or strategy-rule selection.</p>
   </section>
 
   <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
@@ -112,7 +112,7 @@
     </div>
     <div id="asset-detail"></div>
     <p class="foot">the final holdout fold (F5) is shown in bold: it selects nothing — no feature,
-      hyper-parameter, tau or strategy rule was chosen by looking at it.</p>
+      hyper-parameter, entry edge threshold or strategy rule was chosen by looking at it.</p>
   </section>
 
   <p class="foot">static page &middot; data from <code>status.json</code> / <code>ml_status.json</code>

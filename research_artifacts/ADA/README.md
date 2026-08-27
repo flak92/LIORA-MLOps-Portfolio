@@ -1,6 +1,6 @@
 # ADA — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per stage; `calibration.json` next to this file records the settings every number below was computed under.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `calibration.json` next to this file records the settings every number below was computed under.
 
 ## Files
 
@@ -10,7 +10,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,576 KB |
 | `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,777 KB |
 | `oos_predictions.parquet` | out-of-fold class probabilities | 2,344 KB |
-| `hyperparameter_search.json` | the winning point of the search | 316 B |
+| `hyperparameter_search.json` | the winning point of the search | 318 B |
 | `model_evaluation.json` | classification metrics per fold | 2 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 | `calibration.json` | the settings all of the above were computed under | 4 KB |
@@ -24,7 +24,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Model
 
-Search: 50 Optuna trials, best objective 0.771792. Winner: depth 2, eta 0.0100, 450 rounds, subsample 0.516, colsample 0.710, min_child_weight 8, lambda 0.6921, alpha 0.9854.
+Search: 50 Optuna trials, best log-loss 0.771792. Winner: depth 2, eta 0.0100, 450 rounds, subsample 0.516, colsample 0.710, min_child_weight 8, lambda 0.6921, alpha 0.9854.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
@@ -55,10 +55,10 @@ Entry edge threshold **0.24**. Cost 0.06% per side; the hierarchy gate requires 
 | F4 | +0.811 | 10.8% | 39 | 53.8% | 1.28% | 1.1182 |
 | **F5 — final holdout** | -0.304 | 17.7% | 65 | 52.3% | 1.22% | 0.9070 |
 
-Final-holdout exits: adverse 0, lower 15, upper 20, vertical 30.
+Final-holdout exits: upper_barrier 20, lower_barrier 15, vertical 30, ambiguous 0.
 
 ## Reproducing this folder
 
     python -m ml_module.features --tickers ADA && python -m ml_module.labels --tickers ADA && python -m ml_module.hpo --tickers ADA && python -m ml_module.train --tickers ADA && python -m ml_module.strategy --tickers ADA && python -m ml_module.status --tickers ADA
 
-F5 never participates in feature definition, hyper-parameter selection, threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.

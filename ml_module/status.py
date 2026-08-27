@@ -48,7 +48,7 @@ def sample_block(metrics: dict) -> dict:
 def hpo_block(hpo: dict) -> dict:
     return {
         "n_trials": hpo["n_trials"],
-        "best_logloss": round(hpo["best_value"], 6),
+        "best_logloss": round(hpo["best_logloss"], 6),
         "best_params": dict(sorted(hpo["best_params"].items())),
     }
 
@@ -80,7 +80,7 @@ def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_STRIDE) ->
     end = round(final_equity, 4)
     if values[-1] != end:
         values.append(end)
-    return {"equity": values, "equity_final": end}
+    return {"equity": values, "final_equity": end}
 
 
 def _pnl(block: dict) -> dict:
@@ -103,7 +103,7 @@ def strategy_block(strategy: dict) -> dict:
         "entry_edge_threshold_constraint_met":
             strategy["entry_edge_threshold_constraint_met"],
         "selection_score_mean_sharpe": _r(strategy["selection_score_mean_sharpe"], 3),
-        "costs_per_side": strategy["costs_per_side"],
+        "cost_per_side": strategy["cost_per_side"],
         "validation": {k: _pnl(v) for k, v in sorted(strategy["validation"].items())},
         "final_holdout": _pnl(final_holdout),
         "equity_curve": thin_curve(final_holdout["equity_curve"],
@@ -193,7 +193,8 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
     sh = strategy["final_holdout"]
     pnl_rows.append(pnl_row(f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**", sh))
-    exits = ", ".join(f"{k} {v}" for k, v in sorted(sh["exit_counts"].items()))
+    exits = ", ".join(f"{name} {sh['exit_counts'][name]}"
+                     for name in config.EVENT_RESOLUTION_NAME.values())
     met = ("" if strategy["entry_edge_threshold_constraint_met"]
            else f" — **fallback**, no threshold reaches "
                 f"{config.MIN_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
@@ -205,13 +206,13 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per stage; `calibration.json` next to this file records the settings every number below was computed under.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `calibration.json` next to this file records the settings every number below was computed under.
 
 ## Files
 
 {_table(["file", "holds", "size"], files)}
 
-`features.parquet` carries {config.HORIZON_BARS} rows more than `label_events.parquet`: the tail decisions whose full {config.HORIZON_MS // 60_000}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four scored windows end to end.
+`features.parquet` carries {config.HORIZON_MS // config.TF_MS[config.DECISION_TF]} rows more than `label_events.parquet`: the tail decisions whose full {config.HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four scored windows end to end.
 
 ## Labels
 
@@ -219,7 +220,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 ## Model
 
-Search: {hpo['n_trials']} Optuna trials, best objective {hpo['best_value']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
+Search: {hpo['n_trials']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
 
 {_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "MCC", "scored"], cls_rows)}
 
@@ -231,7 +232,7 @@ Search: {hpo['n_trials']} Optuna trials, best objective {hpo['best_value']:.6f}.
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{met}. Cost {100 * strategy['costs_per_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.AGREE_MIN} of 3 levels agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{met}. Cost {100 * strategy['cost_per_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.AGREE_MIN} of 3 levels agreeing.
 
 {_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
@@ -241,7 +242,7 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
+F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
 """
 
 
@@ -286,16 +287,11 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
         },
         "labels": {
             "k_barrier": config.K_BARRIER,
-            "horizon_bars": config.HORIZON_BARS,
-            "horizon_minutes": config.HORIZON_MS // 60_000,
+            "horizon_minutes": config.HORIZON_MINUTES,
             "sigma": "ATR14 of the last closed canonical 1h bar",
             "touch_requires": "volume > 0",
             "event_resolution_codes": {
-                "lower_barrier": config.EVENT_RESOLUTION_LOWER_BARRIER,
-                "vertical": config.EVENT_RESOLUTION_VERTICAL,
-                "upper_barrier": config.EVENT_RESOLUTION_UPPER_BARRIER,
-                "ambiguous": config.EVENT_RESOLUTION_AMBIGUOUS,
-            },
+                name: code for code, name in config.EVENT_RESOLUTION_NAME.items()},
             "supervised_population": "sample_valid = entry_observable & label_valid",
         },
         "hyperparameter_search": {
@@ -308,7 +304,7 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
             "space": {k: list(v) for k, v in config.HPO_SPACE.items()},
             "xgb_fixed": dict(config.XGB_FIXED),
             "best_params": dict(sorted(hpo["best_params"].items())),
-            "best_value": hpo["best_value"],
+            "best_logloss": hpo["best_logloss"],
         },
         # what actually trained: model.fit pops num_boost_round and lets the
         # fixed parameters overwrite the searched ones, so neither dict alone
@@ -327,8 +323,9 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
             "min_trades_per_validation_fold": config.MIN_TRADES_PER_VALIDATION_FOLD,
             "hierarchy_min_agree": config.AGREE_MIN,
             "bars_per_year_15m": config.BARS_PER_YEAR_15M,
-            "selected_entry_edge_threshold": strategy["entry_edge_threshold"],
-            "constraint_met": strategy["entry_edge_threshold_constraint_met"],
+            "entry_edge_threshold": strategy["entry_edge_threshold"],
+            "entry_edge_threshold_constraint_met":
+                strategy["entry_edge_threshold_constraint_met"],
         },
         "runtime": {
             "libraries": {name: version(name) for name in PINNED},

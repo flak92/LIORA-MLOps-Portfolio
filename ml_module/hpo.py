@@ -2,8 +2,9 @@
 
 Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
 validation folds F2-F4 (expanding training, purged before every OOS block).
-The final holdout fold is never touched here. hpo_<T>.json keeps the winner and
-the trial count; the trajectory of 50 trials is a search diary, not a result.
+The final holdout fold is never touched here. hyperparameter_search.json keeps
+the winner and the trial count; the trajectory of 50 trials is a search diary,
+not a result.
 """
 
 from __future__ import annotations
@@ -45,7 +46,7 @@ def main() -> int:
         study.optimize(objective_factory(xy), n_trials=config.N_TRIALS, n_jobs=1)
         payload = {
             "best_params": study.best_trial.params,
-            "best_value": study.best_value,
+            "best_logloss": study.best_value,
             "n_trials": config.N_TRIALS,
         }
         out = config.artifact_dir(t) / "hyperparameter_search.json"

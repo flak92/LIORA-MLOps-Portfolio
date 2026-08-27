@@ -72,6 +72,7 @@
   "warmup_4h_bars": 200
  },
  "hyperparameter_search": {
+  "best_logloss": 0.7791875792689019,
   "best_params": {
    "alpha": 0.3189137190032899,
    "colsample_bytree": 0.6676043527765689,
@@ -82,7 +83,6 @@
    "num_boost_round": 550,
    "subsample": 0.8705724424829939
   },
-  "best_value": 0.7791875792689019,
   "n_trials": 50,
   "objective": "mean uniqueness-weighted multiclass log-loss over folds F2, F3, F4",
   "parallelism": "sequential (n_jobs=1) \u2014 TPE is reproducible only in order",
@@ -146,7 +146,6 @@
    "upper_barrier": 1,
    "vertical": 0
   },
-  "horizon_bars": 16,
   "horizon_minutes": 240,
   "k_barrier": 2.0,
   "sigma": "ATR14 of the last closed canonical 1h bar",
@@ -173,8 +172,9 @@
  },
  "strategy": {
   "bars_per_year_15m": 35040,
-  "constraint_met": true,
   "cost_per_side": 0.0006,
+  "entry_edge_threshold": 0.31,
+  "entry_edge_threshold_constraint_met": true,
   "entry_edge_threshold_grid": {
    "max": 0.6,
    "min": 0.0,
@@ -182,8 +182,7 @@
    "step": 0.01
   },
   "hierarchy_min_agree": 2,
-  "min_trades_per_validation_fold": 30,
-  "selected_entry_edge_threshold": 0.31
+  "min_trades_per_validation_fold": 30
  },
  "ticker": "SOL"
 }

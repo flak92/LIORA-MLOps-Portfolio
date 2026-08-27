@@ -31,10 +31,10 @@ Fills acknowledge that 1m OHLC hides the tick path: a take-profit fills at the
 barrier, a stop fills at the worse of the barrier and the open of the minute
 that touched it. The result is execution-cost-adjusted PnL, excluding funding.
 
-The entry edge threshold (tau) is chosen on the validation folds only: the one
-maximising the mean fold
-Sharpe among those giving at least MIN_TRADES_PER_VALIDATION_FOLD trades in every fold, ties
-resolved towards the smaller threshold.
+The entry edge threshold is chosen on the validation folds only: the one
+maximising the mean fold Sharpe among those giving at least
+MIN_TRADES_PER_VALIDATION_FOLD trades in every fold, ties resolved towards the
+smaller threshold.
 """
 
 from __future__ import annotations
@@ -97,27 +97,22 @@ def rows_for_fold(d: dict, fold_id: int) -> dict:
         "entry_ts": xy["entry_ts"][pos], "event_end_ts": xy["event_end_ts"][pos],
         "event_resolution": xy["event_resolution"][pos],
         "entry_price": xy["entry_price"][pos],
-        "upper": xy["upper"][pos], "lower": xy["lower"][pos],
+        "upper_barrier": xy["upper_barrier"][pos],
+        "lower_barrier": xy["lower_barrier"][pos],
         "exit_reference_price": xy["exit_reference_price"][pos],
     }
 
 
-def fill_price(side: float, event_resolution: int, upper: float, lower: float,
-               exit_reference_price: float) -> float:
+def fill_price(side: float, event_resolution: int, upper_barrier: float,
+               lower_barrier: float, exit_reference_price: float) -> float:
     """Take-profit at the barrier; stop (and the adverse side of an ambiguous
     minute) at the worse of the barrier and that minute's open."""
     if event_resolution == config.EVENT_RESOLUTION_VERTICAL:
         return exit_reference_price                      # mark: last event minute's close
     if event_resolution == side:
-        return upper if side > 0 else lower              # target reached
-    return (min(lower, exit_reference_price) if side > 0
-            else max(upper, exit_reference_price))
-
-
-EXIT_NAME = {
-    config.EVENT_RESOLUTION_VERTICAL: "vertical",
-    config.EVENT_RESOLUTION_AMBIGUOUS: "adverse",
-}
+        return upper_barrier if side > 0 else lower_barrier   # target reached
+    return (min(lower_barrier, exit_reference_price) if side > 0
+            else max(upper_barrier, exit_reference_price))
 
 
 def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end_ms: int) -> dict:
@@ -141,7 +136,8 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
 
     equity, cursor, in_pos_ms = 1.0, 0, 0
     trades = []
-    exits = {"upper": 0, "lower": 0, "vertical": 0, "adverse": 0}
+    # the exit counts are counts by event_resolution, so they carry its names
+    exits = {name: 0 for name in config.EVENT_RESOLUTION_NAME.values()}
     for k in take:
         i = int((rows["entry_ts"][k] - config.RESEARCH_START_MS) // MINUTE_MS) - off
         j = int((rows["event_end_ts"][k] - config.RESEARCH_START_MS) // MINUTE_MS) - off - 1
@@ -150,7 +146,8 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
         s = float(rows["side"][k])
         entry_price = float(rows["entry_price"][k])
         resolution = int(rows["event_resolution"][k])
-        px = fill_price(s, resolution, float(rows["upper"][k]), float(rows["lower"][k]),
+        px = fill_price(s, resolution, float(rows["upper_barrier"][k]),
+                        float(rows["lower_barrier"][k]),
                         float(rows["exit_reference_price"][k]))
         eq[cursor:i] = equity                            # flat while out of the market
         eq[i:j] = equity * (1.0 - c + s * (close1m[off + i:off + j] / entry_price - 1.0))
@@ -160,10 +157,7 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
         cursor = j + 1
         in_pos_ms += int(rows["event_end_ts"][k] - rows["entry_ts"][k])
         trades.append(r)
-        exits[EXIT_NAME.get(
-            resolution,
-            "upper" if resolution == config.EVENT_RESOLUTION_UPPER_BARRIER else "lower",
-        )] += 1
+        exits[config.EVENT_RESOLUTION_NAME[resolution]] += 1
     eq[cursor:] = equity
 
     tr = np.asarray(trades)
@@ -232,7 +226,7 @@ def main() -> int:
             "entry_edge_threshold": best_threshold,
             "entry_edge_threshold_constraint_met": constraint_met,
             "selection_score_mean_sharpe": best_score,
-            "costs_per_side": config.COST_PER_SIDE,
+            "cost_per_side": config.COST_PER_SIDE,
             "validation": {f"fold_{s}": public(r) for s, r in best_detail.items()},
             "final_holdout": {**public(final_holdout),
                               "equity_curve": equity_curve(final_holdout["equity_1m"],

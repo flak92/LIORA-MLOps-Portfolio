@@ -55,7 +55,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `<kind>_<TICKER>.<ext>` artifacts, `ml-<stage>` ↔
+  `download_bybit.py`, `research_artifacts/<TICKER>/<stage>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`data_module`,
   `ml_module`) measures its own domain state in `status.py`, and
   `monitoring_module` presents their snapshots;
@@ -65,15 +65,20 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 ## Canonical vocabulary
 
+**Names must be self-explanatory before they are project-specific. Prefer
+standard domain terminology. A glossary confirms meaning; it must not be
+required to decode an obscure name.**
+
 One concept, one name — in the code, in the artifacts and in the interface. The
 register is `Skills_For_The_Project/glossary.md`, and a new name enters it in
-the same commit that introduces it. The fold vocabulary it fixes:
-`warmup_period` (before any decision), `train_period` (fitting), `purge_period`
-(training events overlapping the evaluated block, removed by
-`event_end_ts <= oos_start`), `embargo_period` (width zero here — forward
-chaining needs none) and `oos`; `VALIDATION_FOLD_IDS` are F2–F4 and choose the
-parameters, `FINAL_HOLDOUT_FOLD_ID` is F5 and only evaluates. Write
-"QuantConnect Lean" on first use, "Lean" afterwards.
+the same commit that introduces it. The fold vocabulary it fixes: `fold` (one
+chronological segment), `WARMUP_END_MS` (before any decision is allowed),
+training rows (everything that finished before the evaluated block), `purge`
+(training events overlapping that block, removed by `event_end_ts <=
+oos_start`), `embargo` (width zero here — forward chaining needs none) and
+`oos` (the evaluated block); `VALIDATION_FOLD_IDS` are F2–F4 and choose the
+parameters, `FINAL_HOLDOUT_FOLD_ID` is F5 and only evaluates. The word "test"
+never names a fold. Write "QuantConnect Lean" on first use, "Lean" afterwards.
 
 ## The default choice
 
