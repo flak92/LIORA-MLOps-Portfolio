@@ -107,6 +107,8 @@ from its layer's grammar, never invented:
 | index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
 | booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_` | `entry_observable`, `label_valid`, `is_full_utc_day()` | `flag`, `ok`, `check` |
 | artifact keys | snake_case, the same word as the identifier that produced it, suffixes `_count`, `_ms`, `_pct`, `_utc` | `scored_row_count`, `generated_at_utc` | a separate vocabulary for JSON |
+| features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
+| stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | directories | `<kind>_<detail>/` | `module_*`, `store_*` | a kind scattered through the alphabet |
 | CSS | BEM `block__element--modifier` | `frame__head`, `pill--active` | `.red` |
 
