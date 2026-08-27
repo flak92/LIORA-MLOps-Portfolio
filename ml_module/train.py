@@ -61,17 +61,20 @@ def main() -> int:
             """Fit before the fold's window, predict the FULL window, score the
             supervised subset only. Returns (metrics, the fitted booster)."""
             oos_start, oos_end = validation.fold_bounds(fold_id)
-            tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                          xy["sample_valid"], oos_start)
-            wi = validation.window_indices(xy["decision_ts"], oos_start, oos_end)
-            oi = validation.oos_indices(xy["decision_ts"], xy["sample_valid"], oos_start, oos_end)
-            prior_train = validation.weighted_class_prior(y_cls[tr], xy["weight"][tr])
+            tr, train_weight = validation.training_set(
+                xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+                xy["sample_valid"], oos_start)
+            wi = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
+            oi, scoring_weight = validation.scoring_set(
+                xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+                xy["sample_valid"], oos_start, oos_end)
+            prior_train = validation.weighted_class_prior(y_cls[tr], train_weight)
             assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
-            booster = model.fit(best, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
+            booster = model.fit(best, xy["x"][tr], xy["y"][tr], train_weight)
             proba_w = model.predict_proba(booster, xy["x"][wi])
             pos = np.searchsorted(wi, oi)          # oi is a subset of wi
             assert np.array_equal(wi[pos], oi)
-            metrics = fold_metrics(y_cls[oi], proba_w[pos], xy["weight"][oi], prior_train)
+            metrics = fold_metrics(y_cls[oi], proba_w[pos], scoring_weight, prior_train)
             pred_rows.extend(
                 (xy["decision_ts"][i], fold_id, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
                 for k, i in enumerate(wi)
@@ -119,7 +122,6 @@ def main() -> int:
                 "warmup_excluded_decision_count": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
                 // config.TIMEFRAME_DURATION_MS["15m"],
             },
-            "uniqueness_weight_mean": float(xy["weight"][trainable].mean()),
         }
         dataset.write_json(adir / "model_evaluation.json", payload)
         print(f"{t} model_evaluation: prior {final_holdout['prior_logloss']:.6f} "

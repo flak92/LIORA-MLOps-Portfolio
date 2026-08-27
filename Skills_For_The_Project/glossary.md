@@ -54,7 +54,7 @@ confirmation; the rest of the concept column states what the name means.
 | the entry minute traded at all — knowable at `entry_ts`, may gate an entry | `entry_observable` | `entry_observable`, `unobservable` | unobservable entry | tradable, valid entry |
 | the event can be classified — knowable only afterwards, never gates an entry | `label_valid` | `label_valid`, `ambiguous` | ambiguous | masked, mask_ok |
 | the supervised population: both of the above | `sample_valid` | `trainable`, `trainable_pct` | trainable rows | valid rows |
-| how little the event overlaps its neighbours | `weight` (average uniqueness) | `weight`, `uniqueness_weight_mean` | mean uniqueness weight | sample weight, class weight |
+| how little an event overlaps its neighbours **within one population** — measured after the purge, never stored in Y | `average_uniqueness_weight()`, `train_weight` / `scoring_weight` | — | — | `weight` as a Y column, uniqueness_weight_mean, class weight |
 
 ## Signal and strategy
 
@@ -108,7 +108,7 @@ each file named after what it holds.
 |---|---|---|
 | `canonical_1m.parquet` | `data_module/export.py` | the published canonical series |
 | `features.parquet` | `ml_module/features.py` | X — 15 causal columns |
-| `label_events.parquet` | `ml_module/labels.py` | Y — labels, weights and the event prices |
+| `label_events.parquet` | `ml_module/labels.py` | Y — labels, the event flags and the event prices |
 | `hyperparameter_search.json` | `ml_module/hpo.py` | the search space and its winner |
 | `oos_predictions.parquet` | `ml_module/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
 | `model_evaluation.json` | `ml_module/train.py` | classification metrics per fold |

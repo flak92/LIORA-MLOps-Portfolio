@@ -1,16 +1,16 @@
 {
  "effective_booster_params": {
-  "alpha": 0.014380429353874383,
-  "colsample_bytree": 0.824916898749703,
-  "eta": 0.023587103419456436,
-  "lambda": 1.475417187136465,
+  "alpha": 0.051795519365237415,
+  "colsample_bytree": 0.9482803430344319,
+  "eta": 0.014680065926141846,
+  "lambda": 2.409684879057576,
   "max_depth": 5,
-  "min_child_weight": 46,
+  "min_child_weight": 45,
   "nthread": 1,
   "num_class": 3,
   "objective": "multi:softprob",
   "seed": 42,
-  "subsample": 0.6206972837376687,
+  "subsample": 0.60214871320827,
   "tree_method": "hist"
  },
  "features": {
@@ -72,16 +72,16 @@
   "warmup_4h_bars": 200
  },
  "hyperparameter_search": {
-  "best_logloss": 0.7744844670614116,
+  "best_logloss": 0.774507443084039,
   "best_params": {
-   "alpha": 0.014380429353874383,
-   "colsample_bytree": 0.824916898749703,
-   "eta": 0.023587103419456436,
-   "lambda": 1.475417187136465,
+   "alpha": 0.051795519365237415,
+   "colsample_bytree": 0.9482803430344319,
+   "eta": 0.014680065926141846,
+   "lambda": 2.409684879057576,
    "max_depth": 5,
-   "min_child_weight": 46,
-   "num_boost_round": 150,
-   "subsample": 0.6206972837376687
+   "min_child_weight": 45,
+   "num_boost_round": 300,
+   "subsample": 0.60214871320827
   },
   "objective": "mean uniqueness-weighted multiclass log-loss over folds F2, F3, F4",
   "parallelism": "sequential (n_jobs=1) \u2014 TPE is reproducible only in order",
@@ -152,7 +152,7 @@
   "supervised_population": "sample_valid = entry_observable & label_valid",
   "touch_requires": "volume > 0"
  },
- "num_boost_round": 150,
+ "num_boost_round": 300,
  "research_window": {
   "end_utc": "2026-08-26",
   "seed": 42,
@@ -172,7 +172,7 @@
  },
  "strategy": {
   "annualisation_period_15m_bars": 35040,
-  "entry_edge_threshold": 0.0,
+  "entry_edge_threshold": 0.21,
   "entry_edge_threshold_constraint_met": true,
   "entry_edge_threshold_grid": {
    "count": 61,

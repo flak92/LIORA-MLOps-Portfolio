@@ -8,9 +8,9 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | --- | --- | --- |
 | `canonical_1m.parquet` | the published canonical 1m series | 43,691 KB |
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,967 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,957 KB |
-| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,368 KB |
-| `hyperparameter_search.json` | the winning point of the search | 323 B |
+| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,450 KB |
+| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,363 KB |
+| `hyperparameter_search.json` | the winning point of the search | 321 B |
 | `model_evaluation.json` | classification metrics per fold | 3 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 | `experiment_configuration.json` | the configuration this run was executed under | 4 KB |
@@ -20,18 +20,18 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Labels
 
-194,832 decisions, of which **194,820 supervised** (99.994%) — 8 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 25,254, neutral 145,753, long 23,813 (194,820 total). Mean uniqueness weight 0.0737.
+194,832 decisions, of which **194,820 supervised** (99.994%) — 8 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 25,254, neutral 145,753, long 23,813 (194,820 total).
 
 ## Model
 
-Search: 50 Optuna trials, best log-loss 0.779188. Winner: depth 3, eta 0.0111, 550 rounds, subsample 0.871, colsample 0.668, min_child_weight 25, lambda 0.1750, alpha 0.3189.
+Search: 50 Optuna trials, best log-loss 0.779053. Winner: depth 3, eta 0.0132, 400 rounds, subsample 0.772, colsample 0.630, min_child_weight 25, lambda 9.4324, alpha 0.1138.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
-| F2 | 0.836280 | 0.792463 | +5.24% | 0.0551 | 35,032 |
-| F3 | 0.832907 | 0.776211 | +6.81% | 0.0693 | 35,040 |
-| F4 | 0.804853 | 0.768888 | +4.47% | 0.0409 | 35,136 |
-| **F5 — final holdout** | 0.834917 | 0.787791 | +5.64% | 0.0580 | 57,776 |
+| F2 | 0.836110 | 0.792577 | +5.21% | 0.0368 | 35,032 |
+| F3 | 0.832876 | 0.775824 | +6.85% | 0.0644 | 35,040 |
+| F4 | 0.804725 | 0.768759 | +4.47% | 0.0351 | 35,136 |
+| **F5 — final holdout** | 0.834866 | 0.788268 | +5.58% | 0.0500 | 57,776 |
 
 ## Fold geometry
 
@@ -42,20 +42,20 @@ Search: 50 Optuna trials, best log-loss 0.779188. Winner: depth 3, eta 0.0111, 5
 | F4 | 101,903 | 5 | 35,136 | 35,136 |
 | F5 | 137,033 | 11 | 57,776 | 57,776 |
 
-`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated.
+`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
 ## Strategy
 
-Entry edge threshold **0.31**. Cost 0.06% per side; the hierarchy gate requires the side to match the 4h trend sign with at least 2 of 3 timeframes agreeing.
+Entry edge threshold **0.3**. Cost 0.06% per side; the hierarchy gate requires the side to match the 4h trend sign with at least 2 of 3 timeframes agreeing.
 
 | fold | Sharpe | maxDD | trades | hit rate | exposure | final equity |
 | --- | --- | --- | --- | --- | --- | --- |
-| F2 | -0.960 | 26.5% | 59 | 42.4% | 1.96% | 0.8484 |
-| F3 | +0.538 | 13.3% | 76 | 48.7% | 2.27% | 1.0816 |
-| F4 | +0.041 | 11.4% | 50 | 42.0% | 1.72% | 0.9986 |
-| **F5 — final holdout** | +0.585 | 13.5% | 89 | 53.9% | 1.63% | 1.1024 |
+| F2 | -0.925 | 17.6% | 31 | 38.7% | 1.02% | 0.8825 |
+| F3 | +1.526 | 15.6% | 43 | 55.8% | 1.16% | 1.2380 |
+| F4 | -0.966 | 12.1% | 38 | 36.8% | 1.38% | 0.8995 |
+| **F5 — final holdout** | +0.405 | 7.4% | 52 | 53.8% | 0.96% | 1.0535 |
 
-Final-holdout exits: upper_barrier 17, lower_barrier 35, vertical 37, ambiguous 0.
+Final-holdout exits: upper_barrier 10, lower_barrier 22, vertical 20, ambiguous 0.
 
 ## Reproducing this folder
 

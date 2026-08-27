@@ -144,8 +144,8 @@ parquet rows`) and feeds the dashboard:
 
 `ml_module/` builds — per asset, deterministically — a fixed 15-column hierarchical
 feature matrix (15m/1h/4h) from the canonical series, triple-barrier
-labels resolved on the **canonical** 1-minute path with uniqueness sample
-weights, a purged walk-forward protocol with Optuna hyper-parameter search
+labels resolved on the **canonical** 1-minute path, a purged walk-forward
+protocol with average-uniqueness sample weights and Optuna hyper-parameter search
 (XGBoost), a final out-of-sample fold that selects nothing, and a top-down gated
 strategy evaluation with explicit costs:
 

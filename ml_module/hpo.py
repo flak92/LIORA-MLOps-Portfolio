@@ -2,6 +2,8 @@
 
 Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
 validation folds F2-F4 (expanding training, purged before every OOS block).
+The populations and their weights do not depend on the hyper-parameters, so
+they are built once instead of once per trial.
 The final holdout fold is never touched here. hyperparameter_search.json keeps
 the winner and the trial count; the trajectory of 50 trials is a search diary,
 not a result.
@@ -17,18 +19,23 @@ from . import config, dataset, model, validation
 
 def objective_factory(xy: dict[str, np.ndarray]):
     y_cls = model.to_class(xy["y"])
+    folds = []
+    for fold_id in config.VALIDATION_FOLD_IDS:
+        oos_start, oos_end = validation.fold_bounds(fold_id)
+        folds.append((
+            validation.training_set(xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+                                    xy["sample_valid"], oos_start),
+            validation.scoring_set(xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+                                   xy["sample_valid"], oos_start, oos_end),
+        ))
 
     def objective(trial: optuna.Trial) -> float:
         params = model.suggest_params(trial)
         losses = []
-        for fold_id in config.VALIDATION_FOLD_IDS:
-            oos_start, oos_end = validation.fold_bounds(fold_id)
-            tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
-                                          xy["sample_valid"], oos_start)
-            oo = validation.oos_indices(xy["decision_ts"], xy["sample_valid"], oos_start, oos_end)
-            booster = model.fit(params, xy["x"][tr], xy["y"][tr], xy["weight"][tr])
+        for (tr, train_weight), (oo, scoring_weight) in folds:
+            booster = model.fit(params, xy["x"][tr], xy["y"][tr], train_weight)
             proba = model.predict_proba(booster, xy["x"][oo])
-            losses.append(validation.multiclass_logloss(y_cls[oo], proba, xy["weight"][oo]))
+            losses.append(validation.multiclass_logloss(y_cls[oo], proba, scoring_weight))
         return float(np.mean(losses))
 
     return objective

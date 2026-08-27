@@ -87,7 +87,7 @@ function renderResearch(s) {
 function viewLabels(s) {
   fillTable("cs-labels",
     ["asset", "rows", "warm-up excl", "trainable", "short", "neutral share",
-     "long", "uniq. weight", "scored (holdout)"],
+     "long", "scored (holdout)"],
     s.assets.map((a) => {
       const c = a.sample.class_counts;
       const total = c.short + c.neutral + c.long;
@@ -99,7 +99,6 @@ function viewLabels(s) {
         fmt(c.short),
         [shareCell(c.neutral, total)],
         fmt(c.long),
-        a.sample.uniqueness_weight_mean.toFixed(4),
         fmt(a.final_holdout.scored_row_count),
       ];
     }));

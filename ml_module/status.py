@@ -40,7 +40,6 @@ def sample_block(metrics: dict) -> dict:
         "trainable": labels["trainable"],
         "trainable_pct": round(100.0 * labels["trainable"] / labels["rows"], 4),
         "warmup_excluded_decision_count": metrics["segments"]["warmup_excluded_decision_count"],
-        "uniqueness_weight_mean": round(metrics["uniqueness_weight_mean"], 4),
         "class_counts": dict(metrics["class_counts"]),
     }
 
@@ -218,7 +217,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 ## Labels
 
-{labels['rows']:,} decisions, of which **{labels['trainable']:,} supervised** ({100 * labels['trainable'] / labels['rows']:.3f}%) — {labels['ambiguous']:,} events resolve ambiguously and {labels['unobservable']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total). Mean uniqueness weight {metrics['uniqueness_weight_mean']:.4f}.
+{labels['rows']:,} decisions, of which **{labels['trainable']:,} supervised** ({100 * labels['trainable'] / labels['rows']:.3f}%) — {labels['ambiguous']:,} events resolve ambiguously and {labels['unobservable']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
 
 ## Model
 
@@ -230,7 +229,7 @@ Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.
 
 {_table(["fold", "trained on", "purged", "window", "scored"], geo_rows)}
 
-`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated.
+`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
 ## Strategy
 

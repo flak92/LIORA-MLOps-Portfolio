@@ -107,7 +107,6 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
         # the supervised population: an entry that could be observed and an
         # event that resolves unambiguously
         "sample_valid": yy["entry_observable"].astype(bool) & yy["label_valid"].astype(bool),
-        "weight": yy["weight"].astype(np.float64),
         "event_resolution": yy["event_resolution"].astype(np.int8),
         "entry_price": yy["entry_price"].astype(np.float64),
         "upper_barrier": yy["upper_barrier"].astype(np.float64),

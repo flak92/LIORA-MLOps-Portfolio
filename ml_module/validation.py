@@ -2,9 +2,16 @@
 
 Pure numpy — no I/O. Training keeps only the rows whose event finished before
 the OOS block opened; because event_end_ts is exclusive, that is exactly "no
-overlap" and no artificial gap is added. A classical embargo after the evaluated block is
-not required in forward chaining, since no training observation lies after the
-OOS block. Every builder asserts its own contract.
+overlap" and no artificial gap is added. A classical embargo after the
+evaluated block is not required in forward chaining, since no training
+observation lies after the OOS block. Every builder asserts its own contract.
+
+A population and its average-uniqueness weights are one object. Concurrency is
+counted inside the population that uses the weights — the purged training rows
+of a fold, and separately the scored rows of that fold — so an event the model
+never sees, or one that lies in the block being evaluated, cannot change the
+weight of a training row. Returning the two together is what makes using a
+population with somebody else's weights impossible.
 """
 
 from __future__ import annotations
@@ -13,38 +20,74 @@ import numpy as np
 
 from . import config
 
+MILLISECONDS_PER_MINUTE = 60_000
+
 
 def fold_bounds(fold_id: int) -> tuple[int, int]:
     """OOS bounds of fold Fk, from the 1-based fold table."""
     return config.FOLD_BOUNDS_MS[fold_id - 1], config.FOLD_BOUNDS_MS[fold_id]
 
 
-def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,
-                  sample_valid: np.ndarray, oos_start_ms: int) -> np.ndarray:
-    """Training rows whose event finished before the OOS block opened.
+def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) -> np.ndarray:
+    """Average uniqueness [Lopez de Prado, ch. 4] over exactly the events given.
+
+    The mean, over an event's minutes, of 1 / (events of this population open
+    at that minute), exact via prefix sums. Concurrency is counted only among
+    the events passed in, so the caller's choice of population *is* the
+    definition of the weight.
+    """
+    n_min = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
+    start = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+    end = ((event_end_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+    delta = np.zeros(n_min + 1, dtype=np.int64)
+    np.add.at(delta, start, 1)
+    np.add.at(delta, end, -1)
+    concurrent = np.cumsum(delta[:-1])
+    inverse = np.zeros(n_min + 1)
+    covered = concurrent > 0
+    inverse[1:][covered] = 1.0 / concurrent[covered]
+    cumulative = np.cumsum(inverse)
+    w = (cumulative[end] - cumulative[start]) / (end - start)
+    # an event alone in its population averages exactly 1, but the value is the
+    # difference of two partial sums over millions of terms, so it can land a
+    # few ulps above it. The bound is asserted at the precision the arithmetic
+    # delivers; asserting it tighter would fail on correct output.
+    assert np.all(w > 0.0) and np.all(w <= 1.0 + 1e-9), "uniqueness weights outside (0, 1]"
+    return w
+
+
+def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
+                 sample_valid: np.ndarray, oos_start_ms: int) -> tuple[np.ndarray, np.ndarray]:
+    """Purged training rows and the average uniqueness of that population.
 
     event_end_ts is the exclusive end of the event, so `event_end_ts <=
     oos_start` is exactly "no overlap" — no extra gap is needed, and forward
     chaining needs no embargo after the evaluated block, because no training row
-    lies after the OOS block.
+    lies after the OOS block. The weights are measured after the purge, so a
+    dropped event no longer inflates the concurrency of the rows that stay.
     """
     keep = sample_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty training segment"
     assert event_end_ts[idx].max() <= oos_start_ms, "a training event overlaps the OOS block"
-    return idx
+    return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 
 
-def oos_indices(decision_ts: np.ndarray, sample_valid: np.ndarray,
-                start_ms: int, end_ms: int) -> np.ndarray:
-    """Trainable OOS rows — the scoring set for metrics and the HPO objective."""
+def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
+                sample_valid: np.ndarray, start_ms: int, end_ms: int) -> tuple[np.ndarray, np.ndarray]:
+    """Supervised OOS rows and their average uniqueness — the scoring set.
+
+    The metric is an average over this block, so the redundancy it corrects for
+    is the redundancy inside this block: concurrency is counted among the scored
+    events alone, never together with the training rows that precede them.
+    """
     keep = sample_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
-    return idx
+    return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 
 
-def window_indices(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np.ndarray:
+def prediction_window(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np.ndarray:
     """Every decision row of a window, masked or not — the prediction set.
 
     Label validity is knowable only after the event resolves, so it may govern

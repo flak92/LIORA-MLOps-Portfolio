@@ -8,8 +8,8 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | --- | --- | --- |
 | `canonical_1m.parquet` | the published canonical 1m series | 38,853 KB |
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,635 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,875 KB |
-| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,330 KB |
+| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,340 KB |
+| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,334 KB |
 | `hyperparameter_search.json` | the winning point of the search | 323 B |
 | `model_evaluation.json` | classification metrics per fold | 3 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
@@ -20,18 +20,18 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Labels
 
-194,832 decisions, of which **194,828 supervised** (99.998%) — 0 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 27,455, neutral 143,385, long 23,988 (194,828 total). Mean uniqueness weight 0.0744.
+194,832 decisions, of which **194,828 supervised** (99.998%) — 0 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 27,455, neutral 143,385, long 23,988 (194,828 total).
 
 ## Model
 
-Search: 50 Optuna trials, best log-loss 0.801648. Winner: depth 2, eta 0.0206, 200 rounds, subsample 0.529, colsample 0.712, min_child_weight 20, lambda 0.3941, alpha 0.3585.
+Search: 50 Optuna trials, best log-loss 0.801736. Winner: depth 2, eta 0.0132, 300 rounds, subsample 0.573, colsample 0.759, min_child_weight 27, lambda 0.3764, alpha 0.7618.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
-| F2 | 0.819911 | 0.798768 | +2.58% | 0.0461 | 35,040 |
-| F3 | 0.822916 | 0.778357 | +5.41% | 0.0527 | 35,040 |
-| F4 | 0.879912 | 0.827821 | +5.92% | 0.0503 | 35,136 |
-| **F5 — final holdout** | 0.871235 | 0.835553 | +4.10% | 0.0410 | 57,776 |
+| F2 | 0.819752 | 0.798077 | +2.64% | 0.0488 | 35,040 |
+| F3 | 0.822737 | 0.778907 | +5.33% | 0.0493 | 35,040 |
+| F4 | 0.879924 | 0.828225 | +5.88% | 0.0508 | 35,136 |
+| **F5 — final holdout** | 0.871183 | 0.835453 | +4.10% | 0.0411 | 57,776 |
 
 ## Fold geometry
 
@@ -42,20 +42,20 @@ Search: 50 Optuna trials, best log-loss 0.801648. Winner: depth 2, eta 0.0206, 2
 | F4 | 101,911 | 5 | 35,136 | 35,136 |
 | F5 | 137,036 | 16 | 57,776 | 57,776 |
 
-`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated.
+`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
 ## Strategy
 
-Entry edge threshold **0.21**. Cost 0.06% per side; the hierarchy gate requires the side to match the 4h trend sign with at least 2 of 3 timeframes agreeing.
+Entry edge threshold **0.19**. Cost 0.06% per side; the hierarchy gate requires the side to match the 4h trend sign with at least 2 of 3 timeframes agreeing.
 
 | fold | Sharpe | maxDD | trades | hit rate | exposure | final equity |
 | --- | --- | --- | --- | --- | --- | --- |
-| F2 | -1.528 | 37.9% | 137 | 40.1% | 4.51% | 0.7049 |
-| F3 | -0.307 | 17.4% | 95 | 50.5% | 2.45% | 0.9583 |
-| F4 | +1.412 | 15.1% | 119 | 53.8% | 3.59% | 1.2384 |
-| **F5 — final holdout** | -1.546 | 24.0% | 212 | 44.8% | 3.95% | 0.7703 |
+| F2 | -1.791 | 39.6% | 126 | 38.9% | 4.22% | 0.6775 |
+| F3 | -1.184 | 19.9% | 96 | 43.8% | 2.58% | 0.8654 |
+| F4 | +1.595 | 15.1% | 139 | 54.7% | 4.25% | 1.3618 |
+| **F5 — final holdout** | -1.707 | 26.9% | 231 | 44.2% | 4.21% | 0.7411 |
 
-Final-holdout exits: upper_barrier 62, lower_barrier 53, vertical 97, ambiguous 0.
+Final-holdout exits: upper_barrier 64, lower_barrier 61, vertical 106, ambiguous 0.
 
 ## Reproducing this folder
 

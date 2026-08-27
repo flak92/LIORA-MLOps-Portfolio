@@ -67,7 +67,7 @@ ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
 ml-features:     ## fixed hierarchical 15-column feature matrix per asset
 	$(call fanout,$(PY),ml_module.features)
 
-ml-labels:       ## triple-barrier labels on the canonical 1m path + uniqueness weights
+ml-labels:       ## triple-barrier labels on the canonical 1m path
 	$(call fanout,$(PY),ml_module.labels)
 
 ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)

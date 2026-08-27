@@ -43,9 +43,10 @@ quote nothing traded at.
 Such a row is neither an executable decision nor a sound measurement, so it
 carries no weight and trains nothing. The strategy still gates on
 `entry_observable` alone and never on `label_valid`.
-Average uniqueness [Lopez de Prado, ch. 4] is computed over the supervised
-events only, so an excluded row cannot dilute the weights of the rows actually
-trained on.
+Sample weights are NOT computed here. Average uniqueness depends on which
+events are open at the same time, and that population is a property of a
+fold, not of the label: `validation.py` measures it over the purged training
+rows and over the scored rows separately.
 
 Y also carries the prices the strategy needs (entry, both barriers, and the
 reference price of the resolving minute), so the backtest replays exactly the
@@ -68,7 +69,7 @@ LABEL_HORIZON_MINUTES = config.LABEL_HORIZON_MINUTES
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
     "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
-    "label_valid": "BOOLEAN", "weight": "DOUBLE",
+    "label_valid": "BOOLEAN",
     "event_resolution": "TINYINT", "entry_price": "DOUBLE",
     "upper_barrier": "DOUBLE", "lower_barrier": "DOUBLE",
     "exit_reference_price": "DOUBLE",
@@ -131,24 +132,6 @@ def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.nd
     return y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier, exit_reference_price
 
 
-def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
-    """Average uniqueness over each event's minutes, exact via prefix sums."""
-    n_min = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
-    start = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-    end = ((end_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-    delta = np.zeros(n_min + 1, dtype=np.int64)
-    np.add.at(delta, start, 1)
-    np.add.at(delta, end, -1)
-    conc = np.cumsum(delta[:-1])
-    inv = np.zeros(n_min + 1)
-    covered = conc > 0
-    inv[1:][covered] = 1.0 / conc[covered]
-    s = np.cumsum(inv)
-    w = (s[end] - s[start]) / (end - start)
-    assert np.all((w > 0) & (w <= 1.0)), "uniqueness weights outside (0, 1]"
-    return w
-
-
 def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
     return dataset.write_parquet(
         config.artifact_dir(ticker) / "label_events.parquet",
@@ -156,8 +139,7 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
             int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
-            int(cols["label_valid"][i]),
-            repr(float(cols["weight"][i])), int(cols["event_resolution"][i]),
+            int(cols["label_valid"][i]), int(cols["event_resolution"][i]),
             repr(float(cols["entry_price"][i])), repr(float(cols["upper_barrier"][i])),
             repr(float(cols["lower_barrier"][i])),
             repr(float(cols["exit_reference_price"][i])),
@@ -205,14 +187,10 @@ def main() -> int:
         label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid
 
-        weight = np.zeros(decision_ts.size)
-        v = np.flatnonzero(sample_valid)
-        weight[v] = uniqueness_weights(entry_ts[v], event_end_ts[v])
-
         out = write_y(t, {
             "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
             "event_end_ts": event_end_ts, "entry_observable": entry_observable,
-            "label_valid": label_valid, "weight": weight,
+            "label_valid": label_valid,
             "event_resolution": event_resolution, "entry_price": entry_price,
             "upper_barrier": upper_barrier, "lower_barrier": lower_barrier,
             "exit_reference_price": exit_reference_price,

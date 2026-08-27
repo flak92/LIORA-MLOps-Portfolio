@@ -13,7 +13,8 @@ window and seed; the git commit records which code produced a result.
 2. The decision is taken at a 15m bar close; **execution happens one minute later**.
 3. `Y` comes from the **canonical research series** only — the same object as `X`.
 4. `Y` is a first-touch triple barrier on the 1m path; **ambiguity is not a class**.
-5. Overlapping labels carry **average-uniqueness** weights.
+5. Overlapping labels carry **average-uniqueness** weights, measured on the
+   population that uses them.
 6. A training event may **not cross the start of its OOS block**.
 7. HPO and the entry edge threshold `τ` see **F2–F4 only**.
 8. **F5 changes no decision** — not a feature, not a hyper-parameter, not the
@@ -176,16 +177,26 @@ position.
 
 Supervision uses both. An unobservable entry gives `P₀ = open` of a minute that
 printed no trade, so its barriers are anchored to a quote nothing traded at: not an executable decision and not a sound
-measurement. `sample_valid` therefore governs the uniqueness weights, the
-training rows, the HPO objective and the classification metrics, while the
-strategy gates on `entry_observable` alone.
+measurement. `sample_valid` therefore governs the training rows, the HPO
+objective and the classification metrics — and, through them, the populations
+the uniqueness weights are measured on — while the strategy gates on
+`entry_observable` alone.
 
 Sample weight = **average uniqueness** [4, ch. 4]: the mean over the event's
-minutes of `1 / (concurrently open events)`, exact via prefix sums, computed
-over the **supervised** events only, so an excluded row cannot dilute the
-weights of the rows actually trained on. It is the XGBoost sample weight, with no
-additional class re-weighting. Rows whose vertical barrier would cross the
-research end are dropped.
+minutes of `1 / (concurrently open events)`, exact via prefix sums. It is the
+XGBoost sample weight, with no additional class re-weighting. Rows whose
+vertical barrier would cross the research end are dropped.
+
+**The weight is a property of a population, not of an event**, so it is
+measured where it is used, in `validation.py`, and never stored in `Y`.
+Concurrency is counted inside the population that carries the weights: the
+**purged training rows** of a fold, and separately the **scored rows** of that
+fold. Counting it once over the whole research window would let a purged
+event — or an event inside the block being evaluated — raise the concurrency
+of a training row, so the future would help decide how much that row counts.
+The training weights therefore feed `model.fit` and the class prior, the
+scoring weights feed the log-losses of that same fold, and neither can be
+used in place of the other.
 
 `label_events.parquet` also carries the prices the backtest needs —
 `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` — so the

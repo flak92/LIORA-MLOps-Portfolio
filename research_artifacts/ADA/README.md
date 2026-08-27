@@ -8,9 +8,9 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | --- | --- | --- |
 | `canonical_1m.parquet` | the published canonical 1m series | 37,865 KB |
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,576 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,777 KB |
-| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,344 KB |
-| `hyperparameter_search.json` | the winning point of the search | 321 B |
+| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,284 KB |
+| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,350 KB |
+| `hyperparameter_search.json` | the winning point of the search | 318 B |
 | `model_evaluation.json` | classification metrics per fold | 3 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 | `experiment_configuration.json` | the configuration this run was executed under | 4 KB |
@@ -20,18 +20,18 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Labels
 
-194,832 decisions, of which **194,818 supervised** (99.993%) — 10 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 25,288, neutral 147,677, long 21,853 (194,818 total). Mean uniqueness weight 0.0734.
+194,832 decisions, of which **194,818 supervised** (99.993%) — 10 events resolve ambiguously and 4 entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short 25,288, neutral 147,677, long 21,853 (194,818 total).
 
 ## Model
 
-Search: 50 Optuna trials, best log-loss 0.771792. Winner: depth 2, eta 0.0100, 450 rounds, subsample 0.516, colsample 0.710, min_child_weight 8, lambda 0.6921, alpha 0.9854.
+Search: 50 Optuna trials, best log-loss 0.771581. Winner: depth 2, eta 0.0115, 500 rounds, subsample 0.529, colsample 0.649, min_child_weight 4, lambda 0.9644, alpha 0.9982.
 
 | fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
 | --- | --- | --- | --- | --- | --- |
-| F2 | 0.810366 | 0.770984 | +4.86% | 0.0418 | 35,038 |
-| F3 | 0.818446 | 0.769932 | +5.93% | 0.0456 | 35,040 |
-| F4 | 0.817473 | 0.774462 | +5.26% | 0.0359 | 35,136 |
-| **F5 — final holdout** | 0.816381 | 0.770129 | +5.67% | 0.0405 | 57,768 |
+| F2 | 0.810186 | 0.771566 | +4.77% | 0.0468 | 35,038 |
+| F3 | 0.818317 | 0.769641 | +5.95% | 0.0506 | 35,040 |
+| F4 | 0.817329 | 0.773535 | +5.36% | 0.0436 | 35,136 |
+| **F5 — final holdout** | 0.816330 | 0.768760 | +5.83% | 0.0433 | 57,768 |
 
 ## Fold geometry
 
@@ -42,7 +42,7 @@ Search: 50 Optuna trials, best log-loss 0.771792. Winner: depth 2, eta 0.0100, 4
 | F4 | 101,910 | 4 | 35,136 | 35,136 |
 | F5 | 137,034 | 16 | 57,776 | 57,768 |
 
-`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated.
+`purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
 ## Strategy
 
@@ -50,12 +50,12 @@ Entry edge threshold **0.24**. Cost 0.06% per side; the hierarchy gate requires 
 
 | fold | Sharpe | maxDD | trades | hit rate | exposure | final equity |
 | --- | --- | --- | --- | --- | --- | --- |
-| F2 | +0.059 | 14.9% | 69 | 44.9% | 2.16% | 0.9980 |
-| F3 | +0.142 | 14.3% | 102 | 42.2% | 3.24% | 1.0097 |
-| F4 | +0.811 | 10.8% | 39 | 53.8% | 1.28% | 1.1182 |
-| **F5 — final holdout** | -0.304 | 17.7% | 65 | 52.3% | 1.22% | 0.9070 |
+| F2 | +0.272 | 13.4% | 88 | 45.5% | 2.88% | 1.0313 |
+| F3 | +0.286 | 13.8% | 127 | 42.5% | 3.94% | 1.0362 |
+| F4 | +0.219 | 13.5% | 53 | 47.2% | 1.83% | 1.0232 |
+| **F5 — final holdout** | -0.305 | 19.6% | 95 | 48.4% | 1.85% | 0.8996 |
 
-Final-holdout exits: upper_barrier 20, lower_barrier 15, vertical 30, ambiguous 0.
+Final-holdout exits: upper_barrier 26, lower_barrier 23, vertical 46, ambiguous 0.
 
 ## Reproducing this folder
 

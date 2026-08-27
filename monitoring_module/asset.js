@@ -81,7 +81,6 @@ function labelFrame(a) {
     ["excluded", fmt(a.sample.ambiguous) + " ambiguous · "
       + fmt(a.sample.unobservable) + " unobservable entry"],
     ["warm-up excluded", fmt(a.sample.warmup_excluded_decision_count) + " decisions"],
-    ["mean uniqueness weight", a.sample.uniqueness_weight_mean.toFixed(4)],
   ]));
   return f.frame;
 }
