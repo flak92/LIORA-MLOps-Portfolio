@@ -117,7 +117,7 @@ fetch("status.json", { cache: "no-store" })
       const tr = document.createElement("tr");
       cell(tr, y.symbol);
       cell(tr, fmt(y.rows));
-      cell(tr, pctCell(y.data_pct), y.data_pct < 99.9);
+      cell(tr, pctCell(y.data_pct));
       cell(tr, fmt(y.ffill_bars), y.ffill_bars > 0);
       cell(tr, fmt(y.parquet_rows), y.parquet_rows !== y.rows);
       cell(tr, fmtBytes(y.parquet_bytes));
@@ -135,16 +135,15 @@ fetch("status.json", { cache: "no-store" })
       cell(tr, fmt(y.rows));
       cell(tr, pctCell(y.pct_binance));
       cell(tr, y.pct_bybit.toFixed(2) + "%");
-      cell(tr, fmt(y.ffill_bars) + " (" + y.pct_ffill.toFixed(3) + "%)", y.pct_ffill > 0.1);
+      cell(tr, fmt(y.ffill_bars) + " (" + y.pct_ffill.toFixed(3) + "%)", y.ffill_bars > 0);
       cell(tr, fmt(y.zero_volume_bars));
       cell(tr, fmt(y.source_switches));
-      cell(tr, y.max_abs_ret_at_switch === null ? "-" : (100 * y.max_abs_ret_at_switch).toFixed(2) + "%",
-           y.max_abs_ret_at_switch !== null && y.max_abs_ret_at_switch > 0.01);
+      cell(tr, y.max_abs_ret_at_switch === null ? "-" : (100 * y.max_abs_ret_at_switch).toFixed(2) + "%");
       cell(tr, fmt(y.ohlc_violations), y.ohlc_violations > 0);
       cell(tr, fmt(y.longest_flat_run_min));
       cell(tr, y.max_abs_ret_1m === null ? "-" : (100 * y.max_abs_ret_1m).toFixed(2) + "%");
       cell(tr, fmtDiv(y.div_mean));
-      cell(tr, fmtDiv(y.div_p99), y.div_p99 !== null && y.div_p99 > 0.002);
+      cell(tr, fmtDiv(y.div_p99));
       cell(tr, fmtDiv(y.div_max));
       ftbody.appendChild(tr);
     }

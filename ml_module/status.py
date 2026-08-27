@@ -62,13 +62,18 @@ def classification_block(metrics: dict) -> tuple[dict, dict]:
     return validation, _cls(metrics["test"])
 
 
-def thin_curve(curve: dict, stride: int = EQUITY_STRIDE) -> dict:
-    """The sparkline needs the shape, not the calendar: thinned values only."""
-    equity = curve["equity"]
-    return {
-        "equity": [round(v, 4) for v in equity[::stride]],
-        "equity_final": round(equity[-1], 4),
-    }
+def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_STRIDE) -> dict:
+    """The sparkline needs the shape, not the calendar: thinned values only.
+
+    The end of the curve is the measured result, not whatever the thinning
+    happened to land on — daily sampling then a stride of seven can stop days
+    before the fold does. The settled value is appended when it differs.
+    """
+    values = [round(v, 4) for v in curve["equity"][::stride]]
+    end = round(final_equity, 4)
+    if values[-1] != end:
+        values.append(end)
+    return {"equity": values, "equity_final": end}
 
 
 def _pnl(block: dict) -> dict:
@@ -93,7 +98,7 @@ def strategy_block(strategy: dict) -> dict:
         "costs_per_side": strategy["costs_per_side"],
         "validation": {k: _pnl(v) for k, v in sorted(strategy["validation"].items())},
         "test": _pnl(test),
-        "equity_curve": thin_curve(test["equity_curve"]),
+        "equity_curve": thin_curve(test["equity_curve"], test["final_equity"]),
     }
 
 
