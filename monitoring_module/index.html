@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1m Crypto Research Dataset — Status</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>1m crypto research dataset — status</h1>
+  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB &rarr; per-asset Parquet &rarr; research</p>
+
+  <nav id="tabs" class="pills" data-pills="tab">
+    <button class="pill pill--active" data-key="pipeline">Pipeline</button>
+    <button class="pill" data-key="quality">Data Quality</button>
+    <button class="pill" data-key="ml">ML Research</button>
+    <button class="pill" data-key="asset">ML Assets</button>
+  </nav>
+
+  <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
+    <div id="meta" class="box">loading status.json&hellip;</div>
+    <div id="flow" class="box"></div>
+    <table id="symbols" hidden>
+      <thead>
+        <tr>
+          <th>symbol</th><th>canonical rows</th><th>real-data share</th>
+          <th>ffill bars</th><th>parquet rows</th><th>parquet size</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
+    <h2>Raw source: Binance USDS-M</h2>
+    <table id="raw-binance">
+      <thead>
+        <tr>
+          <th>symbol</th><th>zips</th><th>rows</th><th>coverage</th><th>gaps</th><th>gaps (since first obs.)</th>
+          <th>dups</th><th>ohlc bad</th><th>zero-vol</th><th>flat</th><th>first</th><th>last</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h2>Raw source: Bybit Linear</h2>
+    <table id="raw-bybit">
+      <thead>
+        <tr>
+          <th>symbol</th><th>zips</th><th>rows</th><th>coverage</th><th>gaps</th><th>gaps (since first obs.)</th>
+          <th>dups</th><th>ohlc bad</th><th>zero-vol</th><th>flat</th><th>first</th><th>last</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h2>Canonical dataset construction</h2>
+    <table id="canonical-source">
+      <thead>
+        <tr>
+          <th>symbol</th><th>rows</th><th>primary</th><th>secondary</th><th>ffill</th>
+          <th>zero-vol</th><th>switches</th><th>max |ret| at switch</th><th>ohlc bad</th>
+          <th>flat run (min)</th><th>max |ret| 1m</th><th>div mean</th><th>div p99</th><th>div max</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">the two sources above are the only place a provider is named: from the
+      canonical table onwards the dataset is one market object. Tier order, the verbatim-candle
+      rule and the reason it beats averaging are in DATA_README.</p>
+  </section>
+
+  <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
+    <div id="ml-meta" class="box">loading ml_status.json&hellip;</div>
+    <table id="ml-assets" hidden>
+      <thead>
+        <tr>
+          <th>asset</th><th>rows</th><th>classes &minus;/0/+</th>
+          <th>depth/eta/rounds</th><th>prior LL</th><th>model LL</th><th>skill</th>
+          <th>&tau; (entry edge threshold)</th><th>Sharpe</th><th>maxDD</th><th>trades</th><th>hit</th><th>exposure</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">final-holdout numbers are computed with parameters frozen on F2–F4: fold F5
+      never participates in feature, hyper-parameter, entry-edge-threshold or strategy-rule selection.</p>
+  </section>
+
+  <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
+    <div id="asset-meta" class="box">loading ml_status.json&hellip;</div>
+
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">cross-section &mdash; ten assets</span>
+        <span class="pills" data-pills="mlview">
+          <button class="pill pill--active" data-key="labels">Labels &amp; data</button>
+          <button class="pill" data-key="classification">Classification</button>
+          <button class="pill" data-key="strategy">Strategy</button>
+          <button class="pill" data-key="search">Search</button>
+        </span>
+      </div>
+      <div class="frame__body">
+        <div data-panel="mlview" data-key="labels"><table id="cs-labels"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="classification" hidden><table id="cs-classification"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="strategy" hidden><table id="cs-strategy"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="search" hidden><table id="cs-search"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">asset</span>
+        <span class="pills" id="asset-pills" data-pills="asset"></span>
+      </div>
+    </div>
+    <div id="asset-detail"></div>
+    <p class="foot">the final holdout fold (F5) is shown in bold: it selects nothing — no feature,
+      hyper-parameter, entry edge threshold or strategy rule was chosen by looking at it.</p>
+  </section>
+
+  <p class="foot">static page &middot; data from <code>status.json</code> / <code>ml_status.json</code>
+    (regenerate with <code>make status</code> / <code>make ml-status</code>)</p>
+  <script src="app.js"></script>
+  <script src="asset.js"></script>
+  <script src="ml.js"></script>
+</body>
+</html>

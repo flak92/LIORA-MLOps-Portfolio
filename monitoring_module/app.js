@@ -1,4 +1,6 @@
-/* Render status.json on two tabs. Vanilla JS, no external resources. */
+/* Pipeline and Data Quality tabs, plus shared helpers used by ml.js.
+   Vanilla JS, classic scripts sharing one global scope, no external
+   resources. */
 "use strict";
 
 function fmt(n) {
@@ -19,9 +21,9 @@ function fmtDiv(x) {
 
 function bar(pctValue) {
   const track = document.createElement("span");
-  track.className = "bar-track";
+  track.className = "bar";
   const fill = document.createElement("span");
-  fill.className = "bar-fill";
+  fill.className = "bar__fill";
   fill.style.width = Math.max(0, Math.min(100, pctValue)) + "%";
   track.appendChild(fill);
   return track;
@@ -43,16 +45,40 @@ function cell(row, content, warn) {
   return td;
 }
 
-/* tabs */
-document.querySelectorAll("#tabs button").forEach((b) =>
-  b.addEventListener("click", () => {
-    document.querySelectorAll("#tabs button")
-      .forEach((x) => x.classList.toggle("active", x === b));
-    document.querySelectorAll("section[id^='tab-']")
-      .forEach((s) => { s.hidden = s.id !== "tab-" + b.dataset.tab; });
-  }));
+/* One pill component for every group: top tabs, summary views, ticker rows.
+   A group is [data-pills="NAME"]; its panels carry data-panel="NAME" and a
+   matching data-key. Groups without static panels drive a hook instead, so
+   pills injected after a fetch work through event delegation. */
+const PILL_HOOKS = {};
 
-function renderVenue(tableId, list) {
+function initPills(root) {
+  root.querySelectorAll("[data-pills]").forEach((group) => {
+    if (group.dataset.bound === "1") return;
+    group.dataset.bound = "1";
+    const name = group.dataset.pills;
+    const select = (key) => {
+      group.querySelectorAll("button").forEach((b) => b.classList.toggle("pill--active", b.dataset.key === key));
+      document.querySelectorAll("[data-panel='" + name + "']")
+        .forEach((p) => { p.hidden = p.dataset.key !== key; });
+      if (PILL_HOOKS[name]) PILL_HOOKS[name](key);
+    };
+    group.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-key]");
+      if (b && group.contains(b)) select(b.dataset.key);
+    });
+    const first = group.querySelector("button.pill--active") || group.querySelector("button");
+    if (first) select(first.dataset.key);
+  });
+}
+
+/* null-safe formatting: to_json_safe() writes null for non-finite floats */
+function num(x, d) {
+  return x === null || x === undefined ? "-" : x.toFixed(d);
+}
+
+initPills(document);
+
+function renderRawSource(tableId, list) {
   const tbody = document.querySelector("#" + tableId + " tbody");
   for (const v of list) {
     const tr = document.createElement("tr");
@@ -61,7 +87,7 @@ function renderVenue(tableId, list) {
     cell(tr, fmt(v.rows));
     cell(tr, pctCell(v.coverage_pct));
     cell(tr, fmt(v.gaps));
-    cell(tr, fmt(v.gaps_after_listing), v.gaps_after_listing > 0);
+    cell(tr, fmt(v.gaps_after_first_observation), v.gaps_after_first_observation > 0);
     cell(tr, fmt(v.duplicates), v.duplicates > 0);
     cell(tr, fmt(v.ohlc_violations), v.ohlc_violations > 0);
     cell(tr, fmt(v.zero_volume));
@@ -81,8 +107,8 @@ fetch("status.json", { cache: "no-store" })
       "database:  " + fmtBytes(s.db_bytes) + "  (duckdb " + s.duckdb_version + ")";
     const f = s.flow;
     document.getElementById("flow").textContent =
-      "flow: " + fmt(f.zips_binance) + " binance zips + " + fmt(f.zips_bybit) + " bybit zips" +
-      " -> " + fmt(f.rows_binance) + " + " + fmt(f.rows_bybit) + " venue rows" +
+      "flow: " + fmt(f.zips_binance + f.zips_bybit) + " raw ZIPs" +
+      " -> " + fmt(f.rows_binance + f.rows_bybit) + " raw rows" +
       " -> " + fmt(f.rows_canonical) + " canonical rows -> " + fmt(f.parquet_rows) + " parquet rows";
 
     const table = document.getElementById("symbols");
@@ -91,7 +117,7 @@ fetch("status.json", { cache: "no-store" })
       const tr = document.createElement("tr");
       cell(tr, y.symbol);
       cell(tr, fmt(y.rows));
-      cell(tr, pctCell(y.data_pct), y.data_pct < 99.9);
+      cell(tr, pctCell(y.data_pct));
       cell(tr, fmt(y.ffill_bars), y.ffill_bars > 0);
       cell(tr, fmt(y.parquet_rows), y.parquet_rows !== y.rows);
       cell(tr, fmtBytes(y.parquet_bytes));
@@ -99,26 +125,25 @@ fetch("status.json", { cache: "no-store" })
     }
     table.hidden = false;
 
-    renderVenue("venue-binance", s.venues.binance);
-    renderVenue("venue-bybit", s.venues.bybit);
+    renderRawSource("raw-binance", s.venues.binance);
+    renderRawSource("raw-bybit", s.venues.bybit);
 
-    const ftbody = document.querySelector("#fusion tbody");
-    for (const y of s.fusion) {
+    const ftbody = document.querySelector("#canonical-source tbody");
+    for (const y of s.canonical_source) {
       const tr = document.createElement("tr");
       cell(tr, y.symbol);
       cell(tr, fmt(y.rows));
-      cell(tr, pctCell(y.pct_both));
-      cell(tr, y.pct_binance_only.toFixed(2) + "%");
-      cell(tr, y.pct_bybit_only.toFixed(2) + "%");
-      cell(tr, fmt(y.ffill_bars) + " (" + y.ffill_pct.toFixed(3) + "%)", y.ffill_pct > 0.1);
-      cell(tr, fmt(y.leading_null), y.leading_null > 0);
+      cell(tr, pctCell(y.pct_binance));
+      cell(tr, y.pct_bybit.toFixed(2) + "%");
+      cell(tr, fmt(y.ffill_bars) + " (" + y.pct_ffill.toFixed(3) + "%)", y.ffill_bars > 0);
+      cell(tr, fmt(y.zero_volume_bars));
+      cell(tr, fmt(y.source_switches));
+      cell(tr, y.max_abs_ret_at_switch === null ? "-" : (100 * y.max_abs_ret_at_switch).toFixed(2) + "%");
       cell(tr, fmt(y.ohlc_violations), y.ohlc_violations > 0);
       cell(tr, fmt(y.longest_flat_run_min));
       cell(tr, y.max_abs_ret_1m === null ? "-" : (100 * y.max_abs_ret_1m).toFixed(2) + "%");
-      cell(tr, y.max_phantom_ret === null ? "-" : (100 * y.max_phantom_ret).toFixed(2) + "%",
-           y.max_phantom_ret !== null && y.max_phantom_ret > 0.01);
       cell(tr, fmtDiv(y.div_mean));
-      cell(tr, fmtDiv(y.div_p99), y.div_p99 !== null && y.div_p99 > 0.002);
+      cell(tr, fmtDiv(y.div_p99));
       cell(tr, fmtDiv(y.div_max));
       ftbody.appendChild(tr);
     }

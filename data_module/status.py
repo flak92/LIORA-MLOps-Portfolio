@@ -1,10 +1,12 @@
-"""DATA INGEST quality monitoring: stdout tables + dashboard/status.json.
+"""Data-layer quality monitoring: stdout tables + monitoring_module/status.json.
 
 Three full scans (one per venue table, one over the canonical series) feed the
 whole report: per-venue availability (coverage, gaps, duplicates, OHLC
-violations), fusion provenance (both / single-venue shares, forward-filled
-bars, cross-exchange divergence) and the pipeline flow totals. JSON keys are
-ordered in flow order; the dashboard renders this file as-is on two tabs.
+violations), canonical source provenance (per-venue shares, forward fills,
+zero-volume candles, source switches and the largest move at a switch — the
+only place a cross-venue basis jump can enter the series) and the pipeline
+flow totals. JSON keys are ordered in flow order; the dashboard renders this
+file as-is.
 """
 
 from __future__ import annotations
@@ -31,48 +33,42 @@ FROM ohlcv_1m_{venue}
 GROUP BY symbol
 """
 
-FUSION_SCAN = """
+CANONICAL_SCAN = """
 SELECT symbol,
-       count(*)                                            AS rows,
-       count(*) FILTER (src_count = 2)                     AS n_both,
-       count(*) FILTER (src_count = 1 AND w_binance = 1.0) AS n_binance_only,
-       count(*) FILTER (src_count = 1 AND w_binance = 0.0) AS n_bybit_only,
-       count(*) FILTER (is_ffill)                          AS ffill_bars,
-       count(*) FILTER (close IS NULL)                     AS leading_null,
-       avg(rel_divergence)                                 AS div_mean,
-       quantile_cont(rel_divergence, 0.99)                 AS div_p99,
-       max(rel_divergence)                                 AS div_max,
-       max(timestamp_ms)                                   AS ts_max,
+       count(*)                              AS rows,
+       count(*) FILTER (source = 'binance')  AS n_binance,
+       count(*) FILTER (source = 'bybit')    AS n_bybit,
+       count(*) FILTER (source = 'ffill')    AS n_ffill,
+       count(*) FILTER (zero_volume)         AS zero_volume_bars,
+       avg(rel_divergence)                   AS div_mean,
+       quantile_cont(rel_divergence, 0.99)   AS div_p99,
+       max(rel_divergence)                   AS div_max,
+       max(timestamp_ms)                     AS ts_max,
        count(*) FILTER (high < greatest(open, close, low)
-                     OR low  > least(open, close, high))   AS ohlc_violations,
-       count(*) FILTER (volume = 0 AND open = high AND high = low
-                        AND low = close)                   AS flat_bars
+                     OR low  > least(open, close, high)) AS ohlc_violations
 FROM ohlcv_1m_canonical
 GROUP BY symbol
 """
 
 # per-symbol (bounded memory): largest 1m move and longest flat run on the canonical series
-CANON_MAX_RET = """
+CANONICAL_MAX_ABS_RET_1M = """
 SELECT max(abs(close / prev - 1)) FROM (
   SELECT close, lag(close) OVER (ORDER BY timestamp_ms) AS prev
   FROM ohlcv_1m_canonical WHERE symbol = ?)
 """
 
-# phantom return: canonical 1m move exceeding BOTH venues' own moves — the
-# index shifting between disagreeing venues via weight changes alone
-PHANTOM_RET = """
-WITH c AS (SELECT timestamp_ms, close AS cc, lag(close) OVER (ORDER BY timestamp_ms) AS pc
-           FROM ohlcv_1m_canonical WHERE symbol = ?),
-     b AS (SELECT timestamp_ms, close AS cb, lag(close) OVER (ORDER BY timestamp_ms) AS pb
-           FROM ohlcv_1m_binance WHERE symbol = ? AND volume > 0),
-     y AS (SELECT timestamp_ms, close AS cy, lag(close) OVER (ORDER BY timestamp_ms) AS py
-           FROM ohlcv_1m_bybit   WHERE symbol = ? AND volume > 0)
-SELECT max(greatest(abs(cc/pc-1) - greatest(abs(cb/pb-1), abs(cy/py-1)), 0)) AS max_phantom_ret
-FROM c JOIN b USING (timestamp_ms) JOIN y USING (timestamp_ms)
-WHERE pc IS NOT NULL AND pb IS NOT NULL AND py IS NOT NULL
+# a basis jump can enter the canonical series only on a minute whose source
+# differs from the previous minute — count switches and the largest such move
+SOURCE_SWITCHES = """
+SELECT count(*) FILTER (chg) AS switches,
+       max(CASE WHEN chg THEN abs(close / prev_close - 1) END) AS max_ret_at_switch
+FROM (SELECT close,
+             lag(close)  OVER (ORDER BY timestamp_ms) AS prev_close,
+             source <> lag(source) OVER (ORDER BY timestamp_ms) AS chg
+      FROM ohlcv_1m_canonical WHERE symbol = ?)
 """
 
-CANON_FLAT_RUN = """
+CANONICAL_LONGEST_FLAT_RUN = """
 WITH f AS (SELECT timestamp_ms, (volume = 0 AND open = high AND high = low
                                  AND low = close) AS flat
            FROM ohlcv_1m_canonical WHERE symbol = ?),
@@ -99,45 +95,52 @@ def main() -> int:
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
 
     con.execute("SET memory_limit='4GB'")
-    con.execute("SET threads=2")
-    venue_rows = {v: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=v)).fetchall()} for v in config.VENUES}
-    fusion_rows = {r[0]: r for r in con.execute(FUSION_SCAN).fetchall()}
+    con.execute("SET threads=1")   # float summation must not be reordered
+    venue_rows = {venue: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=venue)).fetchall()}
+                  for venue in config.SOURCE_VENUES}
+    canonical_rows = {r[0]: r for r in con.execute(CANONICAL_SCAN).fetchall()}
     canon_extra = {
         sym: (
-            con.execute(CANON_MAX_RET, [sym]).fetchone()[0],
-            con.execute(CANON_FLAT_RUN, [sym]).fetchone()[0],
-            con.execute(PHANTOM_RET, [sym, sym, sym]).fetchone()[0],
+            con.execute(CANONICAL_MAX_ABS_RET_1M, [sym]).fetchone()[0],
+            con.execute(CANONICAL_LONGEST_FLAT_RUN, [sym]).fetchone()[0],
+            con.execute(SOURCE_SWITCHES, [sym]).fetchone(),
         )
-        for sym in fusion_rows
+        for sym in canonical_rows
     }
     con.close()
 
-    window_end_ms = max((r[10] for r in fusion_rows.values()), default=None)
+    window_end_ms = max((r[9] for r in canonical_rows.values()), default=None)
     if window_end_ms is not None:
-        window_end_ms += config.GRID_STEP_MS
-    expected = (window_end_ms - config.START_MS) // config.GRID_STEP_MS if window_end_ms else 0
+        window_end_ms += config.CANONICAL_GRID_INTERVAL_MS
+    expected = ((window_end_ms - config.DATA_WINDOW_START_MS)
+                // config.CANONICAL_GRID_INTERVAL_MS) if window_end_ms else 0
 
-    tickers = [t for t in config.TICKERS if config.symbol(t) in fusion_rows]
+    tickers = [t for t in config.TICKERS if config.symbol(t) in canonical_rows]
     zip_counts = {
-        v: {t: sum(1 for _ in config.raw_symbol_dir(t, v).glob("*_trade.zip")) for t in tickers}
-        for v in config.VENUES
+        venue: {t: sum(1 for _ in config.raw_symbol_dir(t, venue).glob("*_trade.zip")) for t in tickers}
+        for venue in config.SOURCE_VENUES
     }
 
     venues = {}
-    for v in config.VENUES:
+    for venue in config.SOURCE_VENUES:
         out = []
         for t in tickers:
             sym = config.symbol(t)
-            r = venue_rows[v].get(sym)
+            r = venue_rows[venue].get(sym)
             rows, distinct_ts = (r[1], r[2]) if r else (0, 0)
             out.append(
                 {
                     "symbol": sym,
-                    "zip_count": zip_counts[v][t],
+                    "zip_count": zip_counts[venue][t],
                     "rows": rows,
                     "coverage_pct": pct(distinct_ts, expected),
                     "gaps": expected - distinct_ts,
-                    "gaps_after_listing": ((r[4] - r[3]) // config.GRID_STEP_MS + 1 - distinct_ts) if r else 0,
+                    # measured from the first observation to the END OF THE WINDOW:
+                    # a span anchored on the symbol's own last row shrinks together
+                    # with a truncated tail and reports zero for a stale feed
+                    "gaps_after_first_observation": (
+                        (window_end_ms - r[3]) // config.CANONICAL_GRID_INTERVAL_MS - distinct_ts
+                    ) if r and window_end_ms else 0,
                     "duplicates": rows - distinct_ts,
                     "ohlc_violations": int(r[5]) if r else 0,
                     "zero_volume": int(r[6]) if r else 0,
@@ -146,35 +149,34 @@ def main() -> int:
                     "last_ts": iso(r[4]) if r else None,
                 }
             )
-        venues[v] = out
+        venues[venue] = out
 
-    fusion, symbols = [], []
+    canonical, symbols = [], []
     for t in tickers:
         sym = config.symbol(t)
-        r = fusion_rows[sym]
-        rows, ffill = r[1], int(r[5])
-        leading = int(r[6])
-        fusion.append(
+        r = canonical_rows[sym]
+        rows, n_ffill = r[1], int(r[4])
+        switches, max_ret_switch = canon_extra[sym][2]
+        canonical.append(
             {
                 "symbol": sym,
                 "rows": rows,
-                "pct_both": pct(int(r[2]), rows),
-                "pct_binance_only": pct(int(r[3]), rows),
-                "pct_bybit_only": pct(int(r[4]), rows),
-                "ffill_bars": ffill,
-                "ffill_pct": pct(ffill, rows),
-                "leading_null": leading,
-                "div_mean": round(float(r[7]), 8) if r[7] is not None else None,
-                "div_p99": round(float(r[8]), 8) if r[8] is not None else None,
-                "div_max": round(float(r[9]), 8) if r[9] is not None else None,
-                "ohlc_violations": int(r[11]),
-                "flat_bars": int(r[12]),
+                "pct_binance": pct(int(r[2]), rows),
+                "pct_bybit": pct(int(r[3]), rows),
+                "pct_ffill": pct(n_ffill, rows),
+                "ffill_bars": n_ffill,
+                "zero_volume_bars": int(r[5]),
+                "source_switches": int(switches),
+                "max_abs_ret_at_switch": round(float(max_ret_switch), 6) if max_ret_switch is not None else None,
+                "div_mean": round(float(r[6]), 8) if r[6] is not None else None,
+                "div_p99": round(float(r[7]), 8) if r[7] is not None else None,
+                "div_max": round(float(r[8]), 8) if r[8] is not None else None,
+                "ohlc_violations": int(r[10]),
                 "max_abs_ret_1m": round(float(canon_extra[sym][0]), 6) if canon_extra[sym][0] is not None else None,
                 "longest_flat_run_min": int(canon_extra[sym][1]),
-                "max_phantom_ret": round(float(canon_extra[sym][2]), 6) if canon_extra[sym][2] is not None else None,
             }
         )
-        pq = config.asset_parquet(t)
+        pq = config.canonical_parquet(t)
         pq_rows = 0
         if pq.exists():
             c2 = duckdb.connect()
@@ -184,8 +186,8 @@ def main() -> int:
             {
                 "symbol": sym,
                 "rows": rows,
-                "ffill_bars": ffill,
-                "data_pct": pct(rows - ffill - leading, rows),
+                "ffill_bars": n_ffill,
+                "data_pct": pct(rows - n_ffill, rows),
                 "parquet_rows": pq_rows,
                 "parquet_bytes": pq.stat().st_size if pq.exists() else 0,
             }
@@ -193,7 +195,7 @@ def main() -> int:
 
     status = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
-        "window_start": f"{config.START_UTC} 00:00",
+        "window_start": f"{config.DATA_WINDOW_START_UTC} 00:00",
         "window_end": iso(window_end_ms),
         "duckdb_version": duckdb.__version__,
         "db_bytes": config.DB_PATH.stat().st_size,
@@ -207,11 +209,11 @@ def main() -> int:
         },
         "symbols": symbols,
         "venues": venues,
-        "fusion": fusion,
+        "canonical_source": canonical,
     }
 
-    config.DASHBOARD_DIR.mkdir(parents=True, exist_ok=True)
-    out = config.DASHBOARD_DIR / "status.json"
+    config.MONITORING_DIR.mkdir(parents=True, exist_ok=True)
+    out = config.MONITORING_DIR / "status.json"
     out.write_text(json.dumps(status, indent=1) + "\n", encoding="utf-8")
 
     f = status["flow"]
@@ -219,21 +221,21 @@ def main() -> int:
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
     print(f"flow: zips {f['zips_binance']}+{f['zips_bybit']} -> rows {f['rows_binance']}+{f['rows_bybit']} "
           f"-> canonical {f['rows_canonical']} -> parquet {f['parquet_rows']}")
-    for v in config.VENUES:
-        print(f"[venue {v}]")
+    for venue in config.SOURCE_VENUES:
+        print(f"[venue {venue}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")
-        for s in venues[v]:
+        for s in venues[venue]:
             print(f"{s['symbol']:9} {s['zip_count']:>5} {s['rows']:>9} {s['coverage_pct']:>8.3f} "
                   f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume']:>6} {s['flat_bars']:>6}")
-    print("[fusion / canonical]")
-    print(f"{'symbol':9} {'rows':>9} {'both%':>7} {'bin%':>7} {'byb%':>6} {'ffill':>6} {'lead0':>5} "
-          f"{'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'phantom':>8} {'div_p99':>10} {'div_max':>10}")
-    for s in fusion:
-        print(f"{s['symbol']:9} {s['rows']:>9} {s['pct_both']:>7.2f} {s['pct_binance_only']:>7.2f} "
-              f"{s['pct_bybit_only']:>6.2f} {s['ffill_bars']:>6} {s['leading_null']:>5} "
+    print("[canonical source]")
+    print(f"{'symbol':9} {'rows':>9} {'bin%':>7} {'byb%':>6} {'ffill':>6} {'v0':>6} {'switch':>7} "
+          f"{'ret@sw':>8} {'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'div_p99':>10} {'div_max':>10}")
+    for s in canonical:
+        print(f"{s['symbol']:9} {s['rows']:>9} {s['pct_binance']:>7.2f} {s['pct_bybit']:>6.2f} "
+              f"{s['ffill_bars']:>6} {s['zero_volume_bars']:>6} {s['source_switches']:>7} "
+              f"{s['max_abs_ret_at_switch'] if s['max_abs_ret_at_switch'] is not None else '-':>8} "
               f"{s['ohlc_violations']:>4} {s['longest_flat_run_min']:>7} "
               f"{s['max_abs_ret_1m'] if s['max_abs_ret_1m'] is not None else '-':>8} "
-              f"{s['max_phantom_ret'] if s['max_phantom_ret'] is not None else '-':>8} "
               f"{s['div_p99'] if s['div_p99'] is not None else '-':>10} "
               f"{s['div_max'] if s['div_max'] is not None else '-':>10}")
     print(f"wrote {out.relative_to(config.REPO_ROOT)}")

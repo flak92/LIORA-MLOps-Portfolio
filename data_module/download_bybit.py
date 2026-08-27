@@ -1,4 +1,4 @@
-"""Download Bybit Linear USDT 1m klines into QC Lean minute-trade ZIPs.
+"""Download Bybit Linear USDT 1m klines into QuantConnect Lean minute-trade ZIPs.
 
 Keyless public v5 API, stdlib only. Mirrors the Binance downloader: the unit of
 work is one full UTC day = one ZIP, existing ZIPs are skipped (idempotent
@@ -10,7 +10,7 @@ Bybit specifics handled here:
   - rate limiting is retCode 10006 (not HTTP 429) -> exponential backoff;
   - a day before the symbol's listing returns no rows -> an empty CSV is still
     written, so the day is answered once and skipped forever (pre-listing
-    minutes become Binance-only in the fusion, never forward-fills).
+    minutes become Binance-only in the canonical series, never forward-fills).
 
 Output tree (Lean-exact, same format as the Binance tree):
   raw_downloaded_1m_data/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
@@ -23,18 +23,19 @@ column 5 (BASE volume) is written, matching the Binance tree.
 
 from __future__ import annotations
 
-import argparse
 import json
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from datetime import UTC, datetime
+from pathlib import Path
 
 from . import config
-from .download import DAY_MS, write_lean_zip
+from .download_binance import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, write_lean_zip
 
-WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
+KLINE_REQUEST_WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
 
 
 def _get(params: dict, retries: int = 6) -> list[list]:
@@ -45,14 +46,14 @@ def _get(params: dict, retries: int = 6) -> list[list]:
             req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
                 data = json.loads(r.read().decode())
-            rc = data.get("retCode")
-            if rc == 0:
+            ret_code = data.get("retCode")
+            if ret_code == 0:
                 return data.get("result", {}).get("list", [])
-            if rc == 10006 and attempt < retries - 1:  # rate limit
+            if ret_code == 10006 and attempt < retries - 1:  # rate limit
                 time.sleep(backoff)
                 backoff *= 2
                 continue
-            raise RuntimeError(f"Bybit retCode={rc} {data.get('retMsg')}")
+            raise RuntimeError(f"Bybit retCode={ret_code} {data.get('retMsg')}")
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
             if attempt == retries - 1:
                 raise
@@ -64,37 +65,64 @@ def _get(params: dict, retries: int = 6) -> list[list]:
 def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as ascending (offset_ms, o, h, l, c, base_volume)."""
     rows = []
-    for w0 in (day_ms, day_ms + WINDOW_MS):
+    for window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
         batch = _get(
             {
                 "category": config.BYBIT_CATEGORY,
                 "symbol": sym,
                 "interval": "1",
-                "start": w0,
-                "end": w0 + WINDOW_MS - 1,
-                "limit": config.BYBIT_MAX_LIMIT,
+                "start": window_start_ms,
+                "end": window_start_ms + KLINE_REQUEST_WINDOW_MS - 1,
+                "limit": config.BYBIT_KLINE_REQUEST_LIMIT,
             }
         )
         rows.extend((int(r[0]) - day_ms, r[1], r[2], r[3], r[4], r[5]) for r in batch)
     return sorted(rows)  # v5 returns newest-first
 
 
+def earliest_traded_day(out_dir: Path) -> str | None:
+    """The first day this symbol has a ZIP with a non-empty CSV in it, if any.
+
+    An empty response has to answer one question: had the instrument listed
+    yet? A day before its first trade is legitimately empty; a day after it is
+    a failed request. Only evidence that PRECEDES the day in question settles
+    that — a later ZIP says nothing about whether the instrument existed
+    earlier, and on a --days top-up the directory is full of them.
+
+    Emptiness is read from the archive rather than from the file size, so no
+    byte threshold has to stand in for "this day has no rows". Computed once
+    per symbol; the run keeps it current as it writes.
+
+    The limit this cannot cross: a transient empty response on the listing day
+    itself is indistinguishable from the day before listing, because no local
+    evidence precedes it.
+    """
+    days = []
+    for p in sorted(out_dir.glob("*_trade.zip")):
+        with zipfile.ZipFile(p) as z:
+            entries = z.infolist()
+            if entries and entries[0].file_size > 0:
+                days.append(p.name[:8])
+                break
+    return days[0] if days else None
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Bybit Linear 1m klines -> Lean minute-trade ZIPs")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("Bybit Linear 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.START_MS if args.days == 0 else end_ms - args.days * DAY_MS
-    total_days = (end_ms - start_ms) // DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * MILLISECONDS_PER_DAY
+    total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
 
     for t in tickers:
         sym = config.symbol(t)
         out_dir = config.raw_symbol_dir(t, "bybit")
         written = skipped = 0
+        earliest = earliest_traded_day(out_dir)
         day_ms = start_ms
         t0 = time.time()
         while day_ms < end_ms:
@@ -102,12 +130,23 @@ def main() -> int:
             if (out_dir / f"{day}_trade.zip").exists():
                 skipped += 1
             else:
-                write_lean_zip(out_dir, sym, day, fetch_day(sym, day_ms))
+                rows = fetch_day(sym, day_ms)
+                if rows and (earliest is None or day < earliest):
+                    earliest = day                       # first traded day may be partial
+                elif earliest is not None and day > earliest and not is_full_utc_day(rows):
+                    # after the first traded day every day is a full one; a short
+                    # answer here is a truncated response, and this day is assembled
+                    # from two 720-minute windows, so half of it can arrive alone
+                    raise SystemExit(
+                        f"bybit {sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        "incomplete response after listing, retry the download"
+                    )
+                write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:
                     print(f"  bybit {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
-                time.sleep(config.BYBIT_SLEEP_S)
-            day_ms += DAY_MS
+                time.sleep(config.BYBIT_REQUEST_DELAY_SECONDS)
+            day_ms += MILLISECONDS_PER_DAY
         print(f"bybit {sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 

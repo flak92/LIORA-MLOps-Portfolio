@@ -1,4 +1,4 @@
-"""Download Binance USDS-M 1m klines into QC Lean minute-trade ZIPs.
+"""Download Binance USDS-M 1m klines into QuantConnect Lean minute-trade ZIPs.
 
 Keyless public API, stdlib only, no Docker required. The unit of work is one
 full UTC day = one ZIP; days whose ZIP already exists are skipped, so the same
@@ -18,9 +18,9 @@ VOLUME UNITS: klines column 5 = BASE volume (e.g. BTC), not quote turnover.
 
 from __future__ import annotations
 
-import argparse
 import io
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -31,7 +31,9 @@ from pathlib import Path
 
 from . import config
 
-DAY_MS = 86_400_000
+MILLISECONDS_PER_DAY = 86_400_000
+MILLISECONDS_PER_MINUTE = 60_000
+MINUTES_PER_DAY = MILLISECONDS_PER_DAY // MILLISECONDS_PER_MINUTE
 
 
 def _iso_day(epoch_ms: int) -> str:
@@ -39,7 +41,7 @@ def _iso_day(epoch_ms: int) -> str:
 
 
 def _get(params: dict, retries: int = 6) -> list[list]:
-    url = f"{config.KLINE_URL}?{urllib.parse.urlencode(params)}"
+    url = f"{config.BINANCE_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
     for attempt in range(retries):
         try:
@@ -65,7 +67,8 @@ def _get(params: dict, retries: int = 6) -> list[list]:
 
 def probe_oldest(sym: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
-    batch = _get({"symbol": sym, "interval": config.INTERVAL, "startTime": 0, "limit": 1})
+    batch = _get({"symbol": sym, "interval": config.SOURCE_CANDLE_INTERVAL,
+                  "startTime": 0, "limit": 1})
     if not batch:
         raise SystemExit(f"probe failed: no candles returned for {sym}")
     return int(batch[0][0])
@@ -76,13 +79,27 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     batch = _get(
         {
             "symbol": sym,
-            "interval": config.INTERVAL,
+            "interval": config.SOURCE_CANDLE_INTERVAL,
             "startTime": day_ms,
-            "endTime": day_ms + DAY_MS - 1,
-            "limit": config.MAX_LIMIT,
+            "endTime": day_ms + MILLISECONDS_PER_DAY - 1,
+            "limit": config.BINANCE_KLINE_REQUEST_LIMIT,
         }
     )
     return [(int(row[0]) - day_ms, row[1], row[2], row[3], row[4], row[5]) for row in batch]
+
+
+def is_full_utc_day(rows: list[tuple]) -> bool:
+    """Exactly the 1440 minutes of one UTC day, in order, with no hole.
+
+    One expression covers completeness, ordering, uniqueness and the exact
+    60 000 ms grid from 00:00 to 23:59, because the offsets of a full day are
+    the sequence 0, 60000, ... by definition. A short answer is a truncated
+    response, and writing it would make the gap permanent: the ZIP exists, so
+    the day is skipped forever.
+    """
+    return len(rows) == MINUTES_PER_DAY and all(
+        row[0] == i * MILLISECONDS_PER_MINUTE for i, row in enumerate(rows)
+    )
 
 
 def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None:
@@ -92,19 +109,23 @@ def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(csv_name, body)
-    (out_dir / f"{day}_trade.zip").write_bytes(buf.getvalue())
+    # whole or not at all: a truncated ZIP would be skipped forever by the
+    # exists() check above and then rejected by ingest
+    out = out_dir / f"{day}_trade.zip"
+    tmp = out.with_suffix(".zip.tmp")
+    tmp.write_bytes(buf.getvalue())
+    os.replace(tmp, out)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Binance USDS-M 1m klines -> Lean minute-trade ZIPs")
-    ap.add_argument("--tickers", default=",".join(config.TICKERS), help="comma-separated subset")
+    ap = config.ticker_parser("Binance USDS-M 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
     args = ap.parse_args()
-    tickers = [t.strip().upper() for t in args.tickers.split(",") if t.strip()]
+    tickers = config.parse_tickers(args.tickers)
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.START_MS if args.days == 0 else end_ms - args.days * DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * MILLISECONDS_PER_DAY
 
     print(f"window [{_iso_day(start_ms)} .. {_iso_day(end_ms)}) — probing listings:", flush=True)
     for t in tickers:
@@ -114,7 +135,7 @@ def main() -> int:
         if not ok:
             raise SystemExit(f"{config.symbol(t)}: history starts after {_iso_day(start_ms)} — basket rule broken")
 
-    total_days = (end_ms - start_ms) // DAY_MS
+    total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
     for t in tickers:
         sym = config.symbol(t)
         out_dir = config.raw_symbol_dir(t)
@@ -127,17 +148,20 @@ def main() -> int:
                 skipped += 1
             else:
                 rows = fetch_day(sym, day_ms)
-                if not rows:
-                    # the listing probe guarantees data exists for every day of the
-                    # window, so an empty 200 is a transient API failure — abort
-                    # instead of persisting a skip-forever empty ZIP
-                    raise SystemExit(f"{sym} {day}: empty response for a post-listing day — retry the download")
+                # the listing probe guarantees every day of the window is
+                # post-listing, so anything short of a full day is a truncated
+                # response, not a fact about the market
+                if not is_full_utc_day(rows):
+                    raise SystemExit(
+                        f"{sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        "incomplete response for a post-listing day, retry the download"
+                    )
                 write_lean_zip(out_dir, sym, day, rows)
                 written += 1
                 if written % 200 == 0:
                     print(f"  {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
-                time.sleep(config.SLEEP_S)
-            day_ms += DAY_MS
+                time.sleep(config.BINANCE_REQUEST_DELAY_SECONDS)
+            day_ms += MILLISECONDS_PER_DAY
         print(f"{sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 
