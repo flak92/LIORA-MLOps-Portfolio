@@ -104,10 +104,9 @@ def main() -> int:
                 "neutral": int((xy["y"] == 0).sum()),
                 "long": int((xy["y"] == 1).sum()),
             },
-            "mask": {
+            "labels": {
                 "rows": int(xy["y"].size),
-                "masked": int((~xy["label_valid"]).sum()),
-                "ambiguous": int((xy["exit_reason"] == 9).sum()),
+                "ambiguous": int((~xy["label_valid"]).sum()),
             },
             "segments": {
                 **segments,

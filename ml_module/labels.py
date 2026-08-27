@@ -23,9 +23,12 @@ event minute. `event_end_ts` is the EXCLUSIVE end of the event, which makes the
 purge rule exactly `event_end_ts <= oos_start`.
 
 A touch requires a trade: a zero-volume minute is a carried-forward price, not
-an execution, so hits are gated on `volume > 0` and an entry minute without
-volume has no executable entry. Both barriers inside one minute leave the order
-unknowable from OHLC, so the row is `label_valid = false` — never relabelled 0.
+an observed transaction, so hits are gated on `volume > 0`. Both barriers
+inside one minute leave the order unknowable from OHLC, so the row is
+`label_valid = false` — never relabelled 0. That flag answers exactly one
+question, "can this event be classified?", and it is knowable only after the
+event resolves. Whether an entry minute was tradable at all is a different,
+present-tense question the strategy answers from the same volume column.
 Average uniqueness [Lopez de Prado, ch. 4] is computed over the *valid* events
 only, so a masked row cannot dilute the weights of the rows actually trained on.
 
@@ -168,7 +171,7 @@ def main() -> int:
         assert np.all(event_end_ts > entry_ts)
 
         entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
-        label_valid = (reason != 9) & (m1["volume"][entry_idx] > 0)
+        label_valid = reason != 9
 
         weight = np.zeros(decision_ts.size)
         v = np.flatnonzero(label_valid)
@@ -182,9 +185,8 @@ def main() -> int:
         })
         print(f"{out.name}: {decision_ts.size} rows  classes(-1/0/+1)="
               f"{int((y == -1).sum())}/{int((y == 0).sum())}/{int((y == 1).sum())}  "
-              f"invalid={int((~label_valid).sum())} "
-              f"(ambiguous {int((reason == 9).sum())}, no-trade entry "
-              f"{int((m1['volume'][entry_idx] == 0).sum())})  "
+              f"ambiguous={int((~label_valid).sum())}  "
+              f"unobservable entries={int((m1['volume'][entry_idx] == 0).sum())}  "
               f"vertical={int((t_res == W).sum())}", flush=True)
     con.close()
     return 0

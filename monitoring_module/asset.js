@@ -76,7 +76,7 @@ function labelFrame(a) {
     n, fmt(c[n]), [shareCell(c[n], total)],
   ])));
   f.body.appendChild(kvBox([
-    ["invalid labels", fmt(a.sample.masked) + " (" + a.sample.masked_pct.toFixed(3) + "%)"],
+    ["ambiguous labels", fmt(a.sample.ambiguous) + " (" + a.sample.ambiguous_pct.toFixed(3) + "%)"],
     ["warm-up excluded", fmt(a.sample.n_warmup_excluded) + " decisions"],
     ["mean uniqueness weight", a.sample.uniqueness_weight_mean.toFixed(4)],
   ]));

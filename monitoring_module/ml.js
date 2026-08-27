@@ -86,7 +86,7 @@ function renderResearch(s) {
 
 function viewLabels(s) {
   fillTable("cs-labels",
-    ["asset", "rows", "warm-up excl", "masked", "ambiguous", "short", "neutral share",
+    ["asset", "rows", "warm-up excl", "ambiguous", "short", "neutral share",
      "long", "uniq. weight", "scored (test)"],
     s.assets.map((a) => {
       const c = a.sample.class_counts;
@@ -95,8 +95,7 @@ function viewLabels(s) {
         [tickerLink(a.ticker)],
         fmt(a.sample.rows),
         fmt(a.sample.n_warmup_excluded),
-        fmt(a.sample.masked) + " (" + a.sample.masked_pct.toFixed(3) + "%)",
-        fmt(a.sample.ambiguous),
+        fmt(a.sample.ambiguous) + " (" + a.sample.ambiguous_pct.toFixed(3) + "%)",
         fmt(c.short),
         [shareCell(c.neutral, total)],
         fmt(c.long),

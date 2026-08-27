@@ -99,5 +99,12 @@ def sharpe_annualised(bar_returns: np.ndarray) -> float:
 
 
 def max_drawdown(equity: np.ndarray) -> float:
-    peak = np.maximum.accumulate(equity)
-    return float(np.max((peak - equity) / peak)) if equity.size else 0.0
+    """Largest peak-to-trough fraction of an equity path that starts at E0 = 1.
+
+    The starting capital is part of the definition, so it is part of the
+    series: without it a path opening below 1.0 would measure its drawdown
+    from its own first dip.
+    """
+    full = np.concatenate(([1.0], equity))
+    peak = np.maximum.accumulate(full)
+    return float(np.max((peak - full) / peak))

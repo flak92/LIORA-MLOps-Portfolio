@@ -5,11 +5,16 @@
     enter = |edge| >= tau  AND  max(p_long, p_short) > p_neutral
             AND side == sign(trend_4h)  AND  n_agree >= 2
 
-The model picks the side, the hierarchy gates it. The entry condition uses only
-information available at decision_ts: label validity is knowable only after the
-event resolves, so it governs training and scoring but NEVER whether a trade is
-allowed — a signal whose event later turns out ambiguous is still a trade, and
-is settled at the barrier adverse to the position.
+The model picks the side, the hierarchy gates it. Two conditions that look
+alike must not be confused:
+
+    entry_observable = volume(entry_ts) > 0   known at t_0, MAY gate an entry
+    label_valid      = event classifiable    known only afterwards, NEVER gates
+
+A minute that printed no trade cannot be entered, and that is visible at the
+time. Whether the event will resolve ambiguously is not, so label validity
+governs training and scoring only — a signal whose event later turns out
+ambiguous is still a trade, settled at the barrier adverse to the position.
 
 Execution is a USDT perpetual with a fixed quantity, so PnL is linear in price:
 
@@ -47,13 +52,13 @@ def load_inputs(ticker: str) -> dict:
     sym = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    close1m = con.execute(
-        f"""SELECT close FROM ohlcv_1m_canonical
+    m1 = con.execute(
+        f"""SELECT close, volume FROM ohlcv_1m_canonical
             WHERE symbol = '{sym}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
-    ).fetchnumpy()["close"]
+    ).fetchnumpy()
     con.close()
     c2 = duckdb.connect()
     preds = c2.execute(
@@ -62,7 +67,8 @@ def load_inputs(ticker: str) -> dict:
     c2.close()
 
     trend = {tf: xy["x"][:, config.FEATURE_COLUMNS.index(f"trend_{tf}")] for tf in config.LEVELS}
-    return {"xy": xy, "close1m": close1m, "trend": trend, "preds": preds}
+    return {"xy": xy, "close1m": m1["close"], "vol1m": m1["volume"],
+            "trend": trend, "preds": preds}
 
 
 def rows_for_split(d: dict, split: int) -> dict:
@@ -83,9 +89,12 @@ def rows_for_split(d: dict, split: int) -> dict:
         & (side == np.sign(d["trend"]["4h"][pos]))
         & (n_agree >= config.AGREE_MIN)
     )
+    entry_ts = xy["entry_ts"][pos]
+    entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
     return {
         "edge": edge, "side": side, "gate": gate,
-        "entry_ts": xy["entry_ts"][pos], "event_end_ts": xy["event_end_ts"][pos],
+        "entry_observable": d["vol1m"][entry_idx] > 0,
+        "entry_ts": entry_ts, "event_end_ts": xy["event_end_ts"][pos],
         "reason": xy["exit_reason"][pos], "p0": xy["p0"][pos],
         "upper": xy["upper"][pos], "lower": xy["lower"][pos], "exit_ref": xy["exit_ref"][pos],
     }
@@ -112,7 +121,7 @@ def backtest(d: dict, rows: dict, tau: float, fold_start_ms: int, fold_end_ms: i
     close1m = d["close1m"]
     eq = np.empty(n_min)
 
-    enter = rows["gate"] & (np.abs(rows["edge"]) >= tau)
+    enter = rows["gate"] & (np.abs(rows["edge"]) >= tau) & rows["entry_observable"]
     # a trade must finish inside the fold; signals whose event would run past the
     # fold end are not taken (at most one horizon of the tail is affected)
     fits = (rows["entry_ts"] >= fold_start_ms) & (rows["event_end_ts"] <= fold_end_ms)
@@ -143,7 +152,9 @@ def backtest(d: dict, rows: dict, tau: float, fold_start_ms: int, fold_end_ms: i
     eq[cursor:] = equity
 
     tr = np.asarray(trades)
-    eq15 = eq[BAR_CLOSE_MIN::15]                     # the same path, sampled at bar closes
+    # the same path sampled at bar closes, starting from the capital itself:
+    # without E0 the first 15 minutes of the fold produce no return at all
+    eq15 = np.concatenate(([1.0], eq[BAR_CLOSE_MIN::15]))
     ret15 = np.diff(eq15) / eq15[:-1]
     return {
         "equity_1m": eq,
