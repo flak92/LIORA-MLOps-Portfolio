@@ -63,8 +63,8 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
         idx = indicators.asof_index(decision_ts,
                                     timeframes[timeframe]["timestamp_ms"].astype(np.int64),
                                     config.TIMEFRAME_DURATION_MS[timeframe])
-        for fam in config.FAMILIES:
-            cols[f"{fam}_{timeframe}"] = feats[timeframe][fam][idx]
+        for family in config.FAMILIES:
+            cols[f"{family}_{timeframe}"] = feats[timeframe][family][idx]
 
     x = np.column_stack([cols[c] for c in config.FEATURE_COLUMNS])
     assert np.isfinite(x).all(), "NaN/inf in X after the research warm-up"

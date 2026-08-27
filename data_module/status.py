@@ -51,7 +51,7 @@ GROUP BY symbol
 """
 
 # per-symbol (bounded memory): largest 1m move and longest flat run on the canonical series
-CANON_MAX_RET = """
+CANONICAL_MAX_ABS_RET_1M = """
 SELECT max(abs(close / prev - 1)) FROM (
   SELECT close, lag(close) OVER (ORDER BY timestamp_ms) AS prev
   FROM ohlcv_1m_canonical WHERE symbol = ?)
@@ -68,7 +68,7 @@ FROM (SELECT close,
       FROM ohlcv_1m_canonical WHERE symbol = ?)
 """
 
-CANON_FLAT_RUN = """
+CANONICAL_LONGEST_FLAT_RUN = """
 WITH f AS (SELECT timestamp_ms, (volume = 0 AND open = high AND high = low
                                  AND low = close) AS flat
            FROM ohlcv_1m_canonical WHERE symbol = ?),
@@ -96,13 +96,13 @@ def main() -> int:
 
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered
-    venue_rows = {v: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=v)).fetchall()}
-                  for v in config.SOURCE_VENUES}
+    venue_rows = {venue: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=venue)).fetchall()}
+                  for venue in config.SOURCE_VENUES}
     canonical_rows = {r[0]: r for r in con.execute(CANONICAL_SCAN).fetchall()}
     canon_extra = {
         sym: (
-            con.execute(CANON_MAX_RET, [sym]).fetchone()[0],
-            con.execute(CANON_FLAT_RUN, [sym]).fetchone()[0],
+            con.execute(CANONICAL_MAX_ABS_RET_1M, [sym]).fetchone()[0],
+            con.execute(CANONICAL_LONGEST_FLAT_RUN, [sym]).fetchone()[0],
             con.execute(SOURCE_SWITCHES, [sym]).fetchone(),
         )
         for sym in canonical_rows
@@ -117,21 +117,21 @@ def main() -> int:
 
     tickers = [t for t in config.TICKERS if config.symbol(t) in canonical_rows]
     zip_counts = {
-        v: {t: sum(1 for _ in config.raw_symbol_dir(t, v).glob("*_trade.zip")) for t in tickers}
-        for v in config.SOURCE_VENUES
+        venue: {t: sum(1 for _ in config.raw_symbol_dir(t, venue).glob("*_trade.zip")) for t in tickers}
+        for venue in config.SOURCE_VENUES
     }
 
     venues = {}
-    for v in config.SOURCE_VENUES:
+    for venue in config.SOURCE_VENUES:
         out = []
         for t in tickers:
             sym = config.symbol(t)
-            r = venue_rows[v].get(sym)
+            r = venue_rows[venue].get(sym)
             rows, distinct_ts = (r[1], r[2]) if r else (0, 0)
             out.append(
                 {
                     "symbol": sym,
-                    "zip_count": zip_counts[v][t],
+                    "zip_count": zip_counts[venue][t],
                     "rows": rows,
                     "coverage_pct": pct(distinct_ts, expected),
                     "gaps": expected - distinct_ts,
@@ -149,7 +149,7 @@ def main() -> int:
                     "last_ts": iso(r[4]) if r else None,
                 }
             )
-        venues[v] = out
+        venues[venue] = out
 
     canonical, symbols = [], []
     for t in tickers:
@@ -221,10 +221,10 @@ def main() -> int:
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
     print(f"flow: zips {f['zips_binance']}+{f['zips_bybit']} -> rows {f['rows_binance']}+{f['rows_bybit']} "
           f"-> canonical {f['rows_canonical']} -> parquet {f['parquet_rows']}")
-    for v in config.SOURCE_VENUES:
-        print(f"[venue {v}]")
+    for venue in config.SOURCE_VENUES:
+        print(f"[venue {venue}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")
-        for s in venues[v]:
+        for s in venues[venue]:
             print(f"{s['symbol']:9} {s['zip_count']:>5} {s['rows']:>9} {s['coverage_pct']:>8.3f} "
                   f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume']:>6} {s['flat_bars']:>6}")
     print("[canonical source]")

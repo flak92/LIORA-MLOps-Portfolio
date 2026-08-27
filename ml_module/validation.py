@@ -36,24 +36,24 @@ def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) ->
     the events passed in, so the caller's choice of population *is* the
     definition of the weight.
     """
-    n_min = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
+    research_minute_count = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
     start = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
     end = ((event_end_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-    delta = np.zeros(n_min + 1, dtype=np.int64)
+    delta = np.zeros(research_minute_count + 1, dtype=np.int64)
     np.add.at(delta, start, 1)
     np.add.at(delta, end, -1)
     concurrent = np.cumsum(delta[:-1])
-    inverse = np.zeros(n_min + 1)
+    inverse = np.zeros(research_minute_count + 1)
     covered = concurrent > 0
     inverse[1:][covered] = 1.0 / concurrent[covered]
     cumulative = np.cumsum(inverse)
-    w = (cumulative[end] - cumulative[start]) / (end - start)
+    weight = (cumulative[end] - cumulative[start]) / (end - start)
     # an event alone in its population averages exactly 1, but the value is the
     # difference of two partial sums over millions of terms, so it can land a
     # few ulps above it. The bound is asserted at the precision the arithmetic
     # delivers; asserting it tighter would fail on correct output.
-    assert np.all(w > 0.0) and np.all(w <= 1.0 + 1e-9), "uniqueness weights outside (0, 1]"
-    return w
+    assert np.all(weight > 0.0) and np.all(weight <= 1.0 + 1e-9), "uniqueness weights outside (0, 1]"
+    return weight
 
 
 def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,

@@ -31,9 +31,9 @@ from pathlib import Path
 
 from . import config
 
-DAY_MS = 86_400_000
+MILLISECONDS_PER_DAY = 86_400_000
 MILLISECONDS_PER_MINUTE = 60_000
-MINUTES_PER_DAY = DAY_MS // MILLISECONDS_PER_MINUTE
+MINUTES_PER_DAY = MILLISECONDS_PER_DAY // MILLISECONDS_PER_MINUTE
 
 
 def _iso_day(epoch_ms: int) -> str:
@@ -41,7 +41,7 @@ def _iso_day(epoch_ms: int) -> str:
 
 
 def _get(params: dict, retries: int = 6) -> list[list]:
-    url = f"{config.KLINE_URL}?{urllib.parse.urlencode(params)}"
+    url = f"{config.BINANCE_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
     for attempt in range(retries):
         try:
@@ -81,7 +81,7 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
             "symbol": sym,
             "interval": config.SOURCE_CANDLE_INTERVAL,
             "startTime": day_ms,
-            "endTime": day_ms + DAY_MS - 1,
+            "endTime": day_ms + MILLISECONDS_PER_DAY - 1,
             "limit": config.BINANCE_KLINE_REQUEST_LIMIT,
         }
     )
@@ -125,7 +125,7 @@ def main() -> int:
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * MILLISECONDS_PER_DAY
 
     print(f"window [{_iso_day(start_ms)} .. {_iso_day(end_ms)}) — probing listings:", flush=True)
     for t in tickers:
@@ -135,7 +135,7 @@ def main() -> int:
         if not ok:
             raise SystemExit(f"{config.symbol(t)}: history starts after {_iso_day(start_ms)} — basket rule broken")
 
-    total_days = (end_ms - start_ms) // DAY_MS
+    total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
     for t in tickers:
         sym = config.symbol(t)
         out_dir = config.raw_symbol_dir(t)
@@ -161,7 +161,7 @@ def main() -> int:
                 if written % 200 == 0:
                     print(f"  {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
                 time.sleep(config.BINANCE_REQUEST_DELAY_SECONDS)
-            day_ms += DAY_MS
+            day_ms += MILLISECONDS_PER_DAY
         print(f"{sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 

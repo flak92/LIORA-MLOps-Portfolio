@@ -64,9 +64,9 @@ def main() -> int:
                                   end_ms=config.RESEARCH_END_MS),
                 [sym],
             )
-            n = con.execute(f"SELECT count(*) FROM ohlcv_{timeframe}_canonical "
-                            "WHERE symbol = ?", [sym]).fetchone()[0]
-            print(f"{timeframe} {sym}: {n} bars", flush=True)
+            bar_count = con.execute(f"SELECT count(*) FROM ohlcv_{timeframe}_canonical "
+                                    "WHERE symbol = ?", [sym]).fetchone()[0]
+            print(f"{timeframe} {sym}: {bar_count} bars", flush=True)
 
     con.close()
     return 0

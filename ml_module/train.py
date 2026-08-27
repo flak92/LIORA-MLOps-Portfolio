@@ -33,12 +33,12 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     information beyond knowing how often each class occurs? The prior comes
     from the rows the model was fitted on, never from the scored fold.
     """
-    model_ll = validation.multiclass_logloss(y_cls, proba, weight)
-    prior_ll = validation.prior_logloss(prior_train, y_cls, weight)
+    model_logloss = validation.multiclass_logloss(y_cls, proba, weight)
+    prior_logloss = validation.prior_logloss(prior_train, y_cls, weight)
     return {
-        "prior_logloss": prior_ll,
-        "model_logloss": model_ll,
-        "relative_logloss_skill": 1.0 - model_ll / prior_ll,
+        "prior_logloss": prior_logloss,
+        "model_logloss": model_logloss,
+        "relative_logloss_skill": 1.0 - model_logloss / prior_logloss,
         "scored_row_count": int(y_cls.size),
     }
 
@@ -59,31 +59,31 @@ def main() -> int:
             """Fit before the fold's window, predict the FULL window, score the
             supervised subset only. Returns (metrics, the fitted booster)."""
             oos_start, oos_end = validation.fold_bounds(fold_id)
-            tr, train_weight = validation.training_set(
+            training_rows, train_weight = validation.training_set(
                 xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
                 xy["sample_valid"], oos_start)
-            wi = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
-            oi, scoring_weight = validation.scoring_set(
+            window_rows = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
+            scoring_rows, scoring_weight = validation.scoring_set(
                 xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
                 xy["sample_valid"], oos_start, oos_end)
-            prior_train = validation.weighted_class_prior(y_cls[tr], train_weight)
+            prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
             assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
-            booster = model.fit(best, xy["x"][tr], xy["y"][tr], train_weight)
-            proba_w = model.predict_proba(booster, xy["x"][wi])
-            pos = np.searchsorted(wi, oi)          # oi is a subset of wi
-            assert np.array_equal(wi[pos], oi)
-            metrics = fold_metrics(y_cls[oi], proba_w[pos], scoring_weight, prior_train)
+            booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight)
+            window_proba = model.predict_proba(booster, xy["x"][window_rows])
+            pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
+            assert np.array_equal(window_rows[pos], scoring_rows)
+            metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
             pred_rows.extend(
-                (xy["decision_ts"][i], fold_id, proba_w[k, 0], proba_w[k, 1], proba_w[k, 2])
-                for k, i in enumerate(wi)
+                (xy["decision_ts"][i], fold_id, window_proba[k, 0], window_proba[k, 1], window_proba[k, 2])
+                for k, i in enumerate(window_rows)
             )
             eligible = int((xy["sample_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
                             & (xy["decision_ts"] < oos_start)).sum())
             segments[f"fold_{fold_id}"] = {
-                "training_row_count": int(tr.size),
-                "purged_event_count": eligible - int(tr.size),
-                "window_row_count": int(wi.size),
-                "scored_row_count": int(oi.size),
+                "training_row_count": int(training_rows.size),
+                "purged_event_count": eligible - int(training_rows.size),
+                "window_row_count": int(window_rows.size),
+                "scored_row_count": int(scoring_rows.size),
             }
             return metrics, booster
 

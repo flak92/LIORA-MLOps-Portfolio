@@ -90,26 +90,26 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
     adir = config.artifact_dir(ticker)
     con = duckdb.connect()
     x = con.execute(f"SELECT * FROM read_parquet('{adir}/features.parquet') ORDER BY decision_ts").fetchnumpy()
-    yy = con.execute(f"SELECT * FROM read_parquet('{adir}/label_events.parquet') ORDER BY decision_ts").fetchnumpy()
+    label_events = con.execute(f"SELECT * FROM read_parquet('{adir}/label_events.parquet') ORDER BY decision_ts").fetchnumpy()
     con.close()
     x_ts = x["decision_ts"].astype(np.int64)
-    y_ts = yy["decision_ts"].astype(np.int64)
+    y_ts = label_events["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
     return {
         "decision_ts": y_ts,
-        "entry_ts": yy["entry_ts"].astype(np.int64),
+        "entry_ts": label_events["entry_ts"].astype(np.int64),
         "x": np.column_stack([x[c][pos] for c in config.FEATURE_COLUMNS]),
-        "y": yy["y"].astype(np.int8),
-        "event_end_ts": yy["event_end_ts"].astype(np.int64),
-        "entry_observable": yy["entry_observable"].astype(bool),
-        "label_valid": yy["label_valid"].astype(bool),
+        "y": label_events["y"].astype(np.int8),
+        "event_end_ts": label_events["event_end_ts"].astype(np.int64),
+        "entry_observable": label_events["entry_observable"].astype(bool),
+        "label_valid": label_events["label_valid"].astype(bool),
         # the supervised population: an entry that could be observed and an
         # event that resolves unambiguously
-        "sample_valid": yy["entry_observable"].astype(bool) & yy["label_valid"].astype(bool),
-        "event_resolution": yy["event_resolution"].astype(np.int8),
-        "entry_price": yy["entry_price"].astype(np.float64),
-        "upper_barrier": yy["upper_barrier"].astype(np.float64),
-        "lower_barrier": yy["lower_barrier"].astype(np.float64),
-        "exit_reference_price": yy["exit_reference_price"].astype(np.float64),
+        "sample_valid": label_events["entry_observable"].astype(bool) & label_events["label_valid"].astype(bool),
+        "event_resolution": label_events["event_resolution"].astype(np.int8),
+        "entry_price": label_events["entry_price"].astype(np.float64),
+        "upper_barrier": label_events["upper_barrier"].astype(np.float64),
+        "lower_barrier": label_events["lower_barrier"].astype(np.float64),
+        "exit_reference_price": label_events["exit_reference_price"].astype(np.float64),
     }

@@ -26,9 +26,9 @@ ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluat
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
 
-def _r(x, n):
+def _r(x, ndigits):
     """round() that tolerates the nulls to_json_safe() writes for non-finite floats."""
-    return None if x is None else round(x, n)
+    return None if x is None else round(x, ndigits)
 
 
 def sample_block(metrics: dict) -> dict:
@@ -184,19 +184,19 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
                  f"{seg[k]['scored_row_count']:,}"]
                 for k in folds + [holdout]]
 
-    def pnl_row(label, b):
-        return [label, f"{b['sharpe']:+.3f}", f"{100 * b['max_drawdown']:.1f}%",
-                f"{b['trade_count']:,}", f"{100 * b['hit_rate']:.1f}%",
-                f"{100 * b['exposure']:.2f}%", f"{b['final_equity']:.4f}"]
+    def pnl_row(label, block):
+        return [label, f"{block['sharpe']:+.3f}", f"{100 * block['max_drawdown']:.1f}%",
+                f"{block['trade_count']:,}", f"{100 * block['hit_rate']:.1f}%",
+                f"{100 * block['exposure']:.2f}%", f"{block['final_equity']:.4f}"]
 
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
     sh = strategy["final_holdout"]
     pnl_rows.append(pnl_row(f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**", sh))
     exits = ", ".join(f"{name} {sh['exit_counts'][name]}"
                      for name in config.EVENT_RESOLUTION_NAME.values())
-    met = ("" if strategy["entry_edge_threshold_constraint_met"]
-           else f" — **fallback**, no threshold reaches "
-                f"{config.MINIMUM_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
+    fallback_note = ("" if strategy["entry_edge_threshold_constraint_met"]
+                     else f" — **fallback**, no threshold reaches "
+                          f"{config.MINIMUM_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
 
     reproduce = " ".join(
         f"python -m ml_module.{stage} --tickers {ticker} &&"
@@ -231,7 +231,7 @@ Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{met}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of 3 timeframes agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of 3 timeframes agreeing.
 
 {_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
@@ -245,7 +245,8 @@ F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-
 """
 
 
-PINNED = ("duckdb", "numpy", "optuna", "xgboost-cpu")
+# the pinned direct dependencies — the four names in requirements.txt
+PINNED_DIRECT_DEPENDENCIES = ("duckdb", "numpy", "optuna", "xgboost-cpu")
 
 
 def experiment_configuration(ticker: str) -> dict:
@@ -321,7 +322,7 @@ def experiment_configuration(ticker: str) -> dict:
             "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
         },
         "runtime": {
-            "libraries": {name: version(name) for name in PINNED},
+            "libraries": {name: version(name) for name in PINNED_DIRECT_DEPENDENCIES},
             "thread_caps": {"xgboost_nthread": config.XGBOOST_FIXED_PARAMETERS["nthread"],
                             "omp_num_threads": 1},
         },

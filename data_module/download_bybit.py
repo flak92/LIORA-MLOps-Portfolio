@@ -33,9 +33,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
-from .download_binance import DAY_MS, MINUTES_PER_DAY, is_full_utc_day, write_lean_zip
+from .download_binance import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, write_lean_zip
 
-WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
+KLINE_REQUEST_WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
 
 
 def _get(params: dict, retries: int = 6) -> list[list]:
@@ -46,14 +46,14 @@ def _get(params: dict, retries: int = 6) -> list[list]:
             req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
                 data = json.loads(r.read().decode())
-            rc = data.get("retCode")
-            if rc == 0:
+            ret_code = data.get("retCode")
+            if ret_code == 0:
                 return data.get("result", {}).get("list", [])
-            if rc == 10006 and attempt < retries - 1:  # rate limit
+            if ret_code == 10006 and attempt < retries - 1:  # rate limit
                 time.sleep(backoff)
                 backoff *= 2
                 continue
-            raise RuntimeError(f"Bybit retCode={rc} {data.get('retMsg')}")
+            raise RuntimeError(f"Bybit retCode={ret_code} {data.get('retMsg')}")
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
             if attempt == retries - 1:
                 raise
@@ -65,14 +65,14 @@ def _get(params: dict, retries: int = 6) -> list[list]:
 def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as ascending (offset_ms, o, h, l, c, base_volume)."""
     rows = []
-    for w0 in (day_ms, day_ms + WINDOW_MS):
+    for window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
         batch = _get(
             {
                 "category": config.BYBIT_CATEGORY,
                 "symbol": sym,
                 "interval": "1",
-                "start": w0,
-                "end": w0 + WINDOW_MS - 1,
+                "start": window_start_ms,
+                "end": window_start_ms + KLINE_REQUEST_WINDOW_MS - 1,
                 "limit": config.BYBIT_KLINE_REQUEST_LIMIT,
             }
         )
@@ -115,8 +115,8 @@ def main() -> int:
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * DAY_MS
-    total_days = (end_ms - start_ms) // DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * MILLISECONDS_PER_DAY
+    total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
 
     for t in tickers:
         sym = config.symbol(t)
@@ -146,7 +146,7 @@ def main() -> int:
                 if written % 200 == 0:
                     print(f"  bybit {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
                 time.sleep(config.BYBIT_REQUEST_DELAY_SECONDS)
-            day_ms += DAY_MS
+            day_ms += MILLISECONDS_PER_DAY
         print(f"bybit {sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 

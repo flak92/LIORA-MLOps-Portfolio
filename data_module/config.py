@@ -32,7 +32,7 @@ DATA_WINDOW_START_MS = int(datetime.fromisoformat(DATA_WINDOW_START_UTC)
                            .replace(tzinfo=UTC).timestamp() * 1000)
 
 # Public keyless endpoints; both return BASE volume (e.g. BTC), not quote turnover.
-KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
+BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
 BINANCE_KLINE_REQUEST_LIMIT = 1500
 BINANCE_REQUEST_DELAY_SECONDS = 0.2
 BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline"
@@ -74,5 +74,5 @@ def ticker_parser(description: str) -> "argparse.ArgumentParser":
     return ap
 
 
-def parse_tickers(csv: str) -> list[str]:
-    return [t.strip().upper() for t in csv.split(",") if t.strip()]
+def parse_tickers(tickers_csv: str) -> list[str]:
+    return [t.strip().upper() for t in tickers_csv.split(",") if t.strip()]

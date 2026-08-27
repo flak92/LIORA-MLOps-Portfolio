@@ -14,8 +14,8 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
 
-def ema(x: np.ndarray, n: int) -> np.ndarray:
-    alpha = 2.0 / (n + 1.0)
+def ema(x: np.ndarray, span_bars: int) -> np.ndarray:
+    alpha = 2.0 / (span_bars + 1.0)
     out = np.empty_like(x)
     out[0] = x[0]
     for i in range(1, x.size):
@@ -53,42 +53,46 @@ def rsi(close: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     return np.concatenate(([np.nan], out))    # delta[i] describes close[i + 1]
 
 
-def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray, n: int) -> np.ndarray:
+def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
+        smoothing_period_bars: int) -> np.ndarray:
     prev_close = np.concatenate(([close[0]], close[:-1]))
-    tr = np.maximum(high - low, np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
-    return wilder_smooth(tr, n)
+    true_range = np.maximum(high - low,
+                            np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
+    return wilder_smooth(true_range, smoothing_period_bars)
 
 
-def rolling_max(x: np.ndarray, n: int) -> np.ndarray:
+def rolling_max(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     out = np.full_like(x, np.nan)
-    out[n - 1:] = sliding_window_view(x, n).max(axis=1)
+    out[lookback_bars - 1:] = sliding_window_view(x, lookback_bars).max(axis=1)
     return out
 
 
-def rolling_min(x: np.ndarray, n: int) -> np.ndarray:
+def rolling_min(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     out = np.full_like(x, np.nan)
-    out[n - 1:] = sliding_window_view(x, n).min(axis=1)
+    out[lookback_bars - 1:] = sliding_window_view(x, lookback_bars).min(axis=1)
     return out
 
 
-def range_position(close: np.ndarray, high: np.ndarray, low: np.ndarray, n: int) -> np.ndarray:
-    """(close - min(low, n)) / (max(high, n) - min(low, n)); flat range -> 0.5."""
-    lo, hi = rolling_min(low, n), rolling_max(high, n)
+def range_position(close: np.ndarray, high: np.ndarray, low: np.ndarray,
+                   lookback_bars: int) -> np.ndarray:
+    """(close - rolling min of low) / (rolling max of high - rolling min of low);
+    flat range -> 0.5."""
+    lo, hi = rolling_min(low, lookback_bars), rolling_max(high, lookback_bars)
     span = hi - lo
     with np.errstate(divide="ignore", invalid="ignore"):
         out = (close - lo) / span
     return np.where(span == 0.0, 0.5, out)
 
 
-def rolling_zscore(x: np.ndarray, n: int) -> np.ndarray:
-    """z-score of x against its trailing n-window (sample std); zero-std -> 0."""
+def rolling_zscore(x: np.ndarray, lookback_bars: int) -> np.ndarray:
+    """z-score of x against its trailing lookback window (sample std); zero-std -> 0."""
     out = np.full_like(x, np.nan)
-    w = sliding_window_view(x, n)
+    w = sliding_window_view(x, lookback_bars)
     mean = w.mean(axis=1)
     std = w.std(axis=1, ddof=1)
     with np.errstate(divide="ignore", invalid="ignore"):
-        z = (x[n - 1:] - mean) / std
-    out[n - 1:] = np.where(std == 0.0, 0.0, z)
+        z = (x[lookback_bars - 1:] - mean) / std
+    out[lookback_bars - 1:] = np.where(std == 0.0, 0.0, z)
     return out
 
 

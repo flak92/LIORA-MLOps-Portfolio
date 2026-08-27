@@ -45,7 +45,8 @@ FAMILIES = (
 TREND_FAMILY = FAMILIES[0]          # the family the strategy hierarchy reads
 # the 2-of-3 trend agreement the strategy needs is a rule over these columns,
 # not a sixteenth feature: it carries nothing the three trend columns lack
-FEATURE_COLUMNS = tuple(f"{fam}_{lvl}" for lvl in HIERARCHY_TIMEFRAMES for fam in FAMILIES)
+FEATURE_COLUMNS = tuple(f"{family}_{timeframe}"
+                        for timeframe in HIERARCHY_TIMEFRAMES for family in FAMILIES)
 EMA_FAST_SPAN_BARS = 20
 EMA_SLOW_SPAN_BARS = 50
 ATR_WILDER_SMOOTHING_PERIOD_BARS = 14
@@ -56,7 +57,7 @@ WARMUP_4H_BARS = 200                # 4 x EMA_SLOW_SPAN_BARS on the top timefram
 WARMUP_END_MS = RESEARCH_START_MS + WARMUP_4H_BARS * TIMEFRAME_DURATION_MS["4h"]
 
 # ---- label contract: triple barrier resolved on the 1m path
-ATR_BARRIER_MULTIPLIER = 2.0                     # +- K * ATR14(last closed 1h bar)
+ATR_BARRIER_MULTIPLIER = 2.0     # barriers at entry_price +- this multiple of ATR14(last closed 1h bar)
 # how an event ended; the values are load-bearing — fill_price compares the
 # resolution against the side of the position
 EVENT_RESOLUTION_LOWER_BARRIER = -1

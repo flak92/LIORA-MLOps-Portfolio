@@ -78,7 +78,7 @@ Y_COLUMNS = {
 
 def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.ndarray]:
     """The canonical 1m series over the research window — the market object."""
-    arrs = con.execute(
+    bars_1m = con.execute(
         f"""SELECT open, high, low, close, volume FROM ohlcv_1m_canonical
             WHERE symbol = '{sym}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
@@ -86,40 +86,41 @@ def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.n
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
     expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
-    assert arrs["open"].size == expected, "canonical 1m grid incomplete inside the research window"
-    return arrs
+    assert bars_1m["open"].size == expected, "canonical 1m grid incomplete inside the research window"
+    return bars_1m
 
 
-def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.ndarray):
+def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.ndarray):
     """Walk the 1m path in chunks.
 
     Returns (y, t_res, event_resolution, entry_price, upper_barrier,
     lower_barrier, exit_reference_price).
     """
     idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-    entry_price = m1["open"][idx]
+    entry_price = bars_1m["open"][idx]
     upper_barrier = entry_price + config.ATR_BARRIER_MULTIPLIER * sigma
     lower_barrier = entry_price - config.ATR_BARRIER_MULTIPLIER * sigma
-    high, low, vol, opn, close = m1["high"], m1["low"], m1["volume"], m1["open"], m1["close"]
+    high, low, vol, opn, close = (bars_1m["high"], bars_1m["low"], bars_1m["volume"],
+                                  bars_1m["open"], bars_1m["close"])
 
-    n = idx.size
-    y = np.zeros(n, dtype=np.int8)
-    t_res = np.full(n, LABEL_HORIZON_MINUTES, dtype=np.int32)
-    event_resolution = np.zeros(n, dtype=np.int8)
+    event_count = idx.size
+    y = np.zeros(event_count, dtype=np.int8)
+    t_res = np.full(event_count, LABEL_HORIZON_MINUTES, dtype=np.int32)
+    event_resolution = np.zeros(event_count, dtype=np.int8)
     offsets = np.arange(LABEL_HORIZON_MINUTES)
-    for a in range(0, n, LABEL_PROCESSING_CHUNK_SIZE_ROWS):
-        b = min(a + LABEL_PROCESSING_CHUNK_SIZE_ROWS, n)
-        win = idx[a:b, None] + offsets[None, :]
-        traded = vol[win] > 0                       # volume = 0 means no observed trade
-        up_hit = traded & (high[win] >= upper_barrier[a:b, None])
-        dn_hit = traded & (low[win] <= lower_barrier[a:b, None])
+    for a in range(0, event_count, LABEL_PROCESSING_CHUNK_SIZE_ROWS):
+        b = min(a + LABEL_PROCESSING_CHUNK_SIZE_ROWS, event_count)
+        event_minutes = idx[a:b, None] + offsets[None, :]
+        traded = vol[event_minutes] > 0             # volume = 0 means no observed trade
+        up_hit = traded & (high[event_minutes] >= upper_barrier[a:b, None])
+        dn_hit = traded & (low[event_minutes] <= lower_barrier[a:b, None])
         t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), LABEL_HORIZON_MINUTES)
         t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), LABEL_HORIZON_MINUTES)
-        amb = (t_up == t_dn) & (t_up < LABEL_HORIZON_MINUTES)
+        ambiguous = (t_up == t_dn) & (t_up < LABEL_HORIZON_MINUTES)
         y[a:b] = np.where(t_up < t_dn, 1, np.where(t_dn < t_up, -1, 0)).astype(np.int8)
-        y[a:b][amb] = 0
+        y[a:b][ambiguous] = 0
         t_res[a:b] = np.minimum(t_up, t_dn)
-        event_resolution[a:b] = np.where(amb, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
+        event_resolution[a:b] = np.where(ambiguous, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
 
     resolved = t_res < LABEL_HORIZON_MINUTES
     # horizontal or ambiguous: the open of the resolving minute (the price the
@@ -175,15 +176,15 @@ def main() -> int:
                                              config.TIMEFRAME_DURATION_MS["1h"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all()
 
-        m1 = load_research_1m(con, sym)
+        bars_1m = load_research_1m(con, sym)
         (y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier,
-         exit_reference_price) = triple_barrier(m1, entry_ts, sigma)
+         exit_reference_price) = triple_barrier(bars_1m, entry_ts, sigma)
         event_end_ts = (entry_ts + np.minimum(t_res + 1, LABEL_HORIZON_MINUTES)
                         * MILLISECONDS_PER_MINUTE)                     # exclusive
         assert np.all(event_end_ts > entry_ts)
 
         entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-        entry_observable = m1["volume"][entry_idx] > 0
+        entry_observable = bars_1m["volume"][entry_idx] > 0
         label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid
 

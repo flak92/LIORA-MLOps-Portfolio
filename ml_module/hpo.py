@@ -32,10 +32,10 @@ def objective_factory(xy: dict[str, np.ndarray]):
     def objective(trial: optuna.Trial) -> float:
         params = model.suggest_params(trial)
         losses = []
-        for (tr, train_weight), (oo, scoring_weight) in folds:
-            booster = model.fit(params, xy["x"][tr], xy["y"][tr], train_weight)
-            proba = model.predict_proba(booster, xy["x"][oo])
-            losses.append(validation.multiclass_logloss(y_cls[oo], proba, scoring_weight))
+        for (training_rows, train_weight), (scoring_rows, scoring_weight) in folds:
+            booster = model.fit(params, xy["x"][training_rows], xy["y"][training_rows], train_weight)
+            proba = model.predict_proba(booster, xy["x"][scoring_rows])
+            losses.append(validation.multiclass_logloss(y_cls[scoring_rows], proba, scoring_weight))
         return float(np.mean(losses))
 
     return objective

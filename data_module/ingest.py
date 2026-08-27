@@ -178,17 +178,17 @@ def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
                 yield (midnight_ms + int(row[0]), row[1], row[2], row[3], row[4], row[5])
 
 
-def spool_symbol(ticker: str, venue: str, tmp: Path) -> int:
+def spool_symbol(ticker: str, venue: str, spool_csv: Path) -> int:
     """Write all of one symbol's bars from one venue into a temp CSV; return the row count."""
     sym = config.symbol(ticker)
-    n = 0
-    with tmp.open("w", encoding="utf-8", newline="") as f:
+    row_count = 0
+    with spool_csv.open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        for zp in iter_zip_paths(config.raw_symbol_dir(ticker, venue)):
-            for ts, o, h, lo, c, v in parse_zip(zp):
+        for zip_path in iter_zip_paths(config.raw_symbol_dir(ticker, venue)):
+            for ts, o, h, lo, c, v in parse_zip(zip_path):
                 w.writerow((sym, ts, o, h, lo, c, v))
-                n += 1
-    return n
+                row_count += 1
+    return row_count
 
 
 def main() -> int:
@@ -213,16 +213,16 @@ def main() -> int:
         for t in tickers:
             sym = config.symbol(t)
             with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as ntf:
-                tmp = Path(ntf.name)
+                spool_csv = Path(ntf.name)
             try:
-                n = spool_symbol(t, venue, tmp)
+                row_count = spool_symbol(t, venue, spool_csv)
                 con.execute(f"DELETE FROM ohlcv_1m_{venue} WHERE symbol = ?", [sym])
                 con.execute(
-                    f"INSERT INTO ohlcv_1m_{venue} SELECT * FROM read_csv('{tmp}', header=false, columns={CSV_COLUMNS})"
+                    f"INSERT INTO ohlcv_1m_{venue} SELECT * FROM read_csv('{spool_csv}', header=false, columns={CSV_COLUMNS})"
                 )
-                print(f"{venue} {sym}: {n} rows loaded", flush=True)
+                print(f"{venue} {sym}: {row_count} rows loaded", flush=True)
             finally:
-                tmp.unlink(missing_ok=True)
+                spool_csv.unlink(missing_ok=True)
     end_ms = con.execute(
         """SELECT max(timestamp_ms) FROM (SELECT timestamp_ms FROM ohlcv_1m_binance
                                           UNION ALL
@@ -246,8 +246,8 @@ def main() -> int:
             )
         )
         print(f"canonical {sym}: rebuilt", flush=True)
-    n = con.execute("SELECT count(*) FROM ohlcv_1m_canonical").fetchone()[0]
-    print(f"ohlcv_1m_canonical: {n} rows (window start {config.DATA_WINDOW_START_UTC})", flush=True)
+    row_count = con.execute("SELECT count(*) FROM ohlcv_1m_canonical").fetchone()[0]
+    print(f"ohlcv_1m_canonical: {row_count} rows (window start {config.DATA_WINDOW_START_UTC})", flush=True)
     con.close()
     return 0
 
