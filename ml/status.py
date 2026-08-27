@@ -1,8 +1,8 @@
 """Aggregate the per-asset artifacts into dashboard/ml_status.json.
 
 Observation only, and the single place where the dashboard payload is
-assembled: the blocks below follow the experiment flow (sample -> segments ->
-search -> validation -> final OOS -> attribution -> strategy). The file is
+assembled: the blocks below follow the experiment flow (sample -> search ->
+validation -> final OOS -> attribution -> strategy). The file is
 written with sorted keys, so reading order lives in the dashboard and in
 ML_README, never in key names. The experiment is described once, globally, by
 its research window and seed — library versions are in requirements.lock and
@@ -63,15 +63,9 @@ def classification_block(metrics: dict) -> tuple[dict, dict]:
 
 
 def thin_curve(curve: dict, stride: int = EQUITY_STRIDE) -> dict:
-    """Drop the timestamp array: the grid is regular, so origin + step rebuild it."""
-    ts, equity = curve["timestamp_ms"], curve["equity"]
-    steps = {ts[i + 1] - ts[i] for i in range(len(ts) - 1)}
-    assert len(steps) == 1, f"irregular equity grid: {sorted(steps)[:3]}"
+    """The sparkline needs the shape, not the calendar: thinned values only."""
+    equity = curve["equity"]
     return {
-        "t0_ms": ts[0],
-        "step_ms": steps.pop() * stride,
-        "stride": stride,
-        "n_source": len(equity),
         "equity": [round(v, 4) for v in equity[::stride]],
         "equity_final": round(equity[-1], 4),
     }
@@ -107,13 +101,9 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     validation, test = classification_block(metrics)
     gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
     assert len(gain) == len(config.FEATURE_COLUMNS), "gain importance misses the feature contract"
-    segments = {k: v for k, v in sorted(metrics["segments"].items()) if k.startswith("split_")}
-    expected = {f"split_{s}" for s in (*config.VALIDATION_SPLITS, config.TEST_SPLIT)}
-    assert set(segments) == expected, f"segments {sorted(segments)} != {sorted(expected)}"
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
-        "segments": segments,
         "hpo": hpo_block(hpo),
         "validation": validation,
         "test": test,
@@ -141,12 +131,8 @@ def main() -> int:
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "research_window": [config.RESEARCH_START_UTC, config.RESEARCH_END_UTC],
         "seed": config.SEED,
-        # structural parameters the page needs to label folds without hardcoding them
-        "folds": {
-            "bounds_utc": list(config.FOLD_BOUNDS_UTC),
-            "validation": list(config.VALIDATION_SPLITS),
-            "test": config.TEST_SPLIT,
-        },
+        # the one structural number the page needs to label the final fold
+        "test_fold": config.TEST_SPLIT,
         "gate_min_agree": config.AGREE_MIN,
         "assets": assets,
     }

@@ -24,7 +24,7 @@ function kvBox(pairs) {
 
 /* single-series line with a dashed reference level; no legend needed, the
    frame title names the series. Native <title> carries the hover summary. */
-function sparkline(values, baseline, markIndex, caption) {
+function sparkline(values, baseline, caption) {
   const NS = "http://www.w3.org/2000/svg";
   const W = 700;
   const H = 120;
@@ -50,16 +50,6 @@ function sparkline(values, baseline, markIndex, caption) {
   line.setAttribute("class", "spark-line");
   line.setAttribute("points", values.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" "));
   svg.append(tip, base, line);
-
-  if (markIndex !== null && markIndex !== undefined) {
-    const mark = document.createElementNS(NS, "line");
-    mark.setAttribute("x1", x(markIndex));
-    mark.setAttribute("x2", x(markIndex));
-    mark.setAttribute("y1", 0);
-    mark.setAttribute("y2", H);
-    mark.setAttribute("class", "spark-mark");
-    svg.appendChild(mark);
-  }
   return svg;
 }
 
@@ -103,7 +93,7 @@ function modelFrame(a, s) {
       + a.hpo.best_logloss.toFixed(6)],
   ]));
   const rows = valSplits(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
-  rows.push(["F" + s.folds.test + " (final OOS)", a.test]);
+  rows.push(["F" + s.test_fold + " (final OOS)", a.test]);
   f.body.appendChild(makeTable(
     ["fold", "prior log-loss", "model log-loss", "skill", "MCC", "scored rows"],
     rows.map(([label, m], i) => {
@@ -127,12 +117,12 @@ function strategyFrame(a, s) {
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
   const rows = valSplits(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
-  rows.push(pnlRow("F" + s.folds.test + " (final OOS)", a.strategy.test, true));
+  rows.push(pnlRow("F" + s.test_fold + " (final OOS)", a.strategy.test, true));
   f.body.appendChild(makeTable(
     ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "final equity"],
     rows));
   const c = a.strategy.equity_curve;
-  f.body.appendChild(sparkline(c.equity, 1.0, null,
+  f.body.appendChild(sparkline(c.equity, 1.0,
     "equity on the final OOS fold; dashed line = 1.0 (flat)"));
   f.body.appendChild(foot("final OOS equity: start 1.000 · low "
     + Math.min(...c.equity).toFixed(3) + " · end " + c.equity_final.toFixed(3)

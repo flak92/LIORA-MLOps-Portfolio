@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 
-import duckdb
 import numpy as np
 import optuna
 

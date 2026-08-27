@@ -101,7 +101,7 @@ function viewLabels(s) {
         [shareCell(c.neutral, total)],
         fmt(c.long),
         a.sample.uniqueness_weight_mean.toFixed(4),
-        fmt(a.segments["split_" + s.folds.test].n_scored),
+        fmt(a.test.n),
       ];
     }));
 }

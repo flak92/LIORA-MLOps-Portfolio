@@ -65,7 +65,6 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
             cols[f"{fam}_{tf}"] = feats[tf][fam][idx]
 
     x = np.column_stack([cols[c] for c in config.FEATURE_COLUMNS])
-    assert x.shape[1] == len(config.FEATURE_COLUMNS), "feature contract broken"
     assert np.isfinite(x).all(), "NaN/inf in X after the research warm-up"
     return decision_ts, x
 

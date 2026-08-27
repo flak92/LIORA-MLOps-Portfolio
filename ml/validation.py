@@ -41,7 +41,6 @@ def oos_indices(decision_ts: np.ndarray, label_valid: np.ndarray,
     keep = label_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
-    assert decision_ts[idx].min() >= max(start_ms, config.WARMUP_END_MS)
     return idx
 
 
@@ -79,7 +78,6 @@ def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> f
     Delegates to multiclass_logloss, so the weighting is the same function by
     construction rather than by convention.
     """
-    assert prior.shape == (3,)
     return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 

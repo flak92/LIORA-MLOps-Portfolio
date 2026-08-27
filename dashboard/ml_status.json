@@ -45,32 +45,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0763
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35035,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 4,
-     "n_scored": 35033,
-     "n_train": 66867,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 5,
-     "n_scored": 35133,
-     "n_train": 101899,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137021,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -162,11 +136,7 @@
       0.9095,
       0.9009
      ],
-     "equity_final": 0.9322,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.9322
     },
     "selection_score_mean_sharpe": -0.666,
     "tau": 0.28,
@@ -311,32 +281,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0755
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35029,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 7,
-     "n_scored": 35039,
-     "n_train": 66858,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 8,
-     "n_scored": 35133,
-     "n_train": 101896,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57769,
-     "n_train": 137021,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -428,11 +372,7 @@
       0.8378,
       0.8319
      ],
-     "equity_final": 0.8843,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.8843
     },
     "selection_score_mean_sharpe": -0.432,
     "tau": 0.26,
@@ -577,32 +517,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0746
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35032,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 14,
-     "n_scored": 35039,
-     "n_train": 66854,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 6,
-     "n_scored": 35134,
-     "n_train": 101901,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137025,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -694,11 +608,7 @@
       1.0174,
       1.0174
      ],
-     "equity_final": 1.0085,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 1.0085
     },
     "selection_score_mean_sharpe": -0.287,
     "tau": 0.33,
@@ -843,32 +753,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0747
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 11,
-     "n_scored": 35036,
-     "n_train": 31825,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 7,
-     "n_scored": 35039,
-     "n_train": 66865,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 4,
-     "n_scored": 35133,
-     "n_train": 101907,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137028,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -960,11 +844,7 @@
       1.2217,
       1.1794
      ],
-     "equity_final": 1.2798,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 1.2798
     },
     "selection_score_mean_sharpe": -0.319,
     "tau": 0.24,
@@ -1109,32 +989,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0737
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35028,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 16,
-     "n_scored": 35039,
-     "n_train": 66848,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 5,
-     "n_scored": 35133,
-     "n_train": 101898,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 11,
-     "n_scored": 57775,
-     "n_train": 137025,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -1226,11 +1080,7 @@
       0.8908,
       0.8848
      ],
-     "equity_final": 0.8467,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.8467
     },
     "selection_score_mean_sharpe": -0.223,
     "tau": 0.22,
@@ -1375,32 +1225,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0744
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 14,
-     "n_scored": 35036,
-     "n_train": 31822,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 16,
-     "n_scored": 35037,
-     "n_train": 66856,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 5,
-     "n_scored": 35133,
-     "n_train": 101904,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137026,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -1492,11 +1316,7 @@
       0.793,
       0.7885
      ],
-     "equity_final": 0.7924,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.7924
     },
     "selection_score_mean_sharpe": -0.595,
     "tau": 0.19,
@@ -1641,32 +1461,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0752
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 15,
-     "n_scored": 35036,
-     "n_train": 31821,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 16,
-     "n_scored": 35039,
-     "n_train": 66856,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 4,
-     "n_scored": 35133,
-     "n_train": 101907,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137028,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -1758,11 +1552,7 @@
       0.9113,
       0.9106
      ],
-     "equity_final": 0.9693,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.9693
     },
     "selection_score_mean_sharpe": 0.896,
     "tau": 0.18,
@@ -1907,32 +1697,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0727
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35036,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 8,
-     "n_scored": 34934,
-     "n_train": 66864,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 4,
-     "n_scored": 35108,
-     "n_train": 101802,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57764,
-     "n_train": 136898,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -2024,11 +1788,7 @@
       1.215,
       1.215
      ],
-     "equity_final": 1.232,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 1.232
     },
     "selection_score_mean_sharpe": -1.019,
     "tau": 0.0,
@@ -2173,32 +1933,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0729
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 15,
-     "n_scored": 35035,
-     "n_train": 31821,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 16,
-     "n_scored": 35039,
-     "n_train": 66855,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 5,
-     "n_scored": 35133,
-     "n_train": 101905,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57775,
-     "n_train": 137027,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -2290,11 +2024,7 @@
       0.8927,
       0.9024
      ],
-     "equity_final": 0.8909,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.8909
     },
     "selection_score_mean_sharpe": -0.654,
     "tau": 0.0,
@@ -2439,32 +2169,6 @@
     "rows": 194832,
     "uniqueness_weight_mean": 0.0734
    },
-   "segments": {
-    "split_2": {
-     "n_purged": 16,
-     "n_scored": 35034,
-     "n_train": 31820,
-     "n_window": 35040
-    },
-    "split_3": {
-     "n_purged": 7,
-     "n_scored": 35039,
-     "n_train": 66863,
-     "n_window": 35040
-    },
-    "split_4": {
-     "n_purged": 4,
-     "n_scored": 35133,
-     "n_train": 101905,
-     "n_window": 35136
-    },
-    "split_5": {
-     "n_purged": 16,
-     "n_scored": 57767,
-     "n_train": 137026,
-     "n_window": 57776
-    }
-   },
    "strategy": {
     "costs_per_side": 0.0006,
     "equity_curve": {
@@ -2556,11 +2260,7 @@
       1.0642,
       1.0351
      ],
-     "equity_final": 0.9882,
-     "n_source": 602,
-     "step_ms": 604800000,
-     "stride": 7,
-     "t0_ms": 1735689600000
+     "equity_final": 0.9882
     },
     "selection_score_mean_sharpe": 0.257,
     "tau": 0.23,
@@ -2661,27 +2361,12 @@
    }
   }
  ],
- "folds": {
-  "bounds_utc": [
-   "2021-01-01",
-   "2022-01-01",
-   "2023-01-01",
-   "2024-01-01",
-   "2025-01-01",
-   "2026-08-26"
-  ],
-  "test": 5,
-  "validation": [
-   2,
-   3,
-   4
-  ]
- },
  "gate_min_agree": 2,
- "generated_at_utc": "2026-08-27 08:32:45",
+ "generated_at_utc": "2026-08-27 09:46:33",
  "research_window": [
   "2021-01-01",
   "2026-08-26"
  ],
- "seed": 42
+ "seed": 42,
+ "test_fold": 5
 }
