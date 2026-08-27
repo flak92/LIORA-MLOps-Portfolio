@@ -28,6 +28,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -79,20 +80,31 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     return sorted(rows)  # v5 returns newest-first
 
 
-EMPTY_ZIP_MAX_BYTES = 200   # an empty Lean ZIP is ~177 B, the smallest traded day ~12 KB
+def earliest_traded_day(out_dir: Path) -> str | None:
+    """The first day this symbol has a ZIP with a non-empty CSV in it, if any.
 
+    An empty response has to answer one question: had the instrument listed
+    yet? A day before its first trade is legitimately empty; a day after it is
+    a failed request. Only evidence that PRECEDES the day in question settles
+    that — a later ZIP says nothing about whether the instrument existed
+    earlier, and on a --days top-up the directory is full of them.
 
-def traded_before(out_dir: Path, day: str) -> bool:
-    """Did this symbol already trade on an EARLIER day than `day`?
+    Emptiness is read from the archive rather than from the file size, so no
+    byte threshold has to stand in for "this day has no rows". Computed once
+    per symbol; the run keeps it current as it writes.
 
-    That is the whole question an empty response has to answer: a day the
-    instrument had not listed yet is legitimately empty, a day after it started
-    trading is a failed request. Evidence has to precede the day in question —
-    a later ZIP says nothing about whether the instrument existed earlier, and
-    on a --days top-up the directory is full of them.
+    The limit this cannot cross: a transient empty response on the listing day
+    itself is indistinguishable from the day before listing, because no local
+    evidence precedes it.
     """
-    return any(p.name[:8] < day and p.stat().st_size > EMPTY_ZIP_MAX_BYTES
-               for p in out_dir.glob("*_trade.zip"))
+    days = []
+    for p in sorted(out_dir.glob("*_trade.zip")):
+        with zipfile.ZipFile(p) as z:
+            entries = z.infolist()
+            if entries and entries[0].file_size > 0:
+                days.append(p.name[:8])
+                break
+    return days[0] if days else None
 
 
 def main() -> int:
@@ -110,6 +122,7 @@ def main() -> int:
         sym = config.symbol(t)
         out_dir = config.raw_symbol_dir(t, "bybit")
         written = skipped = 0
+        earliest = earliest_traded_day(out_dir)
         day_ms = start_ms
         t0 = time.time()
         while day_ms < end_ms:
@@ -118,7 +131,9 @@ def main() -> int:
                 skipped += 1
             else:
                 rows = fetch_day(sym, day_ms)
-                if not rows and traded_before(out_dir, day):
+                if rows and (earliest is None or day < earliest):
+                    earliest = day
+                elif not rows and earliest is not None and day > earliest:
                     raise SystemExit(f"bybit {sym} {day}: empty response after listing — retry the download")
                 write_lean_zip(out_dir, sym, day, rows)
                 written += 1

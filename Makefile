@@ -7,11 +7,13 @@ TICKER_LIST = $(shell python3 -c "from data_module.config import TICKERS; print(
 # here is that external parallelism: OMP_NUM_THREADS and nthread stay at 1,
 # because multi-threaded float summation reorders and two runs of the same
 # experiment stop being comparable. The width is measured, never hardcoded —
-# min(cores, available GiB) so a bigger machine is used and a loaded one is
-# not oversubscribed. Override with `make ml-hpo JOBS=2`.
+# max(1, min(cores, available GiB)) so a bigger machine is used, a loaded one is
+# not oversubscribed, and a nearly full one still runs — `xargs -P 0` means no
+# limit at all, the exact opposite of the intent. Override with `JOBS=2`.
 JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
-                if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then echo $$g; else echo $$c; fi)
+                if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
+                if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
 
 # $(1) = python command, $(2) = ml module
 fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} $(1) -m $(2) --tickers {}
