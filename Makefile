@@ -3,7 +3,7 @@ PORT       ?= 8900
 DUCKDB_PIN := duckdb==1.5.4
 ML_PINS    := numpy==2.5.2 xgboost==3.4.1 optuna==4.9.0
 COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
-TICKER_LIST = $(shell $(PY) -c "from pipeline.config import TICKERS; print(' '.join(TICKERS))")
+TICKER_LIST = $(shell python3 -c "from pipeline.config import TICKERS; print(' '.join(TICKERS))")
 
 .DEFAULT_GOAL := help
 
@@ -81,6 +81,30 @@ docker-export:   ## run the export stage inside the container
 
 docker-status:   ## run the status stage inside the container
 	$(COMPOSE) run --rm pipeline python -m pipeline.status
+
+docker-ml-bars:      ## ml.bars inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.bars
+
+docker-ml-features:  ## ml.features inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.features
+
+docker-ml-labels:    ## ml.labels inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.labels
+
+docker-ml-hpo:       ## ml.hpo inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.hpo
+
+docker-ml-train:     ## ml.train inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.train
+
+docker-ml-strategy:  ## ml.strategy inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.strategy
+
+docker-ml-finalize:  ## ml.train --finalize inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.train --finalize
+
+docker-ml-status:    ## ml.status inside the container
+	$(COMPOSE) run --rm pipeline python -m ml.status
 
 docker-up:       ## start the dashboard container at http://127.0.0.1:8900/
 	$(COMPOSE) up -d dashboard
