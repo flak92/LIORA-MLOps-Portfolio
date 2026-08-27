@@ -63,13 +63,12 @@ with `tree_method=hist` and `nthread=1`, so the GPU stack would be weight
 without function.
 
 ```bash
-make setup            # create .venv with the four pinned libraries
-make download         # backfill/top-up raw 1m ZIPs from both exchanges
-make ingest           # load ZIPs into DuckDB, rebuild the canonical series
-make export           # write per-asset Parquet files
-make status           # quality monitoring -> stdout + dashboard/status.json
+make all              # venv -> download -> ingest -> export -> status -> full ML chain
 make dashboard        # serve http://127.0.0.1:8900/  (loopback only)
 ```
+
+Every stage also runs on its own (`make setup download ingest export status`
+for the data half, `make ml-all` for the ML half) — see the stage table below.
 
 The same stages run inside Docker: `make docker-build`, then
 `make docker-download / docker-ingest / docker-export / docker-status`,

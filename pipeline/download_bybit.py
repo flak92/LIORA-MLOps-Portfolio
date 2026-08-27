@@ -31,7 +31,7 @@ import urllib.request
 from datetime import UTC, datetime
 
 from . import config
-from .download import DAY_MS, write_lean_zip
+from .download_binance import DAY_MS, write_lean_zip
 
 WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
 

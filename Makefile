@@ -20,25 +20,28 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 
 # every target is a command, not a file — without this `make dashboard` would
 # be "up to date" because the dashboard/ directory exists
-.PHONY: help setup download download-binance download-bybit ingest export status \
+.PHONY: help all setup download download-binance download-bybit ingest export status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-download \
         docker-ingest docker-export docker-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
-        docker-ml-strategy docker-ml-status docker-up docker-down
+        docker-ml-strategy docker-ml-status docker-ml-all docker-up docker-down
 
 help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
+
+all:             ## full pipeline from a fresh clone: venv, data, canonical, ML, snapshots
+	$(MAKE) setup download ingest export status ml-all
 
 setup:           ## create .venv and install the locked dependency set
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.lock
 
 download:        ## fetch Binance + Bybit 1m klines (full UTC days, idempotent)
-	$(PY) -m pipeline.download
+	$(PY) -m pipeline.download_binance
 	$(PY) -m pipeline.download_bybit
 
 download-binance: ## Binance USDS-M only
-	$(PY) -m pipeline.download
+	$(PY) -m pipeline.download_binance
 
 download-bybit:  ## Bybit Linear only
 	$(PY) -m pipeline.download_bybit
@@ -84,7 +87,7 @@ docker-build:    ## build the pipeline image
 	$(COMPOSE) build
 
 docker-download: ## run both download stages inside the container
-	$(COMPOSE) run --rm pipeline python -m pipeline.download
+	$(COMPOSE) run --rm pipeline python -m pipeline.download_binance
 	$(COMPOSE) run --rm pipeline python -m pipeline.download_bybit
 
 docker-ingest:   ## run the ingest stage inside the container
@@ -116,6 +119,10 @@ docker-ml-strategy:  ## ml.strategy inside the container
 
 docker-ml-status:    ## ml.status inside the container
 	$(COMPOSE) run --rm pipeline python -m ml.status
+
+docker-ml-all:       ## the whole ML chain inside the container
+	$(MAKE) docker-ml-bars docker-ml-features docker-ml-labels docker-ml-hpo \
+	        docker-ml-train docker-ml-strategy docker-ml-status
 
 docker-up:       ## start the dashboard container at http://127.0.0.1:8900/
 	$(COMPOSE) up -d dashboard
