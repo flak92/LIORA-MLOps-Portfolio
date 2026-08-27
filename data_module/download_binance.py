@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -91,7 +92,12 @@ def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(csv_name, body)
-    (out_dir / f"{day}_trade.zip").write_bytes(buf.getvalue())
+    # whole or not at all: a truncated ZIP would be skipped forever by the
+    # exists() check above and then rejected by ingest
+    out = out_dir / f"{day}_trade.zip"
+    tmp = out.with_suffix(".zip.tmp")
+    tmp.write_bytes(buf.getvalue())
+    os.replace(tmp, out)
 
 
 def main() -> int:

@@ -224,7 +224,13 @@ def main() -> int:
             "SELECT column_name FROM information_schema.columns WHERE table_name = 'ohlcv_1m_canonical'"
         ).fetchall()
     }
-    if old_cols and "source" not in old_cols:  # pre-failover schema: rebuild from scratch
+    if old_cols and "source" not in old_cols:          # pre-failover schema
+        # the drop takes every symbol with it, so a subset run would silently
+        # truncate the dataset to whatever --tickers happened to name
+        if set(tickers) != set(config.TICKERS):
+            raise SystemExit(
+                "canonical schema migration requires a full dataset rebuild — run `make ingest`"
+            )
         con.execute("DROP TABLE ohlcv_1m_canonical")
     con.execute(CANONICAL_DDL)
     for t in tickers:

@@ -29,6 +29,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import UTC, datetime
+from pathlib import Path
 
 from . import config
 from .download_binance import DAY_MS, write_lean_zip
@@ -78,6 +79,22 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     return sorted(rows)  # v5 returns newest-first
 
 
+EMPTY_ZIP_MAX_BYTES = 200   # an empty Lean ZIP is ~177 B, the smallest traded day ~12 KB
+
+
+def traded_before(out_dir: Path, day: str) -> bool:
+    """Did this symbol already trade on an EARLIER day than `day`?
+
+    That is the whole question an empty response has to answer: a day the
+    instrument had not listed yet is legitimately empty, a day after it started
+    trading is a failed request. Evidence has to precede the day in question —
+    a later ZIP says nothing about whether the instrument existed earlier, and
+    on a --days top-up the directory is full of them.
+    """
+    return any(p.name[:8] < day and p.stat().st_size > EMPTY_ZIP_MAX_BYTES
+               for p in out_dir.glob("*_trade.zip"))
+
+
 def main() -> int:
     ap = config.ticker_parser("Bybit Linear 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
@@ -101,9 +118,7 @@ def main() -> int:
                 skipped += 1
             else:
                 rows = fetch_day(sym, day_ms)
-                if not rows and any(p.stat().st_size > 200 for p in out_dir.glob("*_trade.zip")):
-                    # the symbol already has traded days -> an empty response is a
-                    # transient failure, not a pre-listing day; do not persist a hole
+                if not rows and traded_before(out_dir, day):
                     raise SystemExit(f"bybit {sym} {day}: empty response after listing — retry the download")
                 write_lean_zip(out_dir, sym, day, rows)
                 written += 1
