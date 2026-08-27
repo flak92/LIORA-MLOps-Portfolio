@@ -23,26 +23,34 @@ def ema(x: np.ndarray, n: int) -> np.ndarray:
     return out
 
 
-def wilder_smooth(x: np.ndarray, n: int) -> np.ndarray:
-    """Wilder's recursive average: seeded with the SMA of the first n values."""
+def wilder_smooth(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
+    """Wilder's recursive average: seeded with the SMA of the first period."""
     out = np.full_like(x, np.nan)
-    if x.size < n:
+    if x.size < smoothing_period_bars:
         return out
-    out[n - 1] = x[:n].mean()
-    for i in range(n, x.size):
-        out[i] = out[i - 1] + (x[i] - out[i - 1]) / n
+    out[smoothing_period_bars - 1] = x[:smoothing_period_bars].mean()
+    for i in range(smoothing_period_bars, x.size):
+        out[i] = out[i - 1] + (x[i] - out[i - 1]) / smoothing_period_bars
     return out
 
 
-def rsi(close: np.ndarray, n: int) -> np.ndarray:
-    delta = np.diff(close, prepend=close[0])
-    gain = wilder_smooth(np.maximum(delta, 0.0), n)
-    loss = wilder_smooth(np.maximum(-delta, 0.0), n)
+def rsi(close: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
+    """Wilder RSI over real price changes only.
+
+    np.diff yields the close.size - 1 real changes; the seed is the SMA of the
+    first smoothing_period_bars of them, so the first finite value lands at
+    price index smoothing_period_bars — a prepended phantom zero change would
+    dilute the seed and surface the RSI one bar early. The leading NaN realigns
+    the change grid to the price grid; all gains -> 100, no change at all -> 50.
+    """
+    delta = np.diff(close)
+    gain = wilder_smooth(np.maximum(delta, 0.0), smoothing_period_bars)
+    loss = wilder_smooth(np.maximum(-delta, 0.0), smoothing_period_bars)
     with np.errstate(divide="ignore", invalid="ignore"):
         out = 100.0 - 100.0 / (1.0 + gain / loss)
     out = np.where((loss == 0.0) & (gain > 0.0), 100.0, out)
     out = np.where((loss == 0.0) & (gain == 0.0), 50.0, out)
-    return out
+    return np.concatenate(([np.nan], out))    # delta[i] describes close[i + 1]
 
 
 def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray, n: int) -> np.ndarray:
