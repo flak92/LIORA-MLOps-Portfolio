@@ -13,5 +13,9 @@ The dashboard is a static dial-up-minimal page; keep it one.
 - The page reads two committed snapshots (`status.json`, `ml_status.json`)
   and renders everything client-side; the payload carries only fields the
   page actually reads.
+- The page computes no domain or model results — only presentation arithmetic
+  over already measured snapshots (shares, a cross-fold mean, a difference of
+  two reported metrics). Moving those into the payload would grow it without
+  adding a fact.
 - Verify rendering headless: serve on loopback, `chromium --headless
   --dump-dom`, assert no `undefined`/`NaN` and the expected frames.

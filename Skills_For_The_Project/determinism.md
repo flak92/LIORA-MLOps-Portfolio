@@ -1,7 +1,11 @@
 # Skill: determinism
 
 Two runs of the same experiment must produce the same bits — otherwise
-out-of-sample results lose their evidential value.
+out-of-sample results lose their evidential value. The claim is scoped: bit
+parity is expected for the same code, the same fixed input window and the same
+execution environment. Minimising dependencies to four direct pins deliberately
+does **not** claim byte-identical environment reconstruction at an arbitrary
+future date.
 
 - Thread caps are frozen at one: `nthread=1` (XGBoost), `OMP_NUM_THREADS=1`.
   Multi-threaded float summation reorders, two runs diverge, backtests stop

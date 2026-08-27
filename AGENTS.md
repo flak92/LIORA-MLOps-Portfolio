@@ -56,8 +56,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
   `download_bybit.py`, `<kind>_<TICKER>.<ext>` artifacts, `ml-<stage>` ↔
-  `docker-ml-<stage>` targets); each module measures itself in its own
-  `status.py`;
+  `docker-ml-<stage>` targets); each computational module (`data_module`,
+  `ml_module`) measures its own domain state in `status.py`, and
+  `monitoring_module` presents their snapshots;
 - short, predictable paths; no decorative prefixes or suffixes;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.

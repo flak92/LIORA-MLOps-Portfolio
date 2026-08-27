@@ -16,7 +16,8 @@ time. Whether the event will resolve ambiguously is not, so label validity
 governs training and scoring only — a signal whose event later turns out
 ambiguous is still a trade, settled at the barrier adverse to the position.
 
-Execution is a USDT perpetual with a fixed quantity, so PnL is linear in price:
+The simulation applies USDT-perpetual PnL algebra to the canonical price path
+at a fixed quantity, so PnL is linear in price:
 
     Q      = s * E0 / P0                       notional 1x current equity
     R      = s * (Px/P0 - 1) - c - c * (Px/P0)  entry fee c*E0, exit fee c*|Q|*Px

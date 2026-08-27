@@ -7,8 +7,9 @@ research layer knows one market object, not the sources that built it.
 
 Bars are exact UTC-aligned aggregations (O first, H max, L min, C last, V sum;
 arg_min/arg_max by timestamp for determinism) — closed bars only, because the
-window ends at a UTC midnight. A one-off diff of one month of aggregated 1h
-bars against native fapi klines gave 0 OHLC mismatches (see ML_README).
+window ends at a UTC midnight. That these aggregations reproduce a provider's
+own higher timeframes exactly is a property of the data layer, verified once
+and recorded in DATA_README.
 """
 
 from __future__ import annotations

@@ -1,6 +1,6 @@
 # LIORA - MLOps - Portfolio
 
-**A reproducible based on 1-minute Time Frame as the raw crypto market-data pipeline: Binance + Bybit klines → QC Lean raw ZIPs → primary-failover consolidation in DuckDB → continuous canonical per-asset Parquet → static monitoring dashboard.**
+**An academic 1-minute crypto research pipeline: public market observations → Lean-compatible raw data → deterministic canonical DuckDB → features and labels → purged walk-forward XGBoost → research strategy simulation → monitoring.**
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
@@ -144,7 +144,7 @@ weights, a purged walk-forward protocol with Optuna hyper-parameter search
 strategy evaluation with explicit costs:
 
 Both `X` and `Y` read the canonical series — `X` before the decision, `Y` after
-it — so features and target describe the same instrument by construction. The
+it — so features and target describe the same canonical research object. The
 decision is taken at a 15m close and filled one minute later. Stages:
 `make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
 (or `make ml-all`) — every per-asset stage runs `JOBS = min(cores, available

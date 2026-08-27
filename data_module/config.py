@@ -1,7 +1,8 @@
 """Static configuration: the asset basket, time window, endpoint and paths.
 
-Single source of truth for every stage. All constants are plain values so a
-fresh clone reproduces the exact same dataset from the public exchange APIs.
+Single source of truth for every stage. All constants are plain values, so a
+fresh clone deterministically reconstructs the dataset for the requested time
+window from the public market APIs.
 """
 
 from __future__ import annotations

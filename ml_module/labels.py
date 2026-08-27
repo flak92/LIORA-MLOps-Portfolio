@@ -5,7 +5,7 @@ the decision, Y reads the same series after it —
 
     X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})       M = canonical series
 
-so the features and the target describe the same instrument by construction.
+so the features and the target describe the same canonical research object.
 The sources that built M end at the ingest boundary; nothing below that line
 knows which of them printed a given minute.
 

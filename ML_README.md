@@ -17,8 +17,8 @@ window and seed; the git commit records which code produced a result.
 6. A training event may **not cross the start of its OOS block**.
 7. HPO and `τ` see **F2–F4 only**.
 8. **F5 changes no decision** — not a feature, not a hyper-parameter, not `τ`, not a rule.
-9. PnL is a **linear USDT-perpetual PnL for a fixed quantity**, with an explicit
-   cost and without funding.
+9. PnL is **linear fixed-quantity research PnL on canonical prices**, with an
+   explicit cost and without funding.
 
 Everything below is these nine rules written out.
 
@@ -59,7 +59,8 @@ forward fill), and the research layer studies that series and nothing else:
 X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 ```
 
-Features and target therefore describe the same instrument by construction —
+Features and target therefore describe the same canonical research object by
+construction —
 the split that made `X` observation and `Y` execution is gone, and with it the
 claim that this repository simulates trading on a named exchange. It does not:
 it simulates a strategy on a canonical market model, with the costs stated.
@@ -72,12 +73,20 @@ beat an average.
 … ─┤ 12:45 ── 15M bar ── 13:00 ├─ 13:00 ── 15M bar ── 13:15 ├─ …
                                 ▲ t_d = decision_ts = 13:00
 features: bars with close_ts <= 13:00  (15M 12:45–13:00, 1H 12:00–13:00, 4H 08:00–12:00)
-entry:    t_0 = entry_ts = 13:01, at the canonical 1m OPEN of that minute
+entry:    t_0 = 13:01, on the first observed trade of that minute — its OPEN
 event:    [t_0, t_v) = [13:01, 17:01)  — the barrier examines minutes 13:01 … 17:00
 ```
 
 `t_0 = t_d + 1 min` is the **one-minute decision-to-entry latency assumption**:
 a signal computed at the close of a bar cannot be filled at that same close.
+
+`t_0` names a one-minute bucket, not an instant. **Entry occurs on the first
+observed trade of the minute beginning at `t_0`, and its price is that minute's
+`open`** — which is what the open of a 1m bar is. If the minute contains no
+trade there is no entry. The exact intra-minute execution time is unobserved at
+1-minute resolution, and `volume(t_0) > 0` is not future knowledge used to buy
+at an earlier price: it is the statement that the trade whose price is `open`
+happened at all.
 `event_end_ts` is the **exclusive** end of the event, which is what makes the
 purge rule exactly `event_end_ts <= oos_start` — an event ending at the first
 minute of the OOS block does not overlap it.
@@ -140,19 +149,26 @@ observation, not a third outcome.
 ```
 entry_observable = volume(entry_ts) > 0   known at t_0        MAY gate an entry
 label_valid      = event classifiable     known afterwards    NEVER gates an entry
+sample_valid     = entry_observable & label_valid             the supervised population
 ```
 
 Whether the entry minute traded at all is visible at the time, so the strategy
 may refuse it. Whether the event will resolve ambiguously is not, so using
-`label_valid` as an entry condition would be look-ahead: it governs training,
-HPO scoring and classification metrics, and nothing else. A signal whose event
+`label_valid` as an entry condition would be look-ahead: a signal whose event
 later turns out ambiguous **is a trade**, settled at the barrier adverse to the
 position.
 
+Supervision uses both. An unobservable entry gives `P0 = open` of a minute that
+printed no trade — a carried-forward price — so its barriers are anchored to a
+quote that never existed: not an executable decision and not a sound
+measurement. `sample_valid` therefore governs the uniqueness weights, the
+training rows, the HPO objective and the classification metrics, while the
+strategy gates on `entry_observable` alone.
+
 Sample weight = **average uniqueness** [4, ch. 4]: the mean over the event's
 minutes of `1 / (concurrently open events)`, exact via prefix sums, computed
-over the **valid** events only so a masked row cannot dilute the weights of
-the rows actually trained on. It is the XGBoost sample weight, with no
+over the **supervised** events only, so an excluded row cannot dilute the
+weights of the rows actually trained on. It is the XGBoost sample weight, with no
 additional class re-weighting. Rows whose vertical barrier would cross the
 research end are dropped.
 
@@ -214,7 +230,7 @@ prior_logloss · model_logloss · skill = 1 − model_logloss / prior_logloss ·
 `skill` answers one question — does the model add information beyond knowing
 how often each class occurs? — and is **a result, not a gate**. MCC [8] adds
 the confusion-structure view in one number; balanced accuracy answers the same
-question and is not reported. Metrics score the label-valid subset of a fold;
+question and is not reported. Metrics score the supervised subset of a fold;
 predictions cover the full fold.
 
 ## 9. Strategy
@@ -230,7 +246,8 @@ The **model decides the side; the 4H hierarchy gates it**. One unit position
 at a time, new signals ignored while in a position, and a trade must finish
 inside its fold.
 
-**PnL — one formula.** The position is a USDT perpetual held at a fixed
+**PnL — one formula.** The simulation applies USDT-perpetual PnL algebra to the
+canonical price path: a position held at a fixed
 quantity `Q = s · E₀ / P₀` (notional 1× current equity), so PnL is linear in
 price, with the cost `c = 0.0006` charged on entry notional and on exit
 notional:
