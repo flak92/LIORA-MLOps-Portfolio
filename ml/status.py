@@ -94,14 +94,13 @@ def _pnl(block: dict) -> dict:
         "hit_rate": _r(block["hit_rate"], 4),
         "avg_trade_ret": _r(block["avg_trade_ret"], 6),
         "exposure": _r(block["exposure"], 4),
-        "turnover": _r(block["turnover"], 6),
-        "gate_share": _r(block["gate_share"], 4),
+        "final_equity": _r(block["final_equity"], 4),
         "exit_counts": dict(block["exit_counts"]),
     }
 
 
 def strategy_block(strategy: dict) -> dict:
-    test = strategy["test_locked"]
+    test = strategy["test"]
     return {
         "tau": strategy["tau"],
         "tau_constraint_met": strategy["tau_constraint_met"],
@@ -117,7 +116,7 @@ def warnings_block(test: dict, strategy: dict) -> dict:
     """Protocol conditions only — never an unfavourable result."""
     return {
         "test_logloss_above_uniform": test["logloss"] >= LN3,
-        "too_few_trades": strategy["test"]["n_trades"] < config.MIN_TRADES_PER_SPLIT,
+        "too_few_trades": strategy["test"]["n_trades"] < config.TAU_MIN_TRADES,
         "tau_fallback": not strategy["tau_constraint_met"],
     }
 

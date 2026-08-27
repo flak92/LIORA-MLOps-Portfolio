@@ -76,6 +76,6 @@ XGB_FIXED = {
 # ---- strategy (evaluation only)
 COST_PER_SIDE = 0.0006              # taker + slippage, per entry and per exit
 TAU_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
-MIN_TRADES_PER_SPLIT = 30
+TAU_MIN_TRADES = 30                  # a tau must produce this many trades in every validation fold
 BARS_PER_YEAR_15M = 96 * 365        # crypto trades 24/7
 AGREE_MIN = 2                       # levels whose trend sign must agree with the side
