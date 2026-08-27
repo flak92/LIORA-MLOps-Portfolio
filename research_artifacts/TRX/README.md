@@ -11,12 +11,12 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,340 KB |
 | `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,334 KB |
 | `hyperparameter_search.json` | the winning point of the search | 323 B |
-| `model_evaluation.json` | classification metrics per fold | 3 KB |
+| `model_evaluation.json` | classification metrics per fold | 2 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
-| `experiment_configuration.json` | the configuration this run was executed under | 4 KB |
+| `experiment_configuration.json` | the configuration this run was executed under | 3 KB |
 | `README.md` | this file | — |
 
-`features.parquet` carries 16 rows more than `label_events.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised subset of each.
+`features.parquet` carries 16 rows more than `label_events.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -24,22 +24,22 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 ## Model
 
-Search: 50 Optuna trials, best log-loss 0.801736. Winner: depth 2, eta 0.0132, 300 rounds, subsample 0.573, colsample 0.759, min_child_weight 27, lambda 0.3764, alpha 0.7618.
+Search: 50 Optuna trials, best log-loss 0.801825. Winner: depth 2, eta 0.0132, 300 rounds, subsample 0.573, colsample 0.759, min_child_weight 27, lambda 0.3764, alpha 0.7618.
 
-| fold | prior log-loss | model log-loss | rel. skill | MCC | scored |
-| --- | --- | --- | --- | --- | --- |
-| F2 | 0.819752 | 0.798077 | +2.64% | 0.0488 | 35,040 |
-| F3 | 0.822737 | 0.778907 | +5.33% | 0.0493 | 35,040 |
-| F4 | 0.879924 | 0.828225 | +5.88% | 0.0508 | 35,136 |
-| **F5 — final holdout** | 0.871183 | 0.835453 | +4.10% | 0.0411 | 57,776 |
+| fold | prior log-loss | model log-loss | rel. skill | scored |
+| --- | --- | --- | --- | --- |
+| F2 | 0.819880 | 0.798189 | +2.65% | 35,024 |
+| F3 | 0.822740 | 0.778842 | +5.34% | 35,024 |
+| F4 | 0.880119 | 0.828445 | +5.87% | 35,120 |
+| **F5 — final holdout** | 0.871183 | 0.835453 | +4.10% | 57,776 |
 
 ## Fold geometry
 
 | fold | trained on | purged | window | scored |
 | --- | --- | --- | --- | --- |
-| F2 | 31,822 | 14 | 35,040 | 35,040 |
-| F3 | 66,860 | 16 | 35,040 | 35,040 |
-| F4 | 101,911 | 5 | 35,136 | 35,136 |
+| F2 | 31,822 | 14 | 35,040 | 35,024 |
+| F3 | 66,860 | 16 | 35,040 | 35,024 |
+| F4 | 101,911 | 5 | 35,136 | 35,120 |
 | F5 | 137,036 | 16 | 57,776 | 57,776 |
 
 `purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.

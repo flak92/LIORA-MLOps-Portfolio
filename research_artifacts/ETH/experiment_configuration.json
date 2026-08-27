@@ -1,18 +1,4 @@
 {
- "effective_booster_params": {
-  "alpha": 0.9970682275036435,
-  "colsample_bytree": 0.886806409375977,
-  "eta": 0.01121012420535718,
-  "lambda": 1.2725387597459763,
-  "max_depth": 6,
-  "min_child_weight": 23,
-  "nthread": 1,
-  "num_class": 3,
-  "objective": "multi:softprob",
-  "seed": 42,
-  "subsample": 0.5051390814774201,
-  "tree_method": "hist"
- },
  "features": {
   "atr_wilder_smoothing_period_bars": 14,
   "columns": [
@@ -72,17 +58,6 @@
   "warmup_4h_bars": 200
  },
  "hyperparameter_search": {
-  "best_logloss": 0.8142410090562847,
-  "best_params": {
-   "alpha": 0.9970682275036435,
-   "colsample_bytree": 0.886806409375977,
-   "eta": 0.01121012420535718,
-   "lambda": 1.2725387597459763,
-   "max_depth": 6,
-   "min_child_weight": 23,
-   "num_boost_round": 600,
-   "subsample": 0.5051390814774201
-  },
   "objective": "mean uniqueness-weighted multiclass log-loss over folds F2, F3, F4",
   "parallelism": "sequential (n_jobs=1) \u2014 TPE is reproducible only in order",
   "sampler": "optuna.samplers.TPESampler",
@@ -152,7 +127,6 @@
   "supervised_population": "sample_valid = entry_observable & label_valid",
   "touch_requires": "volume > 0"
  },
- "num_boost_round": 600,
  "research_window": {
   "end_utc": "2026-08-26",
   "seed": 42,
@@ -172,8 +146,6 @@
  },
  "strategy": {
   "annualisation_period_15m_bars": 35040,
-  "entry_edge_threshold": 0.26,
-  "entry_edge_threshold_constraint_met": true,
   "entry_edge_threshold_grid": {
    "count": 61,
    "maximum": 0.6,
