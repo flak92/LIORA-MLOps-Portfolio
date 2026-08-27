@@ -67,6 +67,11 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
 
 # ~3M-row build per symbol keeps memory bounded on small hosts; end_ms is the
 # shared global grid end so every symbol covers the identical window.
+OHLC_INTACT = """(isfinite(open) AND isfinite(high) AND isfinite(low)
+          AND isfinite(close) AND isfinite(volume)
+          AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
+          AND low <= least(open, close) AND high >= greatest(open, close))"""
+
 # Tier order: traded Binance > traded Bybit > no-trade Binance > no-trade Bybit
 # > forward fill. use_binance collapses tiers 1 and 3: Binance wins whenever it is
 # valid and either traded or the Bybit candle did not trade either.
@@ -75,18 +80,12 @@ INSERT INTO ohlcv_1m_canonical
 WITH
 raw_1m_binance_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         (isfinite(open) AND isfinite(high) AND isfinite(low)
-          AND isfinite(close) AND isfinite(volume)
-          AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
-          AND low <= least(open, close) AND high >= greatest(open, close)) AS valid
+         {ohlc_intact} AS valid
   FROM ohlcv_1m_binance WHERE symbol = '{sym}'
 ),
 raw_1m_bybit_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         (isfinite(open) AND isfinite(high) AND isfinite(low)
-          AND isfinite(close) AND isfinite(volume)
-          AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
-          AND low <= least(open, close) AND high >= greatest(open, close)) AS valid
+         {ohlc_intact} AS valid
   FROM ohlcv_1m_bybit WHERE symbol = '{sym}'
 ),
 grid AS (
@@ -228,21 +227,14 @@ def main() -> int:
                                           UNION ALL
                                           SELECT timestamp_ms FROM ohlcv_1m_bybit)"""
     ).fetchone()[0] + config.CANONICAL_GRID_INTERVAL_MS
-    old_cols = {
-        r[0]
-        for r in con.execute(
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'ohlcv_1m_canonical'"
-        ).fetchall()
-    }
-    if old_cols and "source" not in old_cols:          # pre-failover schema
-        con.execute("DROP TABLE ohlcv_1m_canonical")
     con.execute(CANONICAL_DDL)
     for t in tickers:
         sym = config.symbol(t)
         con.execute("DELETE FROM ohlcv_1m_canonical WHERE symbol = ?", [sym])
         con.execute(
             CANONICAL_INSERT.format(
-                sym=sym, start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms, step_ms=config.CANONICAL_GRID_INTERVAL_MS
+                sym=sym, start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms,
+                step_ms=config.CANONICAL_GRID_INTERVAL_MS, ohlc_intact=OHLC_INTACT
             )
         )
         print(f"canonical {sym}: rebuilt", flush=True)

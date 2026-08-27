@@ -184,7 +184,6 @@ function buildAssetPills(s) {
     group.appendChild(b);
   });
   PILL_HOOKS.asset = renderAsset;
-  initPills(document);                 /* no-op: the group was bound while empty */
   /* pills arrive after load, so select here; #TICKER deep-links one asset */
   const wanted = decodeURIComponent(location.hash.slice(1)).toUpperCase();
   const start = group.querySelector("button[data-key='" + wanted + "']")

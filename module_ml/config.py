@@ -9,8 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from module_data.config import (  # noqa: F401  (re-exported)
-    DB_PATH, MONITORING_DIR, RESEARCH_ARTIFACTS_DIR, TICKERS, artifact_dir,
-    parse_tickers, symbol, ticker_parser,
+    DB_PATH, MONITORING_DIR, artifact_dir, parse_tickers, symbol, ticker_parser,
 )
 
 SEED = 42
@@ -29,6 +28,7 @@ RESEARCH_END_MS = _utc_ms(RESEARCH_END_UTC)
 
 # ---- hierarchy
 HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
+MILLISECONDS_PER_MINUTE = 60_000
 TIMEFRAME_DURATION_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
 DECISION_TIMEFRAME = "15m"
 
@@ -71,7 +71,7 @@ EVENT_RESOLUTION_NAME = {                # the name of each code, used wherever
     EVENT_RESOLUTION_AMBIGUOUS: "ambiguous",
 }
 LABEL_HORIZON_MINUTES = 240               # vertical barrier (240 min = 16 x 15m bars)
-LABEL_HORIZON_MS = LABEL_HORIZON_MINUTES * 60_000
+LABEL_HORIZON_MS = LABEL_HORIZON_MINUTES * MILLISECONDS_PER_MINUTE
 
 # ---- folds: WARMUP | TRAIN | PURGE | OOS validation | final holdout
 FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",

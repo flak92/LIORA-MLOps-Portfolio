@@ -44,7 +44,7 @@ import numpy as np
 
 from . import config, dataset, validation
 
-MILLISECONDS_PER_MINUTE = 60_000
+MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
 EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES = 1440    # one equity point per day for the dashboard curve
 BAR_CLOSE_OFFSET_MINUTES = 14          # a 15m bar closes on the 15th minute of its block
 

@@ -97,14 +97,12 @@ def earliest_traded_day(out_dir: Path) -> str | None:
     itself is indistinguishable from the day before listing, because no local
     evidence precedes it.
     """
-    days = []
     for p in sorted(out_dir.glob("*_trade.zip")):
         with zipfile.ZipFile(p) as z:
             entries = z.infolist()
             if entries and entries[0].file_size > 0:
-                days.append(p.name[:8])
-                break
-    return days[0] if days else None
+                return p.name[:8]
+    return None
 
 
 def main() -> int:

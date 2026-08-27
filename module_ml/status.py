@@ -67,14 +67,14 @@ def classification_block(metrics: dict) -> tuple[dict, dict]:
     return validation, _rounded_classification(metrics["final_holdout"])
 
 
-def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS) -> dict:
+def thin_curve(curve: dict, final_equity: float) -> dict:
     """The sparkline needs the shape, not the calendar: thinned values only.
 
     The end of the curve is the measured result, not whatever the thinning
     happened to land on — daily sampling then a stride of seven can stop days
     before the fold does. The settled value is appended when it differs.
     """
-    values = [round(v, 4) for v in curve["equity"][::stride]]
+    values = [round(v, 4) for v in curve["equity"][::EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS]]
     end = round(final_equity, 4)
     if values[-1] != end:
         values.append(end)

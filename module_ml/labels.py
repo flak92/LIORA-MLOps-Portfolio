@@ -63,7 +63,7 @@ import numpy as np
 from . import config, dataset, indicators
 
 LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
-MILLISECONDS_PER_MINUTE = 60_000
+MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
 LABEL_HORIZON_MINUTES = config.LABEL_HORIZON_MINUTES
 
 Y_COLUMNS = {
@@ -118,7 +118,6 @@ def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: 
         t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), LABEL_HORIZON_MINUTES)
         ambiguous = (t_up == t_dn) & (t_up < LABEL_HORIZON_MINUTES)
         y[a:b] = np.where(t_up < t_dn, 1, np.where(t_dn < t_up, -1, 0)).astype(np.int8)
-        y[a:b][ambiguous] = 0
         t_res[a:b] = np.minimum(t_up, t_dn)
         event_resolution[a:b] = np.where(ambiguous, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
 
@@ -167,7 +166,6 @@ def main() -> int:
         entry_ts = decision_ts + MILLISECONDS_PER_MINUTE
         keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
-        assert np.all(entry_ts > decision_ts)
 
         atr_1h = indicators.atr(bars_1h["high"], bars_1h["low"], bars_1h["close"],
                                 config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
@@ -181,7 +179,6 @@ def main() -> int:
          exit_reference_price) = triple_barrier(bars_1m, entry_ts, sigma)
         event_end_ts = (entry_ts + np.minimum(t_res + 1, LABEL_HORIZON_MINUTES)
                         * MILLISECONDS_PER_MINUTE)                     # exclusive
-        assert np.all(event_end_ts > entry_ts)
 
         entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
         entry_observable = bars_1m["volume"][entry_idx] > 0

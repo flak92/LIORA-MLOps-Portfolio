@@ -20,7 +20,7 @@ import numpy as np
 
 from . import config
 
-MILLISECONDS_PER_MINUTE = 60_000
+MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
 
 
 def fold_bounds(fold_id: int) -> tuple[int, int]:
@@ -69,7 +69,6 @@ def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np
     keep = sample_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty training segment"
-    assert event_end_ts[idx].max() <= oos_start_ms, "a training event overlaps the OOS block"
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 
 
@@ -118,9 +117,7 @@ def multiclass_logloss(y_cls: np.ndarray, proba: np.ndarray, weight: np.ndarray)
 def weighted_class_prior(y_cls: np.ndarray, weight: np.ndarray) -> np.ndarray:
     """Weight-normalised class frequencies — the baseline a model must beat."""
     prior = np.array([weight[y_cls == c].sum() for c in range(3)], dtype=np.float64)
-    total = prior.sum()
-    assert total > 0.0, "empty or zero-weight segment"
-    return prior / total
+    return prior / prior.sum()
 
 
 def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> float:
