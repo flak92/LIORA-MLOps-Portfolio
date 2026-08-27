@@ -1,7 +1,8 @@
 """Fixed hierarchical feature matrix X — 15 causal columns per asset.
 
-Five families on three time scales (trend, momentum, volatility, structure,
-activity on 15m/1h/4h). Identical definition for every asset; no per-asset
+Five families on three time scales, each named after what it computes
+(ema20_minus_ema50_over_atr14, centered_rsi14, atr14_over_close,
+range_position_20, log_volume_zscore_50, on 15m/1h/4h). Identical definition for every asset; no per-asset
 selection. Cross-level trend agreement is a strategy rule over these columns,
 not a feature: it would carry no information the three trend columns lack.
 
@@ -9,7 +10,7 @@ Every value at decision_ts comes from the last CLOSED bar of its level
 (asof_index asserts causality); the 15m level uses the bar closing exactly at
 decision_ts.
 
-Output: assets/Asset_<T>/X_<T>.parquet with decision_ts + 15 float64 columns,
+Output: research_artifacts/<TICKER>/features.parquet with decision_ts + 15
 rows from the global research warm-up onward, no NaN (asserted).
 """
 
@@ -35,13 +36,14 @@ def level_features(bars: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     close, high, low, vol = bars["close"], bars["high"], bars["low"], bars["volume"]
     atr14 = indicators.atr(high, low, close, config.ATR_N)
     with np.errstate(divide="ignore", invalid="ignore"):
-        trend = (indicators.ema(close, config.EMA_FAST) - indicators.ema(close, config.EMA_SLOW)) / atr14
+        ema_spread = (indicators.ema(close, config.EMA_FAST)
+                      - indicators.ema(close, config.EMA_SLOW)) / atr14
     return {
-        "trend": np.where(atr14 == 0.0, 0.0, trend),
-        "momentum": (indicators.rsi(close, config.RSI_N) - 50.0) / 50.0,
-        "volatility": atr14 / close,
-        "structure": indicators.range_position(close, high, low, config.STRUCTURE_N),
-        "activity": indicators.rolling_zscore(np.log1p(vol), config.ACTIVITY_N),
+        "ema20_minus_ema50_over_atr14": np.where(atr14 == 0.0, 0.0, ema_spread),
+        "centered_rsi14": (indicators.rsi(close, config.RSI_N) - 50.0) / 50.0,
+        "atr14_over_close": atr14 / close,
+        "range_position_20": indicators.range_position(close, high, low, config.STRUCTURE_N),
+        "log_volume_zscore_50": indicators.rolling_zscore(np.log1p(vol), config.ACTIVITY_N),
     }
 
 
@@ -67,7 +69,7 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
 
 def write_x(ticker: str, decision_ts: np.ndarray, x: np.ndarray) -> Path:
     return dataset.write_parquet(
-        config.ASSETS_DIR / f"Asset_{ticker}" / f"X_{ticker}.parquet",
+        config.artifact_dir(ticker) / "features.parquet",
         {"decision_ts": "BIGINT", **{c: "DOUBLE" for c in config.FEATURE_COLUMNS}},
         ([int(decision_ts[i])] + [repr(float(v)) for v in x[i]]
          for i in range(decision_ts.size)),
@@ -81,7 +83,7 @@ def main() -> int:
     for t in config.parse_tickers(args.tickers):
         decision_ts, x = build_x(con, t)
         out = write_x(t, decision_ts, x)
-        print(f"{out.name}: {decision_ts.size} rows x {x.shape[1]} features", flush=True)
+        print(f"{t} {out.name}: {decision_ts.size} rows x {x.shape[1]} features", flush=True)
     con.close()
     return 0
 

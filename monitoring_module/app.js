@@ -71,7 +71,7 @@ function initPills(root) {
   });
 }
 
-/* null-safe formatting: canon() writes null for non-finite floats */
+/* null-safe formatting: to_json_safe() writes null for non-finite floats */
 function num(x, d) {
   return x === null || x === undefined ? "-" : x.toFixed(d);
 }

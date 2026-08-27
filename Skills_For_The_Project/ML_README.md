@@ -15,7 +15,7 @@ window and seed; the git commit records which code produced a result.
 4. `Y` is a first-touch triple barrier on the 1m path; **ambiguity is not a class**.
 5. Overlapping labels carry **average-uniqueness** weights.
 6. A training event may **not cross the start of its OOS block**.
-7. HPO and `τ` see **F2–F4 only**.
+7. HPO and the entry edge threshold `τ` see **F2–F4 only**.
 8. **F5 changes no decision** — not a feature, not a hyper-parameter, not `τ`, not a rule.
 9. PnL is **linear fixed-quantity research PnL on canonical prices**, with an
    explicit cost and without funding.
@@ -103,13 +103,13 @@ exactly is a property of the data layer, verified once and recorded in
 
 | Family | Definition on the level's own bars | Range | Ref. |
 |---|---|---|---|
-| `trend` | `(EMA20 − EMA50) / ATR14` | unbounded, dimensionless | [1][3] |
-| `momentum` | `(RSI14 − 50) / 50` | [−1, 1] | [1][7] |
-| `volatility` | `ATR14 / close` | > 0, dimensionless | [1][5] |
-| `structure` | `(close − min(low,20)) / (max(high,20) − min(low,20))` | [0, 1] | [2] |
-| `activity` | z-score of `log1p(volume)` over 50 bars | dimensionless | [1][6] |
+| `ema20_minus_ema50_over_atr14` | `(EMA20 − EMA50) / ATR14` | unbounded, dimensionless | [1][3] |
+| `centered_rsi14` | `(RSI14 − 50) / 50` | [−1, 1] | [1][7] |
+| `atr14_over_close` | `ATR14 / close` | > 0, dimensionless | [1][5] |
+| `range_position_20` | `(close − min(low,20)) / (max(high,20) − min(low,20))` | [0, 1] | [2] |
+| `log_volume_zscore_50` | z-score of `log1p(volume)` over 50 bars | dimensionless | [1][6] |
 
-`activity` measures the activity of the **canonical observation process**, not
+`log_volume_zscore_50` measures the activity of the **canonical observation process**, not
 venue-independent market activity: the sources differ in liquidity level, so a
 source switch may induce a volume-level discontinuity. Normalising per source
 would push provider knowledge back below the ingest boundary, so the limitation
@@ -117,12 +117,12 @@ is stated rather than engineered away.
 
 Five families on 15m / 1h / 4h — **15 columns**, identical for every asset,
 **no per-asset selection** (a deliberate overfitting control). Cross-level
-trend agreement is **not** a feature: `sign(trend_15m) + sign(trend_1h) +
-sign(trend_4h)` is a deterministic function of three columns the model already
+trend agreement is **not** a feature: the sum of the three trend signs +
+the three trend signs is a deterministic function of columns the model already
 has, so it can only add representation, never information; the 2-of-3
 agreement lives where it is actually used, in the strategy gate. Five families
 per level exceeds the four-per-level multi-timeframe guideline by one:
-`activity` is volume information, not a fifth price-derived indicator.
+`log_volume_zscore_50` is volume information, not a fifth price-derived indicator.
 `rel_divergence` is a data-quality signal, never a feature [12]. Warm-up: 200
 top-level bars (`WARMUP_4H_BARS`) — decision rows before `2021-02-03 08:00
 UTC` are excluded everywhere. Recursions (EMA, Wilder) run as explicit loops;
@@ -183,8 +183,8 @@ weights of the rows actually trained on. It is the XGBoost sample weight, with n
 additional class re-weighting. Rows whose vertical barrier would cross the
 research end are dropped.
 
-`Y_<T>.parquet` also carries the prices the backtest needs — `p0`, `upper`,
-`lower`, `exit_ref` — so the strategy replays exactly the event that produced
+`label_events.parquet` also carries the prices the backtest needs —
+`entry_price`, `upper`, `lower`, `exit_reference_price` — so the strategy replays exactly the event that produced
 the label instead of recomputing it.
 
 ## 6. Split — WARMUP | TRAIN | PURGE | OOS | final OOS
@@ -196,7 +196,7 @@ the label instead of recomputing it.
 Split 2: TRAIN = F1            | PURGE | OOS = F2
 Split 3: TRAIN = F1–F2         | PURGE | OOS = F3
 Split 4: TRAIN = F1–F3         | PURGE | OOS = F4
-Test   : TRAIN = F1–F4         | PURGE | F5   (frozen params, frozen tau)
+Holdout: TRAIN = F1–F4         | PURGE | F5   (frozen params, frozen threshold)
 ```
 
 **Purge** keeps a training row only if `event_end_ts <= oos_start`. Because
@@ -224,10 +224,10 @@ splits F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weigh
 `alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`, no
 early stopping. Label parameters, costs and the `τ` grid are **never** in the
-space. `hpo_<T>.json` keeps the winner and the trial count; the trajectory of
+space. `hyperparameter_search.json` keeps the winner and the trial count; the trajectory of
 50 trials is a search diary, not a result.
 
-## 8. Classification metric — skill against the training prior
+## 8. Classification metric — relative log-loss skill against the training prior
 
 With `y = 0` dominant, a uniform `ln 3` baseline flatters any model that
 merely learns the class frequencies. The baseline is therefore the
@@ -235,10 +235,10 @@ merely learns the class frequencies. The baseline is therefore the
 `p_c = Σ wᵢ·1(yᵢ = c) / Σ wᵢ`, and the reported numbers are
 
 ```
-prior_logloss · model_logloss · skill = 1 − model_logloss / prior_logloss · MCC
+prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior · MCC
 ```
 
-`skill` answers one question — does the model add information beyond knowing
+`relative_logloss_skill` answers one question — does the model add information beyond knowing
 how often each class occurs? — and is **a result, not a gate**. MCC [8] adds
 the confusion-structure view in one number; balanced accuracy answers the same
 question and is not reported. Metrics score the supervised subset of a fold;
@@ -248,9 +248,9 @@ predictions cover the full fold.
 
 ```
 edge = p_long − p_short;  side = sign(edge)
-n_agree = #{level ∈ {15m, 1h, 4h} : sign(trend_level) = side}
+n_agree = #{level ∈ {15m, 1h, 4h} : sign(ema20_minus_ema50_over_atr14_<level>) = side}
 enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
-        ∧ side = sign(trend_4h) ∧ n_agree ≥ 2
+        ∧ side = sign(ema20_minus_ema50_over_atr14_4h) ∧ n_agree ≥ 2
 ```
 
 The **model decides the side; the 4H hierarchy gates it**. One unit position
@@ -283,7 +283,7 @@ that rule a bar-based backtest silently assumes every gap fills at the barrier.
 
 ```
 τ* = argmax_τ  mean( Sharpe_F2(τ), Sharpe_F3(τ), Sharpe_F4(τ) )
-     subject to  trades_f(τ) ≥ TAU_MIN_TRADES = 30  for every f ∈ {F2, F3, F4}
+     subject to  trades_f(τ) ≥ MIN_TRADES_PER_VALIDATION_FOLD = 30  for every f ∈ {F2, F3, F4}
      ties → the smaller τ
 ```
 
@@ -304,14 +304,16 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `assets/Asset_<T>/` (gitignored, reconstructable):
-`X_<T>.parquet`, `Y_<T>.parquet`, `hpo_<T>.json`, `predictions_<T>.parquet`,
-`metrics_<T>.json`, `strategy_<T>.json`. Every JSON is canonical (sorted keys,
+Per asset in `research_artifacts/<TICKER>/` (gitignored, reconstructable):
+`canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
+`hyperparameter_search.json`, `oos_predictions.parquet`,
+`model_evaluation.json`, `strategy_evaluation.json` — one file per stage,
+named for the stage. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
 computed** — no provenance envelope, no hashes, no manifests. The experiment
 is identified once, globally, in `monitoring_module/ml_status.json`: research window
 and seed. Library versions live in `requirements.lock`, model parameters in
-`hpo_<T>.json`. Runs are reproducible by construction — fixed seed,
+`hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
@@ -362,7 +364,7 @@ stage, and most edits do not touch it:
 | a feature definition | `ml-features ml-hpo ml-train ml-strategy ml-status` |
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
-| a strategy rule, the cost, the tau grid | `ml-strategy ml-status` |
+| a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
 | the monitoring payload | `ml-status` |
 
 ## 12. What this is, and what it is not

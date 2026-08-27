@@ -68,12 +68,12 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
 # ~3M-row build per symbol keeps memory bounded on small hosts; end_ms is the
 # shared global grid end so every symbol covers the identical window.
 # Tier order: traded Binance > traded Bybit > no-trade Binance > no-trade Bybit
-# > forward fill. use_b collapses tiers 1 and 3: Binance wins whenever it is
+# > forward fill. use_binance collapses tiers 1 and 3: Binance wins whenever it is
 # valid and either traded or the Bybit candle did not trade either.
 CANONICAL_INSERT = """
 INSERT INTO ohlcv_1m_canonical
 WITH
-b AS (
+raw_1m_binance_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
          (isfinite(open) AND isfinite(high) AND isfinite(low)
           AND isfinite(close) AND isfinite(volume)
@@ -81,7 +81,7 @@ b AS (
           AND low <= least(open, close) AND high >= greatest(open, close)) AS valid
   FROM ohlcv_1m_binance WHERE symbol = '{sym}'
 ),
-y AS (
+raw_1m_bybit_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
          (isfinite(open) AND isfinite(high) AND isfinite(low)
           AND isfinite(close) AND isfinite(volume)
@@ -94,53 +94,57 @@ grid AS (
 ),
 joined AS (
   SELECT g.timestamp_ms,
-         b.open AS o_b, b.high AS h_b, b.low AS l_b, b.close AS c_b, b.volume AS v_b,
-         coalesce(b.valid, false) AS b_valid,
-         y.open AS o_y, y.high AS h_y, y.low AS l_y, y.close AS c_y, y.volume AS v_y,
-         coalesce(y.valid, false) AS y_valid
+         binance.open  AS binance_open,  binance.high   AS binance_high,
+         binance.low   AS binance_low,   binance.close  AS binance_close,
+         binance.volume AS binance_volume,
+         coalesce(binance.valid, false) AS binance_valid,
+         bybit.open  AS bybit_open,  bybit.high   AS bybit_high,
+         bybit.low   AS bybit_low,   bybit.close  AS bybit_close,
+         bybit.volume AS bybit_volume,
+         coalesce(bybit.valid, false) AS bybit_valid
   FROM grid g
-  LEFT JOIN b USING (timestamp_ms)
-  LEFT JOIN y USING (timestamp_ms)
+  LEFT JOIN raw_1m_binance_rows AS binance USING (timestamp_ms)
+  LEFT JOIN raw_1m_bybit_rows   AS bybit   USING (timestamp_ms)
 ),
 tiered AS (
   SELECT *,
-         (b_valid AND (v_b > 0 OR NOT (y_valid AND v_y > 0))) AS use_b,
-         (NOT (b_valid AND (v_b > 0 OR NOT (y_valid AND v_y > 0))) AND y_valid) AS use_y
+         (binance_valid AND (binance_volume > 0 OR NOT (bybit_valid AND bybit_volume > 0))) AS use_binance,
+         (NOT (binance_valid AND (binance_volume > 0 OR NOT (bybit_valid AND bybit_volume > 0))) AND bybit_valid) AS use_bybit
   FROM joined
 ),
 chosen AS (
-  SELECT timestamp_ms, b_valid, y_valid,
-         CASE WHEN use_b THEN 'binance' WHEN use_y THEN 'bybit' ELSE 'ffill' END AS source,
-         CASE WHEN use_b THEN v_b = 0 WHEN use_y THEN v_y = 0 ELSE false END AS zero_volume,
-         CASE WHEN use_b THEN o_b WHEN use_y THEN o_y END AS o_c,
-         CASE WHEN use_b THEN h_b WHEN use_y THEN h_y END AS h_c,
-         CASE WHEN use_b THEN l_b WHEN use_y THEN l_y END AS l_c,
-         CASE WHEN use_b THEN c_b WHEN use_y THEN c_y END AS c_c,
-         CASE WHEN use_b THEN v_b WHEN use_y THEN v_y END AS v_c,
-         CASE WHEN b_valid AND y_valid
-              THEN abs(c_b - c_y) / ((c_b + c_y) / 2) END AS rel_divergence
+  SELECT timestamp_ms, binance_valid, bybit_valid,
+         CASE WHEN use_binance THEN 'binance' WHEN use_bybit THEN 'bybit' ELSE 'ffill' END AS source,
+         CASE WHEN use_binance THEN binance_volume = 0 WHEN use_bybit THEN bybit_volume = 0 ELSE false END AS zero_volume,
+         CASE WHEN use_binance THEN binance_open WHEN use_bybit THEN bybit_open END AS chosen_open,
+         CASE WHEN use_binance THEN binance_high WHEN use_bybit THEN bybit_high END AS chosen_high,
+         CASE WHEN use_binance THEN binance_low WHEN use_bybit THEN bybit_low END AS chosen_low,
+         CASE WHEN use_binance THEN binance_close WHEN use_bybit THEN bybit_close END AS chosen_close,
+         CASE WHEN use_binance THEN binance_volume WHEN use_bybit THEN bybit_volume END AS chosen_volume,
+         CASE WHEN binance_valid AND bybit_valid
+              THEN abs(binance_close - bybit_close) / ((binance_close + bybit_close) / 2) END AS rel_divergence
   FROM tiered
 ),
 filled AS (
   SELECT *,
          -- own close on candle rows, previous canonical close on ffill rows
-         last_value(c_c IGNORE NULLS) OVER (
+         last_value(chosen_close IGNORE NULLS) OVER (
            ORDER BY timestamp_ms
            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-         ) AS c_known
+         ) AS last_known_close
   FROM chosen
 )
 SELECT '{sym}' AS symbol,
        timestamp_ms,
-       coalesce(o_c, c_known) AS open,
-       coalesce(h_c, c_known) AS high,
-       coalesce(l_c, c_known) AS low,
-       coalesce(c_c, c_known) AS close,
-       coalesce(v_c, 0)       AS volume,
+       coalesce(chosen_open, last_known_close) AS open,
+       coalesce(chosen_high, last_known_close) AS high,
+       coalesce(chosen_low, last_known_close) AS low,
+       coalesce(chosen_close, last_known_close) AS close,
+       coalesce(chosen_volume, 0) AS volume,
        source,
        zero_volume,
-       b_valid AS binance_valid,
-       y_valid AS bybit_valid,
+       binance_valid,
+       bybit_valid,
        rel_divergence
 FROM filled
 ORDER BY timestamp_ms;

@@ -83,3 +83,6 @@ Five families × three levels, each named after what it computes:
 `range_position_20` · `log_volume_zscore_50`, suffixed `_15m`, `_1h`, `_4h`.
 Never `trend`, `momentum`, `volatility`, `structure`, `activity` — those name a
 category, not a computation.
+
+The strategy hierarchy reads the first family through `config.TREND_FAMILY`,
+so the name appears once in the code rather than in three string literals.

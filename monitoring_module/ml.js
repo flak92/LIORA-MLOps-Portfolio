@@ -50,7 +50,7 @@ function meanOf(values) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
-function valSplits(a) {
+function validationFolds(a) {
   return Object.keys(a.validation).sort();
 }
 
@@ -60,7 +60,7 @@ function renderResearch(s) {
   const table = document.getElementById("ml-assets");
   const tbody = table.querySelector("tbody");
   for (const a of s.assets) {
-    const st = a.strategy.test;
+    const st = a.strategy.final_holdout;
     const tr = tbody.insertRow();
     cell(tr, a.ticker);
     cell(tr, fmt(a.sample.rows));
@@ -68,11 +68,11 @@ function renderResearch(s) {
              "/" + fmt(a.sample.class_counts.long));
     cell(tr, a.hpo.best_params.max_depth + " / " + a.hpo.best_params.eta.toFixed(3) +
              " / " + a.hpo.best_params.num_boost_round);
-    cell(tr, a.test.prior_logloss.toFixed(4));
-    cell(tr, a.test.model_logloss.toFixed(4));
-    cell(tr, (100 * a.test.skill).toFixed(2) + "%");
-    cell(tr, a.test.mcc.toFixed(3));
-    cell(tr, a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : " !"));
+    cell(tr, a.final_holdout.prior_logloss.toFixed(4));
+    cell(tr, a.final_holdout.model_logloss.toFixed(4));
+    cell(tr, (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%");
+    cell(tr, a.final_holdout.mcc.toFixed(3));
+    cell(tr, a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
     cell(tr, num(st.sharpe, 2));
     cell(tr, (100 * st.max_drawdown).toFixed(1) + "%");
     cell(tr, fmt(st.n_trades));
@@ -87,7 +87,7 @@ function renderResearch(s) {
 function viewLabels(s) {
   fillTable("cs-labels",
     ["asset", "rows", "warm-up excl", "trainable", "short", "neutral share",
-     "long", "uniq. weight", "scored (test)"],
+     "long", "uniq. weight", "scored (holdout)"],
     s.assets.map((a) => {
       const c = a.sample.class_counts;
       const total = c.short + c.neutral + c.long;
@@ -100,44 +100,44 @@ function viewLabels(s) {
         [shareCell(c.neutral, total)],
         fmt(c.long),
         a.sample.uniqueness_weight_mean.toFixed(4),
-        fmt(a.test.n),
+        fmt(a.final_holdout.n),
       ];
     }));
 }
 
 function viewClassification(s) {
   fillTable("cs-classification",
-    ["asset", "val skill F2", "F3", "F4", "mean val skill", "test prior LL",
-     "test model LL", "test skill", "MCC"],
+    ["asset", "val skill F2", "F3", "F4", "mean val skill", "holdout prior LL",
+     "holdout model LL", "holdout skill", "MCC"],
     s.assets.map((a) => {
-      const splits = valSplits(a);
-      const vs = splits.map((k) => a.validation[k].skill);
+      const splits = validationFolds(a);
+      const vs = splits.map((k) => a.validation[k].relative_logloss_skill);
       return [
         [tickerLink(a.ticker)],
         ...vs.map((v) => (100 * v).toFixed(2) + "%"),
         (100 * meanOf(vs)).toFixed(2) + "%",
-        a.test.prior_logloss.toFixed(4),
-        a.test.model_logloss.toFixed(4),
-        (100 * a.test.skill).toFixed(2) + "%",
-        a.test.mcc.toFixed(3),
+        a.final_holdout.prior_logloss.toFixed(4),
+        a.final_holdout.model_logloss.toFixed(4),
+        (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%",
+        a.final_holdout.mcc.toFixed(3),
       ];
     }));
 }
 
 function viewStrategy(s) {
   fillTable("cs-strategy",
-    ["asset", "&tau;", "&tau; met", "selection score", "test Sharpe", "degradation",
+    ["asset", "&tau;", "&tau; met", "selection score", "holdout Sharpe", "degradation",
      "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
      "exits U/L/V/A"],
     s.assets.map((a) => {
-      const st = a.strategy.test;
+      const st = a.strategy.final_holdout;
       const sel = a.strategy.selection_score_mean_sharpe;
       const deg = st.sharpe === null || sel === null ? null : st.sharpe - sel;
       const e = st.exit_counts;
       return [
         [tickerLink(a.ticker)],
-        a.strategy.tau.toFixed(2),
-        a.strategy.tau_constraint_met ? "yes" : "fallback",
+        a.strategy.entry_edge_threshold.toFixed(2),
+        a.strategy.entry_edge_threshold_constraint_met ? "yes" : "fallback",
         num(sel, 2),
         num(st.sharpe, 2),
         deg === null ? "-" : (deg >= 0 ? "+" : "") + deg.toFixed(2),

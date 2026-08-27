@@ -48,10 +48,10 @@ download-binance: ## Binance USDS-M only
 download-bybit:  ## Bybit Linear only
 	$(PY) -m data_module.download_bybit
 
-ingest:          ## load both ZIP trees into db/1m_raw_data_db.duckdb and rebuild the canonical series
+ingest:          ## load both ZIP trees into db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m data_module.ingest
 
-export:          ## write assets/Asset_<T>/1m_<T>_data.parquet from the canonical series
+export:          ## write research_artifacts/<T>/canonical_1m.parquet from the canonical series
 	$(PY) -m data_module.export
 
 status:          ## data & DB monitoring -> stdout + monitoring_module/status.json
@@ -73,10 +73,10 @@ ml-labels:       ## triple-barrier labels on the canonical 1m path + uniqueness 
 ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)
 	$(call fanout,$(PY),ml_module.hpo)
 
-ml-train:        ## OOF predictions + final-OOS report per asset
+ml-train:        ## out-of-fold predictions + final-holdout report per asset
 	$(call fanout,$(PY),ml_module.train)
 
-ml-strategy:     ## tau selection on the validation folds, final-OOS PnL
+ml-strategy:     ## entry edge threshold on the validation folds, final-holdout PnL
 	$(call fanout,$(PY),ml_module.strategy)
 
 ml-status:       ## aggregate ML artifacts -> monitoring_module/ml_status.json

@@ -6,7 +6,7 @@ CANONICAL, CONTINUOUS DATA SERIES.**
 
 # DATA_README — Canonical 1m OHLCV Database
 
-How `db/1m_raw_data_db.duckdb` and the per-asset Parquet files are created:
+How `db/research_ohlcv.duckdb` and the per-asset Parquet files are created:
 sources and endpoints, units and time, the canonical source-priority
 definition, the schema and the known limitations.
 
@@ -156,7 +156,7 @@ native 1h klines gives **0 OHLC mismatches** and a maximum relative volume
 difference of **7.1e-16** — float64 epsilon. The minute grid this database is
 built on reproduces the exchange's own higher timeframes exactly.
 
-**Exports**: `assets/Asset_<TICKER>/1m_<TICKER>_data.parquet` (zstd) carries
+**Exports**: `research_artifacts/<TICKER>/canonical_1m.parquet` (zstd) carries
 only `timestamp_ms, open, high, low, close, volume` — identical row counts for
 every asset (full grid), continuous, no NULLs. Export is **fail-closed**: the
 Parquet is written to a temp file and replaced only after asserting the full

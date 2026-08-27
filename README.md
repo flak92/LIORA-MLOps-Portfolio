@@ -105,7 +105,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; full UTC days only    |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelizable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `assets/Asset_<T>/1m_<T>_data.parquet`          | atomic write + read-back count    |
+| export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | atomic write + read-back count    |
 | status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
@@ -117,7 +117,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   `offset_ms_from_utc_midnight,open,high,low,close,volume`.
 - **Timestamps** are bar OPEN times, UTC epoch milliseconds, strict 60 000 ms
   grid. **Volume** is base-asset volume, never quote turnover.
-- **DuckDB** `db/1m_raw_data_db.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
+- **DuckDB** `db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
   (raw), `ohlcv_1m_canonical` (primary-failover, with provenance columns
   `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`).
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —

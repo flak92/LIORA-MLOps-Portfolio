@@ -59,14 +59,14 @@ from . import config, dataset, indicators
 
 CHUNK = 16384
 MINUTE_MS = 60_000
-W = config.HORIZON_MS // MINUTE_MS   # horizon in minutes (240)
+HORIZON_MINUTES = config.HORIZON_MS // MINUTE_MS   # 240
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
     "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
     "label_valid": "BOOLEAN", "weight": "DOUBLE",
-    "exit_reason": "TINYINT", "p0": "DOUBLE", "upper": "DOUBLE",
-    "lower": "DOUBLE", "exit_ref": "DOUBLE",
+    "event_resolution": "TINYINT", "entry_price": "DOUBLE", "upper": "DOUBLE",
+    "lower": "DOUBLE", "exit_reference_price": "DOUBLE",
 }
 
 
@@ -85,37 +85,45 @@ def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.n
 
 
 def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.ndarray):
-    """Walk the 1m path in chunks; return (y, t_res, reason, p0, upper, lower, exit_ref)."""
+    """Walk the 1m path in chunks.
+
+    Returns (y, t_res, event_resolution, entry_price, upper, lower,
+    exit_reference_price).
+    """
     idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
-    p0 = m1["open"][idx]
-    upper = p0 + config.K_BARRIER * sigma
-    lower = p0 - config.K_BARRIER * sigma
+    entry_price = m1["open"][idx]
+    upper = entry_price + config.K_BARRIER * sigma
+    lower = entry_price - config.K_BARRIER * sigma
     high, low, vol, opn, close = m1["high"], m1["low"], m1["volume"], m1["open"], m1["close"]
 
     n = idx.size
     y = np.zeros(n, dtype=np.int8)
-    t_res = np.full(n, W, dtype=np.int32)
-    reason = np.zeros(n, dtype=np.int8)
-    offsets = np.arange(W)
+    t_res = np.full(n, HORIZON_MINUTES, dtype=np.int32)
+    event_resolution = np.zeros(n, dtype=np.int8)
+    offsets = np.arange(HORIZON_MINUTES)
     for a in range(0, n, CHUNK):
         b = min(a + CHUNK, n)
         win = idx[a:b, None] + offsets[None, :]
         traded = vol[win] > 0                       # a carried-forward price is not a trade
         up_hit = traded & (high[win] >= upper[a:b, None])
         dn_hit = traded & (low[win] <= lower[a:b, None])
-        t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), W)
-        t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), W)
-        amb = (t_up == t_dn) & (t_up < W)
+        t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), HORIZON_MINUTES)
+        t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), HORIZON_MINUTES)
+        amb = (t_up == t_dn) & (t_up < HORIZON_MINUTES)
         y[a:b] = np.where(t_up < t_dn, 1, np.where(t_dn < t_up, -1, 0)).astype(np.int8)
         y[a:b][amb] = 0
         t_res[a:b] = np.minimum(t_up, t_dn)
-        reason[a:b] = np.where(amb, 9, y[a:b])
+        event_resolution[a:b] = np.where(amb, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
 
-    resolved = t_res < W
+    resolved = t_res < HORIZON_MINUTES
     # horizontal or ambiguous: the open of the resolving minute (the price the
     # market was actually at); vertical: the close of the last event minute
-    exit_ref = np.where(resolved, opn[idx + np.minimum(t_res, W - 1)], close[idx + W - 1])
-    return y, t_res, reason, p0, upper, lower, exit_ref
+    exit_reference_price = np.where(
+        resolved,
+        opn[idx + np.minimum(t_res, HORIZON_MINUTES - 1)],
+        close[idx + HORIZON_MINUTES - 1],
+    )
+    return y, t_res, event_resolution, entry_price, upper, lower, exit_reference_price
 
 
 def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
@@ -138,15 +146,15 @@ def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
 
 def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
     return dataset.write_parquet(
-        config.ASSETS_DIR / f"Asset_{ticker}" / f"Y_{ticker}.parquet",
+        config.artifact_dir(ticker) / "label_events.parquet",
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
             int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
             int(cols["label_valid"][i]),
-            repr(float(cols["weight"][i])), int(cols["exit_reason"][i]),
-            repr(float(cols["p0"][i])), repr(float(cols["upper"][i])),
-            repr(float(cols["lower"][i])), repr(float(cols["exit_ref"][i])),
+            repr(float(cols["weight"][i])), int(cols["event_resolution"][i]),
+            repr(float(cols["entry_price"][i])), repr(float(cols["upper"][i])),
+            repr(float(cols["lower"][i])), repr(float(cols["exit_reference_price"][i])),
         ] for i in range(cols["decision_ts"].size)),
         order_by="decision_ts",
     )
@@ -179,13 +187,14 @@ def main() -> int:
         assert np.isfinite(sigma).all() and (sigma > 0).all()
 
         m1 = load_research_1m(con, sym)
-        y, t_res, reason, p0, upper, lower, exit_ref = triple_barrier(m1, entry_ts, sigma)
-        event_end_ts = entry_ts + np.minimum(t_res + 1, W) * MINUTE_MS   # exclusive
+        (y, t_res, event_resolution, entry_price, upper, lower,
+         exit_reference_price) = triple_barrier(m1, entry_ts, sigma)
+        event_end_ts = entry_ts + np.minimum(t_res + 1, HORIZON_MINUTES) * MINUTE_MS   # exclusive
         assert np.all(event_end_ts > entry_ts)
 
         entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
         entry_observable = m1["volume"][entry_idx] > 0
-        label_valid = reason != 9
+        label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid
 
         weight = np.zeros(decision_ts.size)
@@ -196,15 +205,16 @@ def main() -> int:
             "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
             "event_end_ts": event_end_ts, "entry_observable": entry_observable,
             "label_valid": label_valid, "weight": weight,
-            "exit_reason": reason, "p0": p0, "upper": upper, "lower": lower,
-            "exit_ref": exit_ref,
+            "event_resolution": event_resolution, "entry_price": entry_price,
+            "upper": upper, "lower": lower,
+            "exit_reference_price": exit_reference_price,
         })
-        print(f"{out.name}: {decision_ts.size} rows  classes(-1/0/+1)="
+        print(f"{t} {out.name}: {decision_ts.size} rows  classes(-1/0/+1)="
               f"{int((y == -1).sum())}/{int((y == 0).sum())}/{int((y == 1).sum())}  "
               f"ambiguous={int((~label_valid).sum())}  "
               f"unobservable={int((~entry_observable).sum())}  "
               f"trainable={int(sample_valid.sum())}  "
-              f"vertical={int((t_res == W).sum())}", flush=True)
+              f"vertical={int((t_res == HORIZON_MINUTES).sum())}", flush=True)
     con.close()
     return 0
 

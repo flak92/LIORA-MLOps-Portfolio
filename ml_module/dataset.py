@@ -20,7 +20,7 @@ import numpy as np
 from . import config
 
 
-def canon(obj):
+def to_json_safe(obj):
     """Recursively convert numpy containers/scalars to canonical Python.
 
     Type conversion comes first and the finiteness check second: a numpy NaN
@@ -29,11 +29,11 @@ def canon(obj):
     strict parser.
     """
     if isinstance(obj, dict):
-        return {str(k): canon(v) for k, v in obj.items()}
+        return {str(k): to_json_safe(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
-        return [canon(v) for v in obj]
+        return [to_json_safe(v) for v in obj]
     if isinstance(obj, np.ndarray):
-        return [canon(v) for v in obj.tolist()]
+        return [to_json_safe(v) for v in obj.tolist()]
     if isinstance(obj, np.integer):
         return int(obj)
     if isinstance(obj, np.bool_):
@@ -46,7 +46,7 @@ def canon(obj):
 
 
 def write_json(path: Path, payload: dict) -> None:
-    text = json.dumps(canon(payload), sort_keys=True, indent=1) + "\n"
+    text = json.dumps(to_json_safe(payload), sort_keys=True, indent=1) + "\n"
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(text, encoding="utf-8")
     os.replace(tmp, path)
@@ -84,10 +84,10 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
 
 def load_xy(ticker: str) -> dict[str, np.ndarray]:
     """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
-    adir = config.ASSETS_DIR / f"Asset_{ticker}"
+    adir = config.artifact_dir(ticker)
     con = duckdb.connect()
-    x = con.execute(f"SELECT * FROM read_parquet('{adir}/X_{ticker}.parquet') ORDER BY decision_ts").fetchnumpy()
-    yy = con.execute(f"SELECT * FROM read_parquet('{adir}/Y_{ticker}.parquet') ORDER BY decision_ts").fetchnumpy()
+    x = con.execute(f"SELECT * FROM read_parquet('{adir}/features.parquet') ORDER BY decision_ts").fetchnumpy()
+    yy = con.execute(f"SELECT * FROM read_parquet('{adir}/label_events.parquet') ORDER BY decision_ts").fetchnumpy()
     con.close()
     x_ts = x["decision_ts"].astype(np.int64)
     y_ts = yy["decision_ts"].astype(np.int64)
@@ -105,9 +105,9 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
         # event that resolves unambiguously
         "sample_valid": yy["entry_observable"].astype(bool) & yy["label_valid"].astype(bool),
         "weight": yy["weight"].astype(np.float64),
-        "exit_reason": yy["exit_reason"].astype(np.int8),
-        "p0": yy["p0"].astype(np.float64),
+        "event_resolution": yy["event_resolution"].astype(np.int8),
+        "entry_price": yy["entry_price"].astype(np.float64),
         "upper": yy["upper"].astype(np.float64),
         "lower": yy["lower"].astype(np.float64),
-        "exit_ref": yy["exit_ref"].astype(np.float64),
+        "exit_reference_price": yy["exit_reference_price"].astype(np.float64),
     }

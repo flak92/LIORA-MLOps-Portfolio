@@ -1,6 +1,6 @@
 /* ML Assets tab: the per-asset panel. Classic script — uses the helpers from
    app.js (bar, fmt, num) and the table builders from ml.js (makeTable,
-   shareCell, valSplits, CLASS_NAMES, ML_STATUS). */
+   shareCell, validationFolds, CLASS_NAMES, ML_STATUS). */
 "use strict";
 
 function frameEl(title) {
@@ -95,16 +95,16 @@ function modelFrame(a, s) {
     ["search", a.hpo.n_trials + " Optuna trials · best mean F2-F4 log-loss "
       + a.hpo.best_logloss.toFixed(6)],
   ]));
-  const rows = valSplits(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
-  rows.push(["F" + s.test_fold + " (final OOS)", a.test]);
+  const rows = validationFolds(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
+  rows.push(["F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.final_holdout]);
   f.body.appendChild(makeTable(
-    ["fold", "prior log-loss", "model log-loss", "skill", "MCC", "scored rows"],
+    ["fold", "prior log-loss", "model log-loss", "rel. skill", "MCC", "scored rows"],
     rows.map(([label, m], i) => {
       const name = document.createElement("span");
       name.textContent = label;
       if (i === rows.length - 1) name.className = "diag";
       return [[name], m.prior_logloss.toFixed(6), m.model_logloss.toFixed(6),
-              (100 * m.skill).toFixed(2) + "%", m.mcc.toFixed(4), fmt(m.n)];
+              (100 * m.relative_logloss_skill).toFixed(2) + "%", m.mcc.toFixed(4), fmt(m.n)];
     })));
   f.body.appendChild(foot("skill = 1 − model / prior: what the model adds beyond knowing "
     + "how often each class occurs. The prior comes from the training rows of that fold."));
@@ -114,13 +114,13 @@ function modelFrame(a, s) {
 function strategyFrame(a, s) {
   const f = frameEl("STRATEGY — model picks the side, the hierarchy gates it");
   f.body.appendChild(kvBox([
-    ["tau", a.strategy.tau.toFixed(2) + (a.strategy.tau_constraint_met ? "" : "  (fallback)")],
-    ["gate", "side = sign(trend_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
+    ["entry edge threshold (tau)", a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
+    ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
     ["cost per side", (100 * a.strategy.costs_per_side).toFixed(2)
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
-  const rows = valSplits(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
-  rows.push(pnlRow("F" + s.test_fold + " (final OOS)", a.strategy.test, true));
+  const rows = validationFolds(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
+  rows.push(pnlRow("F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.strategy.final_holdout, true));
   f.body.appendChild(makeTable(
     ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "final equity"],
     rows));

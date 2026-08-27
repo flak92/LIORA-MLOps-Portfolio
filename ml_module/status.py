@@ -2,7 +2,7 @@
 
 Observation only, and the single place where the dashboard payload is
 assembled: the blocks below follow the experiment flow (sample -> search ->
-validation -> final OOS -> attribution -> strategy). The file is
+validation -> final holdout -> attribution -> strategy). The file is
 written with sorted keys, so reading order lives in the dashboard and in
 ML_README, never in key names. The experiment is described once, globally, by
 its research window and seed — library versions are in requirements.lock and
@@ -15,12 +15,12 @@ from datetime import UTC, datetime
 
 from . import config, dataset
 
-ARTIFACT_KINDS = ("hpo", "metrics", "strategy")
+ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluation")
 EQUITY_STRIDE = 7          # daily equity grid -> weekly points for the sparkline
 
 
 def _r(x, n):
-    """round() that tolerates the nulls canon() writes for non-finite floats."""
+    """round() that tolerates the nulls to_json_safe() writes for non-finite floats."""
     return None if x is None else round(x, n)
 
 
@@ -50,16 +50,16 @@ def _cls(v: dict) -> dict:
     return {
         "prior_logloss": round(v["prior_logloss"], 6),
         "model_logloss": round(v["model_logloss"], 6),
-        "skill": round(v["skill"], 6),
+        "relative_logloss_skill": round(v["relative_logloss_skill"], 6),
         "mcc": round(v["mcc"], 4),
         "n": v["n"],
     }
 
 
 def classification_block(metrics: dict) -> tuple[dict, dict]:
-    """(validation per split, final OOS)."""
+    """(validation per fold, final holdout)."""
     validation = {k: _cls(v) for k, v in sorted(metrics["validation"].items())}
-    return validation, _cls(metrics["test"])
+    return validation, _cls(metrics["final_holdout"])
 
 
 def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_STRIDE) -> dict:
@@ -90,20 +90,22 @@ def _pnl(block: dict) -> dict:
 
 
 def strategy_block(strategy: dict) -> dict:
-    test = strategy["test"]
+    final_holdout = strategy["final_holdout"]
     return {
-        "tau": strategy["tau"],
-        "tau_constraint_met": strategy["tau_constraint_met"],
+        "entry_edge_threshold": strategy["entry_edge_threshold"],
+        "entry_edge_threshold_constraint_met":
+            strategy["entry_edge_threshold_constraint_met"],
         "selection_score_mean_sharpe": _r(strategy["selection_score_mean_sharpe"], 3),
         "costs_per_side": strategy["costs_per_side"],
         "validation": {k: _pnl(v) for k, v in sorted(strategy["validation"].items())},
-        "test": _pnl(test),
-        "equity_curve": thin_curve(test["equity_curve"], test["final_equity"]),
+        "final_holdout": _pnl(final_holdout),
+        "equity_curve": thin_curve(final_holdout["equity_curve"],
+                                   final_holdout["final_equity"]),
     }
 
 
 def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
-    validation, test = classification_block(metrics)
+    validation, final_holdout = classification_block(metrics)
     gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
     assert len(gain) == len(config.FEATURE_COLUMNS), "gain importance misses the feature contract"
     return {
@@ -111,7 +113,7 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
         "sample": sample_block(metrics),
         "hpo": hpo_block(hpo),
         "validation": validation,
-        "test": test,
+        "final_holdout": final_holdout,
         "gain_importance": gain,
         "strategy": strategy_block(strategy),
     }
@@ -122,12 +124,14 @@ def main() -> int:
 
     assets = []
     for t in config.parse_tickers(args.tickers):
-        adir = config.ASSETS_DIR / f"Asset_{t}"
-        paths = {k: adir / f"{k}_{t}.json" for k in ARTIFACT_KINDS}
+        adir = config.artifact_dir(t)
+        paths = {k: adir / f"{k}.json" for k in ARTIFACT_KINDS}
         if not all(p.exists() for p in paths.values()):
             continue
         loaded = {k: dataset.read_json(p) for k, p in paths.items()}
-        assets.append(asset_report(t, loaded["hpo"], loaded["metrics"], loaded["strategy"]))
+        assets.append(asset_report(t, loaded["hyperparameter_search"],
+                                   loaded["model_evaluation"],
+                                   loaded["strategy_evaluation"]))
     assert assets, "no complete artifact set found — run the ML chain first"
 
     payload = {
@@ -135,7 +139,7 @@ def main() -> int:
         "research_window": [config.RESEARCH_START_UTC, config.RESEARCH_END_UTC],
         "seed": config.SEED,
         # the one structural number the page needs to label the final fold
-        "test_fold": config.TEST_SPLIT,
+        "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
         "gate_min_agree": config.AGREE_MIN,
         "assets": assets,
     }
@@ -143,10 +147,12 @@ def main() -> int:
     dataset.write_json(out, payload)
 
     for a in assets:
-        print(f"{a['ticker']:5} skill={a['test']['skill']:+.4f} "
-              f"mcc={a['test']['mcc']:.3f} tau={a['strategy']['tau']} "
-              f"sharpe={a['strategy']['test']['sharpe']} "
-              f"trades={a['strategy']['test']['n_trades']}")
+        print(f"{a['ticker']:5} "
+              f"skill={a['final_holdout']['relative_logloss_skill']:+.4f} "
+              f"mcc={a['final_holdout']['mcc']:.3f} "
+              f"threshold={a['strategy']['entry_edge_threshold']} "
+              f"sharpe={a['strategy']['final_holdout']['sharpe']} "
+              f"trades={a['strategy']['final_holdout']['n_trades']}")
     print(f"wrote {out} ({out.stat().st_size / 1024:.1f} KB)")
     return 0
 

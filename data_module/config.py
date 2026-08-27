@@ -20,8 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # joins each symbol whenever its listing starts.
 TICKERS = ["BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "DOGE", "ZEC", "LINK", "ADA"]
 QUOTE = "USDT"
-MARKET = "binance"          # Lean market folder name
-SECURITY = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
+LEAN_MARKET_FOLDER = "binance"          # Lean market folder name
+LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 INTERVAL = "1m"
 GRID_STEP_MS = 60_000
 
@@ -43,8 +43,8 @@ USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 VENUES = ("binance", "bybit")
 
 RAW_DIR = REPO_ROOT / "raw_downloaded_1m_data"
-DB_PATH = REPO_ROOT / "db" / "1m_raw_data_db.duckdb"
-ASSETS_DIR = REPO_ROOT / "assets"
+DB_PATH = REPO_ROOT / "db" / "research_ohlcv.duckdb"
+RESEARCH_ARTIFACTS_DIR = REPO_ROOT / "research_artifacts"
 MONITORING_DIR = REPO_ROOT / "monitoring_module"
 
 
@@ -52,13 +52,18 @@ def symbol(ticker: str) -> str:
     return f"{ticker}{QUOTE}"
 
 
-def raw_symbol_dir(ticker: str, venue: str = MARKET) -> Path:
+def raw_symbol_dir(ticker: str, venue: str = LEAN_MARKET_FOLDER) -> Path:
     """Lean-exact tree: raw_downloaded_1m_data/cryptofuture/<venue>/minute/<symbol>/"""
-    return RAW_DIR / SECURITY / venue / "minute" / symbol(ticker).lower()
+    return RAW_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 
-def asset_parquet(ticker: str) -> Path:
-    return ASSETS_DIR / f"Asset_{ticker}" / f"1m_{ticker}_data.parquet"
+def artifact_dir(ticker: str) -> Path:
+    """One directory per ticker; inside it one file per stage, named for it."""
+    return RESEARCH_ARTIFACTS_DIR / ticker
+
+
+def canonical_parquet(ticker: str) -> Path:
+    return artifact_dir(ticker) / "canonical_1m.parquet"
 
 
 def ticker_parser(description: str) -> "argparse.ArgumentParser":

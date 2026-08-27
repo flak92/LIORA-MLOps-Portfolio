@@ -9,7 +9,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from data_module.config import (  # noqa: F401  (re-exported)
-    ASSETS_DIR, DB_PATH, MONITORING_DIR, TICKERS, parse_tickers, symbol, ticker_parser,
+    DB_PATH, MONITORING_DIR, RESEARCH_ARTIFACTS_DIR, TICKERS, artifact_dir,
+    parse_tickers, symbol, ticker_parser,
 )
 
 SEED = 42
@@ -32,7 +33,16 @@ TF_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
 DECISION_TF = "15m"
 
 # ---- feature contract: 5 families x 3 levels = 15 columns
-FAMILIES = ("trend", "momentum", "volatility", "structure", "activity")
+# each family is named after what it computes, not after the category it belongs
+# to, so a column name is readable without the documentation
+FAMILIES = (
+    "ema20_minus_ema50_over_atr14",
+    "centered_rsi14",
+    "atr14_over_close",
+    "range_position_20",
+    "log_volume_zscore_50",
+)
+TREND_FAMILY = FAMILIES[0]          # the family the strategy hierarchy reads
 # the 2-of-3 trend agreement the strategy needs is a rule over these columns,
 # not a sixteenth feature: it carries nothing the three trend columns lack
 FEATURE_COLUMNS = tuple(f"{fam}_{lvl}" for lvl in LEVELS for fam in FAMILIES)
@@ -47,15 +57,21 @@ WARMUP_END_MS = RESEARCH_START_MS + WARMUP_4H_BARS * TF_MS["4h"]
 
 # ---- label contract: triple barrier resolved on the 1m path
 K_BARRIER = 2.0                     # +- K * ATR14(last closed 1h bar)
+# how an event ended; the values are load-bearing — fill_price compares the
+# resolution against the side of the position
+EVENT_RESOLUTION_LOWER_BARRIER = -1
+EVENT_RESOLUTION_VERTICAL = 0
+EVENT_RESOLUTION_UPPER_BARRIER = 1
+EVENT_RESOLUTION_AMBIGUOUS = 9
 HORIZON_BARS = 16                   # vertical barrier: 16 x 15m = 240 minutes
 HORIZON_MS = HORIZON_BARS * TF_MS["15m"]
 
-# ---- split: WARMUP | TRAIN | PURGE | OOS validation | final OOS
+# ---- folds: WARMUP | TRAIN | PURGE | OOS validation | final holdout
 FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",
                    "2025-01-01", RESEARCH_END_UTC)
 FOLD_BOUNDS_MS = tuple(_utc_ms(d) for d in FOLD_BOUNDS_UTC)
-VALIDATION_SPLITS = (2, 3, 4)       # OOS = F2, F3, F4 (expanding training)
-TEST_SPLIT = 5                      # final OOS fold F5: evaluated, never selected on
+VALIDATION_FOLD_IDS = (2, 3, 4)     # F2, F3, F4 — these choose every parameter
+FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 
 # ---- HPO (Optuna TPE, sequential, in-memory)
 N_TRIALS = 50
@@ -79,7 +95,9 @@ XGB_FIXED = {
 
 # ---- strategy (evaluation only)
 COST_PER_SIDE = 0.0006              # taker + slippage, per entry and per exit
-TAU_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
-TAU_MIN_TRADES = 30                  # a tau must produce this many trades in every validation fold
+# tau: the entry edge threshold, i.e. how much directional probability edge a
+# signal must carry before it is traded
+ENTRY_EDGE_THRESHOLD_GRID = tuple(round(0.01 * i, 2) for i in range(61))   # 0.00 .. 0.60
+MIN_TRADES_PER_VALIDATION_FOLD = 30  # selection guardrail, not an acceptance gate
 BARS_PER_YEAR_15M = 96 * 365        # crypto trades 24/7
 AGREE_MIN = 2                       # levels whose trend sign must agree with the side

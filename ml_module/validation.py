@@ -1,4 +1,4 @@
-"""Split contract and metrics: WARMUP | TRAIN | PURGE | OOS | final OOS.
+"""Split contract and metrics: WARMUP | TRAIN | PURGE | OOS | final holdout.
 
 Pure numpy — no I/O. Training keeps only the rows whose event finished before
 the OOS block opened; because event_end_ts is exclusive, that is exactly "no
@@ -14,9 +14,9 @@ import numpy as np
 from . import config
 
 
-def split_bounds(split: int) -> tuple[int, int]:
-    """OOS bounds of a split: split k tests fold Fk (1-based fold table)."""
-    return config.FOLD_BOUNDS_MS[split - 1], config.FOLD_BOUNDS_MS[split]
+def fold_bounds(fold_id: int) -> tuple[int, int]:
+    """OOS bounds of fold Fk, from the 1-based fold table."""
+    return config.FOLD_BOUNDS_MS[fold_id - 1], config.FOLD_BOUNDS_MS[fold_id]
 
 
 def train_indices(decision_ts: np.ndarray, event_end_ts: np.ndarray,

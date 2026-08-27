@@ -1,8 +1,8 @@
 """Optuna HPO per asset: TPE(seed), sequential, in-memory study.
 
 Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
-validation splits F2-F4 (expanding training, purged before every OOS block).
-The final OOS fold is never touched here. hpo_<T>.json keeps the winner and
+validation folds F2-F4 (expanding training, purged before every OOS block).
+The final holdout fold is never touched here. hpo_<T>.json keeps the winner and
 the trial count; the trajectory of 50 trials is a search diary, not a result.
 """
 
@@ -20,8 +20,8 @@ def objective_factory(xy: dict[str, np.ndarray]):
     def objective(trial: optuna.Trial) -> float:
         params = model.suggest_params(trial)
         losses = []
-        for split in config.VALIDATION_SPLITS:
-            oos_start, oos_end = validation.split_bounds(split)
+        for fold_id in config.VALIDATION_FOLD_IDS:
+            oos_start, oos_end = validation.fold_bounds(fold_id)
             tr = validation.train_indices(xy["decision_ts"], xy["event_end_ts"],
                                           xy["sample_valid"], oos_start)
             oo = validation.oos_indices(xy["decision_ts"], xy["sample_valid"], oos_start, oos_end)
@@ -48,9 +48,9 @@ def main() -> int:
             "best_value": study.best_value,
             "n_trials": config.N_TRIALS,
         }
-        out = config.ASSETS_DIR / f"Asset_{t}" / f"hpo_{t}.json"
+        out = config.artifact_dir(t) / "hyperparameter_search.json"
         dataset.write_json(out, payload)
-        print(f"{out.name}: best logloss {study.best_value:.6f} "
+        print(f"{t} {out.name}: best logloss {study.best_value:.6f} "
               f"(trial {study.best_trial.number})", flush=True)
     return 0
 
