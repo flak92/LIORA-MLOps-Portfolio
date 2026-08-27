@@ -132,16 +132,6 @@ def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> f
     return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 
-def matthews_corrcoef(y_cls: np.ndarray, pred_cls: np.ndarray) -> float:
-    """Multiclass MCC (Gorodkin) from the 3x3 confusion matrix."""
-    cm = np.zeros((3, 3), dtype=np.float64)
-    np.add.at(cm, (y_cls, pred_cls), 1.0)
-    t, p, c, s = cm.sum(axis=1), cm.sum(axis=0), np.trace(cm), cm.sum()
-    num = c * s - t @ p
-    den = np.sqrt(s * s - p @ p) * np.sqrt(s * s - t @ t)
-    return float(num / den) if den > 0 else 0.0
-
-
 def sharpe_annualised(bar_returns: np.ndarray) -> float:
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:

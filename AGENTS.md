@@ -87,7 +87,7 @@ explicit: `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_FOLD_ID`, `_RATE`
 or `_COUNT`. The parameter word follows the mechanics — `SPAN` for an EMA,
 `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
 window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
-Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, MCC, XGBoost) stay
+Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
 and are spelled out on first use in the documentation; local ones (`N`, `W`,
 `TF`, `MIN`, `MAX`, `K`, `XGB`) never appear. Write "QuantConnect Lean" on
 first use, "Lean" afterwards. British spelling throughout the prose

@@ -33,14 +33,12 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     information beyond knowing how often each class occurs? The prior comes
     from the rows the model was fitted on, never from the scored fold.
     """
-    pred = proba.argmax(axis=1).astype(np.int32)
     model_ll = validation.multiclass_logloss(y_cls, proba, weight)
     prior_ll = validation.prior_logloss(prior_train, y_cls, weight)
     return {
         "prior_logloss": prior_ll,
         "model_logloss": model_ll,
         "relative_logloss_skill": 1.0 - model_ll / prior_ll,
-        "mcc": validation.matthews_corrcoef(y_cls, pred),
         "scored_row_count": int(y_cls.size),
     }
 
@@ -125,8 +123,8 @@ def main() -> int:
         }
         dataset.write_json(adir / "model_evaluation.json", payload)
         print(f"{t} model_evaluation: prior {final_holdout['prior_logloss']:.6f} "
-              f"model {final_holdout['model_logloss']:.6f} skill {final_holdout['relative_logloss_skill']:+.4f} "
-              f"mcc {final_holdout['mcc']:.4f}", flush=True)
+              f"model {final_holdout['model_logloss']:.6f} "
+              f"skill {final_holdout['relative_logloss_skill']:+.4f}", flush=True)
     return 0
 
 

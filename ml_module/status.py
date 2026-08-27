@@ -57,7 +57,6 @@ def _cls(v: dict) -> dict:
         "prior_logloss": round(v["prior_logloss"], 6),
         "model_logloss": round(v["model_logloss"], 6),
         "relative_logloss_skill": round(v["relative_logloss_skill"], 6),
-        "mcc": round(v["mcc"], 4),
         "scored_row_count": v["scored_row_count"],
     }
 
@@ -171,14 +170,13 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
                  f"{metrics['validation'][k]['model_logloss']:.6f}",
                  f"{100 * metrics['validation'][k]['relative_logloss_skill']:+.2f}%",
-                 f"{metrics['validation'][k]['mcc']:.4f}",
                  f"{metrics['validation'][k]['scored_row_count']:,}"]
                 for k in folds]
     fh = metrics["final_holdout"]
     cls_rows.append([f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**",
                      f"{fh['prior_logloss']:.6f}", f"{fh['model_logloss']:.6f}",
                      f"{100 * fh['relative_logloss_skill']:+.2f}%",
-                     f"{fh['mcc']:.4f}", f"{fh['scored_row_count']:,}"])
+                     f"{fh['scored_row_count']:,}"])
 
     seg = metrics["segments"]
     geo_rows = [[f"F{k.split('_')[1]}", f"{seg[k]['training_row_count']:,}",
@@ -223,7 +221,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
 
-{_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "MCC", "scored"], cls_rows)}
+{_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
 
 ## Fold geometry
 
@@ -375,7 +373,6 @@ def main() -> int:
     for a in assets:
         print(f"{a['ticker']:5} "
               f"skill={a['final_holdout']['relative_logloss_skill']:+.4f} "
-              f"mcc={a['final_holdout']['mcc']:.3f} "
               f"threshold={a['strategy']['entry_edge_threshold']} "
               f"sharpe={a['strategy']['final_holdout']['sharpe']} "
               f"trades={a['strategy']['final_holdout']['trade_count']}")

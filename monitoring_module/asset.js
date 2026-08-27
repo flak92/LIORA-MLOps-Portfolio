@@ -97,13 +97,13 @@ function modelFrame(a, s) {
   const rows = validationFolds(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
   rows.push(["F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.final_holdout]);
   f.body.appendChild(makeTable(
-    ["fold", "prior log-loss", "model log-loss", "rel. skill", "MCC", "scored rows"],
+    ["fold", "prior log-loss", "model log-loss", "rel. skill", "scored rows"],
     rows.map(([label, m], i) => {
       const name = document.createElement("span");
       name.textContent = label;
       if (i === rows.length - 1) name.className = "diag";
       return [[name], m.prior_logloss.toFixed(6), m.model_logloss.toFixed(6),
-              (100 * m.relative_logloss_skill).toFixed(2) + "%", m.mcc.toFixed(4), fmt(m.scored_row_count)];
+              (100 * m.relative_logloss_skill).toFixed(2) + "%", fmt(m.scored_row_count)];
     })));
   f.body.appendChild(foot("skill = 1 − model / prior: what the model adds beyond knowing "
     + "how often each class occurs. The prior comes from the training rows of that fold."));

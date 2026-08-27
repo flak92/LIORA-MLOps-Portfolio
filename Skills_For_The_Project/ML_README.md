@@ -28,10 +28,10 @@ Why this shape: the label is a **decision indication**, not a price forecast —
 the triple barrier [4] asks "which barrier does the market touch first from
 here: profit, stop, or neither within the horizon?", which is exactly the
 question a rule-based exit answers. Tree ensembles are the strongest
-general-purpose learner for tabular financial features [3][10], short-horizon
+general-purpose learner for tabular financial features [3][9], short-horizon
 crypto predictability from technical features is documented in [1][2], and the
 top-down multi-timeframe gate follows the classic triple-screen hierarchy
-[11]. The protocol as a whole is built against backtest overfitting [9]:
+[10]. The protocol as a whole is built against backtest overfitting [8]:
 parameters frozen before the first run, and selection statistics kept strictly
 apart from the final report.
 
@@ -125,7 +125,7 @@ has, so it can only add representation, never information; the 2-of-3
 agreement lives where it is actually used, in the strategy gate. Five families
 per timeframe exceeds the four-per-timeframe multi-timeframe guideline by one:
 `log_volume_zscore_50` is volume information, not a fifth price-derived indicator.
-`rel_divergence` is a data-quality signal, never a feature [12]. Warm-up: 200
+`rel_divergence` is a data-quality signal, never a feature [11]. Warm-up: 200
 top-timeframe bars (`WARMUP_4H_BARS`) — decision rows before `2021-02-03 08:00
 UTC` are excluded everywhere. Recursions (EMA, Wilder) run as explicit loops;
 rolling statistics use `sliding_window_view`; no NaN survives the warm-up
@@ -259,13 +259,13 @@ merely learns the class frequencies. The baseline is therefore the
 `p_c = Σ wᵢ·1(yᵢ = c) / Σ wᵢ`, and the reported numbers are
 
 ```
-prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior · MCC
+prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 ```
 
 `relative_logloss_skill` answers one question — does the model add information beyond knowing
-how often each class occurs? — and is **a result, not a gate**. MCC [8] adds
-the confusion-structure view in one number; balanced accuracy answers the same
-question and is not reported. Metrics score the supervised subset of a fold
+how often each class occurs? — and is **a result, not a gate**; balanced
+accuracy answers the same question and is not reported. Metrics score the
+supervised subset of a fold
 whose maximum horizon fits inside it — the same t₀-decidable rule that governs
 strategy eligibility (§9); predictions cover the full fold.
 
@@ -442,8 +442,7 @@ block) — reported per asset, not resampled.
 | [5] | Parkinson, M. (1980); Garman, M., Klass, M. (1980). *Journal of Business*, 53(1) — range-based volatility |
 | [6] | Amihud, Y. (2002). Illiquidity and stock returns: cross-section and time-series effects. *Journal of Financial Markets*, 5(1), 31–56 |
 | [7] | Wilder, J. W. (1978). *New Concepts in Technical Trading Systems* — RSI, ATR |
-| [8] | Gorodkin, J. (2004). Comparing two K-category assignments by a K-category correlation coefficient. *Computational Biology and Chemistry*, 28(5–6), 367–374. doi:10.1016/j.compbiolchem.2004.09.006 |
-| [9] | Bailey, D., Borwein, J., López de Prado, M., Zhu, Q. (2014). Pseudo-mathematics and financial charlatanism: the effects of backtest overfitting on out-of-sample performance. *Notices of the AMS*, 61(5), 458–471. doi:10.1090/noti1105 |
-| [10] | Chen, T., Guestrin, C. (2016). XGBoost: a scalable tree boosting system. *KDD 2016* |
-| [11] | Elder, A. (1993). *Trading for a Living* — triple-screen multi-timeframe hierarchy |
-| [12] | Makarov, I., Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. *Journal of Financial Economics*, 135(2), 293–319 — why `rel_divergence` stays a data-quality signal |
+| [8] | Bailey, D., Borwein, J., López de Prado, M., Zhu, Q. (2014). Pseudo-mathematics and financial charlatanism: the effects of backtest overfitting on out-of-sample performance. *Notices of the AMS*, 61(5), 458–471. doi:10.1090/noti1105 |
+| [9] | Chen, T., Guestrin, C. (2016). XGBoost: a scalable tree boosting system. *KDD 2016* |
+| [10] | Elder, A. (1993). *Trading for a Living* — triple-screen multi-timeframe hierarchy |
+| [11] | Makarov, I., Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. *Journal of Financial Economics*, 135(2), 293–319 — why `rel_divergence` stays a data-quality signal |

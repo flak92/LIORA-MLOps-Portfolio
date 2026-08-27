@@ -71,7 +71,6 @@ function renderResearch(s) {
     cell(tr, a.final_holdout.prior_logloss.toFixed(4));
     cell(tr, a.final_holdout.model_logloss.toFixed(4));
     cell(tr, (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%");
-    cell(tr, a.final_holdout.mcc.toFixed(3));
     cell(tr, a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
     cell(tr, num(st.sharpe, 2));
     cell(tr, (100 * st.max_drawdown).toFixed(1) + "%");
@@ -107,7 +106,7 @@ function viewLabels(s) {
 function viewClassification(s) {
   fillTable("cs-classification",
     ["asset", "val skill F2", "F3", "F4", "mean val skill", "holdout prior LL",
-     "holdout model LL", "holdout skill", "MCC"],
+     "holdout model LL", "holdout skill"],
     s.assets.map((a) => {
       const folds = validationFolds(a);
       const vs = folds.map((k) => a.validation[k].relative_logloss_skill);
@@ -118,7 +117,6 @@ function viewClassification(s) {
         a.final_holdout.prior_logloss.toFixed(4),
         a.final_holdout.model_logloss.toFixed(4),
         (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%",
-        a.final_holdout.mcc.toFixed(3),
       ];
     }));
 }

@@ -7,7 +7,7 @@ required to decode an obscure name.**
 Every concept below has exactly one name in the code, one key in the artifacts
 and one label in the interface. A synonym never enters, and a new concept is
 registered here in the same commit that introduces it. Names that are standard
-in the field (`fold`, `purge`, `embargo`, out-of-sample, Sharpe, MCC) appear as
+in the field (`fold`, `purge`, `embargo`, out-of-sample, Sharpe) appear as
 confirmation; the rest of the concept column states what the name means.
 
 ## Validation and folds
@@ -91,7 +91,6 @@ Every count says what it counts; a bare `n` names nothing.
 | log-loss of the weighted training class prior | `prior_logloss` | `prior_logloss` | prior log-loss | baseline |
 | log-loss of the model on the evaluated block | `model_logloss` | `model_logloss` | model log-loss | loss |
 | information beyond the prior, `1 − model / prior` | `relative_logloss_skill` | `relative_logloss_skill` | skill | accuracy, edge |
-| Matthews correlation coefficient | `mcc` | `mcc` | MCC | correlation |
 | the HPO objective value at the winner | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss | best_value, score |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
