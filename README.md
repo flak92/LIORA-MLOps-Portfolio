@@ -9,7 +9,8 @@ XGBoost → research strategy simulation → monitoring.
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
-skills in [Skills_For_The_Project/](Skills_For_The_Project/). The working path
+skills, the naming register and the two methodology documents in
+[Skills_For_The_Project/](Skills_For_The_Project/). The working path
 through the repo is `AGENTS.md → module names → Skills_For_The_Project → code`;
 this README is the general overview.
 
@@ -60,7 +61,7 @@ divergence and every other anomaly are recorded by the monitoring layer and
 shown on the dashboard. Downstream ML code reads a continuous `t,O,H,L,C,V`
 series whose every printed price existed on a real market, and needs no
 source-specific logic. Full methodology, endpoints and schema:
-[DATA_README.md](DATA_README.md).
+[Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
 
 ## The basket
 
@@ -125,7 +126,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 - **Semantics**: `1m_<T>_data.parquet` is a **canonical primary-failover
   series**, not the raw feed of a single source — use it for ML and indicators;
   for Lean backtests use the per-source raw ZIP trees. Step-by-step build
-  description: [DATA_README.md](DATA_README.md).
+  description: [Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
 
 ## Monitoring
 
@@ -157,5 +158,5 @@ GiB)` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Full methodology:
-[ML_README.md](ML_README.md).
+[Skills_For_The_Project/ML_README.md](Skills_For_The_Project/ML_README.md).
 

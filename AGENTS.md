@@ -63,10 +63,25 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 
+## Canonical vocabulary
+
+One concept, one name — in the code, in the artifacts and in the interface. The
+register is `Skills_For_The_Project/glossary.md`, and a new name enters it in
+the same commit that introduces it. The fold vocabulary it fixes:
+`warmup_period` (before any decision), `train_period` (fitting), `purge_period`
+(training events overlapping the evaluated block, removed by
+`event_end_ts <= oos_start`), `embargo_period` (width zero here — forward
+chaining needs none) and `oos`; `VALIDATION_FOLD_IDS` are F2–F4 and choose the
+parameters, `FINAL_HOLDOUT_FOLD_ID` is F5 and only evaluates. Write
+"QuantConnect Lean" on first use, "Lean" afterwards.
+
 ## The default choice
 
 For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
 Project-specific agent instructions live in `Skills_For_The_Project/` — the
-only other place agent guidance may exist in this tree.
+only other place agent guidance may exist in this tree. It holds the naming
+register (`glossary.md`), the four skills, and the two methodology documents:
+`DATA_README.md` (how the canonical dataset is built, with the citations) and
+`ML_README.md` (the research layer, equation by equation).

@@ -1,4 +1,4 @@
-# Skill: parallelism
+# Skill: computing optimalisation
 
 Parallelism matters for wall-clock time, with one governing rule:
 
