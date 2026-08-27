@@ -304,15 +304,24 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `research_artifacts/<TICKER>/` (gitignored, reconstructable):
-`canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
+Per asset in `research_artifacts/<TICKER>/` — one file per stage, named for the
+stage: `canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
 `hyperparameter_search.json`, `oos_predictions.parquet`,
-`model_evaluation.json`, `strategy_evaluation.json` — one file per stage,
-named for the stage. Every JSON is canonical (sorted keys,
+`model_evaluation.json`, `strategy_evaluation.json`. The data files are
+gitignored and reconstructable; two text files are not, because they are what
+makes the rest readable without a run: **`calibration.json`**, the settings
+every number in the folder was computed under, and **`README.md`**, what the
+folder holds and what came out of it. Both are written by `ml_module/status.py`
+and carry no timestamp, so an unchanged experiment reproduces them byte for
+byte. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
-computed** — no provenance envelope, no hashes, no manifests. The experiment
-is identified once, globally, in `monitoring_module/ml_status.json`: research window
-and seed. Library versions live in `requirements.lock`, model parameters in
+computed** — no provenance envelope, no hashes, no manifests. A calibration
+record is none of those three: it proves nothing about itself, gates nothing,
+and is not compared against anything. It answers the only question the folder
+could not otherwise answer — under which settings these numbers were computed —
+which is what makes the artifacts reproducible without reading the source. The
+experiment is still identified once, globally, in
+`monitoring_module/ml_status.json`: research window and seed. Library versions live in `requirements.lock`, model parameters in
 `hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is

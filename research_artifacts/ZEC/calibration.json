@@ -1,0 +1,189 @@
+{
+ "effective_booster_params": {
+  "alpha": 0.16637524338800402,
+  "colsample_bytree": 0.9119628885844705,
+  "eta": 0.018398669987069537,
+  "lambda": 2.803532826415821,
+  "max_depth": 2,
+  "min_child_weight": 38,
+  "nthread": 1,
+  "num_class": 3,
+  "objective": "multi:softprob",
+  "seed": 42,
+  "subsample": 0.5396686243791224,
+  "tree_method": "hist"
+ },
+ "features": {
+  "atr_n": 14,
+  "columns": [
+   "ema20_minus_ema50_over_atr14_15m",
+   "centered_rsi14_15m",
+   "atr14_over_close_15m",
+   "range_position_20_15m",
+   "log_volume_zscore_50_15m",
+   "ema20_minus_ema50_over_atr14_1h",
+   "centered_rsi14_1h",
+   "atr14_over_close_1h",
+   "range_position_20_1h",
+   "log_volume_zscore_50_1h",
+   "ema20_minus_ema50_over_atr14_4h",
+   "centered_rsi14_4h",
+   "atr14_over_close_4h",
+   "range_position_20_4h",
+   "log_volume_zscore_50_4h"
+  ],
+  "decision_timeframe": "15m",
+  "ema_fast": 20,
+  "ema_slow": 50,
+  "families": [
+   "ema20_minus_ema50_over_atr14",
+   "centered_rsi14",
+   "atr14_over_close",
+   "range_position_20",
+   "log_volume_zscore_50"
+  ],
+  "levels": [
+   "15m",
+   "1h",
+   "4h"
+  ],
+  "range_position_n": 20,
+  "rsi_n": 14,
+  "volume_zscore_n": 50
+ },
+ "folds": {
+  "bounds_utc": [
+   "2021-01-01",
+   "2022-01-01",
+   "2023-01-01",
+   "2024-01-01",
+   "2025-01-01",
+   "2026-08-26"
+  ],
+  "embargo": "none \u2014 forward chaining places no training row after the OOS block",
+  "final_holdout_fold_id": 5,
+  "first_decision_utc": "2021-02-03 08:00",
+  "purge_rule": "event_end_ts <= oos_start",
+  "validation_fold_ids": [
+   2,
+   3,
+   4
+  ],
+  "warmup_4h_bars": 200
+ },
+ "hyperparameter_search": {
+  "best_params": {
+   "alpha": 0.16637524338800402,
+   "colsample_bytree": 0.9119628885844705,
+   "eta": 0.018398669987069537,
+   "lambda": 2.803532826415821,
+   "max_depth": 2,
+   "min_child_weight": 38,
+   "num_boost_round": 400,
+   "subsample": 0.5396686243791224
+  },
+  "best_value": 0.7712406532102719,
+  "n_trials": 50,
+  "objective": "mean uniqueness-weighted multiclass log-loss over folds F2, F3, F4",
+  "parallelism": "sequential (n_jobs=1) \u2014 TPE is reproducible only in order",
+  "sampler": "optuna.samplers.TPESampler",
+  "sampler_seed": 42,
+  "space": {
+   "alpha": [
+    "log",
+    0.01,
+    1.0
+   ],
+   "colsample_bytree": [
+    "float",
+    0.5,
+    1.0
+   ],
+   "eta": [
+    "log",
+    0.01,
+    0.3
+   ],
+   "lambda": [
+    "log",
+    0.1,
+    10.0
+   ],
+   "max_depth": [
+    "int",
+    2,
+    6
+   ],
+   "min_child_weight": [
+    "int",
+    1,
+    50
+   ],
+   "num_boost_round": [
+    "int_step",
+    100,
+    800,
+    50
+   ],
+   "subsample": [
+    "float",
+    0.5,
+    1.0
+   ]
+  },
+  "xgb_fixed": {
+   "nthread": 1,
+   "num_class": 3,
+   "objective": "multi:softprob",
+   "seed": 42,
+   "tree_method": "hist"
+  }
+ },
+ "labels": {
+  "event_resolution_codes": {
+   "ambiguous": 9,
+   "lower_barrier": -1,
+   "upper_barrier": 1,
+   "vertical": 0
+  },
+  "horizon_bars": 16,
+  "horizon_minutes": 240,
+  "k_barrier": 2.0,
+  "sigma": "ATR14 of the last closed canonical 1h bar",
+  "supervised_population": "sample_valid = entry_observable & label_valid",
+  "touch_requires": "volume > 0"
+ },
+ "num_boost_round": 400,
+ "research_window": {
+  "end_utc": "2026-08-26",
+  "seed": 42,
+  "start_utc": "2021-01-01"
+ },
+ "runtime": {
+  "libraries": {
+   "duckdb": "1.5.4",
+   "numpy": "2.5.2",
+   "optuna": "4.9.0",
+   "xgboost-cpu": "3.4.1"
+  },
+  "thread_caps": {
+   "omp_num_threads": 1,
+   "xgboost_nthread": 1
+  }
+ },
+ "strategy": {
+  "bars_per_year_15m": 35040,
+  "constraint_met": false,
+  "cost_per_side": 0.0006,
+  "entry_edge_threshold_grid": {
+   "max": 0.6,
+   "min": 0.0,
+   "n": 61,
+   "step": 0.01
+  },
+  "hierarchy_min_agree": 2,
+  "min_trades_per_validation_fold": 30,
+  "selected_entry_edge_threshold": 0.0
+ },
+ "ticker": "ZEC"
+}

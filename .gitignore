@@ -2,4 +2,9 @@
 __pycache__/
 raw_downloaded_1m_data/
 db/
-research_artifacts/
+# the artifacts themselves are reconstructable, but each folder's calibration
+# record and its README are the two files that make them readable without a run
+research_artifacts/**
+!research_artifacts/*/
+!research_artifacts/*/calibration.json
+!research_artifacts/*/README.md

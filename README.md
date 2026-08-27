@@ -157,6 +157,8 @@ decision is taken at a 15m close and filled one minute later. Stages:
 GiB)` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
-time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Full methodology:
+time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
+describes itself: `calibration.json` records the settings its artifacts were
+computed under, and its `README.md` says what came out. Full methodology:
 [Skills_For_The_Project/ML_README.md](Skills_For_The_Project/ML_README.md).
 

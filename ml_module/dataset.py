@@ -3,7 +3,9 @@
 Loading X/Y and writing JSON are the only two things every stage needs from a
 common place, so they live together here. There is no provenance envelope: the
 git commit records which code produced a result, and ml_status.json carries the
-research window and the seed once, not in every file.
+research window and the seed once, not in every file. The per-asset
+calibration record written by status.py is a different thing — the settings a
+result was computed under, not a proof about the file.
 """
 
 from __future__ import annotations

@@ -74,6 +74,8 @@ stage name and nothing else:
 | `oos_predictions.parquet` | `ml_module/train.py` | out-of-fold probabilities |
 | `model_evaluation.json` | `ml_module/train.py` | classification metrics |
 | `strategy_evaluation.json` | `ml_module/strategy.py` | τ and PnL |
+| `calibration.json` | `ml_module/status.py` | the settings the other files were computed under |
+| `README.md` | `ml_module/status.py` | what the folder holds and what came out of it |
 
 ## Features
 
