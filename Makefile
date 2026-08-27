@@ -5,12 +5,25 @@ ML_PINS    := numpy==2.5.2 xgboost==3.4.1 optuna==4.9.0
 COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
 TICKER_LIST = $(shell python3 -c "from pipeline.config import TICKERS; print(' '.join(TICKERS))")
 
+# ML stages are one independent process per asset. The only speed-up allowed
+# here is that external parallelism: OMP_NUM_THREADS and nthread stay at 1,
+# because multi-threaded float summation reorders and two runs of the same
+# experiment stop being comparable. The width is measured, never hardcoded —
+# min(cores, available GiB) so a bigger machine is used and a loaded one is
+# not oversubscribed. Override with `make ml-hpo JOBS=2`.
+JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
+                g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
+                if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then echo $$g; else echo $$c; fi)
+
+# $(1) = python command, $(2) = ml module
+fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} $(1) -m $(2) --tickers {}
+
 .DEFAULT_GOAL := help
 
 # every target is a command, not a file — without this `make dashboard` would
 # be "up to date" because the dashboard/ directory exists
 .PHONY: help setup download download-binance download-bybit ingest export status \
-        dashboard ml-bars ml-features ml-labels ml-hpo ml-hpo-par ml-train \
+        dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-download \
         docker-ingest docker-export docker-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
@@ -49,22 +62,19 @@ ml-bars:         ## canonical 15m/1h/4h bars + Binance 1h (single DB writer)
 	$(PY) -m ml.bars
 
 ml-features:     ## fixed hierarchical 15-column feature matrix per asset
-	OMP_NUM_THREADS=1 $(PY) -m ml.features
+	$(call fanout,$(PY),ml.features)
 
 ml-labels:       ## triple-barrier labels on the Binance 1m path + uniqueness weights
-	OMP_NUM_THREADS=1 $(PY) -m ml.labels
+	$(call fanout,$(PY),ml.labels)
 
-ml-hpo:          ## Optuna TPE per asset (sequential)
-	OMP_NUM_THREADS=1 $(PY) -m ml.hpo
-
-ml-hpo-par:      ## Optuna HPO, 4 assets in parallel x nthread=1
-	printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P 4 -I{} $(PY) -m ml.hpo --tickers {}
+ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)
+	$(call fanout,$(PY),ml.hpo)
 
 ml-train:        ## OOF predictions + final-OOS report per asset
-	OMP_NUM_THREADS=1 $(PY) -m ml.train
+	$(call fanout,$(PY),ml.train)
 
 ml-strategy:     ## tau selection on the validation folds, final-OOS PnL
-	OMP_NUM_THREADS=1 $(PY) -m ml.strategy
+	$(call fanout,$(PY),ml.strategy)
 
 ml-status:       ## aggregate ML artifacts -> dashboard/ml_status.json
 	$(PY) -m ml.status
@@ -92,19 +102,19 @@ docker-ml-bars:      ## ml.bars inside the container
 	$(COMPOSE) run --rm pipeline python -m ml.bars
 
 docker-ml-features:  ## ml.features inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.features
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml.features)"
 
 docker-ml-labels:    ## ml.labels inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.labels
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml.labels)"
 
 docker-ml-hpo:       ## ml.hpo inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.hpo
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml.hpo)"
 
 docker-ml-train:     ## ml.train inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.train
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml.train)"
 
 docker-ml-strategy:  ## ml.strategy inside the container
-	$(COMPOSE) run --rm pipeline python -m ml.strategy
+	$(COMPOSE) run --rm pipeline sh -c "$(call fanout,python,ml.strategy)"
 
 docker-ml-status:    ## ml.status inside the container
 	$(COMPOSE) run --rm pipeline python -m ml.status

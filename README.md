@@ -131,7 +131,9 @@ Observation may use the failover series; execution may not — a position cannot
 change exchange because the canonical source switched for one minute. The
 decision is taken at a 15m close and filled one minute later. Stages:
 `make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
-(or `make ml-all`); results on the dashboard's **ML Research** tab (ten-asset
+(or `make ml-all`) — every per-asset stage runs `JOBS = min(cores, available
+GiB)` assets in parallel, one process each, with the thread caps pinned at one;
+results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Full methodology:
 [ML_README.md](ML_README.md).

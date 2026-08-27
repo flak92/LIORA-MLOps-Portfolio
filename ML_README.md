@@ -289,7 +289,38 @@ to their module**. The export invariants of `pipeline/export.py` are the
 canonical-series gate; the documented order runs `make ml-all` after
 `make export`.
 
-## 11. What this is, and what it is not
+## 11. Running the layer: one asset per process
+
+Every stage takes `--tickers`, so the chain parallelises the only way an
+experiment with frozen thread caps may — **externally**, one asset per
+process. `make ml-features / ml-labels / ml-hpo / ml-train / ml-strategy` fan
+out `JOBS` assets at a time, where `JOBS = min(cores, available GiB)` is
+measured at each invocation rather than written down (the machine this runs on
+changes size); override with `make ml-hpo JOBS=2`. `ml-bars` stays sequential
+because it is the only writer to the database.
+
+Thread caps stay at one — `nthread = 1`, `OMP_NUM_THREADS = 1` — and are not
+negotiable: multi-threaded float summation reorders, two runs of the same
+experiment produce different models, and out-of-sample results stop being
+comparable. Measured on 4 cores: the four per-asset stages take 1 min 29 s
+instead of 4 min 13 s (2.8x) and every artifact is bit-identical either way.
+The search itself is 88 % of the chain and is CPU-bound; one asset's Optuna
+study is sequential by construction, so the wall-clock floor of `ml-hpo` is
+the slowest single asset, not the total divided by the core count.
+
+Rerun only what a change actually invalidates — the search is the expensive
+stage, and most edits do not touch it:
+
+| what changed | what to rerun |
+|---|---|
+| the canonical series (`make ingest`) | everything, from `ml-bars` |
+| a feature definition | `ml-features ml-hpo ml-train ml-strategy ml-status` |
+| a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
+| the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
+| a strategy rule, the cost, the tau grid | `ml-strategy ml-status` |
+| the dashboard payload | `ml-status` |
+
+## 12. What this is, and what it is not
 
 This is a **causally correct, internally consistent 1-minute bar-based
 perpetual-futures research backtest with explicit execution-cost
@@ -304,7 +335,7 @@ differentiation, fixed costs, unit position sizing. The class distribution is
 dominated by `y = 0` (the `k = 2` barrier is rarely touched within one 4H
 block) — reported per asset, not resampled.
 
-## 12. References (verified online 2026-08-26; DOIs resolve)
+## 13. References (verified online 2026-08-26; DOIs resolve)
 
 | Key | Reference |
 |---|---|
