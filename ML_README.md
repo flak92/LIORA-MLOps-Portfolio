@@ -162,10 +162,22 @@ full runs must produce identical SHA-256 for X/Y/hpo/predictions/metrics/
 strategy artifacts (`nthread = 1`, parallelism across assets only, pinned
 `requirements.lock`).
 
+The dashboard snapshot `dashboard/ml_status.json` (schema v2) carries, per
+asset: the sample contract, split segments, the search summary with the
+50-trial objective trajectory, validation metrics, the locked-test metrics and
+confusion matrix, all 16 total-gain importances, strategy PnL per fold with
+exit breakdowns and a weekly-thinned locked-test equity curve, plus the
+warnings and artifact hashes. A global `config` block and
+`baseline_logloss_uniform` keep the page self-describing. Its
+`generated_at_utc` is monitoring metadata and sits **outside** the determinism
+claim, which covers the per-asset artifacts; with unchanged artifacts a
+regeneration diffs by that one line.
+
 Module layout: `ml/config` (frozen constants) · `ml/artifacts` (an IO
 utility: canonical serialization and atomic writes) · `ml/indicators`,
 `ml/validation`, `ml/model` (pure numpy / xgboost kernels) · `ml/dataset`
-(artifact loading) · `ml/bars` (single DB writer) · `ml/features`,
+(artifact loading) · `ml/report` (pure snapshot assembly) · `ml/bars`
+(single DB writer) · `ml/features`,
 `ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`, `ml/status` (CLI stages,
 `python -m ml.<stage> [--tickers …]`). Constant convention as it actually
 is: **experiment-semantic constants live in `ml/config.py` and enter
