@@ -21,19 +21,25 @@ from . import config
 
 
 def canon(obj):
-    """Recursively convert numpy containers/scalars to canonical Python."""
+    """Recursively convert numpy containers/scalars to canonical Python.
+
+    Type conversion comes first and the finiteness check second: a numpy NaN
+    that returned as a float on the way past would reach json.dumps, which
+    writes the literal NaN — valid Python, invalid JSON, and unreadable by any
+    strict parser.
+    """
     if isinstance(obj, dict):
         return {str(k): canon(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
         return [canon(v) for v in obj]
     if isinstance(obj, np.ndarray):
         return [canon(v) for v in obj.tolist()]
-    if isinstance(obj, np.floating):
-        return float(obj)
     if isinstance(obj, np.integer):
         return int(obj)
     if isinstance(obj, np.bool_):
         return bool(obj)
+    if isinstance(obj, np.floating):
+        obj = float(obj)
     if isinstance(obj, float) and not np.isfinite(obj):
         return None
     return obj
