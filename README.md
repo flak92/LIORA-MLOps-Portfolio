@@ -1,12 +1,6 @@
 # LIORA - MLOps - Portfolio
 
-**A reproducible 1-minute crypto market-data pipeline: Binance USDS-M + Bybit Linear klines → QC Lean raw ZIPs → primary-failover consolidation in DuckDB → continuous canonical per-asset Parquet → static monitoring dashboard.**
-
-> Design rule: deterministic and minimal. No API keys, no hidden state, one
-> mathematical rule instead of hand-written exceptions. Anyone who clones this
-> repository can rebuild the entire dataset from the public exchange APIs with
-> four make targets. Data anomalies are a DATA INGEST problem, not an
-> RSI/LSTM/XGBoost problem.
+**A reproducible based on 1-minute Time Frame as the raw crypto market-data pipeline: Binance + Bybit klines → QC Lean raw ZIPs → primary-failover consolidation in DuckDB → continuous canonical per-asset Parquet → static monitoring dashboard.**
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
@@ -15,17 +9,17 @@ through the repo is `AGENTS.md → module names → Skills_For_The_Project → c
 this README is the general overview.
 
 ```
-Binance USDS-M API ──> raw_downloaded_1m_data/cryptofuture/binance/...  ─┐
+Binance API ──> raw_downloaded_1m_data/cryptofuture/binance/...         ─┐
 (keyless, stdlib)      QC Lean ZIPs, 1 full UTC day = 1 zip              ├─> db/1m_raw_data_db.duckdb
                                                                          │   ohlcv_1m_binance
-Bybit Linear API ───> raw_downloaded_1m_data/cryptofuture/bybit/...   ───┘   ohlcv_1m_bybit
+Bybit API ───> raw_downloaded_1m_data/cryptofuture/bybit/...            ─┘   ohlcv_1m_bybit
 (keyless, stdlib)      same Lean ZIP format                                  ohlcv_1m_canonical (failover)
                                                                                   │
                                               assets/Asset_<TICKER>/ <────────────┤ export
                                               1m_<TICKER>_data.parquet            │
                                               (continuous t,OHLCV)                v
                                                                              dashboard/status.json
-                                                                             four-tab HTML dashboard
+                                                                             multiple tabs simple HTML, CSS, JS dashboard
 ```
 
 ## Primary-failover canonical series (why two venues)
@@ -50,7 +44,7 @@ Ten assets, uniform market — USDT-margined perpetual futures:
 
 `BTC ETH BNB XRP SOL TRX DOGE ZEC LINK ADA`
 
-The window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
+The Time window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
 midnight. Every asset was listed on Binance USDS-M before the window start
 (verified by probing each symbol's oldest candle before every download). Bybit
 listings partially fall inside the window; pre-listing minutes are simply
@@ -58,8 +52,6 @@ Binance-only in the canonical series, which covers the identical
 full minute grid — equal row counts by construction.
 
 ## Quickstart
-
-Requirements: **Python 3.11+** and `make`; Docker optional.
 
 Four direct dependencies and nothing else — `duckdb` (storage and query),
 `numpy` (mathematics), `optuna` (hyper-parameter search) and `xgboost-cpu`
@@ -134,9 +126,9 @@ strategy evaluation with explicit costs:
 
 ```
 canonical OHLCV ──► 15m/1h/4h bars ──► X    (market observation)
-Binance 1m      ──► triple barrier  ──► Y    (execution)
+Kline_1m      ──► triple barrier  ──► Y    (execution)
 X + Y ──► purged walk-forward ──► XGBoost ──► probabilities
-      ──► fixed strategy rules ──► Binance execution path ──► equity / PnL
+      ──► fixed strategy rules ──► execution path ──► equity / PnL
 ```
 
 Observation may use the failover series; execution may not — a position cannot
@@ -150,11 +142,3 @@ cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Full methodology:
 [ML_README.md](ML_README.md).
 
-## Roadmap
-
-- [x] Reproducible two-venue download → DuckDB primary-failover canonical → Parquet pipeline
-- [x] Canonical continuous series (no downstream gap handling)
-- [x] Static monitoring dashboard (Pipeline / Data Quality / ML Research / ML Assets)
-- [x] ML research layer: features → labels → HPO → final OOS fold → strategy
-- [ ] Scheduled top-ups (the download stages are already incremental)
-- [ ] WO-ML-002: regime gating, per-asset selection, meta-labeling, sizing
