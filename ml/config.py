@@ -87,7 +87,7 @@ AGREE_MIN = 2                       # levels whose trend sign must agree with th
 _CONSTANTS = {
     k: v
     for k, v in sorted(globals().items())
-    if k.isupper() and isinstance(v, (int, float, str, tuple, dict))
+    if k.isupper() and isinstance(v, (int, float, str, tuple, list, dict))
 }
 
 

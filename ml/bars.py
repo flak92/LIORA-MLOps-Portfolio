@@ -57,19 +57,25 @@ META_DDL = "CREATE TABLE IF NOT EXISTS _ml_meta (key VARCHAR PRIMARY KEY, value 
 
 
 def compute_data_sha256(con: duckdb.DuckDBPyConnection) -> str:
+    """Hash every canonical column the ML chain reads: OHLCV and `source`
+    (labels mask on ffill minutes, so provenance is part of the input)."""
     h = hashlib.sha256()
     for t in config.TICKERS:
+        where = (f"symbol = '{config.symbol(t)}' "
+                 f"AND timestamp_ms >= {config.RESEARCH_START_MS} "
+                 f"AND timestamp_ms < {config.RESEARCH_END_MS}")
         arrs = con.execute(
             f"""SELECT timestamp_ms, open, high, low, close, volume
-                FROM ohlcv_1m_canonical
-                WHERE symbol = '{config.symbol(t)}'
-                  AND timestamp_ms >= {config.RESEARCH_START_MS}
-                  AND timestamp_ms < {config.RESEARCH_END_MS}
-                ORDER BY timestamp_ms"""
+                FROM ohlcv_1m_canonical WHERE {where} ORDER BY timestamp_ms"""
         ).fetchnumpy()
         h.update(arrs["timestamp_ms"].astype("<i8").tobytes())
         for col in ("open", "high", "low", "close", "volume"):
             h.update(arrs[col].astype("<f8").tobytes())
+        sources = con.execute(
+            f"""SELECT string_agg(source, chr(10) ORDER BY timestamp_ms)
+                FROM ohlcv_1m_canonical WHERE {where}"""
+        ).fetchone()[0]
+        h.update(sources.encode("utf-8"))
     return h.hexdigest()
 
 

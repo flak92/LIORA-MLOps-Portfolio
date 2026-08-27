@@ -77,7 +77,10 @@ def triple_barrier(m1: dict[str, np.ndarray], decision_ts: np.ndarray, sigma: np
         t_res[a:b] = np.minimum(t_up, t_dn)
         reason[a:b] = np.where(amb, 9, np.where(t_up < t_dn, 1, np.where(t_dn < t_up, -1, 0)))
         y[a:b][amb] = 0
-    ffill_in_path = (ffill_prefix[idx + W] - ffill_prefix[idx]) > 0
+    # the mask covers the RESOLVED path only: entry minute up to the resolving
+    # minute (or the whole horizon when the vertical barrier ends the event)
+    path_end = idx + np.minimum(t_res + 1, W)
+    ffill_in_path = (ffill_prefix[path_end] - ffill_prefix[idx]) > 0
     return y, t_res, reason, ffill_in_path
 
 
