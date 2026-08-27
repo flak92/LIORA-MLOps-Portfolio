@@ -120,9 +120,12 @@ def backtest(d: dict, rows: dict, tau: float, fold_start_ms: int, fold_end_ms: i
     eq = np.empty(n_min)
 
     enter = rows["gate"] & (np.abs(rows["edge"]) >= tau) & rows["entry_observable"]
-    # a trade must finish inside the fold; signals whose event would run past the
-    # fold end are not taken (at most one horizon of the tail is affected)
-    fits = (rows["entry_ts"] >= fold_start_ms) & (rows["event_end_ts"] <= fold_end_ms)
+    # A trade must be able to finish inside the fold, and that has to be decidable
+    # at t_0: testing the REAL event_end_ts would let the future decide whether the
+    # position was opened at all — a signal that happened to hit a barrier early
+    # would fit where one that ran to the vertical barrier would not. The maximum
+    # horizon is the only version of the question the entry moment can answer.
+    fits = (rows["entry_ts"] >= fold_start_ms) & (rows["entry_ts"] + config.HORIZON_MS <= fold_end_ms)
     take = np.flatnonzero(enter & fits)
 
     equity, cursor, in_pos_ms = 1.0, 0, 0
