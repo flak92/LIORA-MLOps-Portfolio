@@ -66,3 +66,15 @@ td:first-child, th:first-child { text-align: left; }
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* per-asset detail: sparklines, confusion emphasis, compact share bars */
+.spark {
+  display: block; width: 100%; height: 8em;
+  border: 1px solid #111; background: #fff;
+}
+.spark-line { fill: none; stroke: #0a7a0a; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spark-base { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.spark-mark { stroke: #666; stroke-width: 1; stroke-dasharray: 2 2; vector-effect: non-scaling-stroke; }
+.bar-track.mini { width: 4em; height: 0.6em; }
+.diag { font-weight: bold; }
+.subhead { font-weight: bold; margin: 0.6em 0 0.3em; }
