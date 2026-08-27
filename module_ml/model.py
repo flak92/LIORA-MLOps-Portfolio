@@ -48,3 +48,9 @@ def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray) -> xgb.B
 
 def predict_proba(booster: xgb.Booster, x: np.ndarray) -> np.ndarray:
     return booster.predict(xgb.DMatrix(x, feature_names=list(config.FEATURE_COLUMNS)))
+
+
+def gain_importance(booster: xgb.Booster) -> dict[str, float]:
+    """Total gain per feature, zero for a feature the trees never split on."""
+    score = booster.get_score(importance_type="total_gain")
+    return {column: score.get(column, 0.0) for column in config.FEATURE_COLUMNS}

@@ -62,14 +62,14 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
     return []
 
 
-def fetch_day(sym: str, day_ms: int) -> list[tuple]:
+def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as ascending (offset_ms, o, h, l, c, base_volume)."""
     rows = []
     for window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
         batch = fetch_klines(
             {
                 "category": config.BYBIT_CATEGORY,
-                "symbol": sym,
+                "symbol": symbol,
                 "interval": "1",
                 "start": window_start_ms,
                 "end": window_start_ms + KLINE_REQUEST_WINDOW_MS - 1,
@@ -117,7 +117,7 @@ def main() -> int:
     total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
 
     for t in tickers:
-        sym = config.symbol(t)
+        symbol = config.symbol(t)
         out_dir = config.raw_symbol_dir(t, "bybit")
         written = skipped = 0
         earliest = earliest_traded_day(out_dir)
@@ -128,7 +128,7 @@ def main() -> int:
             if (out_dir / f"{day}_trade.zip").exists():
                 skipped += 1
             else:
-                rows = fetch_day(sym, day_ms)
+                rows = fetch_day(symbol, day_ms)
                 if rows and (earliest is None or day < earliest):
                     earliest = day                       # first traded day may be partial
                 elif earliest is not None and day > earliest and not is_full_utc_day(rows):
@@ -136,16 +136,16 @@ def main() -> int:
                     # answer here is a truncated response, and this day is assembled
                     # from two 720-minute windows, so half of it can arrive alone
                     raise SystemExit(
-                        f"bybit {sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        f"bybit {symbol} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
                         "incomplete response after listing, retry the download"
                     )
-                write_lean_zip(out_dir, sym, day, rows)
+                write_lean_zip(out_dir, symbol, day, rows)
                 written += 1
                 if written % 200 == 0:
-                    print(f"  bybit {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
+                    print(f"  bybit {symbol}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
                 time.sleep(config.BYBIT_REQUEST_DELAY_SECONDS)
             day_ms += MILLISECONDS_PER_DAY
-        print(f"bybit {sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
+        print(f"bybit {symbol}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 
 

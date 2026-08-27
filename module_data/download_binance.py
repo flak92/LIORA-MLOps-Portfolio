@@ -65,20 +65,20 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
     return []
 
 
-def probe_oldest(sym: str) -> int:
+def probe_oldest(symbol: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
-    batch = fetch_klines({"symbol": sym, "interval": config.SOURCE_CANDLE_INTERVAL,
+    batch = fetch_klines({"symbol": symbol, "interval": config.SOURCE_CANDLE_INTERVAL,
                   "startTime": 0, "limit": 1})
     if not batch:
-        raise SystemExit(f"probe failed: no candles returned for {sym}")
+        raise SystemExit(f"probe failed: no candles returned for {symbol}")
     return int(batch[0][0])
 
 
-def fetch_day(sym: str, day_ms: int) -> list[tuple]:
+def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as (offset_ms, o, h, l, c, base_volume)."""
     batch = fetch_klines(
         {
-            "symbol": sym,
+            "symbol": symbol,
             "interval": config.SOURCE_CANDLE_INTERVAL,
             "startTime": day_ms,
             "endTime": day_ms + MILLISECONDS_PER_DAY - 1,
@@ -102,9 +102,9 @@ def is_full_utc_day(rows: list[tuple]) -> bool:
     )
 
 
-def write_lean_zip(out_dir: Path, sym: str, day: str, rows: list[tuple]) -> None:
+def write_lean_zip(out_dir: Path, symbol: str, day: str, rows: list[tuple]) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    csv_name = f"{day}_{sym.lower()}_minute_trade_perp.csv"
+    csv_name = f"{day}_{symbol.lower()}_minute_trade_perp.csv"
     body = "\n".join(f"{off},{o},{h},{lo},{c},{v}" for (off, o, h, lo, c, v) in rows)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -137,7 +137,7 @@ def main() -> int:
 
     total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
     for t in tickers:
-        sym = config.symbol(t)
+        symbol = config.symbol(t)
         out_dir = config.raw_symbol_dir(t)
         written = skipped = 0
         day_ms = start_ms
@@ -147,22 +147,22 @@ def main() -> int:
             if (out_dir / f"{day}_trade.zip").exists():
                 skipped += 1
             else:
-                rows = fetch_day(sym, day_ms)
+                rows = fetch_day(symbol, day_ms)
                 # the listing probe guarantees every day of the window is
                 # post-listing, so anything short of a full day is a truncated
                 # response, not a fact about the market
                 if not is_full_utc_day(rows):
                     raise SystemExit(
-                        f"{sym} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
+                        f"{symbol} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
                         "incomplete response for a post-listing day, retry the download"
                     )
-                write_lean_zip(out_dir, sym, day, rows)
+                write_lean_zip(out_dir, symbol, day, rows)
                 written += 1
                 if written % 200 == 0:
-                    print(f"  {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
+                    print(f"  {symbol}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
                 time.sleep(config.BINANCE_REQUEST_DELAY_SECONDS)
             day_ms += MILLISECONDS_PER_DAY
-        print(f"{sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
+        print(f"{symbol}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0
 
 

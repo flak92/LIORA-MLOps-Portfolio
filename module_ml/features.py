@@ -24,10 +24,10 @@ import numpy as np
 from . import config, dataset, indicators
 
 
-def load_timeframe(con: duckdb.DuckDBPyConnection, sym: str, timeframe: str) -> dict[str, np.ndarray]:
+def load_timeframe(con: duckdb.DuckDBPyConnection, symbol: str, timeframe: str) -> dict[str, np.ndarray]:
     return con.execute(
         f"""SELECT timestamp_ms, open, high, low, close, volume
-            FROM ohlcv_{timeframe}_canonical WHERE symbol = '{sym}' ORDER BY timestamp_ms"""
+            FROM ohlcv_{timeframe}_canonical WHERE symbol = '{symbol}' ORDER BY timestamp_ms"""
     ).fetchnumpy()
 
 
@@ -50,13 +50,13 @@ def timeframe_features(bars: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
 def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np.ndarray]:
     """Return (decision_ts, X matrix ordered as config.FEATURE_COLUMNS)."""
-    sym = config.symbol(ticker)
-    timeframes = {timeframe: load_timeframe(con, sym, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
+    symbol = config.symbol(ticker)
+    timeframes = {timeframe: load_timeframe(con, symbol, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
     feats = {timeframe: timeframe_features(timeframes[timeframe])
              for timeframe in config.HIERARCHY_TIMEFRAMES}
 
-    ts15 = timeframes["15m"]["timestamp_ms"].astype(np.int64)
-    decision_ts = ts15[ts15 >= config.WARMUP_END_MS]
+    ts_15m = timeframes["15m"]["timestamp_ms"].astype(np.int64)
+    decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
 
     cols: dict[str, np.ndarray] = {}
     for timeframe in config.HIERARCHY_TIMEFRAMES:

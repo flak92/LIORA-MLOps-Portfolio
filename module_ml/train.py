@@ -95,12 +95,12 @@ def main() -> int:
         write_predictions(t, pred_rows)
 
         trainable = xy["sample_valid"]
-        gain = booster.get_score(importance_type="total_gain")
+        gain = model.gain_importance(booster)
         payload = {
             "params": best,
             "validation": per_fold,
             "final_holdout": final_holdout,
-            "gain_importance": {k: gain.get(k, 0.0) for k in config.FEATURE_COLUMNS},
+            "gain_importance": gain,
             # classes over the supervised population only: an ambiguous event
             # carries y = 0 in the file and would otherwise be counted as a
             # neutral observation, which is exactly what it is not

@@ -100,12 +100,12 @@ def main() -> int:
                   for venue in config.SOURCE_VENUES}
     canonical_rows = {r[0]: r for r in con.execute(CANONICAL_SCAN).fetchall()}
     canon_extra = {
-        sym: (
-            con.execute(CANONICAL_MAX_ABS_RET_1M, [sym]).fetchone()[0],
-            con.execute(CANONICAL_LONGEST_FLAT_RUN, [sym]).fetchone()[0],
-            con.execute(SOURCE_SWITCHES, [sym]).fetchone(),
+        symbol: (
+            con.execute(CANONICAL_MAX_ABS_RET_1M, [symbol]).fetchone()[0],
+            con.execute(CANONICAL_LONGEST_FLAT_RUN, [symbol]).fetchone()[0],
+            con.execute(SOURCE_SWITCHES, [symbol]).fetchone(),
         )
-        for sym in canonical_rows
+        for symbol in canonical_rows
     }
     con.close()
 
@@ -125,12 +125,12 @@ def main() -> int:
     for venue in config.SOURCE_VENUES:
         out = []
         for t in tickers:
-            sym = config.symbol(t)
-            r = venue_rows[venue].get(sym)
+            symbol = config.symbol(t)
+            r = venue_rows[venue].get(symbol)
             rows, distinct_ts = (r[1], r[2]) if r else (0, 0)
             out.append(
                 {
-                    "symbol": sym,
+                    "symbol": symbol,
                     "zip_count": zip_counts[venue][t],
                     "rows": rows,
                     "coverage_pct": pct(distinct_ts, expected),
@@ -153,13 +153,13 @@ def main() -> int:
 
     canonical, symbols = [], []
     for t in tickers:
-        sym = config.symbol(t)
-        r = canonical_rows[sym]
+        symbol = config.symbol(t)
+        r = canonical_rows[symbol]
         rows, n_ffill = r[1], int(r[4])
-        switches, max_ret_switch = canon_extra[sym][2]
+        switches, max_ret_switch = canon_extra[symbol][2]
         canonical.append(
             {
-                "symbol": sym,
+                "symbol": symbol,
                 "rows": rows,
                 "pct_binance": pct(int(r[2]), rows),
                 "pct_bybit": pct(int(r[3]), rows),
@@ -172,8 +172,8 @@ def main() -> int:
                 "div_p99": round(float(r[7]), 8) if r[7] is not None else None,
                 "div_max": round(float(r[8]), 8) if r[8] is not None else None,
                 "ohlc_violations": int(r[10]),
-                "max_abs_ret_1m": round(float(canon_extra[sym][0]), 6) if canon_extra[sym][0] is not None else None,
-                "longest_flat_run_min": int(canon_extra[sym][1]),
+                "max_abs_ret_1m": round(float(canon_extra[symbol][0]), 6) if canon_extra[symbol][0] is not None else None,
+                "longest_flat_run_min": int(canon_extra[symbol][1]),
             }
         )
         pq = config.canonical_parquet(t)
@@ -184,7 +184,7 @@ def main() -> int:
             c2.close()
         symbols.append(
             {
-                "symbol": sym,
+                "symbol": symbol,
                 "rows": rows,
                 "ffill_bars": n_ffill,
                 "data_pct": pct(rows - n_ffill, rows),

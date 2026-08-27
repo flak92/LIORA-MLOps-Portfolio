@@ -56,17 +56,17 @@ def main() -> int:
     for timeframe, timeframe_duration_ms in config.TIMEFRAME_DURATION_MS.items():
         con.execute(BAR_DDL.format(timeframe=timeframe))
         for t in tickers:
-            sym = config.symbol(t)
-            con.execute(f"DELETE FROM ohlcv_{timeframe}_canonical WHERE symbol = ?", [sym])
+            symbol = config.symbol(t)
+            con.execute(f"DELETE FROM ohlcv_{timeframe}_canonical WHERE symbol = ?", [symbol])
             con.execute(
                 BAR_INSERT.format(timeframe=timeframe, timeframe_duration_ms=timeframe_duration_ms,
                                   start_ms=config.RESEARCH_START_MS,
                                   end_ms=config.RESEARCH_END_MS),
-                [sym],
+                [symbol],
             )
             bar_count = con.execute(f"SELECT count(*) FROM ohlcv_{timeframe}_canonical "
-                                    "WHERE symbol = ?", [sym]).fetchone()[0]
-            print(f"{timeframe} {sym}: {bar_count} bars", flush=True)
+                                    "WHERE symbol = ?", [symbol]).fetchone()[0]
+            print(f"{timeframe} {symbol}: {bar_count} bars", flush=True)
 
     con.close()
     return 0

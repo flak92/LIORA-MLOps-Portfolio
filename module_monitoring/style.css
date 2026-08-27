@@ -42,7 +42,7 @@ table { border-collapse: collapse; background: #fff; width: 100%; }
 th, td { border: 1px solid #111; padding: 0.25em 0.5em; text-align: right; }
 th { background: #ddd; font-weight: bold; }
 td:first-child, th:first-child { text-align: left; }
-.bar {
+.meter {
   display: inline-block;
   width: 8em;
   height: 0.8em;
@@ -51,7 +51,7 @@ td:first-child, th:first-child { text-align: left; }
   vertical-align: middle;
   margin-right: 0.4em;
 }
-.bar__fill { display: block; height: 100%; background: #0a7a0a; }
+.meter__fill { display: block; height: 100%; background: #0a7a0a; }
 .warn { background: #fff3b0; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }

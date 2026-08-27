@@ -35,7 +35,7 @@ function sparkline(values, baseline, caption) {
   const y = (v) => H - ((v - lo) / span) * H;
 
   const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.setAttribute("renderBox", "0 0 " + W + " " + H);
   svg.setAttribute("preserveAspectRatio", "none");
   svg.setAttribute("class", "spark");
   const tip = document.createElementNS(NS, "title");
@@ -139,7 +139,7 @@ function featuresFrame(a) {
   const max = items[0][1] || 1;
   f.body.appendChild(makeTable(["feature", "total gain"], items.map((kv) => {
     const wrap = document.createElement("span");
-    wrap.appendChild(bar((100 * kv[1]) / max));
+    wrap.appendChild(meter((100 * kv[1]) / max));
     wrap.appendChild(document.createTextNode(fmt(Math.round(kv[1]))));
     return [kv[0], [wrap]];
   })));
@@ -164,13 +164,13 @@ function pnlRow(label, m, isFinalHoldout) {
   if (isFinalHoldout) name.className = "diag";
   return [
     [name],
-    num(m.sharpe, 2),
+    fmtNum(m.sharpe, 2),
     (100 * m.max_drawdown).toFixed(1) + "%",
     fmt(m.trade_count),
     (100 * m.hit_rate).toFixed(1) + "%",
     m.avg_trade_ret === null ? "-" : (100 * m.avg_trade_ret).toFixed(3) + "%",
     (100 * m.exposure).toFixed(2) + "%",
-    num(m.final_equity, 4),
+    fmtNum(m.final_equity, 4),
   ];
 }
 

@@ -19,11 +19,11 @@ function fmtDiv(x) {
   return x === null || x === undefined ? "-" : (100 * x).toFixed(4) + "%";
 }
 
-function bar(pctValue) {
+function meter(pctValue) {
   const track = document.createElement("span");
-  track.className = "bar";
+  track.className = "meter";
   const fill = document.createElement("span");
-  fill.className = "bar__fill";
+  fill.className = "meter__fill";
   fill.style.width = Math.max(0, Math.min(100, pctValue)) + "%";
   track.appendChild(fill);
   return track;
@@ -31,7 +31,7 @@ function bar(pctValue) {
 
 function pctCell(pctValue) {
   const wrap = document.createElement("span");
-  wrap.appendChild(bar(pctValue));
+  wrap.appendChild(meter(pctValue));
   wrap.appendChild(document.createTextNode(pctValue.toFixed(3) + "%"));
   return wrap;
 }
@@ -72,7 +72,7 @@ function initPills(root) {
 }
 
 /* null-safe formatting: to_json_safe() writes null for non-finite floats */
-function num(x, d) {
+function fmtNum(x, d) {
   return x === null || x === undefined ? "-" : x.toFixed(d);
 }
 
@@ -113,14 +113,14 @@ fetch("status.json", { cache: "no-store" })
 
     const table = document.getElementById("symbols");
     const tbody = table.querySelector("tbody");
-    for (const y of s.symbols) {
+    for (const row of s.symbols) {
       const tr = document.createElement("tr");
-      cell(tr, y.symbol);
-      cell(tr, fmt(y.rows));
-      cell(tr, pctCell(y.data_pct));
-      cell(tr, fmt(y.ffill_bars), y.ffill_bars > 0);
-      cell(tr, fmt(y.parquet_rows), y.parquet_rows !== y.rows);
-      cell(tr, fmtBytes(y.parquet_bytes));
+      cell(tr, row.symbol);
+      cell(tr, fmt(row.rows));
+      cell(tr, pctCell(row.data_pct));
+      cell(tr, fmt(row.ffill_bars), row.ffill_bars > 0);
+      cell(tr, fmt(row.parquet_rows), row.parquet_rows !== row.rows);
+      cell(tr, fmtBytes(row.parquet_bytes));
       tbody.appendChild(tr);
     }
     table.hidden = false;
@@ -129,22 +129,22 @@ fetch("status.json", { cache: "no-store" })
     renderRawSource("raw-bybit", s.venues.bybit);
 
     const ftbody = document.querySelector("#canonical-source tbody");
-    for (const y of s.canonical_source) {
+    for (const row of s.canonical_source) {
       const tr = document.createElement("tr");
-      cell(tr, y.symbol);
-      cell(tr, fmt(y.rows));
-      cell(tr, pctCell(y.pct_binance));
-      cell(tr, y.pct_bybit.toFixed(2) + "%");
-      cell(tr, fmt(y.ffill_bars) + " (" + y.pct_ffill.toFixed(3) + "%)", y.ffill_bars > 0);
-      cell(tr, fmt(y.zero_volume_bars));
-      cell(tr, fmt(y.source_switches));
-      cell(tr, y.max_abs_ret_at_switch === null ? "-" : (100 * y.max_abs_ret_at_switch).toFixed(2) + "%");
-      cell(tr, fmt(y.ohlc_violations), y.ohlc_violations > 0);
-      cell(tr, fmt(y.longest_flat_run_min));
-      cell(tr, y.max_abs_ret_1m === null ? "-" : (100 * y.max_abs_ret_1m).toFixed(2) + "%");
-      cell(tr, fmtDiv(y.div_mean));
-      cell(tr, fmtDiv(y.div_p99));
-      cell(tr, fmtDiv(y.div_max));
+      cell(tr, row.symbol);
+      cell(tr, fmt(row.rows));
+      cell(tr, pctCell(row.pct_binance));
+      cell(tr, row.pct_bybit.toFixed(2) + "%");
+      cell(tr, fmt(row.ffill_bars) + " (" + row.pct_ffill.toFixed(3) + "%)", row.ffill_bars > 0);
+      cell(tr, fmt(row.zero_volume_bars));
+      cell(tr, fmt(row.source_switches));
+      cell(tr, row.max_abs_ret_at_switch === null ? "-" : (100 * row.max_abs_ret_at_switch).toFixed(2) + "%");
+      cell(tr, fmt(row.ohlc_violations), row.ohlc_violations > 0);
+      cell(tr, fmt(row.longest_flat_run_min));
+      cell(tr, row.max_abs_ret_1m === null ? "-" : (100 * row.max_abs_ret_1m).toFixed(2) + "%");
+      cell(tr, fmtDiv(row.div_mean));
+      cell(tr, fmtDiv(row.div_p99));
+      cell(tr, fmtDiv(row.div_max));
       ftbody.appendChild(tr);
     }
   })

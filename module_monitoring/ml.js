@@ -41,7 +41,7 @@ function makeTable(headers, rows) {
 function shareCell(part, whole) {
   const pctValue = whole ? (100 * part) / whole : 0;
   const wrap = document.createElement("span");
-  wrap.appendChild(bar(pctValue));
+  wrap.appendChild(meter(pctValue));
   wrap.appendChild(document.createTextNode(fmt(part) + " (" + pctValue.toFixed(1) + "%)"));
   return wrap;
 }
@@ -72,7 +72,7 @@ function renderResearch(s) {
     cell(tr, a.final_holdout.model_logloss.toFixed(4));
     cell(tr, (100 * a.final_holdout.relative_logloss_skill).toFixed(2) + "%");
     cell(tr, a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
-    cell(tr, num(st.sharpe, 2));
+    cell(tr, fmtNum(st.sharpe, 2));
     cell(tr, (100 * st.max_drawdown).toFixed(1) + "%");
     cell(tr, fmt(st.trade_count));
     cell(tr, (100 * st.hit_rate).toFixed(1) + "%");
@@ -83,7 +83,7 @@ function renderResearch(s) {
 
 /* ---- ML Assets tab: four complementary cross-section views ---- */
 
-function viewLabels(s) {
+function renderLabels(s) {
   fillTable("cs-labels",
     ["asset", "rows", "warm-up excl", "trainable", "short", "neutral share",
      "long", "scored (holdout)"],
@@ -103,10 +103,11 @@ function viewLabels(s) {
     }));
 }
 
-function viewClassification(s) {
+function renderClassification(s) {
+  const foldKeys = validationFolds(s.assets[0]);
   fillTable("cs-classification",
-    ["asset", "val skill F2", "F3", "F4", "mean val skill", "holdout prior LL",
-     "holdout model LL", "holdout skill"],
+    ["asset", ...foldKeys.map((k) => "val skill F" + k.split("_")[1]),
+     "mean val skill", "holdout prior LL", "holdout model LL", "holdout skill"],
     s.assets.map((a) => {
       const folds = validationFolds(a);
       const vs = folds.map((k) => a.validation[k].relative_logloss_skill);
@@ -121,7 +122,7 @@ function viewClassification(s) {
     }));
 }
 
-function viewStrategy(s) {
+function renderStrategy(s) {
   fillTable("cs-strategy",
     ["asset", "entry edge threshold", "constraint met", "selection score", "holdout Sharpe", "degradation",
      "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
@@ -135,21 +136,21 @@ function viewStrategy(s) {
         [tickerLink(a.ticker)],
         a.strategy.entry_edge_threshold.toFixed(2),
         a.strategy.entry_edge_threshold_constraint_met ? "yes" : "fallback",
-        num(sel, 2),
-        num(st.sharpe, 2),
+        fmtNum(sel, 2),
+        fmtNum(st.sharpe, 2),
         deg === null ? "-" : (deg >= 0 ? "+" : "") + deg.toFixed(2),
         (100 * st.max_drawdown).toFixed(1) + "%",
         fmt(st.trade_count),
         (100 * st.hit_rate).toFixed(1) + "%",
         st.avg_trade_ret === null ? "-" : (100 * st.avg_trade_ret).toFixed(3) + "%",
         (100 * st.exposure).toFixed(1) + "%",
-        num(st.final_equity, 3),
+        fmtNum(st.final_equity, 3),
         e.upper_barrier + "/" + e.lower_barrier + "/" + e.vertical + "/" + e.ambiguous,
       ];
     }));
 }
 
-function viewSearch(s) {
+function renderSearch(s) {
   fillTable("cs-search",
     ["asset", "trials", "best LL", "depth", "eta",
      "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
@@ -200,10 +201,10 @@ fetch("ml_status.json", { cache: "no-store" })
 
     ML_STATUS = s;
     renderResearch(s);
-    viewLabels(s);
-    viewClassification(s);
-    viewStrategy(s);
-    viewSearch(s);
+    renderLabels(s);
+    renderClassification(s);
+    renderStrategy(s);
+    renderSearch(s);
     buildAssetPills(s);
   })
   .catch((e) => {

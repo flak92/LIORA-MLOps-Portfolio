@@ -51,12 +51,12 @@ BAR_CLOSE_OFFSET_MINUTES = 14          # a 15m bar closes on the 15th minute of 
 
 def load_inputs(ticker: str) -> dict:
     adir = config.artifact_dir(ticker)
-    sym = config.symbol(ticker)
+    symbol = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
-    close1m = con.execute(
+    close_1m = con.execute(
         f"""SELECT close FROM ohlcv_1m_canonical
-            WHERE symbol = '{sym}'
+            WHERE symbol = '{symbol}'
               AND timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
@@ -70,10 +70,10 @@ def load_inputs(ticker: str) -> dict:
 
     trend = {timeframe: xy["x"][:, config.FEATURE_COLUMNS.index(f"{config.TREND_FAMILY}_{timeframe}")]
              for timeframe in config.HIERARCHY_TIMEFRAMES}
-    return {"xy": xy, "close1m": close1m, "trend": trend, "preds": preds}
+    return {"xy": xy, "close_1m": close_1m, "trend": trend, "preds": preds}
 
 
-def rows_for_fold(inputs: dict, fold_id: int) -> dict:
+def signals_for_fold(inputs: dict, fold_id: int) -> dict:
     """Signal arrays for one fold, aligned to the label-event grid."""
     xy = inputs["xy"]
     in_fold = inputs["preds"]["oos_fold_id"] == fold_id
@@ -118,24 +118,24 @@ def fill_price(side: float, event_resolution: int, upper_barrier: float,
             else max(upper_barrier, exit_reference_price))
 
 
-def backtest(inputs: dict, rows: dict, entry_edge_threshold: float,
+def backtest(inputs: dict, signals: dict, entry_edge_threshold: float,
              fold_start_ms: int, fold_end_ms: int) -> dict:
     """Single-position state machine producing one continuous equity path."""
     c = config.EXECUTION_COST_RATE_PER_TRADE_SIDE
     fold_start_minute = (fold_start_ms - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
     fold_minute_count = (fold_end_ms - fold_start_ms) // MILLISECONDS_PER_MINUTE
-    close1m = inputs["close1m"]
+    close_1m = inputs["close_1m"]
     equity_1m = np.empty(fold_minute_count)
 
-    enter = (rows["gate"] & rows["entry_observable"]
-             & (np.abs(rows["directional_probability_edge"]) >= entry_edge_threshold))
+    enter = (signals["gate"] & signals["entry_observable"]
+             & (np.abs(signals["directional_probability_edge"]) >= entry_edge_threshold))
     # A trade must be able to finish inside the fold, and that has to be decidable
     # at t_0: testing the REAL event_end_ts would let the future decide whether the
     # position was opened at all — a signal that happened to hit a barrier early
     # would fit where one that ran to the vertical barrier would not. The maximum
     # horizon is the only version of the question the entry moment can answer.
-    fits = ((rows["entry_ts"] >= fold_start_ms)
-            & (rows["entry_ts"] + config.LABEL_HORIZON_MS <= fold_end_ms))
+    fits = ((signals["entry_ts"] >= fold_start_ms)
+            & (signals["entry_ts"] + config.LABEL_HORIZON_MS <= fold_end_ms))
     take = np.flatnonzero(enter & fits)
 
     equity, cursor, in_pos_ms = 1.0, 0, 0
@@ -143,26 +143,26 @@ def backtest(inputs: dict, rows: dict, entry_edge_threshold: float,
     # the exit counts are counts by event_resolution, so they carry its names
     exits = {name: 0 for name in config.EVENT_RESOLUTION_NAME.values()}
     for k in take:
-        i = int((rows["entry_ts"][k] - config.RESEARCH_START_MS)
+        i = int((signals["entry_ts"][k] - config.RESEARCH_START_MS)
                 // MILLISECONDS_PER_MINUTE) - fold_start_minute
-        j = int((rows["event_end_ts"][k] - config.RESEARCH_START_MS)
+        j = int((signals["event_end_ts"][k] - config.RESEARCH_START_MS)
                 // MILLISECONDS_PER_MINUTE) - fold_start_minute - 1
         if i < cursor:
             continue                                     # position still open
-        s = float(rows["side"][k])
-        entry_price = float(rows["entry_price"][k])
-        resolution = int(rows["event_resolution"][k])
-        px = fill_price(s, resolution, float(rows["upper_barrier"][k]),
-                        float(rows["lower_barrier"][k]),
-                        float(rows["exit_reference_price"][k]))
+        s = float(signals["side"][k])
+        entry_price = float(signals["entry_price"][k])
+        resolution = int(signals["event_resolution"][k])
+        px = fill_price(s, resolution, float(signals["upper_barrier"][k]),
+                        float(signals["lower_barrier"][k]),
+                        float(signals["exit_reference_price"][k]))
         equity_1m[cursor:i] = equity                     # flat while out of the market
         equity_1m[i:j] = equity * (1.0 - c + s * (
-            close1m[fold_start_minute + i:fold_start_minute + j] / entry_price - 1.0))
+            close_1m[fold_start_minute + i:fold_start_minute + j] / entry_price - 1.0))
         r = s * (px / entry_price - 1.0) - c - c * (px / entry_price)
         equity *= 1.0 + r
         equity_1m[j] = equity
         cursor = j + 1
-        in_pos_ms += int(rows["event_end_ts"][k] - rows["entry_ts"][k])
+        in_pos_ms += int(signals["event_end_ts"][k] - signals["entry_ts"][k])
         trades.append(r)
         exits[config.EVENT_RESOLUTION_NAME[resolution]] += 1
     equity_1m[cursor:] = equity
@@ -185,7 +185,7 @@ def backtest(inputs: dict, rows: dict, entry_edge_threshold: float,
     }
 
 
-def public(result: dict) -> dict:
+def without_equity_path(result: dict) -> dict:
     """Everything but the 1m path, which is an intermediate, not a report."""
     return {k: v for k, v in result.items() if k != "equity_1m"}
 
@@ -205,7 +205,7 @@ def main() -> int:
 
     for t in config.parse_tickers(args.tickers):
         inputs = load_inputs(t)
-        validation_rows = {fold_id: rows_for_fold(inputs, fold_id)
+        validation_rows = {fold_id: signals_for_fold(inputs, fold_id)
                            for fold_id in config.VALIDATION_FOLD_IDS}
         validation_bounds = {fold_id: validation.fold_bounds(fold_id)
                              for fold_id in config.VALIDATION_FOLD_IDS}
@@ -235,7 +235,7 @@ def main() -> int:
                 np.mean([r["sharpe"] for r in validation_by_fold.values()]))
 
         holdout_start, holdout_end = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
-        final_holdout = backtest(inputs, rows_for_fold(inputs, config.FINAL_HOLDOUT_FOLD_ID),
+        final_holdout = backtest(inputs, signals_for_fold(inputs, config.FINAL_HOLDOUT_FOLD_ID),
                                  entry_edge_threshold, holdout_start, holdout_end)
 
         payload = {
@@ -243,9 +243,9 @@ def main() -> int:
             "entry_edge_threshold_constraint_met": entry_edge_threshold_constraint_met,
             "selection_score_mean_sharpe": selection_score_mean_sharpe,
             "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
-            "validation": {f"fold_{fold_id}": public(r)
+            "validation": {f"fold_{fold_id}": without_equity_path(r)
                            for fold_id, r in validation_by_fold.items()},
-            "final_holdout": {**public(final_holdout),
+            "final_holdout": {**without_equity_path(final_holdout),
                               "equity_curve": equity_curve(final_holdout["equity_1m"],
                                                           holdout_start)},
         }

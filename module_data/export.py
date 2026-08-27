@@ -47,13 +47,13 @@ def main() -> int:
                    // {config.CANONICAL_GRID_INTERVAL_MS} FROM ohlcv_1m_canonical"""
     ).fetchone()[0]
     for t in tickers:
-        sym = config.symbol(t)
+        symbol = config.symbol(t)
         out = config.canonical_parquet(t)
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_suffix(".parquet.tmp")
         con.execute(
             f"""COPY (SELECT timestamp_ms, open, high, low, close, volume
-                      FROM ohlcv_1m_canonical WHERE symbol = '{sym}' ORDER BY timestamp_ms)
+                      FROM ohlcv_1m_canonical WHERE symbol = '{symbol}' ORDER BY timestamp_ms)
                 TO '{tmp}' (FORMAT PARQUET, COMPRESSION zstd)"""
         )
         inv = con.execute(INVARIANTS.format(path=tmp)).fetchone()
