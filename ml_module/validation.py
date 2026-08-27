@@ -75,13 +75,21 @@ def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np
 
 def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
                 sample_valid: np.ndarray, start_ms: int, end_ms: int) -> tuple[np.ndarray, np.ndarray]:
-    """Supervised OOS rows and their average uniqueness — the scoring set.
+    """Supervised OOS rows whose full horizon fits the block — the scoring set.
+
+    Membership must be decidable at t_0: admitting by the real event_end_ts
+    would let the future choose the scored population — an event that happened
+    to hit a barrier early would fit where one that ran to the vertical barrier
+    would not. The maximum horizon is the only version of the question the
+    entry moment can answer, so the last LABEL_HORIZON_MS of a block score
+    nothing, exactly as strategy eligibility admits no trade there.
 
     The metric is an average over this block, so the redundancy it corrects for
     is the redundancy inside this block: concurrency is counted among the scored
     events alone, never together with the training rows that precede them.
     """
-    keep = sample_valid & (decision_ts >= start_ms) & (decision_ts < end_ms)
+    keep = (sample_valid & (decision_ts >= start_ms)
+            & (entry_ts + config.LABEL_HORIZON_MS <= end_ms))
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty OOS segment"
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])

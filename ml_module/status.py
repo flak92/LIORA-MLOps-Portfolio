@@ -213,7 +213,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {_table(["file", "holds", "size"], files)}
 
-`features.parquet` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `label_events.parquet`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised subset of each.
+`features.parquet` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `label_events.parquet`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 

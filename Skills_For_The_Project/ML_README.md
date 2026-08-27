@@ -222,6 +222,12 @@ without removing leakage. A classical embargo after the evaluated block
 [4, ch. 7] is not required in forward chaining: no training observation lies
 after the OOS block. Each segment builder asserts its own contract.
 
+**Scoring** mirrors the purge at the other boundary: a fold scores only the
+supervised rows whose maximum 240-minute horizon fits inside the block
+(`entry_ts + LABEL_HORIZON_MS <= oos_end`), decided at t₀ — the real
+`event_end_ts` is path-dependent, so admitting by it would let the future
+choose the scored population.
+
 **F5 is the historical final holdout fold.** The contract is a sentence, not a
 guard, and it is about selection rather than counting: *F5 never participates
 in feature definition, hyper-parameter selection, entry-edge-threshold
@@ -259,8 +265,9 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior · 
 `relative_logloss_skill` answers one question — does the model add information beyond knowing
 how often each class occurs? — and is **a result, not a gate**. MCC [8] adds
 the confusion-structure view in one number; balanced accuracy answers the same
-question and is not reported. Metrics score the supervised subset of a fold;
-predictions cover the full fold.
+question and is not reported. Metrics score the supervised subset of a fold
+whose maximum horizon fits inside it — the same t₀-decidable rule that governs
+strategy eligibility (§9); predictions cover the full fold.
 
 ## 9. Strategy
 
