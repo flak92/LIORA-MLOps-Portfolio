@@ -8,6 +8,11 @@
 > four make targets. Data anomalies are a DATA INGEST problem, not an
 > RSI/LSTM/XGBoost problem.
 
+The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
+UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
+skills in [Skills_For_The_Project/](Skills_For_The_Project/). Read the repo as
+`AGENTS.md → README → module names → code`.
+
 ```
 Binance USDS-M API ──> raw_downloaded_1m_data/cryptofuture/binance/...  ─┐
 (keyless, stdlib)      QC Lean ZIPs, 1 full UTC day = 1 zip              ├─> db/1m_raw_data_db.duckdb

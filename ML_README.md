@@ -280,7 +280,8 @@ product.
 
 Module layout: `ml/config` (frozen constants) · `ml/indicators`,
 `ml/validation`, `ml/model` (pure numpy / xgboost kernels) · `ml/dataset`
-(artifact loading and JSON IO) · `ml/bars` (single DB writer) · `ml/features`,
+(artifact IO: X/Y loading, the one parquet writer, canonical JSON) ·
+`ml/bars` (single DB writer) · `ml/features`,
 `ml/labels`, `ml/hpo`, `ml/train`, `ml/strategy`, `ml/status` (CLI stages,
 `python -m ml.<stage> [--tickers …]`). Constant convention:
 **experiment-semantic constants live in `ml/config.py`; implementation
