@@ -41,12 +41,12 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
         "model_logloss": model_ll,
         "relative_logloss_skill": 1.0 - model_ll / prior_ll,
         "mcc": validation.matthews_corrcoef(y_cls, pred),
-        "n": int(y_cls.size),
+        "scored_row_count": int(y_cls.size),
     }
 
 
 def main() -> int:
-    args = config.ticker_parser("frozen-parameter training and the final-OOS report").parse_args()
+    args = config.ticker_parser("frozen-parameter training and the final-holdout report").parse_args()
 
     for t in config.parse_tickers(args.tickers):
         adir = config.artifact_dir(t)
@@ -79,10 +79,10 @@ def main() -> int:
             eligible = int((xy["sample_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
                             & (xy["decision_ts"] < oos_start)).sum())
             segments[f"fold_{fold_id}"] = {
-                "n_train": int(tr.size),
-                "n_purged": eligible - int(tr.size),
-                "n_window": int(wi.size),
-                "n_scored": int(oi.size),
+                "training_row_count": int(tr.size),
+                "purged_event_count": eligible - int(tr.size),
+                "window_row_count": int(wi.size),
+                "scored_row_count": int(oi.size),
             }
             return metrics, booster
 
@@ -116,8 +116,8 @@ def main() -> int:
             },
             "segments": {
                 **segments,
-                "n_warmup_excluded": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
-                // config.TF_MS["15m"],
+                "warmup_excluded_decision_count": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
+                // config.TIMEFRAME_DURATION_MS["15m"],
             },
             "uniqueness_weight_mean": float(xy["weight"][trainable].mean()),
         }

@@ -73,7 +73,7 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
                 "interval": "1",
                 "start": w0,
                 "end": w0 + WINDOW_MS - 1,
-                "limit": config.BYBIT_MAX_LIMIT,
+                "limit": config.BYBIT_KLINE_REQUEST_LIMIT,
             }
         )
         rows.extend((int(r[0]) - day_ms, r[1], r[2], r[3], r[4], r[5]) for r in batch)
@@ -115,7 +115,7 @@ def main() -> int:
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.START_MS if args.days == 0 else end_ms - args.days * DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * DAY_MS
     total_days = (end_ms - start_ms) // DAY_MS
 
     for t in tickers:
@@ -145,7 +145,7 @@ def main() -> int:
                 written += 1
                 if written % 200 == 0:
                     print(f"  bybit {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
-                time.sleep(config.BYBIT_SLEEP_S)
+                time.sleep(config.BYBIT_REQUEST_DELAY_SECONDS)
             day_ms += DAY_MS
         print(f"bybit {sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0

@@ -22,7 +22,7 @@ def to_class(y: np.ndarray) -> np.ndarray:
 def suggest_params(trial) -> dict:
     """Draw one point of the HPO space from an Optuna trial."""
     out = {}
-    for name, spec in config.HPO_SPACE.items():
+    for name, spec in config.HYPERPARAMETER_SEARCH_SPACE.items():
         kind = spec[0]
         if kind == "int":
             out[name] = trial.suggest_int(name, spec[1], spec[2])
@@ -40,7 +40,7 @@ def suggest_params(trial) -> dict:
 def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray) -> xgb.Booster:
     p = dict(params)
     num_boost_round = int(p.pop("num_boost_round"))
-    p.update(config.XGB_FIXED)
+    p.update(config.XGBOOST_FIXED_PARAMETERS)
     dtrain = xgb.DMatrix(x, label=to_class(y), weight=weight,
                          feature_names=list(config.FEATURE_COLUMNS))
     return xgb.train(p, dtrain, num_boost_round=num_boost_round)

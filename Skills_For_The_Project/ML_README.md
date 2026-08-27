@@ -92,7 +92,7 @@ happened at all.
 purge rule exactly `event_end_ts <= oos_start` — an event ending at the first
 minute of the OOS block does not overlap it.
 
-Higher-level features come from the last **closed** bar of their level
+Higher-timeframe features come from the last **closed** bar of their timeframe
 (`asof_index`: `searchsorted` on close times, causality asserted in code, not
 assumed). Bars are exact UTC-aligned aggregations of the canonical 1m series
 (O first, H max, L min, C last, V sum; `arg_min` / `arg_max` by timestamp for
@@ -102,7 +102,7 @@ exactly is a property of the data layer, verified once and recorded in
 
 ## 4. Features — fixed contract, 15 columns
 
-| Family | Definition on the level's own bars | Range | Ref. |
+| Family | Definition on the timeframe's own bars | Range | Ref. |
 |---|---|---|---|
 | `ema20_minus_ema50_over_atr14` | `(EMA20 − EMA50) / ATR14` | unbounded, dimensionless | [1][3] |
 | `centered_rsi14` | `(RSI14 − 50) / 50` | [−1, 1] | [1][7] |
@@ -117,15 +117,15 @@ would push provider knowledge back below the ingest boundary, so the limitation
 is stated rather than engineered away.
 
 Five families on 15m / 1h / 4h — **15 columns**, identical for every asset,
-**no per-asset selection** (a deliberate overfitting control). Cross-level
-trend agreement is **not** a feature: the count of levels whose trend sign
+**no per-asset selection** (a deliberate overfitting control). Cross-timeframe
+trend agreement is **not** a feature: the count of timeframes whose trend sign
 matches a given side is a deterministic function of columns the model already
 has, so it can only add representation, never information; the 2-of-3
 agreement lives where it is actually used, in the strategy gate. Five families
-per level exceeds the four-per-level multi-timeframe guideline by one:
+per timeframe exceeds the four-per-timeframe multi-timeframe guideline by one:
 `log_volume_zscore_50` is volume information, not a fifth price-derived indicator.
 `rel_divergence` is a data-quality signal, never a feature [12]. Warm-up: 200
-top-level bars (`WARMUP_4H_BARS`) — decision rows before `2021-02-03 08:00
+top-timeframe bars (`WARMUP_4H_BARS`) — decision rows before `2021-02-03 08:00
 UTC` are excluded everywhere. Recursions (EMA, Wilder) run as explicit loops;
 rolling statistics use `sliding_window_view`; no NaN survives the warm-up
 (asserted).
@@ -135,14 +135,14 @@ rolling statistics use `sliding_window_view`; no NaN survives the warm-up
 Triple barrier [4] on every 15m boundary after the warm-up. Entry
 `P₀ = entry_price = canonical 1m open(t_0)`; horizontal barriers
 `P₀ ± 2.0 × ATR14` of the last closed **canonical** 1h bar; vertical barrier
-`HORIZON_MINUTES` = 240 minutes (16 × 15m bars). Resolution walks
+`LABEL_HORIZON_MINUTES` = 240 minutes (16 × 15m bars). Resolution walks
 the canonical 1m path: the first minute whose high touches `upper_barrier`
 gives `y = +1`, whose low touches `lower_barrier` gives `y = −1`, neither gives
 `y = 0` with the exit at the close of the last event minute.
 
 **A touch requires a trade.** `volume = 0` means no observed trade in that
 minute, so both hit conditions are gated on `volume > 0`. Whether such a minute
-is a provider candle that printed nothing or a synthesized continuity row is a
+is a provider candle that printed nothing or a synthesised continuity row is a
 provenance question, answered in the canonical table and in `DATA_README.md`,
 not here:
 
@@ -214,7 +214,9 @@ after the OOS block. Each segment builder asserts its own contract.
 **F5 is the historical final holdout fold.** The contract is a sentence, not a
 guard, and it is about selection rather than counting: *F5 never participates
 in feature definition, hyper-parameter selection, entry-edge-threshold
-selection or strategy-rule selection.* F2–F4 carry every research decision; F5 is evaluated
+selection or strategy-rule selection.* F2–F4 carry the data-driven selection —
+the hyper-parameters and the entry edge threshold; the barrier width, the
+horizon, the cost and the feature set are frozen a priori. F5 is evaluated
 against them. Recomputing F5 deterministically — after a refactor, on another
 machine, in a later run — changes nothing, because nothing was chosen by
 looking at it. What the contract forbids is the loop: read F5, change the
@@ -253,9 +255,11 @@ predictions cover the full fold.
 
 ```
 edge = directional_probability_edge = p_long − p_short;  side = sign(edge)
-n_agree = #{level ∈ {15m, 1h, 4h} : sign(ema20_minus_ema50_over_atr14_<level>) = side}
+agreeing_trend_timeframe_count =
+    #{timeframe ∈ {15m, 1h, 4h} : sign(ema20_minus_ema50_over_atr14_<timeframe>) = side}
 enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral
-        ∧ side = sign(ema20_minus_ema50_over_atr14_4h) ∧ n_agree ≥ 2
+        ∧ side = sign(ema20_minus_ema50_over_atr14_4h)
+        ∧ agreeing_trend_timeframe_count ≥ 2
 ```
 
 The **model decides the side; the 4H hierarchy gates it**. One unit position
@@ -288,7 +292,7 @@ that rule a bar-based backtest silently assumes every gap fills at the barrier.
 
 ```
 τ* = argmax_τ  mean( Sharpe_F2(τ), Sharpe_F3(τ), Sharpe_F4(τ) )
-     subject to  trades_f(τ) ≥ MIN_TRADES_PER_VALIDATION_FOLD = 30  for every f ∈ {F2, F3, F4}
+     subject to  trades_f(τ) ≥ MINIMUM_TRADES_PER_VALIDATION_FOLD = 30  for every f ∈ {F2, F3, F4}
      ties → the smaller τ
 ```
 
@@ -316,19 +320,21 @@ for what it holds: `canonical_1m.parquet`, `features.parquet`, `label_events.par
 `hyperparameter_search.json`, `oos_predictions.parquet`,
 `model_evaluation.json`, `strategy_evaluation.json`. The data files are
 gitignored and reconstructable; two text files are not, because they are what
-makes the rest readable without a run: **`calibration.json`**, the settings
-every number in the folder was computed under, and **`README.md`**, what the
+makes the rest readable without a run: **`experiment_configuration.json`**, the
+configuration this run was executed under, and **`README.md`**, what the
 folder holds and what came out of it. Both are written by `ml_module/status.py`
 and carry no timestamp, so an unchanged experiment reproduces them byte for
 byte. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
-computed** — no provenance envelope, no hashes, no manifests. A calibration
-record is none of those three: it proves nothing about itself, gates nothing,
-and is not compared against anything. It answers the only question the folder
-could not otherwise answer — under which settings these numbers were computed —
-which is what makes the artifacts reproducible without reading the source. The
+computed** — no provenance envelope, no hashes, no manifests. The experiment
+configuration is none of those three: it is read from `ml_module/config.py`
+when the folder is written, not recovered from the artifacts, so it proves
+nothing about any file, gates nothing, and is compared against nothing. It
+answers the only question the folder could not otherwise answer — which
+settings this run used — which is what makes the artifacts reproducible
+without reading the source. The
 experiment is still identified once, globally, in
-`monitoring_module/ml_status.json`: research window and seed. Library versions live in `requirements.lock`, model parameters in
+`monitoring_module/ml_status.json`: research window and seed. Library versions live in `requirements.txt`, model parameters in
 `hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is
@@ -336,7 +342,7 @@ persisted: nothing in this repo performs inference, so the numbers are the
 product.
 
 Module layout — three top-level modules, in the order the data moves:
-`data_module` (sources → normalized raw 1m → one canonical DuckDB → published
+`data_module` (sources → normalised raw 1m → one canonical DuckDB → published
 parquet) · `ml_module` (this document) · `monitoring_module` (presentation of
 what each module measured about itself). Inside `ml_module`:
 `ml_module/config` (frozen constants) · `ml_module/indicators`,
@@ -347,7 +353,7 @@ JSON) · `ml_module/bars` (single DB writer) · `ml_module/features`,
 `ml_module/status` (CLI stages, `python -m ml_module.<stage> [--tickers …]`).
 Constant convention: **experiment-semantic constants live in
 `ml_module/config.py`; implementation
-constants** (chunk sizes, `MINUTE_MS`, equity-curve stride) **may stay local
+constants** (chunk sizes, `MILLISECONDS_PER_MINUTE`, equity-curve stride) **may stay local
 to their module**. The export invariants of `data_module/export.py` are the
 canonical-series gate; the documented order runs `make ml-all` after
 `make export`.

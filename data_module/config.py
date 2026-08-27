@@ -16,31 +16,32 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Basket: 10 assets, one uniform market — USDT-margined perpetuals, fused from
 # two venues (Binance USDS-M + Bybit Linear). Every asset has Binance 1m
-# history starting before START_UTC (probed before every download); Bybit
-# joins each symbol whenever its listing starts.
+# history starting before DATA_WINDOW_START_UTC (probed before every download);
+# Bybit joins each symbol whenever its listing starts.
 TICKERS = ["BTC", "ETH", "BNB", "XRP", "SOL", "TRX", "DOGE", "ZEC", "LINK", "ADA"]
-QUOTE = "USDT"
+QUOTE_ASSET = "USDT"
 LEAN_MARKET_FOLDER = "binance"          # Lean market folder name
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
-INTERVAL = "1m"
-GRID_STEP_MS = 60_000
+SOURCE_CANDLE_INTERVAL = "1m"
+CANONICAL_GRID_INTERVAL_MS = 60_000
 
 # Window start (inclusive, UTC midnight). The window end is always the most
 # recent UTC midnight (exclusive): the pipeline only handles full UTC days.
-START_UTC = "2021-01-01"
-START_MS = int(datetime.fromisoformat(START_UTC).replace(tzinfo=UTC).timestamp() * 1000)
+DATA_WINDOW_START_UTC = "2021-01-01"
+DATA_WINDOW_START_MS = int(datetime.fromisoformat(DATA_WINDOW_START_UTC)
+                           .replace(tzinfo=UTC).timestamp() * 1000)
 
 # Public keyless endpoints; both return BASE volume (e.g. BTC), not quote turnover.
 KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"
-MAX_LIMIT = 1500
-SLEEP_S = 0.2
+BINANCE_KLINE_REQUEST_LIMIT = 1500
+BINANCE_REQUEST_DELAY_SECONDS = 0.2
 BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline"
 BYBIT_CATEGORY = "linear"
-BYBIT_MAX_LIMIT = 1000          # < 1440 -> one day = 2 windows of 720 minutes
-BYBIT_SLEEP_S = 0.1
+BYBIT_KLINE_REQUEST_LIMIT = 1000          # < 1440 -> one day = 2 windows of 720 minutes
+BYBIT_REQUEST_DELAY_SECONDS = 0.1
 USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 
-VENUES = ("binance", "bybit")
+SOURCE_VENUES = ("binance", "bybit")
 
 RAW_DIR = REPO_ROOT / "raw_downloaded_1m_data"
 DB_PATH = REPO_ROOT / "db" / "research_ohlcv.duckdb"
@@ -49,7 +50,7 @@ MONITORING_DIR = REPO_ROOT / "monitoring_module"
 
 
 def symbol(ticker: str) -> str:
-    return f"{ticker}{QUOTE}"
+    return f"{ticker}{QUOTE_ASSET}"
 
 
 def raw_symbol_dir(ticker: str, venue: str = LEAN_MARKET_FOLDER) -> Path:

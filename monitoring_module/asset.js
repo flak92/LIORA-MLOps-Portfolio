@@ -80,7 +80,7 @@ function labelFrame(a) {
       + " (" + a.sample.trainable_pct.toFixed(3) + "%)"],
     ["excluded", fmt(a.sample.ambiguous) + " ambiguous · "
       + fmt(a.sample.unobservable) + " unobservable entry"],
-    ["warm-up excluded", fmt(a.sample.n_warmup_excluded) + " decisions"],
+    ["warm-up excluded", fmt(a.sample.warmup_excluded_decision_count) + " decisions"],
     ["mean uniqueness weight", a.sample.uniqueness_weight_mean.toFixed(4)],
   ]));
   return f.frame;
@@ -92,7 +92,7 @@ function modelFrame(a, s) {
   f.body.appendChild(kvBox([
     ["parameters", "depth " + p.max_depth + " · eta " + p.eta.toFixed(4)
       + " · rounds " + p.num_boost_round + " · subsample " + p.subsample.toFixed(2)],
-    ["search", a.hpo.n_trials + " Optuna trials · best mean F2-F4 log-loss "
+    ["search", a.hpo.trial_count + " Optuna trials · best mean F2-F4 log-loss "
       + a.hpo.best_logloss.toFixed(6)],
   ]));
   const rows = validationFolds(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
@@ -104,7 +104,7 @@ function modelFrame(a, s) {
       name.textContent = label;
       if (i === rows.length - 1) name.className = "diag";
       return [[name], m.prior_logloss.toFixed(6), m.model_logloss.toFixed(6),
-              (100 * m.relative_logloss_skill).toFixed(2) + "%", m.mcc.toFixed(4), fmt(m.n)];
+              (100 * m.relative_logloss_skill).toFixed(2) + "%", m.mcc.toFixed(4), fmt(m.scored_row_count)];
     })));
   f.body.appendChild(foot("skill = 1 − model / prior: what the model adds beyond knowing "
     + "how often each class occurs. The prior comes from the training rows of that fold."));
@@ -115,8 +115,8 @@ function strategyFrame(a, s) {
   const f = frameEl("STRATEGY — model picks the side, the hierarchy gates it");
   f.body.appendChild(kvBox([
     ["entry edge threshold (\u03c4)", a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
-    ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + s.gate_min_agree + " of 3 levels agree"],
-    ["cost per side", (100 * a.strategy.cost_per_side).toFixed(2)
+    ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + s.minimum_agreeing_trend_timeframes + " of 3 timeframes agree"],
+    ["cost per side", (100 * a.strategy.execution_cost_rate_per_trade_side).toFixed(2)
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
   const rows = validationFolds(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
@@ -167,7 +167,7 @@ function pnlRow(label, m, isFinalHoldout) {
     [name],
     num(m.sharpe, 2),
     (100 * m.max_drawdown).toFixed(1) + "%",
-    fmt(m.n_trades),
+    fmt(m.trade_count),
     (100 * m.hit_rate).toFixed(1) + "%",
     m.avg_trade_ret === null ? "-" : (100 * m.avg_trade_ret).toFixed(3) + "%",
     (100 * m.exposure).toFixed(2) + "%",

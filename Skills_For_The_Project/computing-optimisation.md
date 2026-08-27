@@ -1,8 +1,8 @@
-# Skill: computing optimalisation
+# Skill: computing optimisation
 
 Parallelism matters for wall-clock time, with one governing rule:
 
-> **Parallelism is an execution-time optimization — never at the cost of
+> **Parallelism is an execution-time optimisation — never at the cost of
 > deterministic correctness.**
 
 - Speed comes exclusively from **external parallelism**: independent,
@@ -12,8 +12,8 @@ Parallelism matters for wall-clock time, with one governing rule:
   min(cores, available GiB))` in the Makefile — the floor matters, because
   `xargs -P 0` means no limit at all. The machine changes size; a literal
   written for one size is silently wrong on every other. `JOBS=n` overrides.
-- Before optimizing, **measure the time distribution** — the bottleneck is
-  rarely where intuition points. After optimizing, compare against the
+- Before optimising, **measure the time distribution** — the bottleneck is
+  rarely where intuition points. After optimising, compare against the
   run-to-run spread: an improvement within the spread is noise and the
   change is rejected (measured example: reusing a DMatrix across HPO trials
   saved 2–4%, the same order as the spread — rejected).

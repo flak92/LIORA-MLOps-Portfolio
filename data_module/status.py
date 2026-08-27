@@ -96,7 +96,8 @@ def main() -> int:
 
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered
-    venue_rows = {v: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=v)).fetchall()} for v in config.VENUES}
+    venue_rows = {v: {r[0]: r for r in con.execute(VENUE_SCAN.format(venue=v)).fetchall()}
+                  for v in config.SOURCE_VENUES}
     canonical_rows = {r[0]: r for r in con.execute(CANONICAL_SCAN).fetchall()}
     canon_extra = {
         sym: (
@@ -110,17 +111,18 @@ def main() -> int:
 
     window_end_ms = max((r[9] for r in canonical_rows.values()), default=None)
     if window_end_ms is not None:
-        window_end_ms += config.GRID_STEP_MS
-    expected = (window_end_ms - config.START_MS) // config.GRID_STEP_MS if window_end_ms else 0
+        window_end_ms += config.CANONICAL_GRID_INTERVAL_MS
+    expected = ((window_end_ms - config.DATA_WINDOW_START_MS)
+                // config.CANONICAL_GRID_INTERVAL_MS) if window_end_ms else 0
 
     tickers = [t for t in config.TICKERS if config.symbol(t) in canonical_rows]
     zip_counts = {
         v: {t: sum(1 for _ in config.raw_symbol_dir(t, v).glob("*_trade.zip")) for t in tickers}
-        for v in config.VENUES
+        for v in config.SOURCE_VENUES
     }
 
     venues = {}
-    for v in config.VENUES:
+    for v in config.SOURCE_VENUES:
         out = []
         for t in tickers:
             sym = config.symbol(t)
@@ -137,7 +139,7 @@ def main() -> int:
                     # a span anchored on the symbol's own last row shrinks together
                     # with a truncated tail and reports zero for a stale feed
                     "gaps_after_first_observation": (
-                        (window_end_ms - r[3]) // config.GRID_STEP_MS - distinct_ts
+                        (window_end_ms - r[3]) // config.CANONICAL_GRID_INTERVAL_MS - distinct_ts
                     ) if r and window_end_ms else 0,
                     "duplicates": rows - distinct_ts,
                     "ohlc_violations": int(r[5]) if r else 0,
@@ -193,7 +195,7 @@ def main() -> int:
 
     status = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
-        "window_start": f"{config.START_UTC} 00:00",
+        "window_start": f"{config.DATA_WINDOW_START_UTC} 00:00",
         "window_end": iso(window_end_ms),
         "duckdb_version": duckdb.__version__,
         "db_bytes": config.DB_PATH.stat().st_size,
@@ -219,7 +221,7 @@ def main() -> int:
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
     print(f"flow: zips {f['zips_binance']}+{f['zips_bybit']} -> rows {f['rows_binance']}+{f['rows_bybit']} "
           f"-> canonical {f['rows_canonical']} -> parquet {f['parquet_rows']}")
-    for v in config.VENUES:
+    for v in config.SOURCE_VENUES:
         print(f"[venue {v}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")
         for s in venues[v]:

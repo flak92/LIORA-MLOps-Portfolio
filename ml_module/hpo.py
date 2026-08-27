@@ -43,11 +43,12 @@ def main() -> int:
         study = optuna.create_study(
             direction="minimize", sampler=optuna.samplers.TPESampler(seed=config.SEED)
         )
-        study.optimize(objective_factory(xy), n_trials=config.N_TRIALS, n_jobs=1)
+        study.optimize(objective_factory(xy),
+                       n_trials=config.HYPERPARAMETER_SEARCH_TRIAL_COUNT, n_jobs=1)
         payload = {
             "best_params": study.best_trial.params,
             "best_logloss": study.best_value,
-            "n_trials": config.N_TRIALS,
+            "trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,
         }
         out = config.artifact_dir(t) / "hyperparameter_search.json"
         dataset.write_json(out, payload)

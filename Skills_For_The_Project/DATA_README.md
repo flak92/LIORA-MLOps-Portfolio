@@ -13,7 +13,7 @@ definition, the schema and the known limitations.
 ## 1. Methodology — primary-failover consolidation (v2)
 
 Raw one-minute OHLCV observations from Binance USDS-M and Bybit Linear USDT
-perpetual markets are synchronized to a common UTC one-minute grid and
+perpetual markets are synchronised to a common UTC one-minute grid and
 consolidated into a single canonical market series. **Every canonical bar is
 one venue's candle copied verbatim** — prices and volume of a single exchange,
 never a blend: per minute, the highest-priority existing tier wins (traded

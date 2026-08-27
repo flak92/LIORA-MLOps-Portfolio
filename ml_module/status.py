@@ -3,9 +3,9 @@
 Observation only, and the single place the reports are assembled. Three
 outputs, none of which computes a result of its own:
 
-    monitoring_module/ml_status.json   the dashboard payload, all assets
-    <asset>/calibration.json           the settings that produced this asset
-    <asset>/README.md                  what the folder holds and what came out
+    monitoring_module/ml_status.json        the dashboard payload, all assets
+    <asset>/experiment_configuration.json   the configuration this run used
+    <asset>/README.md                       what the folder holds and what came out
 
 The payload blocks follow the experiment flow (sample -> search -> validation
 -> final holdout -> attribution -> strategy) and are written with sorted keys,
@@ -23,7 +23,7 @@ from importlib.metadata import version
 from . import config, dataset
 
 ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluation")
-EQUITY_STRIDE = 7          # daily equity grid -> weekly points for the sparkline
+EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
 
 def _r(x, n):
@@ -39,7 +39,7 @@ def sample_block(metrics: dict) -> dict:
         "unobservable": labels["unobservable"],
         "trainable": labels["trainable"],
         "trainable_pct": round(100.0 * labels["trainable"] / labels["rows"], 4),
-        "n_warmup_excluded": metrics["segments"]["n_warmup_excluded"],
+        "warmup_excluded_decision_count": metrics["segments"]["warmup_excluded_decision_count"],
         "uniqueness_weight_mean": round(metrics["uniqueness_weight_mean"], 4),
         "class_counts": dict(metrics["class_counts"]),
     }
@@ -47,7 +47,7 @@ def sample_block(metrics: dict) -> dict:
 
 def hpo_block(hpo: dict) -> dict:
     return {
-        "n_trials": hpo["n_trials"],
+        "trial_count": hpo["trial_count"],
         "best_logloss": round(hpo["best_logloss"], 6),
         "best_params": dict(sorted(hpo["best_params"].items())),
     }
@@ -59,7 +59,7 @@ def _cls(v: dict) -> dict:
         "model_logloss": round(v["model_logloss"], 6),
         "relative_logloss_skill": round(v["relative_logloss_skill"], 6),
         "mcc": round(v["mcc"], 4),
-        "n": v["n"],
+        "scored_row_count": v["scored_row_count"],
     }
 
 
@@ -69,7 +69,7 @@ def classification_block(metrics: dict) -> tuple[dict, dict]:
     return validation, _cls(metrics["final_holdout"])
 
 
-def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_STRIDE) -> dict:
+def thin_curve(curve: dict, final_equity: float, stride: int = EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS) -> dict:
     """The sparkline needs the shape, not the calendar: thinned values only.
 
     The end of the curve is the measured result, not whatever the thinning
@@ -87,7 +87,7 @@ def _pnl(block: dict) -> dict:
     return {
         "sharpe": _r(block["sharpe"], 3),
         "max_drawdown": _r(block["max_drawdown"], 4),
-        "n_trades": block["n_trades"],
+        "trade_count": block["trade_count"],
         "hit_rate": _r(block["hit_rate"], 4),
         "avg_trade_ret": _r(block["avg_trade_ret"], 6),
         "exposure": _r(block["exposure"], 4),
@@ -103,7 +103,7 @@ def strategy_block(strategy: dict) -> dict:
         "entry_edge_threshold_constraint_met":
             strategy["entry_edge_threshold_constraint_met"],
         "selection_score_mean_sharpe": _r(strategy["selection_score_mean_sharpe"], 3),
-        "cost_per_side": strategy["cost_per_side"],
+        "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
         "validation": {k: _pnl(v) for k, v in sorted(strategy["validation"].items())},
         "final_holdout": _pnl(final_holdout),
         "equity_curve": thin_curve(final_holdout["equity_curve"],
@@ -130,11 +130,11 @@ FILE_NOTES = {
     "canonical_1m.parquet": "the published canonical 1m series",
     "features.parquet": "X — 15 causal columns on the decision grid",
     "label_events.parquet": "Y — triple-barrier outcome and the event prices",
-    "oos_predictions.parquet": "out-of-fold class probabilities",
+    "oos_predictions.parquet": "out-of-fold class probabilities, full windows",
     "hyperparameter_search.json": "the winning point of the search",
     "model_evaluation.json": "classification metrics per fold",
     "strategy_evaluation.json": "threshold, PnL and the equity curve",
-    "calibration.json": "the settings all of the above were computed under",
+    "experiment_configuration.json": "the configuration this run was executed under",
     "README.md": "this file",
 }
 
@@ -172,22 +172,24 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
                  f"{metrics['validation'][k]['model_logloss']:.6f}",
                  f"{100 * metrics['validation'][k]['relative_logloss_skill']:+.2f}%",
-                 f"{metrics['validation'][k]['mcc']:.4f}", f"{metrics['validation'][k]['n']:,}"]
+                 f"{metrics['validation'][k]['mcc']:.4f}",
+                 f"{metrics['validation'][k]['scored_row_count']:,}"]
                 for k in folds]
     fh = metrics["final_holdout"]
     cls_rows.append([f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**",
                      f"{fh['prior_logloss']:.6f}", f"{fh['model_logloss']:.6f}",
                      f"{100 * fh['relative_logloss_skill']:+.2f}%",
-                     f"{fh['mcc']:.4f}", f"{fh['n']:,}"])
+                     f"{fh['mcc']:.4f}", f"{fh['scored_row_count']:,}"])
 
     seg = metrics["segments"]
-    geo_rows = [[f"F{k.split('_')[1]}", f"{seg[k]['n_train']:,}", f"{seg[k]['n_purged']:,}",
-                 f"{seg[k]['n_window']:,}", f"{seg[k]['n_scored']:,}"]
+    geo_rows = [[f"F{k.split('_')[1]}", f"{seg[k]['training_row_count']:,}",
+                 f"{seg[k]['purged_event_count']:,}", f"{seg[k]['window_row_count']:,}",
+                 f"{seg[k]['scored_row_count']:,}"]
                 for k in folds + [holdout]]
 
     def pnl_row(label, b):
         return [label, f"{b['sharpe']:+.3f}", f"{100 * b['max_drawdown']:.1f}%",
-                f"{b['n_trades']:,}", f"{100 * b['hit_rate']:.1f}%",
+                f"{b['trade_count']:,}", f"{100 * b['hit_rate']:.1f}%",
                 f"{100 * b['exposure']:.2f}%", f"{b['final_equity']:.4f}"]
 
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
@@ -197,7 +199,7 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
                      for name in config.EVENT_RESOLUTION_NAME.values())
     met = ("" if strategy["entry_edge_threshold_constraint_met"]
            else f" — **fallback**, no threshold reaches "
-                f"{config.MIN_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
+                f"{config.MINIMUM_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
 
     reproduce = " ".join(
         f"python -m ml_module.{stage} --tickers {ticker} &&"
@@ -206,13 +208,13 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `calibration.json` next to this file records the settings every number below was computed under.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the configuration this run was executed under.
 
 ## Files
 
 {_table(["file", "holds", "size"], files)}
 
-`features.parquet` carries {config.HORIZON_MS // config.TF_MS[config.DECISION_TF]} rows more than `label_events.parquet`: the tail decisions whose full {config.HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four scored windows end to end.
+`features.parquet` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `label_events.parquet`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised subset of each.
 
 ## Labels
 
@@ -220,7 +222,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 ## Model
 
-Search: {hpo['n_trials']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
+Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
 
 {_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "MCC", "scored"], cls_rows)}
 
@@ -232,7 +234,7 @@ Search: {hpo['n_trials']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{met}. Cost {100 * strategy['cost_per_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.AGREE_MIN} of 3 levels agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{met}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of 3 timeframes agreeing.
 
 {_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
@@ -242,23 +244,24 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry every research decision. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
+F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `Skills_For_The_Project/ML_README.md`, the field names in `Skills_For_The_Project/glossary.md`.
 """
 
 
 PINNED = ("duckdb", "numpy", "optuna", "xgboost-cpu")
 
 
-def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
-    """Every setting that took part in producing this asset's artifacts.
+def experiment_configuration(ticker: str, hpo: dict, strategy: dict) -> dict:
+    """The configuration this run was executed under.
 
-    Not a provenance envelope: it proves nothing and gates nothing. It answers
-    the one question the folder cannot otherwise answer — under which settings
-    were these numbers computed — so the artifacts can be reproduced without
-    reading the source.
+    Read from ml_module/config.py when the folder is written, not recovered
+    from the artifacts, so it describes the experiment and proves nothing
+    about any particular file. It answers the one question the folder cannot
+    otherwise answer — which settings this run used — so the artifacts can be
+    reproduced without reading the source.
     """
     booster = {k: v for k, v in hpo["best_params"].items() if k != "num_boost_round"}
-    booster.update(config.XGB_FIXED)          # fixed wins on collision, as in model.fit
+    booster.update(config.XGBOOST_FIXED_PARAMETERS)          # fixed wins on collision, as in model.fit
     return {
         "ticker": ticker,
         "research_window": {
@@ -277,17 +280,20 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
             "embargo": "none — forward chaining places no training row after the OOS block",
         },
         "features": {
-            "levels": list(config.LEVELS),
-            "decision_timeframe": config.DECISION_TF,
+            "hierarchy_timeframes": list(config.HIERARCHY_TIMEFRAMES),
+            "decision_timeframe": config.DECISION_TIMEFRAME,
             "families": list(config.FAMILIES),
             "columns": list(config.FEATURE_COLUMNS),
-            "ema_fast": config.EMA_FAST, "ema_slow": config.EMA_SLOW,
-            "atr_n": config.ATR_N, "rsi_n": config.RSI_N,
-            "range_position_n": config.STRUCTURE_N, "volume_zscore_n": config.ACTIVITY_N,
+            "ema_fast_span_bars": config.EMA_FAST_SPAN_BARS,
+            "ema_slow_span_bars": config.EMA_SLOW_SPAN_BARS,
+            "atr_wilder_smoothing_period_bars": config.ATR_WILDER_SMOOTHING_PERIOD_BARS,
+            "rsi_wilder_smoothing_period_bars": config.RSI_WILDER_SMOOTHING_PERIOD_BARS,
+            "range_position_lookback_bars": config.RANGE_POSITION_LOOKBACK_BARS,
+            "log_volume_zscore_lookback_bars": config.LOG_VOLUME_ZSCORE_LOOKBACK_BARS,
         },
         "labels": {
-            "k_barrier": config.K_BARRIER,
-            "horizon_minutes": config.HORIZON_MINUTES,
+            "atr_barrier_multiplier": config.ATR_BARRIER_MULTIPLIER,
+            "label_horizon_minutes": config.LABEL_HORIZON_MINUTES,
             "sigma": "ATR14 of the last closed canonical 1h bar",
             "touch_requires": "volume > 0",
             "event_resolution_codes": {
@@ -297,12 +303,12 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
         "hyperparameter_search": {
             "sampler": "optuna.samplers.TPESampler",
             "sampler_seed": config.SEED,
-            "n_trials": config.N_TRIALS,
+            "trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,
             "parallelism": "sequential (n_jobs=1) — TPE is reproducible only in order",
             "objective": "mean uniqueness-weighted multiclass log-loss over folds "
                          + ", ".join(f"F{i}" for i in config.VALIDATION_FOLD_IDS),
-            "space": {k: list(v) for k, v in config.HPO_SPACE.items()},
-            "xgb_fixed": dict(config.XGB_FIXED),
+            "space": {k: list(v) for k, v in config.HYPERPARAMETER_SEARCH_SPACE.items()},
+            "xgboost_fixed_parameters": dict(config.XGBOOST_FIXED_PARAMETERS),
             "best_params": dict(sorted(hpo["best_params"].items())),
             "best_logloss": hpo["best_logloss"],
         },
@@ -312,24 +318,24 @@ def calibration(ticker: str, hpo: dict, strategy: dict) -> dict:
         "effective_booster_params": dict(sorted(booster.items())),
         "num_boost_round": hpo["best_params"]["num_boost_round"],
         "strategy": {
-            "cost_per_side": config.COST_PER_SIDE,
+            "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
             "entry_edge_threshold_grid": {
-                "min": config.ENTRY_EDGE_THRESHOLD_GRID[0],
-                "max": config.ENTRY_EDGE_THRESHOLD_GRID[-1],
+                "minimum": config.ENTRY_EDGE_THRESHOLD_GRID[0],
+                "maximum": config.ENTRY_EDGE_THRESHOLD_GRID[-1],
                 "step": round(config.ENTRY_EDGE_THRESHOLD_GRID[1]
                               - config.ENTRY_EDGE_THRESHOLD_GRID[0], 4),
-                "n": len(config.ENTRY_EDGE_THRESHOLD_GRID),
+                "count": len(config.ENTRY_EDGE_THRESHOLD_GRID),
             },
-            "min_trades_per_validation_fold": config.MIN_TRADES_PER_VALIDATION_FOLD,
-            "hierarchy_min_agree": config.AGREE_MIN,
-            "bars_per_year_15m": config.BARS_PER_YEAR_15M,
+            "minimum_trades_per_validation_fold": config.MINIMUM_TRADES_PER_VALIDATION_FOLD,
+            "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
+            "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
             "entry_edge_threshold": strategy["entry_edge_threshold"],
             "entry_edge_threshold_constraint_met":
                 strategy["entry_edge_threshold_constraint_met"],
         },
         "runtime": {
             "libraries": {name: version(name) for name in PINNED},
-            "thread_caps": {"xgboost_nthread": config.XGB_FIXED["nthread"],
+            "thread_caps": {"xgboost_nthread": config.XGBOOST_FIXED_PARAMETERS["nthread"],
                             "omp_num_threads": 1},
         },
     }
@@ -349,7 +355,8 @@ def main() -> int:
         metrics = loaded["model_evaluation"]
         strategy = loaded["strategy_evaluation"]
         assets.append(asset_report(t, hpo, metrics, strategy))
-        dataset.write_json(adir / "calibration.json", calibration(t, hpo, strategy))
+        dataset.write_json(adir / "experiment_configuration.json",
+                           experiment_configuration(t, hpo, strategy))
         (adir / "README.md").write_text(asset_readme(t, hpo, metrics, strategy),
                                         encoding="utf-8")
     assert assets, "no complete artifact set found — run the ML chain first"
@@ -360,7 +367,7 @@ def main() -> int:
         "seed": config.SEED,
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
-        "gate_min_agree": config.AGREE_MIN,
+        "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
         "assets": assets,
     }
     out = config.MONITORING_DIR / "ml_status.json"
@@ -372,9 +379,9 @@ def main() -> int:
               f"mcc={a['final_holdout']['mcc']:.3f} "
               f"threshold={a['strategy']['entry_edge_threshold']} "
               f"sharpe={a['strategy']['final_holdout']['sharpe']} "
-              f"trades={a['strategy']['final_holdout']['n_trades']}")
+              f"trades={a['strategy']['final_holdout']['trade_count']}")
     print(f"wrote {out} ({out.stat().st_size / 1024:.1f} KB) "
-          f"+ calibration.json and README.md in {len(assets)} asset folders")
+          f"+ experiment_configuration.json and README.md in {len(assets)} asset folders")
     return 0
 
 

@@ -208,7 +208,7 @@ def main() -> int:
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered
     con.execute("SET preserve_insertion_order=false")
-    for venue in config.VENUES:
+    for venue in config.SOURCE_VENUES:
         con.execute(VENUE_DDL.format(venue=venue))
         for t in tickers:
             sym = config.symbol(t)
@@ -227,7 +227,7 @@ def main() -> int:
         """SELECT max(timestamp_ms) FROM (SELECT timestamp_ms FROM ohlcv_1m_binance
                                           UNION ALL
                                           SELECT timestamp_ms FROM ohlcv_1m_bybit)"""
-    ).fetchone()[0] + config.GRID_STEP_MS
+    ).fetchone()[0] + config.CANONICAL_GRID_INTERVAL_MS
     old_cols = {
         r[0]
         for r in con.execute(
@@ -242,12 +242,12 @@ def main() -> int:
         con.execute("DELETE FROM ohlcv_1m_canonical WHERE symbol = ?", [sym])
         con.execute(
             CANONICAL_INSERT.format(
-                sym=sym, start_ms=config.START_MS, end_ms=end_ms, step_ms=config.GRID_STEP_MS
+                sym=sym, start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms, step_ms=config.CANONICAL_GRID_INTERVAL_MS
             )
         )
         print(f"canonical {sym}: rebuilt", flush=True)
     n = con.execute("SELECT count(*) FROM ohlcv_1m_canonical").fetchone()[0]
-    print(f"ohlcv_1m_canonical: {n} rows (window start {config.START_UTC})", flush=True)
+    print(f"ohlcv_1m_canonical: {n} rows (window start {config.DATA_WINDOW_START_UTC})", flush=True)
     con.close()
     return 0
 

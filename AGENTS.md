@@ -12,7 +12,7 @@ conflicts with this file, the change is wrong.
 - **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
   is `python:3.12-slim`. A library is added only when the standard library and
   the current stack — `duckdb`, `numpy`, `optuna`, `xgboost-cpu` — cannot do
-  the job. The lockfile declares direct dependencies only.
+  the job. `requirements.txt` declares direct dependencies only.
 - **KISS / YAGNI / DRY / SOLID.** The simplest correct implementation, built
   for the need that exists, never for a hypothetical one. One responsibility
   per module; repeated logic becomes one function, not three copies.
@@ -45,7 +45,7 @@ conflicts with this file, the change is wrong.
 Three modules, in the order the data moves through them:
 
 ```
-data_module/         sources → normalized raw 1m → ONE canonical DuckDB → published parquet
+data_module/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
 ml_module/           canonical dataset → X, Y → search → model → research simulation
 monitoring_module/   presentation of what the two modules measured about themselves
 ```
@@ -55,7 +55,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `research_artifacts/<TICKER>/<stage>.<ext>`, `ml-<stage>` ↔
+  `download_bybit.py`, `research_artifacts/<TICKER>/<artifact>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`data_module`,
   `ml_module`) measures its own domain state in `status.py`, and
   `monitoring_module` presents their snapshots;
@@ -76,9 +76,22 @@ chronological segment), `WARMUP_END_MS` (before any decision is allowed),
 training rows (everything that finished before the evaluated block), `purge`
 (training events overlapping that block, removed by `event_end_ts <=
 oos_start`), `embargo` (width zero here — forward chaining needs none) and
-`oos` (the evaluated block); `VALIDATION_FOLD_IDS` are F2–F4 and choose the
-parameters, `FINAL_HOLDOUT_FOLD_ID` is F5 and only evaluates. The word "test"
-never names a fold. Write "QuantConnect Lean" on first use, "Lean" afterwards.
+`oos` (the evaluated block); `VALIDATION_FOLD_IDS` are F2–F4 and carry the
+data-driven selection of model hyper-parameters and the entry edge threshold —
+the barrier width, the horizon, the cost and the feature set are frozen a
+priori, not selected — and `FINAL_HOLDOUT_FOLD_ID` is F5, which only
+evaluates. The word "test" never names a fold.
+
+Constants are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the unit is
+explicit: `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_FOLD_ID`, `_RATE`
+or `_COUNT`. The parameter word follows the mechanics — `SPAN` for an EMA,
+`SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
+window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
+Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, MCC, XGBoost) stay
+and are spelled out on first use in the documentation; local ones (`N`, `W`,
+`TF`, `MIN`, `MAX`, `K`, `XGB`) never appear. Write "QuantConnect Lean" on
+first use, "Lean" afterwards. British spelling throughout the prose
+(`-ise`, `-isation`); language keywords keep their own spelling.
 
 ## The default choice
 

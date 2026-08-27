@@ -16,7 +16,7 @@ this README is the general overview.
 
 ```
                  ┌── market source A ──┐
-MARKET DATA ─────┤                     ├──► NORMALIZED RAW 1m OHLCV  (QC Lean ZIPs)
+MARKET DATA ─────┤                     ├──► NORMALISED RAW 1m OHLCV  (QC Lean ZIPs)
                  └── market source B ──┘              │
                                                       ▼
                                           ONE CANONICAL DuckDB
@@ -103,7 +103,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
 | download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; full UTC days only    |
-|           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelizable      |
+|           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
 | export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | atomic write + read-back count    |
 | status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
@@ -158,7 +158,7 @@ available GiB))` assets in parallel, one process each, with the thread caps pinn
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
-describes itself: `calibration.json` records the settings its artifacts were
-computed under, and its `README.md` says what came out. Full methodology:
+describes itself: `experiment_configuration.json` records the configuration
+the run used, and its `README.md` says what came out. Full methodology:
 [Skills_For_The_Project/ML_README.md](Skills_For_The_Project/ML_README.md).
 

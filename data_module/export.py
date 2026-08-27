@@ -43,8 +43,8 @@ def main() -> int:
 
     con = duckdb.connect(str(config.DB_PATH), read_only=True)
     grid_rows = con.execute(
-        f"""SELECT (max(timestamp_ms) + {config.GRID_STEP_MS} - {config.START_MS})
-                   // {config.GRID_STEP_MS} FROM ohlcv_1m_canonical"""
+        f"""SELECT (max(timestamp_ms) + {config.CANONICAL_GRID_INTERVAL_MS} - {config.DATA_WINDOW_START_MS})
+                   // {config.CANONICAL_GRID_INTERVAL_MS} FROM ohlcv_1m_canonical"""
     ).fetchone()[0]
     for t in tickers:
         sym = config.symbol(t)

@@ -95,7 +95,7 @@ def sharpe_annualised(bar_returns: np.ndarray) -> float:
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:
         return 0.0
-    return float(bar_returns.mean() / sd * np.sqrt(config.BARS_PER_YEAR_15M))
+    return float(bar_returns.mean() / sd * np.sqrt(config.ANNUALISATION_PERIOD_15M_BARS))
 
 
 def max_drawdown(equity: np.ndarray) -> float:

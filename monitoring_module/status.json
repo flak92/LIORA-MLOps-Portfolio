@@ -1,9 +1,9 @@
 {
- "generated_at_utc": "2026-08-27 13:14:43",
+ "generated_at_utc": "2026-08-27 17:37:36",
  "window_start": "2021-01-01 00:00",
  "window_end": "2026-08-26 00:00",
  "duckdb_version": "1.5.4",
- "db_bytes": 1189097472,
+ "db_bytes": 1188311040,
  "flow": {
   "zips_binance": 20630,
   "zips_bybit": 20630,

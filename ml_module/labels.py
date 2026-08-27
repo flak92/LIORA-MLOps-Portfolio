@@ -12,7 +12,7 @@ knows which of them printed a given minute.
 Timing, once and for all:
 
     t_d = decision_ts          close of the 15m bar; all features are known
-    t_0 = entry_ts = t_d + 1m  the first fully tradable minute after the signal
+    t_0 = entry_ts = t_d + 1m  the candidate entry minute after the decision
     event = [t_0, t_v),        t_v = t_0 + 240 min
 
 The barrier examines minutes t_0 … t_0+239. Entry is the canonical 1m open at
@@ -24,7 +24,7 @@ makes the purge rule exactly `event_end_ts <= oos_start`.
 
 A touch requires a trade: `volume = 0` means no observed trade in that minute,
 so hits are gated on `volume > 0`. Whether the minute was a provider candle
-that printed nothing or a synthesized continuity row is a provenance question,
+that printed nothing or a synthesised continuity row is a provenance question,
 answered in the canonical table, not here. Both barriers inside one minute
 leave the order unknowable from OHLC, so the row is
 `label_valid = false` — never relabelled 0. That flag answers exactly one
@@ -61,9 +61,9 @@ import numpy as np
 
 from . import config, dataset, indicators
 
-CHUNK = 16384
-MINUTE_MS = 60_000
-HORIZON_MINUTES = config.HORIZON_MINUTES
+LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
+MILLISECONDS_PER_MINUTE = 60_000
+LABEL_HORIZON_MINUTES = config.LABEL_HORIZON_MINUTES
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
@@ -84,7 +84,7 @@ def load_research_1m(con: duckdb.DuckDBPyConnection, sym: str) -> dict[str, np.n
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
-    expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MINUTE_MS
+    expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
     assert arrs["open"].size == expected, "canonical 1m grid incomplete inside the research window"
     return arrs
 
@@ -95,47 +95,47 @@ def triple_barrier(m1: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: np.nd
     Returns (y, t_res, event_resolution, entry_price, upper_barrier,
     lower_barrier, exit_reference_price).
     """
-    idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
+    idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
     entry_price = m1["open"][idx]
-    upper_barrier = entry_price + config.K_BARRIER * sigma
-    lower_barrier = entry_price - config.K_BARRIER * sigma
+    upper_barrier = entry_price + config.ATR_BARRIER_MULTIPLIER * sigma
+    lower_barrier = entry_price - config.ATR_BARRIER_MULTIPLIER * sigma
     high, low, vol, opn, close = m1["high"], m1["low"], m1["volume"], m1["open"], m1["close"]
 
     n = idx.size
     y = np.zeros(n, dtype=np.int8)
-    t_res = np.full(n, HORIZON_MINUTES, dtype=np.int32)
+    t_res = np.full(n, LABEL_HORIZON_MINUTES, dtype=np.int32)
     event_resolution = np.zeros(n, dtype=np.int8)
-    offsets = np.arange(HORIZON_MINUTES)
-    for a in range(0, n, CHUNK):
-        b = min(a + CHUNK, n)
+    offsets = np.arange(LABEL_HORIZON_MINUTES)
+    for a in range(0, n, LABEL_PROCESSING_CHUNK_SIZE_ROWS):
+        b = min(a + LABEL_PROCESSING_CHUNK_SIZE_ROWS, n)
         win = idx[a:b, None] + offsets[None, :]
         traded = vol[win] > 0                       # volume = 0 means no observed trade
         up_hit = traded & (high[win] >= upper_barrier[a:b, None])
         dn_hit = traded & (low[win] <= lower_barrier[a:b, None])
-        t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), HORIZON_MINUTES)
-        t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), HORIZON_MINUTES)
-        amb = (t_up == t_dn) & (t_up < HORIZON_MINUTES)
+        t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), LABEL_HORIZON_MINUTES)
+        t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), LABEL_HORIZON_MINUTES)
+        amb = (t_up == t_dn) & (t_up < LABEL_HORIZON_MINUTES)
         y[a:b] = np.where(t_up < t_dn, 1, np.where(t_dn < t_up, -1, 0)).astype(np.int8)
         y[a:b][amb] = 0
         t_res[a:b] = np.minimum(t_up, t_dn)
         event_resolution[a:b] = np.where(amb, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
 
-    resolved = t_res < HORIZON_MINUTES
+    resolved = t_res < LABEL_HORIZON_MINUTES
     # horizontal or ambiguous: the open of the resolving minute (the price the
     # market was actually at); vertical: the close of the last event minute
     exit_reference_price = np.where(
         resolved,
-        opn[idx + np.minimum(t_res, HORIZON_MINUTES - 1)],
-        close[idx + HORIZON_MINUTES - 1],
+        opn[idx + np.minimum(t_res, LABEL_HORIZON_MINUTES - 1)],
+        close[idx + LABEL_HORIZON_MINUTES - 1],
     )
     return y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier, exit_reference_price
 
 
 def uniqueness_weights(entry_ts: np.ndarray, end_ts: np.ndarray) -> np.ndarray:
     """Average uniqueness over each event's minutes, exact via prefix sums."""
-    n_min = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MINUTE_MS
-    start = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
-    end = ((end_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
+    n_min = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
+    start = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+    end = ((end_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
     delta = np.zeros(n_min + 1, dtype=np.int64)
     np.add.at(delta, start, 1)
     np.add.at(delta, end, -1)
@@ -181,24 +181,26 @@ def main() -> int:
         ).fetchnumpy()["timestamp_ms"].astype(np.int64)
 
         decision_ts = ts15[ts15 >= config.WARMUP_END_MS]
-        entry_ts = decision_ts + MINUTE_MS
-        keep = entry_ts + config.HORIZON_MS <= config.RESEARCH_END_MS
+        entry_ts = decision_ts + MILLISECONDS_PER_MINUTE
+        keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
         assert np.all(entry_ts > decision_ts)
 
-        atr_1h = indicators.atr(bars_1h["high"], bars_1h["low"], bars_1h["close"], config.ATR_N)
+        atr_1h = indicators.atr(bars_1h["high"], bars_1h["low"], bars_1h["close"],
+                                config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
         sigma = atr_1h[indicators.asof_index(decision_ts,
                                              bars_1h["timestamp_ms"].astype(np.int64),
-                                             config.TF_MS["1h"])]
+                                             config.TIMEFRAME_DURATION_MS["1h"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all()
 
         m1 = load_research_1m(con, sym)
         (y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier,
          exit_reference_price) = triple_barrier(m1, entry_ts, sigma)
-        event_end_ts = entry_ts + np.minimum(t_res + 1, HORIZON_MINUTES) * MINUTE_MS   # exclusive
+        event_end_ts = (entry_ts + np.minimum(t_res + 1, LABEL_HORIZON_MINUTES)
+                        * MILLISECONDS_PER_MINUTE)                     # exclusive
         assert np.all(event_end_ts > entry_ts)
 
-        entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MINUTE_MS).astype(np.int64)
+        entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
         entry_observable = m1["volume"][entry_idx] > 0
         label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid
@@ -220,7 +222,7 @@ def main() -> int:
               f"ambiguous={int((~label_valid).sum())}  "
               f"unobservable={int((~entry_observable).sum())}  "
               f"trainable={int(sample_valid.sum())}  "
-              f"vertical={int((t_res == HORIZON_MINUTES).sum())}", flush=True)
+              f"vertical={int((t_res == LABEL_HORIZON_MINUTES).sum())}", flush=True)
     con.close()
     return 0
 

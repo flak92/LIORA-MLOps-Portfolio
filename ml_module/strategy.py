@@ -1,9 +1,9 @@
 """Top-down gated strategy on the canonical research path.
 
     directional_probability_edge = p_long - p_short;  side = sign(edge)
-    n_agree = #{level in {15m, 1h, 4h} : sign(trend_level) == side}
+    agreeing_trend_timeframe_count = #{timeframe : sign(trend_timeframe) == side}
     enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral
-            AND side == sign(trend_4h)  AND  n_agree >= 2
+            AND side == sign(trend_4h)  AND  agreeing_trend_timeframe_count >= 2
 
 The model picks the side, the hierarchy gates it. Two conditions that look
 alike must not be confused:
@@ -33,7 +33,7 @@ that touched it. The result is execution-cost-adjusted PnL, excluding funding.
 
 The entry edge threshold is chosen on the validation folds only: the one
 maximising the mean fold Sharpe among those giving at least
-MIN_TRADES_PER_VALIDATION_FOLD trades in every fold, ties resolved towards the
+MINIMUM_TRADES_PER_VALIDATION_FOLD trades in every fold, ties resolved towards the
 smaller threshold.
 """
 
@@ -44,9 +44,9 @@ import numpy as np
 
 from . import config, dataset, validation
 
-MINUTE_MS = 60_000
-EQUITY_SAMPLE_MIN = 1440    # one equity point per day for the dashboard curve
-BAR_CLOSE_MIN = 14          # a 15m bar closes on the 15th minute of its block
+MILLISECONDS_PER_MINUTE = 60_000
+EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES = 1440    # one equity point per day for the dashboard curve
+BAR_CLOSE_OFFSET_MINUTES = 14          # a 15m bar closes on the 15th minute of its block
 
 
 def load_inputs(ticker: str) -> dict:
@@ -68,7 +68,8 @@ def load_inputs(ticker: str) -> dict:
     ).fetchnumpy()
     c2.close()
 
-    trend = {tf: xy["x"][:, config.FEATURE_COLUMNS.index(f"{config.TREND_FAMILY}_{tf}")] for tf in config.LEVELS}
+    trend = {timeframe: xy["x"][:, config.FEATURE_COLUMNS.index(f"{config.TREND_FAMILY}_{timeframe}")]
+             for timeframe in config.HIERARCHY_TIMEFRAMES}
     return {"xy": xy, "close1m": close1m, "trend": trend, "preds": preds}
 
 
@@ -83,12 +84,14 @@ def rows_for_fold(d: dict, fold_id: int) -> dict:
     p_neutral = d["preds"]["p_neutral"][m]
     directional_probability_edge = p_long - p_short
     side = np.sign(directional_probability_edge)
-    n_agree = sum((np.sign(d["trend"][tf][pos]) == side).astype(np.int64) for tf in config.LEVELS)
+    agreeing_trend_timeframe_count = sum(
+        (np.sign(d["trend"][timeframe][pos]) == side).astype(np.int64)
+        for timeframe in config.HIERARCHY_TIMEFRAMES)
     gate = (
         (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
         & (side == np.sign(d["trend"]["4h"][pos]))
-        & (n_agree >= config.AGREE_MIN)
+        & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     return {
         "directional_probability_edge": directional_probability_edge,
@@ -117,9 +120,9 @@ def fill_price(side: float, event_resolution: int, upper_barrier: float,
 
 def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end_ms: int) -> dict:
     """Single-position state machine producing one continuous equity path."""
-    c = config.COST_PER_SIDE
-    off = (fold_start_ms - config.RESEARCH_START_MS) // MINUTE_MS
-    n_min = (fold_end_ms - fold_start_ms) // MINUTE_MS
+    c = config.EXECUTION_COST_RATE_PER_TRADE_SIDE
+    off = (fold_start_ms - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
+    n_min = (fold_end_ms - fold_start_ms) // MILLISECONDS_PER_MINUTE
     close1m = d["close1m"]
     eq = np.empty(n_min)
 
@@ -131,7 +134,7 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
     # would fit where one that ran to the vertical barrier would not. The maximum
     # horizon is the only version of the question the entry moment can answer.
     fits = ((rows["entry_ts"] >= fold_start_ms)
-            & (rows["entry_ts"] + config.HORIZON_MS <= fold_end_ms))
+            & (rows["entry_ts"] + config.LABEL_HORIZON_MS <= fold_end_ms))
     take = np.flatnonzero(enter & fits)
 
     equity, cursor, in_pos_ms = 1.0, 0, 0
@@ -139,8 +142,8 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
     # the exit counts are counts by event_resolution, so they carry its names
     exits = {name: 0 for name in config.EVENT_RESOLUTION_NAME.values()}
     for k in take:
-        i = int((rows["entry_ts"][k] - config.RESEARCH_START_MS) // MINUTE_MS) - off
-        j = int((rows["event_end_ts"][k] - config.RESEARCH_START_MS) // MINUTE_MS) - off - 1
+        i = int((rows["entry_ts"][k] - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE) - off
+        j = int((rows["event_end_ts"][k] - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE) - off - 1
         if i < cursor:
             continue                                     # position still open
         s = float(rows["side"][k])
@@ -163,13 +166,13 @@ def backtest(d: dict, rows: dict, threshold: float, fold_start_ms: int, fold_end
     tr = np.asarray(trades)
     # the same path sampled at bar closes, starting from the capital itself:
     # without E0 the first 15 minutes of the fold produce no return at all
-    eq15 = np.concatenate(([1.0], eq[BAR_CLOSE_MIN::15]))
+    eq15 = np.concatenate(([1.0], eq[BAR_CLOSE_OFFSET_MINUTES::15]))
     ret15 = np.diff(eq15) / eq15[:-1]
     return {
         "equity_1m": eq,
         "sharpe": validation.sharpe_annualised(ret15),
         "max_drawdown": validation.max_drawdown(eq),     # 1m path: intra-bar drawdown is real
-        "n_trades": int(tr.size),
+        "trade_count": int(tr.size),
         "hit_rate": float((tr > 0).mean()) if tr.size else 0.0,
         "avg_trade_ret": float(tr.mean()) if tr.size else None,
         "exposure": in_pos_ms / (fold_end_ms - fold_start_ms),
@@ -184,9 +187,9 @@ def public(result: dict) -> dict:
 
 
 def equity_curve(eq: np.ndarray, fold_start_ms: int) -> dict:
-    idx = np.arange(0, eq.size, EQUITY_SAMPLE_MIN)
+    idx = np.arange(0, eq.size, EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES)
     return {
-        "timestamp_ms": (fold_start_ms + idx * MINUTE_MS).tolist(),
+        "timestamp_ms": (fold_start_ms + idx * MILLISECONDS_PER_MINUTE).tolist(),
         "equity": np.round(eq[idx], 6).tolist(),
     }
 
@@ -202,40 +205,45 @@ def main() -> int:
         val_bounds = {s: validation.fold_bounds(s)
                       for s in config.VALIDATION_FOLD_IDS}
 
-        best_threshold, best_score, best_detail, constraint_met = None, -np.inf, None, False
+        # the locals carry the names of the keys they end up as, so the selection
+        # loop reads like the artifact it writes
+        entry_edge_threshold, selection_score_mean_sharpe = None, -np.inf
+        validation_by_fold, entry_edge_threshold_constraint_met = None, False
         for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
             res = {s: backtest(d, val_rows[s], threshold, *val_bounds[s])
                    for s in config.VALIDATION_FOLD_IDS}
-            if any(r["n_trades"] < config.MIN_TRADES_PER_VALIDATION_FOLD for r in res.values()):
+            if any(r["trade_count"] < config.MINIMUM_TRADES_PER_VALIDATION_FOLD for r in res.values()):
                 continue
-            constraint_met = True
+            entry_edge_threshold_constraint_met = True
             score = float(np.mean([r["sharpe"] for r in res.values()]))
-            if score > best_score:                       # strict: ties keep the smaller threshold
-                best_threshold, best_score, best_detail = threshold, score, res
-        if not constraint_met:                           # deterministic fallback, reported as such
-            best_threshold = 0.0
-            best_detail = {s: backtest(d, val_rows[s], best_threshold, *val_bounds[s])
-                           for s in config.VALIDATION_FOLD_IDS}
-            best_score = float(np.mean([r["sharpe"] for r in best_detail.values()]))
+            if score > selection_score_mean_sharpe:      # strict: ties keep the smaller threshold
+                entry_edge_threshold, selection_score_mean_sharpe = threshold, score
+                validation_by_fold = res
+        if not entry_edge_threshold_constraint_met:      # deterministic fallback, reported as such
+            entry_edge_threshold = 0.0
+            validation_by_fold = {s: backtest(d, val_rows[s], entry_edge_threshold, *val_bounds[s])
+                                  for s in config.VALIDATION_FOLD_IDS}
+            selection_score_mean_sharpe = float(
+                np.mean([r["sharpe"] for r in validation_by_fold.values()]))
 
         holdout_start, holdout_end = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
         final_holdout = backtest(d, rows_for_fold(d, config.FINAL_HOLDOUT_FOLD_ID),
-                                 best_threshold, holdout_start, holdout_end)
+                                 entry_edge_threshold, holdout_start, holdout_end)
 
         payload = {
-            "entry_edge_threshold": best_threshold,
-            "entry_edge_threshold_constraint_met": constraint_met,
-            "selection_score_mean_sharpe": best_score,
-            "cost_per_side": config.COST_PER_SIDE,
-            "validation": {f"fold_{s}": public(r) for s, r in best_detail.items()},
+            "entry_edge_threshold": entry_edge_threshold,
+            "entry_edge_threshold_constraint_met": entry_edge_threshold_constraint_met,
+            "selection_score_mean_sharpe": selection_score_mean_sharpe,
+            "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
+            "validation": {f"fold_{s}": public(r) for s, r in validation_by_fold.items()},
             "final_holdout": {**public(final_holdout),
                               "equity_curve": equity_curve(final_holdout["equity_1m"],
                                                           holdout_start)},
         }
         out = config.artifact_dir(t) / "strategy_evaluation.json"
         dataset.write_json(out, payload)
-        print(f"{t} {out.name}: threshold={best_threshold} sharpe {final_holdout['sharpe']:.3f} "
-              f"trades {final_holdout['n_trades']} maxDD {final_holdout['max_drawdown']:.3f} "
+        print(f"{t} {out.name}: threshold={entry_edge_threshold} sharpe {final_holdout['sharpe']:.3f} "
+              f"trades {final_holdout['trade_count']} maxDD {final_holdout['max_drawdown']:.3f} "
               f"final equity {final_holdout['final_equity']:.3f}", flush=True)
     return 0
 

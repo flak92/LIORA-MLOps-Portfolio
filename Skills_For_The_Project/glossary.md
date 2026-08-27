@@ -16,22 +16,25 @@ confirmation; the rest of the concept column states what the name means.
 |---|---|---|---|---|
 | one chronological segment of the research window | `fold`, `fold_id` | `fold_2` … `fold_4` | `F1` … `F5` | split, period, chunk |
 | the segment boundaries | `fold_bounds()`, `FOLD_BOUNDS_MS` | `folds.bounds_utc` | — | split_bounds |
-| the folds that choose every parameter | `VALIDATION_FOLD_IDS` = (2, 3, 4) | `validation` | `F2`–`F4` | test folds, CV folds |
+| the folds used for the data-driven selection of model hyper-parameters and the entry edge threshold | `VALIDATION_FOLD_IDS` = (2, 3, 4) | `validation` | `F2`–`F4` | test folds, CV folds, "the folds that choose every parameter" |
 | the fold that is only ever evaluated | `FINAL_HOLDOUT_FOLD_ID` = 5 | `final_holdout`, `final_holdout_fold_id` | `F5 — final holdout (out-of-sample)` | test, test set, locked test, final OOS |
 | the evaluated block of a fold, and which one a prediction belongs to | `oos`, `oos_fold_id` | `oos_fold_id` (parquet column) | out-of-sample | test block, test period |
 | dropping training events that overlap the evaluated block | `purge` — `event_end_ts <= oos_start` | `folds.purge_rule` | purged | gap, buffer |
 | a forced wait after the evaluated block — **width zero here**, forward chaining needs none | `embargo` | `folds.embargo` | — | cooldown, post-test embargo |
-| bars consumed before the first decision is allowed | `WARMUP_4H_BARS` = 200, `WARMUP_END_MS` | `folds.warmup_4h_bars`, `n_warmup_excluded` | warm-up excluded | burn-in |
+| bars consumed before the first decision is allowed | `WARMUP_4H_BARS` = 200, `WARMUP_END_MS` | `folds.warmup_4h_bars`, `warmup_excluded_decision_count` | warm-up excluded | burn-in |
 
 ## Market object
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | `canonical_1m.parquet` | canonical dataset | fused series, index, blended price |
+| the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
+| the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
+| how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
 | a data provider, above the ingest boundary only | `binance` / `bybit`, in `data_module` | `venues.*`, `pct_binance` | Raw source | venue or exchange used below ingest |
 | which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / forward fill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-volume bars | carried-forward price (true only of forward-filled minutes) |
-| a synthesized continuity minute | `source = 'ffill'` | `ffill_bars` | forward fill | gap, missing bar |
+| a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | forward fill | gap, missing bar |
 | quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | same | — | signal, feature |
 
 ## Event and sample
@@ -39,11 +42,11 @@ confirmation; the rest of the concept column states what the name means.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the moment a decision may be taken — close of the 15m bar | `decision_ts` | `decision_ts` | — | signal time |
-| the first tradable minute after the decision | `entry_ts` | `entry_ts` | — | fill time |
+| the candidate entry minute after the decision — an entry is permitted here, not guaranteed | `entry_ts` | `entry_ts` | — | fill time, first tradable minute |
 | the canonical open of that minute | `entry_price` | `entry_price` | — | `p0` as an identifier (`P₀` stays in the equations) |
 | the take-profit price of a long, the stop of a short | `upper_barrier` | `upper_barrier` | upper_barrier | `upper`, ceiling, band |
 | the stop of a long, the take-profit of a short | `lower_barrier` | `lower_barrier` | lower_barrier | `lower`, floor, band |
-| the vertical barrier, in minutes (240 = 16 × 15m bars) | `HORIZON_MINUTES`, `HORIZON_MS` | `labels.horizon_minutes` | 240-minute horizon | HORIZON_BARS, W, H |
+| the vertical barrier, in minutes (240 = 16 × 15m bars) | `LABEL_HORIZON_MINUTES`, `LABEL_HORIZON_MS` | `labels.label_horizon_minutes` | 240-minute horizon | HORIZON_BARS, W, H |
 | the exclusive end of the event | `event_end_ts` | `event_end_ts` | — | exit time |
 | the price that closes the event | `exit_reference_price` | `exit_reference_price` | — | exit_ref |
 | how the event ended | `event_resolution` | `event_resolution`, `exit_counts.*` | upper_barrier / lower_barrier / vertical / ambiguous | reason, exit_reason |
@@ -61,13 +64,25 @@ confirmation; the rest of the concept column states what the name means.
 | how much of that lean a signal must carry to be traded | `entry_edge_threshold` (τ) | `entry_edge_threshold` | τ (entry edge threshold) | `tau` as an identifier |
 | the grid searched for it | `ENTRY_EDGE_THRESHOLD_GRID` | `strategy.entry_edge_threshold_grid` | — | TAU_GRID |
 | whether any threshold on the grid cleared the trade floor | `entry_edge_threshold_constraint_met` | same | fallback | tau_constraint_met |
-| the trade floor — a selection guardrail, not an acceptance gate | `MIN_TRADES_PER_VALIDATION_FOLD` = 30 | `strategy.min_trades_per_validation_fold` | — | TAU_MIN_TRADES, acceptance gate |
-| how many levels must agree with the side | `AGREE_MIN`, `n_agree` | `gate_min_agree`, `strategy.hierarchy_min_agree` | at least 2 of 3 levels agree | confirmation, filter |
+| the trade floor — a selection guardrail, not an acceptance gate | `MINIMUM_TRADES_PER_VALIDATION_FOLD` = 30 | `strategy.minimum_trades_per_validation_fold` | — | TAU_MIN_TRADES, MIN_TRADES, acceptance gate |
+| how many timeframes must agree with the side | `MINIMUM_AGREEING_TREND_TIMEFRAMES`, `agreeing_trend_timeframe_count` | `minimum_agreeing_trend_timeframes` | at least 2 of 3 timeframes agree | AGREE_MIN, gate_min_agree, hierarchy_min_agree, n_agree, level |
 | replaying the strategy over the canonical price path | `backtest()` | `strategy_evaluation.json` | STRATEGY | live execution, exchange execution |
-| the execution cost charged on entry and on exit | `COST_PER_SIDE` = 0.0006 | `cost_per_side` | cost per side | costs_per_side, fees |
+| the execution cost charged on entry and on exit | `EXECUTION_COST_RATE_PER_TRADE_SIDE` = 0.0006 | `execution_cost_rate_per_trade_side` | cost per side | costs_per_side, cost_per_side, fees |
 
 The symbol τ may stay in equations and in table headers; its first use in any
 document or on any page spells out `entry edge threshold`.
+
+## Counts
+
+Every count says what it counts; a bare `n` names nothing.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| rows a fold's metrics were computed on | `scored_row_count` | `scored_row_count` | scored | `n` |
+| rows the model was fitted on, and the events purged before them | `training_row_count`, `purged_event_count` | same | trained on / purged | n_train, n_purged |
+| rows in a prediction window | `window_row_count` | `window_row_count` | window | n_window |
+| trades a fold produced | `trade_count` | `trade_count` | trades | n_trades |
+| trials the search ran | `trial_count` | `trial_count` | trials | n_trials |
 
 ## Metrics
 
@@ -95,15 +110,15 @@ each file named after what it holds.
 | `features.parquet` | `ml_module/features.py` | X — 15 causal columns |
 | `label_events.parquet` | `ml_module/labels.py` | Y — labels, weights and the event prices |
 | `hyperparameter_search.json` | `ml_module/hpo.py` | the search space and its winner |
-| `oos_predictions.parquet` | `ml_module/train.py` | out-of-fold probabilities |
+| `oos_predictions.parquet` | `ml_module/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
 | `model_evaluation.json` | `ml_module/train.py` | classification metrics per fold |
 | `strategy_evaluation.json` | `ml_module/strategy.py` | the entry edge threshold and the PnL |
-| `calibration.json` | `ml_module/status.py` | the settings every number in the folder was computed under |
+| `experiment_configuration.json` | `ml_module/status.py` | the configuration this run was executed under |
 | `README.md` | `ml_module/status.py` | what the folder holds and what came out of it |
 
 ## Features
 
-| family | computes | levels |
+| family | computes | timeframes |
 |---|---|---|
 | `ema20_minus_ema50_over_atr14` | `(EMA20 − EMA50) / ATR14` | `_15m`, `_1h`, `_4h` |
 | `centered_rsi14` | `(RSI14 − 50) / 50` | `_15m`, `_1h`, `_4h` |

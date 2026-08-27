@@ -32,8 +32,8 @@ from pathlib import Path
 from . import config
 
 DAY_MS = 86_400_000
-MINUTE_MS = 60_000
-MINUTES_PER_DAY = DAY_MS // MINUTE_MS
+MILLISECONDS_PER_MINUTE = 60_000
+MINUTES_PER_DAY = DAY_MS // MILLISECONDS_PER_MINUTE
 
 
 def _iso_day(epoch_ms: int) -> str:
@@ -67,7 +67,8 @@ def _get(params: dict, retries: int = 6) -> list[list]:
 
 def probe_oldest(sym: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
-    batch = _get({"symbol": sym, "interval": config.INTERVAL, "startTime": 0, "limit": 1})
+    batch = _get({"symbol": sym, "interval": config.SOURCE_CANDLE_INTERVAL,
+                  "startTime": 0, "limit": 1})
     if not batch:
         raise SystemExit(f"probe failed: no candles returned for {sym}")
     return int(batch[0][0])
@@ -78,10 +79,10 @@ def fetch_day(sym: str, day_ms: int) -> list[tuple]:
     batch = _get(
         {
             "symbol": sym,
-            "interval": config.INTERVAL,
+            "interval": config.SOURCE_CANDLE_INTERVAL,
             "startTime": day_ms,
             "endTime": day_ms + DAY_MS - 1,
-            "limit": config.MAX_LIMIT,
+            "limit": config.BINANCE_KLINE_REQUEST_LIMIT,
         }
     )
     return [(int(row[0]) - day_ms, row[1], row[2], row[3], row[4], row[5]) for row in batch]
@@ -97,7 +98,7 @@ def is_full_utc_day(rows: list[tuple]) -> bool:
     the day is skipped forever.
     """
     return len(rows) == MINUTES_PER_DAY and all(
-        row[0] == i * MINUTE_MS for i, row in enumerate(rows)
+        row[0] == i * MILLISECONDS_PER_MINUTE for i, row in enumerate(rows)
     )
 
 
@@ -124,7 +125,7 @@ def main() -> int:
 
     now = datetime.now(tz=UTC)
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
-    start_ms = config.START_MS if args.days == 0 else end_ms - args.days * DAY_MS
+    start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * DAY_MS
 
     print(f"window [{_iso_day(start_ms)} .. {_iso_day(end_ms)}) — probing listings:", flush=True)
     for t in tickers:
@@ -159,7 +160,7 @@ def main() -> int:
                 written += 1
                 if written % 200 == 0:
                     print(f"  {sym}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
-                time.sleep(config.SLEEP_S)
+                time.sleep(config.BINANCE_REQUEST_DELAY_SECONDS)
             day_ms += DAY_MS
         print(f"{sym}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
     return 0

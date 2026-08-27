@@ -8,8 +8,8 @@ The dashboard is a static dial-up-minimal page; keep it one.
   SSH tunnel, never a bind to a public interface.
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;
   single-class utility blocks stay single-class.
-- Magnitudes are shown as **bars, not colors**; color marks category, bold
-  marks the final-OOS row. Sparklines are inline SVG with a dashed reference.
+- Magnitudes are shown as **bars, not colours**; colour marks category, bold
+  marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
 - The page reads two committed snapshots (`status.json`, `ml_status.json`)
   and renders everything client-side; the payload carries only fields the
   page actually reads.

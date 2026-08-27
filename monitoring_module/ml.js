@@ -75,7 +75,7 @@ function renderResearch(s) {
     cell(tr, a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
     cell(tr, num(st.sharpe, 2));
     cell(tr, (100 * st.max_drawdown).toFixed(1) + "%");
-    cell(tr, fmt(st.n_trades));
+    cell(tr, fmt(st.trade_count));
     cell(tr, (100 * st.hit_rate).toFixed(1) + "%");
     cell(tr, (100 * st.exposure).toFixed(1) + "%");
   }
@@ -94,13 +94,13 @@ function viewLabels(s) {
       return [
         [tickerLink(a.ticker)],
         fmt(a.sample.rows),
-        fmt(a.sample.n_warmup_excluded),
+        fmt(a.sample.warmup_excluded_decision_count),
         fmt(a.sample.trainable) + " (" + a.sample.trainable_pct.toFixed(3) + "%)",
         fmt(c.short),
         [shareCell(c.neutral, total)],
         fmt(c.long),
         a.sample.uniqueness_weight_mean.toFixed(4),
-        fmt(a.final_holdout.n),
+        fmt(a.final_holdout.scored_row_count),
       ];
     }));
 }
@@ -142,7 +142,7 @@ function viewStrategy(s) {
         num(st.sharpe, 2),
         deg === null ? "-" : (deg >= 0 ? "+" : "") + deg.toFixed(2),
         (100 * st.max_drawdown).toFixed(1) + "%",
-        fmt(st.n_trades),
+        fmt(st.trade_count),
         (100 * st.hit_rate).toFixed(1) + "%",
         st.avg_trade_ret === null ? "-" : (100 * st.avg_trade_ret).toFixed(3) + "%",
         (100 * st.exposure).toFixed(1) + "%",
@@ -160,7 +160,7 @@ function viewSearch(s) {
       const p = a.hpo.best_params;
       return [
         [tickerLink(a.ticker)],
-        a.hpo.n_trials,
+        a.hpo.trial_count,
         a.hpo.best_logloss.toFixed(4),
         p.max_depth,
         p.eta.toFixed(4),
