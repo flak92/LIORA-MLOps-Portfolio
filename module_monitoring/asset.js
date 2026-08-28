@@ -1,25 +1,25 @@
 /* ML Assets tab: the per-asset panel. Classic script — uses the helpers from
-   app.js (bar, fmt, num) and the table builders from ml.js (makeTable,
-   shareCell, validationFolds, CLASS_NAMES, ML_STATUS). */
+   app.js (meter, formatCount, formatNumber) and the table builders from ml.js
+   (makeTable, buildShareCell, validationFolds, CLASS_NAMES, ML_STATUS). */
 "use strict";
 
-function frameEl(title) {
-  const f = document.createElement("div");
-  f.className = "frame";
-  const h = document.createElement("div");
-  h.className = "frame__head";
-  h.textContent = title;
-  const b = document.createElement("div");
-  b.className = "frame__body";
-  f.append(h, b);
-  return { frame: f, body: b };
+function buildFrame(title) {
+  const frame = document.createElement("div");
+  frame.className = "frame";
+  const head = document.createElement("div");
+  head.className = "frame__head";
+  head.textContent = title;
+  const body = document.createElement("div");
+  body.className = "frame__body";
+  frame.append(head, body);
+  return { frame: frame, body: body };
 }
 
-function kvBox(pairs) {
-  const d = document.createElement("div");
-  d.className = "box";
-  d.textContent = pairs.map((kv) => (kv[0] + ":").padEnd(26) + kv[1]).join("\n");
-  return d;
+function buildKeyValueBox(pairs) {
+  const box = document.createElement("div");
+  box.className = "box";
+  box.textContent = pairs.map((kv) => (kv[0] + ":").padEnd(26) + kv[1]).join("\n");
+  return box;
 }
 
 /* single-series line with a dashed reference level; no legend needed, the
@@ -35,7 +35,7 @@ function sparkline(values, baseline, caption) {
   const y = (v) => H - ((v - lo) / span) * H;
 
   const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("renderBox", "0 0 " + W + " " + H);
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
   svg.setAttribute("preserveAspectRatio", "none");
   svg.setAttribute("class", "spark");
   const tip = document.createElementNS(NS, "title");
@@ -53,135 +53,135 @@ function sparkline(values, baseline, caption) {
   return svg;
 }
 
-function foot(text) {
-  const p = document.createElement("p");
-  p.className = "foot";
-  p.textContent = text;
-  return p;
+function buildFootnote(text) {
+  const paragraph = document.createElement("p");
+  paragraph.className = "foot";
+  paragraph.textContent = text;
+  return paragraph;
 }
 
-function headerLine(a, s) {
-  const d = document.createElement("p");
-  d.className = "sub";
-  d.textContent = a.ticker + " · " + s.research_window.start_utc.slice(0, 7) + " → "
-    + s.research_window.end_utc.slice(0, 7) + " · " + fmt(a.sample.rows) + " decisions";
-  return d;
+function headerLine(asset, mlStatus) {
+  const line = document.createElement("p");
+  line.className = "sub";
+  line.textContent = asset.ticker + " · " + mlStatus.research_window.start_utc.slice(0, 7) + " → "
+    + mlStatus.research_window.end_utc.slice(0, 7) + " · " + formatCount(asset.sample.rows) + " decisions";
+  return line;
 }
 
-function labelFrame(a) {
-  const f = frameEl("LABEL — triple barrier on the canonical 1m path");
-  const c = a.sample.class_counts;
-  const total = c.short + c.neutral + c.long;
-  f.body.appendChild(makeTable(["class", "count", "share"], CLASS_NAMES.map((n) => [
-    n, fmt(c[n]), [shareCell(c[n], total)],
+function labelFrame(asset) {
+  const frame = buildFrame("LABEL — triple barrier on the canonical 1m path");
+  const classCounts = asset.sample.class_counts;
+  const total = classCounts.short + classCounts.neutral + classCounts.long;
+  frame.body.appendChild(makeTable(["class", "count", "share"], CLASS_NAMES.map((className) => [
+    className, formatCount(classCounts[className]), [buildShareCell(classCounts[className], total)],
   ])));
-  f.body.appendChild(kvBox([
-    ["trainable rows", fmt(a.sample.trainable) + " of " + fmt(a.sample.rows)
-      + " (" + a.sample.trainable_pct.toFixed(3) + "%)"],
-    ["excluded", fmt(a.sample.ambiguous) + " ambiguous · "
-      + fmt(a.sample.unobservable) + " unobservable entry"],
-    ["warm-up excluded", fmt(a.sample.warmup_excluded_decision_count) + " decisions"],
+  frame.body.appendChild(buildKeyValueBox([
+    ["trainable rows", formatCount(asset.sample.trainable) + " of " + formatCount(asset.sample.rows)
+      + " (" + asset.sample.trainable_pct.toFixed(3) + "%)"],
+    ["excluded", formatCount(asset.sample.ambiguous) + " ambiguous · "
+      + formatCount(asset.sample.unobservable) + " unobservable entry"],
+    ["warm-up excluded", formatCount(asset.sample.warmup_excluded_decision_count) + " decisions"],
   ]));
-  return f.frame;
+  return frame.frame;
 }
 
-function modelFrame(a, s) {
-  const f = frameEl("MODEL — skill against the training class prior");
-  const p = a.hyperparameter_search.best_params;
-  f.body.appendChild(kvBox([
-    ["parameters", "depth " + p.max_depth + " · eta " + p.eta.toFixed(4)
-      + " · rounds " + p.num_boost_round + " · subsample " + p.subsample.toFixed(2)],
-    ["search", a.hyperparameter_search.trial_count + " Optuna trials · best mean F2-F4 log-loss "
-      + a.hyperparameter_search.best_logloss.toFixed(6)],
+function modelFrame(asset, mlStatus) {
+  const frame = buildFrame("MODEL — skill against the training class prior");
+  const bestParameters = asset.hyperparameter_search.best_params;
+  frame.body.appendChild(buildKeyValueBox([
+    ["parameters", "depth " + bestParameters.max_depth + " · eta " + bestParameters.eta.toFixed(4)
+      + " · rounds " + bestParameters.num_boost_round + " · subsample " + bestParameters.subsample.toFixed(2)],
+    ["search", asset.hyperparameter_search.trial_count + " Optuna trials · best mean F2-F4 log-loss "
+      + asset.hyperparameter_search.best_logloss.toFixed(6)],
   ]));
-  const rows = validationFolds(a).map((k) => ["F" + k.split("_")[1], a.validation[k]]);
-  rows.push(["F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.final_holdout]);
-  f.body.appendChild(makeTable(
+  const rows = validationFolds(asset).map((foldKey) => ["F" + foldKey.split("_")[1], asset.validation[foldKey]]);
+  rows.push(["F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.final_holdout]);
+  frame.body.appendChild(makeTable(
     ["fold", "prior log-loss", "model log-loss", "rel. skill", "scored rows"],
-    rows.map(([label, m], i) => {
+    rows.map(([label, metrics], i) => {
       const name = document.createElement("span");
       name.textContent = label;
       if (i === rows.length - 1) name.className = "diag";
-      return [[name], m.prior_logloss.toFixed(6), m.model_logloss.toFixed(6),
-              (100 * m.relative_logloss_skill).toFixed(2) + "%", fmt(m.scored_row_count)];
+      return [[name], metrics.prior_logloss.toFixed(6), metrics.model_logloss.toFixed(6),
+              (100 * metrics.relative_logloss_skill).toFixed(2) + "%", formatCount(metrics.scored_row_count)];
     })));
-  f.body.appendChild(foot("skill = 1 − model / prior: what the model adds beyond knowing "
+  frame.body.appendChild(buildFootnote("skill = 1 − model / prior: what the model adds beyond knowing "
     + "how often each class occurs. The prior comes from the training rows of that fold."));
-  return f.frame;
+  return frame.frame;
 }
 
-function strategyFrame(a, s) {
-  const f = frameEl("STRATEGY — model picks the side, the hierarchy gates it");
-  f.body.appendChild(kvBox([
-    ["entry edge threshold (\u03c4)", a.strategy.entry_edge_threshold.toFixed(2) + (a.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
-    ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + s.minimum_agreeing_trend_timeframes + " of 3 timeframes agree"],
-    ["cost per side", (100 * a.strategy.execution_cost_rate_per_trade_side).toFixed(2)
+function strategyFrame(asset, mlStatus) {
+  const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
+  frame.body.appendChild(buildKeyValueBox([
+    ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
+    ["gate", "side = sign(ema20_minus_ema50_over_atr14_4h) and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of 3 timeframes agree"],
+    ["cost per side", (100 * asset.strategy.execution_cost_rate_per_trade_side).toFixed(2)
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
-  const rows = validationFolds(a).map((k) => pnlRow("F" + k.split("_")[1], a.strategy.validation[k], false));
-  rows.push(pnlRow("F" + s.final_holdout_fold_id + " — final holdout (out-of-sample)", a.strategy.final_holdout, true));
-  f.body.appendChild(makeTable(
+  const rows = validationFolds(asset).map((foldKey) => pnlRow("F" + foldKey.split("_")[1], asset.strategy.validation[foldKey], false));
+  rows.push(pnlRow("F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.strategy.final_holdout, true));
+  frame.body.appendChild(makeTable(
     ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "final equity"],
     rows));
-  const c = a.strategy.equity_curve;
-  f.body.appendChild(sparkline(c.equity, 1.0,
+  const equityCurve = asset.strategy.equity_curve;
+  frame.body.appendChild(sparkline(equityCurve.equity, 1.0,
     "equity on the final holdout fold; dashed line = 1.0 (flat)"));
-  f.body.appendChild(foot("final holdout equity: start 1.000 · end "
-    + c.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
+  frame.body.appendChild(buildFootnote("final holdout equity: start 1.000 · end "
+    + equityCurve.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
     + "from the 15m equity series and the drawdown measured on the 1m path, "
     + "both from the starting capital; the curve above is weekly-sampled."));
-  return f.frame;
+  return frame.frame;
 }
 
-function featuresFrame(a) {
-  const f = frameEl("FEATURES — XGBoost total gain");
-  const items = Object.entries(a.gain_importance).sort((x, y) => y[1] - x[1]);
+function featuresFrame(asset) {
+  const frame = buildFrame("FEATURES — XGBoost total gain");
+  const items = Object.entries(asset.gain_importance).sort((a, b) => b[1] - a[1]);
   const max = items[0][1] || 1;
-  f.body.appendChild(makeTable(["feature", "total gain"], items.map((kv) => {
+  frame.body.appendChild(makeTable(["feature", "total gain"], items.map((kv) => {
     const wrap = document.createElement("span");
     wrap.appendChild(meter((100 * kv[1]) / max));
-    wrap.appendChild(document.createTextNode(fmt(Math.round(kv[1]))));
+    wrap.appendChild(document.createTextNode(formatCount(Math.round(kv[1]))));
     return [kv[0], [wrap]];
   })));
-  return f.frame;
+  return frame.frame;
 }
 
 function renderAsset(ticker) {
-  const s = ML_STATUS;
+  const mlStatus = ML_STATUS;
   const host = document.getElementById("asset-detail");
-  if (!s || !host) return;
-  const a = s.assets.find((x) => x.ticker === ticker);
-  if (!a) return;
+  if (!mlStatus || !host) return;
+  const asset = mlStatus.assets.find((candidate) => candidate.ticker === ticker);
+  if (!asset) return;
   host.textContent = "";
-  host.appendChild(headerLine(a, s));
-  [labelFrame(a), modelFrame(a, s), strategyFrame(a, s), featuresFrame(a)]
+  host.appendChild(headerLine(asset, mlStatus));
+  [labelFrame(asset), modelFrame(asset, mlStatus), strategyFrame(asset, mlStatus), featuresFrame(asset)]
     .forEach((el) => host.appendChild(el));
 }
 
-function pnlRow(label, m, isFinalHoldout) {
+function pnlRow(label, pnlMetrics, isFinalHoldout) {
   const name = document.createElement("span");
   name.textContent = label;
   if (isFinalHoldout) name.className = "diag";
   return [
     [name],
-    fmtNum(m.sharpe, 2),
-    (100 * m.max_drawdown).toFixed(1) + "%",
-    fmt(m.trade_count),
-    (100 * m.hit_rate).toFixed(1) + "%",
-    m.avg_trade_ret === null ? "-" : (100 * m.avg_trade_ret).toFixed(3) + "%",
-    (100 * m.exposure).toFixed(2) + "%",
-    fmtNum(m.final_equity, 4),
+    formatNumber(pnlMetrics.sharpe, 2),
+    (100 * pnlMetrics.max_drawdown).toFixed(1) + "%",
+    formatCount(pnlMetrics.trade_count),
+    (100 * pnlMetrics.hit_rate).toFixed(1) + "%",
+    pnlMetrics.avg_trade_ret === null ? "-" : (100 * pnlMetrics.avg_trade_ret).toFixed(3) + "%",
+    (100 * pnlMetrics.exposure).toFixed(2) + "%",
+    formatNumber(pnlMetrics.final_equity, 4),
   ];
 }
 
-function buildAssetPills(s) {
+function buildAssetPills(mlStatus) {
   const group = document.getElementById("asset-pills");
-  s.assets.forEach((a, i) => {
-    const b = document.createElement("button");
-    b.className = "pill" + (i === 0 ? " pill--active" : "");
-    b.dataset.key = a.ticker;
-    b.textContent = a.ticker;
-    group.appendChild(b);
+  mlStatus.assets.forEach((asset, i) => {
+    const button = document.createElement("button");
+    button.className = "pill" + (i === 0 ? " pill--active" : "");
+    button.dataset.key = asset.ticker;
+    button.textContent = asset.ticker;
+    group.appendChild(button);
   });
   PILL_HOOKS.asset = renderAsset;
   /* pills arrive after load, so select here; #TICKER deep-links one asset */

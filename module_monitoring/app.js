@@ -1,22 +1,23 @@
-/* Pipeline and Data Quality tabs, plus shared helpers used by ml.js.
-   Vanilla JS, classic scripts sharing one global scope, no external
-   resources. */
+/* Pipeline and Data Quality tabs, plus shared helpers used by ml.js and
+   asset.js (formatCount, formatBytes, formatNumber, formatDivergencePercent,
+   meter, buildPercentageCell, cell, initPills, PILL_HOOKS). Vanilla JS,
+   classic scripts sharing one global scope, no external resources. */
 "use strict";
 
-function fmt(n) {
-  return n === null || n === undefined ? "-" : n.toLocaleString("en-US");
+function formatCount(value) {
+  return value === null || value === undefined ? "-" : value.toLocaleString("en-US");
 }
 
-function fmtBytes(b) {
-  if (b === 0) return "0";
+function formatBytes(byteCount) {
+  if (byteCount === 0) return "0";
   const units = ["B", "KB", "MB", "GB"];
   let i = 0;
-  while (b >= 1024 && i < units.length - 1) { b /= 1024; i++; }
-  return b.toFixed(i === 0 ? 0 : 1) + " " + units[i];
+  while (byteCount >= 1024 && i < units.length - 1) { byteCount /= 1024; i++; }
+  return byteCount.toFixed(i === 0 ? 0 : 1) + " " + units[i];
 }
 
-function fmtDiv(x) {
-  return x === null || x === undefined ? "-" : (100 * x).toFixed(4) + "%";
+function formatDivergencePercent(value) {
+  return value === null || value === undefined ? "-" : (100 * value).toFixed(4) + "%";
 }
 
 function meter(pctValue) {
@@ -29,7 +30,7 @@ function meter(pctValue) {
   return track;
 }
 
-function pctCell(pctValue) {
+function buildPercentageCell(pctValue) {
   const wrap = document.createElement("span");
   wrap.appendChild(meter(pctValue));
   wrap.appendChild(document.createTextNode(pctValue.toFixed(3) + "%"));
@@ -57,14 +58,14 @@ function initPills(root) {
     group.dataset.bound = "1";
     const name = group.dataset.pills;
     const select = (key) => {
-      group.querySelectorAll("button").forEach((b) => b.classList.toggle("pill--active", b.dataset.key === key));
+      group.querySelectorAll("button").forEach((button) => button.classList.toggle("pill--active", button.dataset.key === key));
       document.querySelectorAll("[data-panel='" + name + "']")
-        .forEach((p) => { p.hidden = p.dataset.key !== key; });
+        .forEach((panel) => { panel.hidden = panel.dataset.key !== key; });
       if (PILL_HOOKS[name]) PILL_HOOKS[name](key);
     };
-    group.addEventListener("click", (e) => {
-      const b = e.target.closest("button[data-key]");
-      if (b && group.contains(b)) select(b.dataset.key);
+    group.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-key]");
+      if (button && group.contains(button)) select(button.dataset.key);
     });
     const first = group.querySelector("button.pill--active") || group.querySelector("button");
     if (first) select(first.dataset.key);
@@ -72,84 +73,84 @@ function initPills(root) {
 }
 
 /* null-safe formatting: to_json_safe() writes null for non-finite floats */
-function fmtNum(x, d) {
-  return x === null || x === undefined ? "-" : x.toFixed(d);
+function formatNumber(value, decimals) {
+  return value === null || value === undefined ? "-" : value.toFixed(decimals);
 }
 
 initPills(document);
 
-function renderRawSource(tableId, list) {
+function renderRawSource(tableId, venueRows) {
   const tbody = document.querySelector("#" + tableId + " tbody");
-  for (const v of list) {
+  for (const row of venueRows) {
     const tr = document.createElement("tr");
-    cell(tr, v.symbol);
-    cell(tr, fmt(v.zip_count));
-    cell(tr, fmt(v.rows));
-    cell(tr, pctCell(v.coverage_pct));
-    cell(tr, fmt(v.gaps));
-    cell(tr, fmt(v.gaps_after_first_observation), v.gaps_after_first_observation > 0);
-    cell(tr, fmt(v.duplicates), v.duplicates > 0);
-    cell(tr, fmt(v.ohlc_violations), v.ohlc_violations > 0);
-    cell(tr, fmt(v.zero_volume_bars));
-    cell(tr, fmt(v.flat_bars));
-    cell(tr, v.first_ts || "-");
-    cell(tr, v.last_ts || "-");
+    cell(tr, row.symbol);
+    cell(tr, formatCount(row.zip_count));
+    cell(tr, formatCount(row.rows));
+    cell(tr, buildPercentageCell(row.coverage_pct));
+    cell(tr, formatCount(row.gaps));
+    cell(tr, formatCount(row.gaps_after_first_observation), row.gaps_after_first_observation > 0);
+    cell(tr, formatCount(row.duplicates), row.duplicates > 0);
+    cell(tr, formatCount(row.ohlc_violations), row.ohlc_violations > 0);
+    cell(tr, formatCount(row.zero_volume_bars));
+    cell(tr, formatCount(row.flat_bars));
+    cell(tr, row.first_ts || "-");
+    cell(tr, row.last_ts || "-");
     tbody.appendChild(tr);
   }
 }
 
 fetch("status.json", { cache: "no-store" })
-  .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-  .then((s) => {
+  .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
+  .then((status) => {
     document.getElementById("meta").textContent =
-      "generated: " + s.generated_at_utc + " UTC\n" +
-      "window:    [" + s.window_start + " .. " + s.window_end + ") UTC\n" +
-      "database:  " + fmtBytes(s.db_bytes) + "  (duckdb " + s.duckdb_version + ")";
-    const f = s.flow;
+      "generated: " + status.generated_at_utc + " UTC\n" +
+      "window:    [" + status.window_start + " .. " + status.window_end + ") UTC\n" +
+      "database:  " + formatBytes(status.db_bytes) + "  (duckdb " + status.duckdb_version + ")";
+    const flow = status.flow;
     document.getElementById("flow").textContent =
-      "flow: " + fmt(f.zips_binance + f.zips_bybit) + " raw ZIPs" +
-      " -> " + fmt(f.rows_binance + f.rows_bybit) + " raw rows" +
-      " -> " + fmt(f.rows_canonical) + " canonical rows -> " + fmt(f.rows_parquet) + " parquet rows";
+      "flow: " + formatCount(flow.zips_binance + flow.zips_bybit) + " raw ZIPs" +
+      " -> " + formatCount(flow.rows_binance + flow.rows_bybit) + " raw rows" +
+      " -> " + formatCount(flow.rows_canonical) + " canonical rows -> " + formatCount(flow.rows_parquet) + " parquet rows";
 
     const table = document.getElementById("symbols");
     const tbody = table.querySelector("tbody");
-    for (const row of s.symbols) {
+    for (const row of status.symbols) {
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
-      cell(tr, fmt(row.rows));
-      cell(tr, pctCell(row.real_data_pct));
-      cell(tr, fmt(row.ffill_bars), row.ffill_bars > 0);
-      cell(tr, fmt(row.rows_parquet), row.rows_parquet !== row.rows);
-      cell(tr, fmtBytes(row.parquet_bytes));
+      cell(tr, formatCount(row.rows));
+      cell(tr, buildPercentageCell(row.real_data_pct));
+      cell(tr, formatCount(row.ffill_bars), row.ffill_bars > 0);
+      cell(tr, formatCount(row.rows_parquet), row.rows_parquet !== row.rows);
+      cell(tr, formatBytes(row.parquet_bytes));
       tbody.appendChild(tr);
     }
     table.hidden = false;
 
-    renderRawSource("raw-binance", s.venues.binance);
-    renderRawSource("raw-bybit", s.venues.bybit);
+    renderRawSource("raw-binance", status.venues.binance);
+    renderRawSource("raw-bybit", status.venues.bybit);
 
     const ftbody = document.querySelector("#canonical-source tbody");
-    for (const row of s.canonical_source) {
+    for (const row of status.canonical_source) {
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
-      cell(tr, fmt(row.rows));
-      cell(tr, pctCell(row.binance_pct));
+      cell(tr, formatCount(row.rows));
+      cell(tr, buildPercentageCell(row.binance_pct));
       cell(tr, row.bybit_pct.toFixed(2) + "%");
-      cell(tr, fmt(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
-      cell(tr, fmt(row.zero_volume_bars));
-      cell(tr, fmt(row.source_switches));
+      cell(tr, formatCount(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
+      cell(tr, formatCount(row.zero_volume_bars));
+      cell(tr, formatCount(row.source_switches));
       cell(tr, row.max_abs_ret_at_switch === null ? "-" : (100 * row.max_abs_ret_at_switch).toFixed(2) + "%");
-      cell(tr, fmt(row.ohlc_violations), row.ohlc_violations > 0);
-      cell(tr, fmt(row.longest_flat_run_minutes));
+      cell(tr, formatCount(row.ohlc_violations), row.ohlc_violations > 0);
+      cell(tr, formatCount(row.longest_flat_run_minutes));
       cell(tr, row.max_abs_ret_1m === null ? "-" : (100 * row.max_abs_ret_1m).toFixed(2) + "%");
-      cell(tr, fmtDiv(row.div_mean));
-      cell(tr, fmtDiv(row.div_p99));
-      cell(tr, fmtDiv(row.div_max));
+      cell(tr, formatDivergencePercent(row.div_mean));
+      cell(tr, formatDivergencePercent(row.div_p99));
+      cell(tr, formatDivergencePercent(row.div_max));
       ftbody.appendChild(tr);
     }
   })
-  .catch((e) => {
+  .catch((error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load status.json (" + e.message + ") — run `make status`";
+    meta.textContent = "could not load status.json (" + error.message + ") — run `make status`";
     meta.className = "box err";
   });
