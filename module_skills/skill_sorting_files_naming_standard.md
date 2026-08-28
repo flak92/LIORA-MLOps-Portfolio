@@ -29,7 +29,7 @@ will land in, on any server, under any locale.
   everywhere, which is why the slot scheme was verified identical under both
   `C` and `en_US.UTF-8` before it was enacted. Three names are exempt by
   decision, not by accident — the ecosystem-fixed root files and `__init__.py`
-  (act row 17) and `<TICKER>_README.md` (act row 15); the invariance claim
+  (act row 16) and `<TICKER>_README.md` (act row 14); the invariance claim
   binds every project-minted name, and the `Checks` section of
   `skill_self_explaining_naming.md` runs the `diff` that proves it.
 - **The enacted names live in the act.** This skill explains the mechanics;

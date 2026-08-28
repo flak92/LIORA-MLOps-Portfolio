@@ -35,7 +35,9 @@ representation, constructed deterministically from the available market
 observations.** Every candle in it is a real observation printed by one
 provider — the only exception is an explicit forward fill, flagged as such. No
 price is an average of two sources, because an average prints quotes that
-existed nowhere. This series, and nothing upstream of it, is the object the
+existed nowhere: a per-minute index weighted by the two venues' notional moves
+the printed price whenever the weights shift, which on this window reaches 7.8 %
+in a single minute — a move no venue made. This series, and nothing upstream of it, is the object the
 research layer studies: features, labels, validation, modelling and the
 strategy simulation all read it and none of them knows which provider printed
 a given minute ([methodology_ml.md](methodology_ml.md) §2).
@@ -181,6 +183,10 @@ rebuilding from a clean `store_db/` reproduces it bit-identically.
   venue moving; the count and the largest such move are monitored per symbol
   (`source_switch_count`, `max_abs_return_at_switch`). No smoothing is applied — the
   switch is visible, not hidden.
+- **A source switch is the only place a basis jump can enter.** Within a
+  minute nothing is blended, so no averaging artifact exists to measure; between
+  two minutes the series can change venue, which is why `source_switch_count`
+  and `max_abs_return_at_switch` are monitored per symbol rather than smoothed.
 - **No cross-exchange divergence cutoff.** Strongly diverging minutes are real
   market dislocations; the per-symbol distribution (mean / p99 / max) is
   exposed in monitoring.
@@ -203,16 +209,3 @@ the basket) — a thin-liquidity symbol whose Binance feed prints no-trade
 minutes often enough to hand the tier to Bybit repeatedly. The largest 1m move
 at any ZEC switch is 0.67 %, in line with the rest of the basket, so the
 switching is frequent but not violent.
-
-## 8. Changelog
-
-- **v2 (2026-08-26, WO-ML-001 v2).** The v1 canonical series was a per-minute
-  notional-weighted index of both venues. Measured on the full window it
-  produced weight-shift "phantom returns" up to 7.8 % in one minute (SOL,
-  2022-11-09) — moves no venue printed — and rounded prices to present-day
-  tick sizes. Replaced by the primary-failover definition above: verbatim
-  venue candles, no weighting, no rounding, no synthetic averaged
-  price; `max_phantom_ret` monitoring retired, `source_switch_count` /
-  `max_abs_return_at_switch` added — a switch can still carry the basis from one
-  minute to the next, and those two metrics are how it stays visible.
-- **v1 (2026-08-26).** Notional-weighted two-venue index (superseded).

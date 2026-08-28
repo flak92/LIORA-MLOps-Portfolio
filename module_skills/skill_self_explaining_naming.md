@@ -125,7 +125,7 @@ count keys            git grep -nE '"(rows|gaps|duplicates|ambiguous|unobservabl
 time suffixes         git grep -nE '"[a-z_]+_ts":' -- '*.py' | grep -vE 'decision_ts|entry_ts|event_end_ts'
                       → empty (the three `_ts` columns are the act's schema boundary)
 abbreviation ret      git grep -nE '_ret\b|_ret_' -- '*.py' '*.js' '*.md' ':!store_assets_artifacts/*/*'
-                      → only the rejected forms in the act and the register, and the retired `max_phantom_ret` in the data changelog
+                      → only the rejected forms recorded in the act and the register
 conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'module_data/config.py\|module_data/lean.py'
                       → empty
 JavaScript verbs      grep -hoE '^function [a-zA-Z]+' module_monitoring/*.js | grep -vE 'function (build|render|format|append|select|init)[A-Z]|^function (validationFolds|mean)$'
