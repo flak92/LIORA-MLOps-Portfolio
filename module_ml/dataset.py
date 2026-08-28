@@ -55,7 +55,7 @@ def write_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
-def read_json(path: Path) -> dict:
+def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 

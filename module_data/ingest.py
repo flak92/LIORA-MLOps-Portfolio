@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
 );
 """
 
-OHLC_INTACT = """(isfinite(open) AND isfinite(high) AND isfinite(low)
+OHLC_INTACT_PREDICATE = """(isfinite(open) AND isfinite(high) AND isfinite(low)
           AND isfinite(close) AND isfinite(volume)
           AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
           AND low <= least(open, close) AND high >= greatest(open, close))"""
@@ -79,12 +79,12 @@ INSERT INTO ohlcv_1m_canonical
 WITH
 raw_1m_binance_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         {ohlc_intact} AS valid
+         {ohlc_intact_predicate} AS valid
   FROM ohlcv_1m_binance WHERE symbol = '{symbol}'
 ),
 raw_1m_bybit_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
-         {ohlc_intact} AS valid
+         {ohlc_intact_predicate} AS valid
   FROM ohlcv_1m_bybit WHERE symbol = '{symbol}'
 ),
 grid AS (
@@ -158,7 +158,7 @@ def utc_midnight_ms(yyyymmdd: str) -> int:
     return int(datetime.strptime(yyyymmdd, "%Y%m%d").replace(tzinfo=UTC).timestamp() * 1000)
 
 
-def iter_zip_paths(zip_dir: Path) -> list[Path]:
+def zip_paths(zip_dir: Path) -> list[Path]:
     return [p for _, p in sorted((p.name[:8], p) for p in zip_dir.glob(LEAN_DAY_ZIP_GLOB) if LEAN_DAY_ZIP_NAME_PATTERN.match(p.name))]
 
 
@@ -176,13 +176,13 @@ def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
                 yield (midnight_ms + int(row[0]), row[1], row[2], row[3], row[4], row[5])
 
 
-def spool_symbol(ticker: str, venue: str, spool_csv: Path) -> int:
+def write_symbol_spool(ticker: str, venue: str, spool_csv: Path) -> int:
     """Write all of one symbol's bars from one venue into a temp CSV; return the row count."""
     symbol = config.symbol(ticker)
     row_count = 0
     with spool_csv.open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        for zip_path in iter_zip_paths(config.raw_symbol_dir(ticker, venue)):
+        for zip_path in zip_paths(config.raw_symbol_dir(ticker, venue)):
             for ts, o, h, lo, c, v in parse_zip(zip_path):
                 w.writerow((symbol, ts, o, h, lo, c, v))
                 row_count += 1
@@ -213,7 +213,7 @@ def main() -> int:
             with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as ntf:
                 spool_csv = Path(ntf.name)
             try:
-                row_count = spool_symbol(t, venue, spool_csv)
+                row_count = write_symbol_spool(t, venue, spool_csv)
                 con.execute(f"DELETE FROM ohlcv_1m_{venue} WHERE symbol = ?", [symbol])
                 con.execute(
                     f"INSERT INTO ohlcv_1m_{venue} SELECT * FROM read_csv('{spool_csv}', header=false, columns={CSV_COLUMNS})"
@@ -233,7 +233,7 @@ def main() -> int:
         con.execute(
             CANONICAL_INSERT.format(
                 symbol=symbol, start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms,
-                step_ms=config.CANONICAL_GRID_INTERVAL_MS, ohlc_intact=OHLC_INTACT
+                step_ms=config.CANONICAL_GRID_INTERVAL_MS, ohlc_intact_predicate=OHLC_INTACT_PREDICATE
             )
         )
         print(f"canonical {symbol}: rebuilt", flush=True)

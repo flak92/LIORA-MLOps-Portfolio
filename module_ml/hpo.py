@@ -19,7 +19,7 @@ import optuna
 from . import config, dataset, model, validation
 
 
-def objective_factory(xy: dict[str, np.ndarray]):
+def build_objective(xy: dict[str, np.ndarray]):
     y_cls = model.to_class(xy["y"])
     folds = []
     for fold_id in config.VALIDATION_FOLD_IDS:
@@ -127,7 +127,7 @@ def main() -> int:
         study = optuna.create_study(
             direction="minimize", sampler=optuna.samplers.TPESampler(seed=config.SEED)
         )
-        study.optimize(objective_factory(xy),
+        study.optimize(build_objective(xy),
                        n_trials=config.HYPERPARAMETER_SEARCH_TRIAL_COUNT, n_jobs=1)
         payload = {
             "experiment_configuration": experiment_configuration(t),

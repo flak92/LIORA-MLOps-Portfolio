@@ -66,8 +66,8 @@ def classification_block(metrics: dict) -> tuple[dict, dict]:
     return validation, _classification_block(metrics["final_holdout"])
 
 
-def thin_curve(curve: dict, final_equity: float) -> dict:
-    """The sparkline needs the shape, not the calendar: thinned values only.
+def equity_curve_block(curve: dict, final_equity: float) -> dict:
+    """The equity-curve block: the sparkline needs the shape, not the calendar.
 
     The end of the curve is the measured result, not whatever the thinning
     happened to land on — daily sampling then a stride of seven can stop days
@@ -103,7 +103,7 @@ def strategy_block(strategy: dict) -> dict:
         "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
         "validation": {k: _pnl_block(v) for k, v in sorted(strategy["validation"].items())},
         "final_holdout": _pnl_block(final_holdout),
-        "equity_curve": thin_curve(final_holdout["equity_curve"],
+        "equity_curve": equity_curve_block(final_holdout["equity_curve"],
                                    final_holdout["final_equity"]),
     }
 
@@ -136,19 +136,19 @@ FILE_MANIFEST = (
 )
 
 
-def _size(path):
+def formatted_file_size(path):
     if not path.exists():
         return "—"
     n = path.stat().st_size
     return f"{n:,} B" if n < 1024 else f"{n / 1024:,.0f} KB"
 
 
-def _row(cells):
+def markdown_table_row(cells):
     return "| " + " | ".join(str(c) for c in cells) + " |"
 
 
-def _table(headers, rows):
-    return "\n".join([_row(headers), _row(["---"] * len(headers))] + [_row(r) for r in rows])
+def markdown_table(headers, rows):
+    return "\n".join([markdown_table_row(headers), markdown_table_row(["---"] * len(headers))] + [markdown_table_row(r) for r in rows])
 
 
 def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
@@ -163,7 +163,7 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     for descriptor, note in FILE_MANIFEST:
         path = descriptor(ticker)
         # this file's own size would be self-referential: writing it changes it
-        size = "—" if descriptor is config.asset_readme_md else _size(path)
+        size = "—" if descriptor is config.asset_readme_md else formatted_file_size(path)
         files.append([f"`{path.name}`", note, size])
 
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
@@ -209,7 +209,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 ## Files
 
-{_table(["file", "holds", "size"], files)}
+{markdown_table(["file", "holds", "size"], files)}
 
 Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
@@ -221,11 +221,11 @@ Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TI
 
 Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
 
-{_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
+{markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
 
 ## Fold geometry
 
-{_table(["fold", "trained on", "purged", "window", "scored"], geo_rows)}
+{markdown_table(["fold", "trained on", "purged", "window", "scored"], geo_rows)}
 
 `purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
@@ -233,7 +233,7 @@ Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.
 
 Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.HIERARCHY_TIMEFRAMES)} timeframes agreeing.
 
-{_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
+{markdown_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
 Final-holdout exits: {exits}.
 
@@ -257,7 +257,7 @@ def main() -> int:
                  "strategy_evaluation": config.strategy_evaluation_json(t)}
         if not all(p.exists() for p in paths.values()):
             continue
-        loaded = {k: dataset.read_json(p) for k, p in paths.items()}
+        loaded = {k: dataset.load_json(p) for k, p in paths.items()}
         hpo = loaded["parameters"]["OPTUNAs_XGB_HPOs_best_params"]
         metrics = loaded["model_evaluation"]
         strategy = loaded["strategy_evaluation"]

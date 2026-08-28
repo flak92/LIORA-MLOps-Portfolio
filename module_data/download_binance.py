@@ -29,7 +29,7 @@ from . import config
 from .lean import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, lean_day_zip_name, write_lean_zip
 
 
-def _iso_day(epoch_ms: int) -> str:
+def to_utc_day(epoch_ms: int) -> str:
     return datetime.fromtimestamp(epoch_ms / 1000, tz=UTC).strftime("%Y-%m-%d")
 
 
@@ -57,7 +57,7 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
             backoff *= 2
 
 
-def probe_oldest(symbol: str) -> int:
+def fetch_oldest_candle_ms(symbol: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
     batch = fetch_klines({"symbol": symbol, "interval": config.SOURCE_CANDLE_INTERVAL,
                   "startTime": 0, "limit": 1})
@@ -90,13 +90,13 @@ def main() -> int:
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
     start_ms = config.DATA_WINDOW_START_MS if args.days == 0 else end_ms - args.days * MILLISECONDS_PER_DAY
 
-    print(f"window [{_iso_day(start_ms)} .. {_iso_day(end_ms)}) — probing listings:", flush=True)
+    print(f"window [{to_utc_day(start_ms)} .. {to_utc_day(end_ms)}) — probing listings:", flush=True)
     for t in tickers:
-        oldest = probe_oldest(config.symbol(t))
+        oldest = fetch_oldest_candle_ms(config.symbol(t))
         ok = oldest <= start_ms
-        print(f"  {config.symbol(t):9} oldest candle {_iso_day(oldest)}  {'ok' if ok else 'AFTER WINDOW START'}", flush=True)
+        print(f"  {config.symbol(t):9} oldest candle {to_utc_day(oldest)}  {'ok' if ok else 'AFTER WINDOW START'}", flush=True)
         if not ok:
-            raise SystemExit(f"{config.symbol(t)}: history starts after {_iso_day(start_ms)} — basket rule broken")
+            raise SystemExit(f"{config.symbol(t)}: history starts after {to_utc_day(start_ms)} — basket rule broken")
 
     total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
     for t in tickers:

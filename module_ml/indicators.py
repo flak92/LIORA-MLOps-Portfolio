@@ -23,7 +23,7 @@ def ema(x: np.ndarray, span_bars: int) -> np.ndarray:
     return out
 
 
-def wilder_smooth(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
+def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     """Wilder's recursive average: seeded with the SMA of the first period."""
     out = np.full_like(x, np.nan)
     if x.size < smoothing_period_bars:
@@ -44,8 +44,8 @@ def rsi(close: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     the change grid to the price grid; all gains -> 100, no change at all -> 50.
     """
     delta = np.diff(close)
-    gain = wilder_smooth(np.maximum(delta, 0.0), smoothing_period_bars)
-    loss = wilder_smooth(np.maximum(-delta, 0.0), smoothing_period_bars)
+    gain = wilder_smoothing(np.maximum(delta, 0.0), smoothing_period_bars)
+    loss = wilder_smoothing(np.maximum(-delta, 0.0), smoothing_period_bars)
     with np.errstate(divide="ignore", invalid="ignore"):
         out = 100.0 - 100.0 / (1.0 + gain / loss)
     out = np.where((loss == 0.0) & (gain > 0.0), 100.0, out)
@@ -58,7 +58,7 @@ def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
     prev_close = np.concatenate(([close[0]], close[:-1]))
     true_range = np.maximum(high - low,
                             np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
-    return wilder_smooth(true_range, smoothing_period_bars)
+    return wilder_smoothing(true_range, smoothing_period_bars)
 
 
 def rolling_max(x: np.ndarray, lookback_bars: int) -> np.ndarray:
