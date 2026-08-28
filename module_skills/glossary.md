@@ -27,6 +27,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
+| the external minute-bar format the raw store is byte-compatible with | Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | — (DuckDB tables only; no OHLCV file is published) | canonical dataset | fused series, index, blended price |
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
@@ -86,7 +87,7 @@ adjective (`ambiguous`) names no number.
 | trades a fold produced | `trade_count` | `trade_count` | trades | n_trades |
 | trials the search ran | `trial_count` | `trial_count` | trials | n_trials |
 
-## Data quality (status.json)
+## Data quality (data_status.json)
 
 Written by `module_data/status.py`; every SQL alias in its scans is the key it becomes.
 
@@ -111,6 +112,7 @@ Written by `module_data/status.py`; every SQL alias in its scans is the key it b
 | log-loss of the weighted training class prior | `prior_logloss` | `prior_logloss` | prior log-loss | baseline |
 | log-loss of the model on the evaluated block | `model_logloss` | `model_logloss` | model log-loss | loss |
 | information beyond the prior, `1 − model / prior` | `relative_logloss_skill` | `relative_logloss_skill` | skill | accuracy, edge |
+| the search for model hyper-parameters, and the stage that runs it | HPO — `module_ml/hpo.py`, `make ml-hpo` | `hyperparameter_search_result` | search | tuning, optimisation, autoML; `HPO` spelled out mid-document after its first use |
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe | return/risk |
@@ -134,7 +136,7 @@ key is in this register.
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
-| the three tables of status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
+| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
 | the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count` |
 | the database envelope | `db_bytes`, `duckdb_version` | size on disk and the engine that wrote it |
 | day files a venue's tree holds | `zip_count` | one per UTC calendar day |
@@ -181,7 +183,7 @@ research pipeline, and they never appear in a measurement payload.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the generated page: the tracked tree drawn as one self-contained file | `galaxy_html()` | `module_monitoring/repo_galaxy.html` | Repo Silk Galaxy | diagram, graph, chart |
+| the generated page: the tracked tree drawn as one self-contained file | `visualisation_html()` | `module_monitoring/files_and_folders_visualisation.html` | Files and Folders | diagram, graph, chart |
 | one file or folder drawn in the picture | `node`, `NODES` | `id`, `path`, `type` | — | vertex, item, entry |
 | a parent → child line, the only kind of line the picture has | tree edge, `EDGES` | `kind: "tree"` | folder – folder / folder – file | link, dependency, flow |
 | an edge whose two ends are both folders, drawn heavier | `thick` | `thick` | folder – folder | bold, primary edge |
@@ -189,6 +191,6 @@ research pipeline, and they never appear in a measurement payload.
 | the node drawn at the centre of a story | `hub` | `hub` | — | root of the story, anchor |
 | a folder collapsed to a single node, its contents left out of the picture | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the commit the tree was read from, and its committer date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date, timestamp |
-| the one region of the template the generator writes | structure block | `GALAXY:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
+| the one region of the template the generator writes | structure block | `VISUALISATION:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
 | regenerating and byte-comparing against the committed page | `--check` | — | — | test, validate, lint |
 

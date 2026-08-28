@@ -5,7 +5,7 @@
     ".gitignore",
     ".dockerignore",
     "**/__init__.py",
-    "module_monitoring/repo_galaxy.html"
+    "module_monitoring/files_and_folders_visualisation.html"
   ],
 
   "story_map": {
@@ -54,7 +54,7 @@
     "module_visualisation/config.py": "config",
     "module_ml/validation.py": "gate",
     "Makefile": "entrypoint",
-    "module_visualisation/galaxy_config.json": "config"
+    "module_visualisation/visualisation_config.json": "config"
   },
 
   "descriptions": {
@@ -68,17 +68,17 @@
     "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout — the gate of the whole system.",
     "module_monitoring/": "Static dashboard — reads two JSON snapshots, no backend.",
     "module_skills/": "The contract's companions: the act, the register, the methodologies and the skills.",
-    "module_visualisation/": "This picture: the tracked tree rendered into module_monitoring/repo_galaxy.html on every push.",
-    "module_visualisation/galaxy_config.json": "The whole configuration surface — shape, colour, wording and placement, with no Python edit.",
+    "module_visualisation/": "This picture: the tracked tree rendered into module_monitoring/files_and_folders_visualisation.html on every push.",
+    "module_visualisation/visualisation_config.json": "The whole configuration surface — shape, colour, wording and placement, with no Python edit.",
     "store_assets_artifacts/": "Versioned per-asset artifacts — the only objects the system produces.",
-    ".github/": "The one workflow: a push regenerates the galaxy and commits it back."
+    ".github/": "The one workflow: a push regenerates the picture and commits it back."
   },
 
   "camera": { "start_rot_y": 3.491, "start_rot_x": -0.40, "fit_width": 1400 },
 
   "header": {
     "eyebrow_from_git": true,
-    "title": "Repo Silk Galaxy",
+    "title": "Files and Folders",
     "subtitle": "{files} tracked files · {modules} top-level folders · {assets} asset artifacts"
   }
 }

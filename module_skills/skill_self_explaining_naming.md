@@ -31,7 +31,10 @@ directory — must explain itself, so an agent never has to guess.
   things live. If renaming would place things of one kind next to each other,
   rename them — `module_*` beside `module_*`, `store_*` beside `store_*`.
 - **One concept, one name.** A synonym forces the reader to decide whether two
-  names are one thing or two — a thought the code should never demand.
+  names are one thing or two — a thought the code should never demand. And its
+  converse, **one name, one concept**: a name denoting two things in one scope
+  demands the same thought from the other side. `AGENTS.md` holds the rule and
+  enumerates the scopes it binds.
 - **The glossary confirms, it never decodes.** `glossary.md` registers what a
   name already says; if the register is needed to understand the name, the
   name is wrong.
@@ -100,12 +103,11 @@ whose command cannot fail is a preference, so each one names the hit it would
 report.
 
 ```
-kind-first blocks     ls -1d */
-                      → module_data module_ml module_monitoring module_skills module_visualisation, then store_assets_artifacts store_db store_raw_1m
-collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_1m; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
-                      → empty (the packages are absent from the loop for the same reason the root is:
-                        their listings differ only by names the act exempts — the ecosystem-fixed ones
-                        of row 16, plus the template of row 20 in module_visualisation)
+act conventions       make conventions-check
+                      → eight checks pass. The act's conventions-data block is the rule set, and
+                        this check owns what used to be `kind-first blocks`, `collation invariance`
+                        and `make targets`: it rebuilds the listings from the index instead of ls,
+                        so a build artifact or a gitignored store cannot move the answer
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty
 constructors          git grep -nE '^def make_|_factory\(' -- '*.py'
@@ -116,7 +118,7 @@ paths at point of use git grep -n '_DIR /' -- '*.py' | grep -v config.py
                       → empty
 Lean names            git grep -n 'trade\.zip\|minute_trade_perp' -- '*.py' | grep -v module_data/lean.py
                       → only the tree diagrams in the two downloader docstrings
-statement constants   grep -nE '^[A-Z_]+ = ("""|re\.compile)' module_data/*.py module_ml/*.py module_visualisation/*.py | grep -vE '_(DDL|INSERT|SCAN|PREDICATE|PATTERN|COLUMNS) ='
+statement constants   grep -nE '^[A-Z_]+ = ("""|re\.compile)' module_data/*.py module_ml/*.py module_visualisation/*.py module_skills/*.py | grep -vE '_(DDL|INSERT|SCAN|PREDICATE|PATTERN|COLUMNS) ='
                       → empty
 SQL aliases           grep -nE ' AS (n_|div_|chg|prev|ts_|rows)\b' module_data/status.py
                       → empty
@@ -132,14 +134,12 @@ conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'modu
                       → empty
 JavaScript verbs      grep -hoE '^function [a-zA-Z]+' module_monitoring/*.js | grep -vE 'function (build|render|format|append|select|init)[A-Z]|^function (validationFolds|mean)$'
                       → empty
-make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|dashboard|docker-build|docker-up|docker-down|(data|ml|visualisation)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
-                      → empty
 .PHONY completeness   comm -3 <(grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | sort -u) <(sed -n '/^\.PHONY:/,/^$/p' Makefile | tr ' \\' '\n' | grep -v PHONY | grep . | sort -u)
                       → empty
 port                  git grep -n 8900 -- Makefile docker-compose.yml
                       → Makefile's `PORT ?=` and the two `${PORT:-8900}` defaults of compose, nothing else
 boundaries            the pre-sweep grep of the act, § External vocabularies
                       → hits only inside the owning files listed there
-register              python3 -c "import json;g=open('module_skills/glossary.md').read();s=json.load(open('module_monitoring/status.json'));m=json.load(open('module_monitoring/ml_status.json'));a=m['assets'][0];k=set(s)|set(s['flow'])|{x for r in s['symbols']+s['canonical_source']+s['venues']['binance'] for x in r}|set(m)|set(m['research_window'])|set(a)|set(a['sample'])|set(a['strategy'])|set(a['strategy']['final_holdout'])|set(a['final_holdout'])|set(a['hyperparameter_search_result']);print(sorted(x for x in k if '\x60'+x+'\x60' not in g))"
+register              python3 -c "import json;g=open('module_skills/glossary.md').read();s=json.load(open('module_monitoring/data_status.json'));m=json.load(open('module_monitoring/ml_status.json'));a=m['assets'][0];k=set(s)|set(s['flow'])|{x for r in s['symbols']+s['canonical_source']+s['venues']['binance'] for x in r}|set(m)|set(m['research_window'])|set(a)|set(a['sample'])|set(a['strategy'])|set(a['strategy']['final_holdout'])|set(a['final_holdout'])|set(a['hyperparameter_search_result']);print(sorted(x for x in k if '\x60'+x+'\x60' not in g))"
                       → [] (every published key is in the register)
 ```

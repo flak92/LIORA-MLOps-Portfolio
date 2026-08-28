@@ -1,5 +1,5 @@
 /* ML Assets tab: the per-asset panel. Classic script — uses buildMeter,
-   formatCount and formatNumber from app.js, and buildTable, buildShareCell,
+   formatCount and formatNumber from data.js, and buildTable, buildShareCell,
    validationFolds, CLASS_NAMES and ML_STATUS from ml.js. */
 "use strict";
 

@@ -1,4 +1,4 @@
-name: galaxy
+name: visualisation
 
 # The repository's first workflow, and deliberately its only one. AGENTS.md still
 # forbids test frameworks and precautionary guards; what is repealed here is
@@ -19,10 +19,10 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - module_monitoring/repo_galaxy.html
+      - module_monitoring/files_and_folders_visualisation.html
 
 concurrency:
-  group: galaxy-${{ github.ref }}
+  group: visualisation-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -37,16 +37,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - run: make visualisation-galaxy
+      - run: make conventions-check
+
+      - run: make visualisation-generate
 
       - name: commit the page when the tree has moved
         run: |
-          if git diff --quiet -- module_monitoring/repo_galaxy.html; then
-            echo "the galaxy already matches the tree"
+          if git diff --quiet -- module_monitoring/files_and_folders_visualisation.html; then
+            echo "the picture already matches the tree"
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add module_monitoring/repo_galaxy.html
-          git commit -m 'chore(galaxy): regenerate [skip ci]'
+          git add module_monitoring/files_and_folders_visualisation.html
+          git commit -m 'chore(visualisation): regenerate [skip ci]'
           git push

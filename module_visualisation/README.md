@@ -2,25 +2,25 @@
 
 The tracked git tree, rendered as a self-contained 3D page.
 
-`module_monitoring/repo_galaxy.html` is generated, never hand-edited. Nodes are the files and
+`module_monitoring/files_and_folders_visualisation.html` is generated, never hand-edited. Nodes are the files and
 folders `git ls-files` reports; edges are parent → child and nothing else. A push to `main`
 regenerates it, so the picture always equals the tree.
 
 ```
-make visualisation-galaxy         regenerate the page
-make visualisation-galaxy-check   fail if the committed page no longer matches the tree
+make visualisation-generate         regenerate the page
+make visualisation-check   fail if the committed page no longer matches the tree
 ```
 
-Both run `python3 -m module_visualisation.generate_galaxy` — standard library only, plus the `git`
+Both run `python3 -m module_visualisation.generate` — standard library only, plus the `git`
 binary. There is nothing to install, which is why the workflow can call the same target on a bare
 runner.
 
-The page is served by the dashboard that already exists: `make dashboard`, then
-<http://127.0.0.1:8900/repo_galaxy.html>, or the link in the dashboard footer.
+The page is served by the dashboard that already exists: `make monitoring-dashboard`, then
+<http://127.0.0.1:8900/files_and_folders_visualisation.html>, or the link in the dashboard footer.
 
 ## The one rule
 
-**`galaxy_config.json` is the whole configuration surface.** Shape, colour, wording, camera and
+**`visualisation_config.json` is the whole configuration surface.** Shape, colour, wording, camera and
 placement all live there. Changing the picture never means editing Python. An unknown key is a hard
 error naming the key, so a typo cannot be silently ignored.
 
@@ -39,7 +39,7 @@ error naming the key, so a typo cannot be silently ignored.
 | `place` | Path → hand-tuned position for one node, as `r` (fraction of the island radius), `da` (angle offset in radians from the island centre), `y` (vertical offset) and optional `jit` (the vertical jitter of that folder's own child ring). A path that is not in the picture is an error. |
 | `roles` | Path → role, overriding the extension-based default. A role picks the glyph and the word the side panel shows: `artifact` draws the halo-and-diamond, everything else draws a plain file or folder. |
 | `descriptions` | Path → the sentence the side panel shows. Optional everywhere: a node without one gets an empty line, never an error, and a description left behind by a deleted file is dropped rather than reported. |
-| `camera` | `start_rot_y`, `start_rot_x` (radians) and `fit_width` (the viewport width at which the galaxy fits at zoom 1). |
+| `camera` | `start_rot_y`, `start_rot_x` (radians) and `fit_width` (the viewport width at which the picture fits at zoom 1). |
 | `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>` read from `remote.origin.url`. |
 | `header.title` | The heading, and the first half of the browser tab title. The repository name is appended to the tab title from git. |
 | `header.subtitle` | The line under the heading. May use `{files}`, `{modules}`, `{assets}`, `{nodes}`, `{edges}` — respectively tracked files that survived `exclude`, top-level folders, aggregated folders, and the totals actually drawn. Any other placeholder is an error naming it. |
@@ -50,10 +50,10 @@ The subtitle always ends with `tree as of <short-hash> · <committer date>`. Tha
 **tree was read from**, not the moment the file was built — the same commit twice produces the same
 bytes.
 
-The stamp walks back from `HEAD` past any commit that changed nothing but `repo_galaxy.html`. That
+The stamp walks back from `HEAD` past any commit that changed nothing but `files_and_folders_visualisation.html`. That
 walk is what makes the workflow's own commit harmless: without it, the bot's regeneration commit
 would become the newest commit, the next run would stamp a different hash for an identical tree, and
-`visualisation-galaxy-check` would fail on the commit the workflow had just made.
+`visualisation-check` would fail on the commit the workflow had just made.
 
 A shallow clone is refused rather than stamped. At a graft every file looks new, so the walk stops on
 the first commit it sees and a page-only commit would be stamped as if it were the tree's own — the
@@ -62,13 +62,13 @@ of wrong. `fetch-depth: 0` in the workflow is load-bearing, not decoration.
 
 ## The template
 
-`Files_and_Folders_Visualisation.html` is the rendering shell. The generator owns exactly one region
+`files_and_folders_visualisation_template.html` is the rendering shell. The generator owns exactly one region
 of it:
 
 ```js
-/* GALAXY:STRUCTURE:BEGIN ... */
+/* VISUALISATION:STRUCTURE:BEGIN ... */
 const META, ISLANDS, ISLAND_ORDER, PLACE, NODES, EDGES
-/* GALAXY:STRUCTURE:END */
+/* VISUALISATION:STRUCTURE:END */
 ```
 
 Everything outside those two markers is hand-written canvas code and is never touched. If the

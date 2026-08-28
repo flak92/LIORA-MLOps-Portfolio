@@ -23,7 +23,7 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 # every target is a command, not a file — .PHONY stops make from ever looking
 # for a file of the target's own name (and from searching implicit rules for it)
 .PHONY: help all setup data-download data-download-binance data-download-bybit data-ingest data-status \
-        dashboard visualisation-galaxy visualisation-galaxy-check \
+        monitoring-dashboard visualisation-generate visualisation-check conventions-check \
         ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-data-download \
         docker-data-ingest docker-data-status docker-ml-bars \
@@ -52,21 +52,26 @@ data-download-bybit: ## Bybit Linear only
 data-ingest:     ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m module_data.ingest
 
-data-status:     ## data & DB monitoring -> stdout + module_monitoring/status.json
+data-status:     ## data & DB monitoring -> stdout + module_monitoring/data_status.json
 	$(PY) -m module_data.status
 
-dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
+monitoring-dashboard: ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory module_monitoring
 
 # python3, not $(PY): the generator is standard library only and has to run on a
 # CI runner that has no .venv. Installing duckdb, numpy, optuna and xgboost to
 # render an HTML file would be the wrong trade.
-visualisation-galaxy: ## regenerate module_monitoring/repo_galaxy.html from the tracked tree
-	python3 -m module_visualisation.generate_galaxy
+visualisation-generate: ## regenerate module_monitoring/files_and_folders_visualisation.html from the tracked tree
+	python3 -m module_visualisation.generate
 
-visualisation-galaxy-check: ## fail if the committed galaxy no longer matches the tree
-	python3 -m module_visualisation.generate_galaxy --check
+visualisation-check: ## fail if the committed picture no longer matches the tree
+	python3 -m module_visualisation.generate --check
+
+# a plain script path, not -m: module_skills never participates in runtime
+# imports, and -m would invite the misreading that it does
+conventions-check: ## verify the enacted names of the act against the tree
+	python3 module_skills/check_conventions.py
 
 ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
 	$(PY) -m module_ml.bars

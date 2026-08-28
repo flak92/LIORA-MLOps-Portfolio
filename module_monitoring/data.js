@@ -1,4 +1,4 @@
-/* Pipeline and Data Quality tabs, plus the helpers ml.js and asset.js share:
+/* Pipeline and Data Quality tabs, plus the code ml.js and asset.js share:
    formatCount, formatNumber, buildMeter, appendCell, appendHeaderRow,
    appendRows, renderTable, initPills, PILL_HOOKS. Vanilla JS, classic
    scripts sharing one global scope, no external resources. Every function
@@ -126,7 +126,7 @@ function renderRawSource(tableId, venueRows) {
   }
 }
 
-fetch("status.json", { cache: "no-store" })
+fetch("data_status.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
   .then((status) => {
     document.getElementById("meta").textContent =
@@ -181,6 +181,6 @@ fetch("status.json", { cache: "no-store" })
   })
   .catch((error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load status.json (" + error.message + ") — run `make data-status`";
+    meta.textContent = "could not load data_status.json (" + error.message + ") — run `make data-status`";
     meta.className = "box err";
   });

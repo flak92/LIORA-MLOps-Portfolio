@@ -20,7 +20,7 @@ conflicts with this file, the change is wrong.
   switches that can be automated, are: `make all` runs the whole pipeline
   from a fresh clone, every stage is idempotent, the dashboard opens itself.
   One GitHub Actions workflow carries the rule past the clone: a push to `main`
-  regenerates `module_monitoring/repo_galaxy.html` and commits it, because a
+  regenerates `module_monitoring/files_and_folders_visualisation.html` and commits it, because a
   picture of the files that a human has to remember to refresh is a picture
   that is quietly wrong.
 - **Main = clean working logic.** No test frameworks, security layers,
@@ -30,11 +30,13 @@ conflicts with this file, the change is wrong.
   the aligned decision grids of the arrays `dataset.load_xy` joins by position,
   the basket-wide ingest, the download that aborts on a short post-listing day).
   A check that could only fail on a stale artifact from another run is not one
-  of them. The single workflow in `.github/` is not an exception to this rule
-  but a consequence of the one above it: it runs no tests, asserts nothing and
-  blocks no merge — it regenerates one artifact whose whole purpose is to equal
-  the tree. A workflow that lints, gates or proves anything does not belong here,
-  and a second workflow is the signal that this one has been misread. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
+  of them. The single workflow in `.github/` does **exactly two** things, and the
+  count is the rule: it regenerates one artifact whose whole purpose is to equal
+  the tree, and it checks the tree against the names this project enacted. Both
+  are the contract keeping itself true, neither asserts anything about the
+  mathematics, and neither adds a dependency. A test suite, a linter, a coverage
+  gate or a merge block does not belong here — and a third thing, or a second
+  workflow, is the signal that this one has been misread. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
   part of correctness, not a setting.
 - **Research logic over tooling.** External sources, libraries and
   infrastructure are implementation details. The repository should expose the
@@ -98,7 +100,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree) —
   and the browser, which has no config module and fetches its two snapshots by
-  literal name (`app.js`, `ml.js`); one asset is one folder,
+  literal name (`data.js`, `ml.js`); one asset is one folder,
   `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a
@@ -128,6 +130,34 @@ the barrier width, the horizon, the cost and the feature set are frozen a
 priori, not selected — and `FINAL_HOLDOUT_FOLD_ID` is F5, which only
 evaluates. The word "test" never names a fold.
 
+And one name, one concept. A name that could denote two things **in the same
+scope** is renamed until it denotes one. The scopes are enumerated, so the rule
+can be applied without argument: make targets, compose services, tracked paths,
+and Python symbols within a module. Two objects sharing a name in *different*
+scopes are not a collision — the compose service `dashboard` and the make target
+`monitoring-dashboard` are addressed by different tools and never appear in one
+listing. This is the rule the act already leaned on twice without writing it
+down: `db` is legal where nothing else could be meant (row 3), and `status`
+became `data-status` the moment `ml-status` existed (row 13).
+
+**Derived, never drafted.** Every derived artifact is generated from source and
+config, and never hand-edited; a hand edit to a generated file is a violation.
+`module_monitoring/files_and_folders_visualisation.html` is derived from the git
+index and `module_visualisation/visualisation_config.json`, and
+`make visualisation-check` is what makes this enforceable instead of hoped for.
+
+**Prefer generative structure over repeated project knowledge.** When a family —
+assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
+— is governed by one canonical definition, derive the repeated representations
+from that owner rather than copying the same list or naming decision into
+several files; adding the next member of an established family should need one
+local definition and predictable derivation. Keep it stupid simple: no
+generators, registries, metaprogramming or abstraction layers for a one-off
+value. Generation earns its place only when it removes duplicated knowledge and
+shortens the extension path, and it is a preference the repository states rather
+than a grammar it can check — `module_skills/act_naming_conventions.md` records
+it among the rules no grep can settle.
+
 Every layer has a closed grammar, the way CSS has BEM. A name is **derived**
 from its layer's grammar, never invented:
 
@@ -151,7 +181,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `dashboard`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
 | directories | `<kind>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (the act, § timeframe slots) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |

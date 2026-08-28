@@ -1,9 +1,9 @@
-"""Render the tracked git tree into module_monitoring/repo_galaxy.html.
+"""Render the tracked git tree into module_monitoring/files_and_folders_visualisation.html.
 
 The picture is not a drawing of the repository; it is the repository. Nodes are
 the files and folders `git ls-files` reports, edges are parent -> child and
 nothing else, and the whole structure is spliced into the one marked region of
-Files_and_Folders_Visualisation.html. Everything outside that region is
+files_and_folders_visualisation_template.html. Everything outside that region is
 hand-written rendering code this module never touches.
 
     git ls-files
@@ -12,9 +12,9 @@ hand-written rendering code this module never touches.
       -> aggregate rules collapse a matching folder into a single node
       -> stories by longest prefix (unmapped is an error, not a default)
       -> NODES / EDGES + the header block
-      -> splice -> module_monitoring/repo_galaxy.html
+      -> splice -> module_monitoring/files_and_folders_visualisation.html
 
-Two properties are load-bearing. The first is that galaxy_config.json is the
+Two properties are load-bearing. The first is that visualisation_config.json is the
 whole configuration surface: shape, colour, wording, camera and placement all
 come from there, an unknown key is reported by name rather than ignored, and
 changing the picture never means editing this file. The second is determinism:
@@ -41,7 +41,7 @@ from . import config
 PROVENANCE_WALK_LIMIT = 64          # a chain of output-only commits longer than this is not a real history
 
 
-class GalaxyError(Exception):
+class VisualisationError(Exception):
     """A configuration or repository state that cannot produce a picture.
 
     Raised with the offending name and the fix in the message, because the
@@ -54,7 +54,7 @@ def _git(*args: str) -> str:
     done = subprocess.run(("git", *args), cwd=config.REPO_ROOT,
                           capture_output=True, text=True, check=False)
     if done.returncode != 0:
-        raise GalaxyError(f"git {' '.join(args)} failed: {done.stderr.strip()}")
+        raise VisualisationError(f"git {' '.join(args)} failed: {done.stderr.strip()}")
     return done.stdout
 
 
@@ -79,7 +79,7 @@ def load_provenance_stamp(output_relative: str) -> tuple[str, str]:
     and the freshness check would fail on the commit the workflow had just made.
     """
     if _git("rev-parse", "--is-shallow-repository").strip() == "true":
-        raise GalaxyError(
+        raise VisualisationError(
             "the repository is a shallow clone, so the stamp cannot be trusted: at a graft every\n"
             "  file looks new, the walk stops on the first commit it sees, and a page-only commit\n"
             "  would be stamped as though it were the tree's own.\n"
@@ -177,8 +177,8 @@ def role_of(node_id: str, is_folder: bool) -> str:
 def _validate_keys(where: str, given, allowed) -> None:
     unknown = sorted(set(given) - set(allowed))
     if unknown:
-        raise GalaxyError(
-            f"galaxy_config.json: unknown key {unknown[0]!r} in {where}.\n"
+        raise VisualisationError(
+            f"visualisation_config.json: unknown key {unknown[0]!r} in {where}.\n"
             f"  known keys here: {', '.join(sorted(allowed))}\n"
             f"  fix: correct the spelling, or drop the key — the generator never ignores one silently."
         )
@@ -256,8 +256,8 @@ def resolve_key(raw: str, nodes: dict, where: str) -> str:
     for candidate in (raw, raw.rstrip("/") + "/", raw.rstrip("/")):
         if candidate in nodes:
             return candidate
-    raise GalaxyError(
-        f"galaxy_config.json: {where} points at {raw!r}, which is not in the picture.\n"
+    raise VisualisationError(
+        f"visualisation_config.json: {where} points at {raw!r}, which is not in the picture.\n"
         f"  fix: use a path that `git ls-files` reports and that `exclude` does not remove."
     )
 
@@ -284,8 +284,8 @@ def hub_of(story_id: str, story: dict, members: list, nodes: dict) -> str:
     if story.get("hub"):
         return resolve_key(story["hub"], nodes, f'"stories"."{story_id}"."hub"')
     if not members:
-        raise GalaxyError(
-            f'galaxy_config.json: story "{story_id}" has no files, so it cannot be drawn.\n'
+        raise VisualisationError(
+            f'visualisation_config.json: story "{story_id}" has no files, so it cannot be drawn.\n'
             f"  fix: map at least one path to it in \"story_map\", or remove the story."
         )
     folders = [m for m in members if nodes[m]["type"] == "folder"]
@@ -309,8 +309,8 @@ def build_structure(settings: dict) -> tuple[list, list, dict, dict]:
         if story_id is None:
             unmapped.append(node_id)
         elif story_id not in stories:
-            raise GalaxyError(
-                f"galaxy_config.json: \"story_map\" sends {node_id!r} to story {story_id!r}, "
+            raise VisualisationError(
+                f"visualisation_config.json: \"story_map\" sends {node_id!r} to story {story_id!r}, "
                 f"which \"stories\" does not define.\n"
                 f"  fix: add {story_id!r} to \"stories\", or point the path at an existing story."
             )
@@ -318,8 +318,8 @@ def build_structure(settings: dict) -> tuple[list, list, dict, dict]:
     if unmapped:
         listed = "\n".join(f"    {p}" for p in sorted(unmapped)[:40])
         more = "" if len(unmapped) <= 40 else f"\n    ... and {len(unmapped) - 40} more"
-        raise GalaxyError(
-            f"galaxy_config.json: {len(unmapped)} path(s) belong to no story:\n{listed}{more}\n"
+        raise VisualisationError(
+            f"visualisation_config.json: {len(unmapped)} path(s) belong to no story:\n{listed}{more}\n"
             f'  fix: add a "story_map" entry for each — the shortest prefix that covers them is\n'
             f"       usually the right one — or set \"default_story\" to a story id to stop\n"
             f"       classifying new things consciously."
@@ -376,16 +376,16 @@ def build_meta(settings: dict, counts: dict) -> dict:
     header = settings["header"]
     owner, repository = load_repository_name()
     short, committed_at = load_provenance_stamp(
-        str(config.MODULE_MONITORING_REPO_GALAXY_HTML_PATH.relative_to(config.REPO_ROOT)))
+        str(config.MODULE_MONITORING_FILES_AND_FOLDERS_VISUALISATION_HTML_PATH.relative_to(config.REPO_ROOT)))
     template = header.get("subtitle") or "{files} tracked files"
     try:
         subtitle = template.format(**counts)
     except KeyError as unknown:
-        raise GalaxyError(
-            f'galaxy_config.json: "header"."subtitle" uses {{{unknown.args[0]}}}, which is not a count.\n'
+        raise VisualisationError(
+            f'visualisation_config.json: "header"."subtitle" uses {{{unknown.args[0]}}}, which is not a count.\n'
             f"  fix: use one of {', '.join('{' + k + '}' for k in sorted(counts))}."
         ) from None
-    title = header.get("title") or "Repo Silk Galaxy"
+    title = header.get("title") or "Files and Folders"
     eyebrow = f"{owner} / {repository}" if header.get("eyebrow_from_git", True) else ""
     return {
         "title": title,
@@ -405,7 +405,7 @@ def build_structure_block(meta: dict, islands: dict, order: list,
                           place: dict, nodes: list, edges: list) -> str:
     lines = [
         f"{config.STRUCTURE_BEGIN_MARKER} - written by "
-        f"module_visualisation/generate_galaxy.py, do not edit by hand */",
+        f"module_visualisation/generate.py, do not edit by hand */",
         _literal("META", meta),
         _literal("ISLANDS", islands),
         _literal("ISLAND_ORDER", order),
@@ -423,22 +423,22 @@ def render_html(template_text: str, block: str) -> str:
     begin = template_text.find(config.STRUCTURE_BEGIN_MARKER)
     end = template_text.find(config.STRUCTURE_END_MARKER)
     if begin < 0 or end < 0 or end < begin:
-        raise GalaxyError(
-            f"{config.GALAXY_TEMPLATE_HTML_PATH.name}: the structure markers are missing or out of "
+        raise VisualisationError(
+            f"{config.VISUALISATION_TEMPLATE_HTML_PATH.name}: the structure markers are missing or out of "
             f"order.\n  fix: the template must contain {config.STRUCTURE_BEGIN_MARKER!r} once, then "
             f"{config.STRUCTURE_END_MARKER!r} once."
         )
     if template_text.count(config.STRUCTURE_BEGIN_MARKER) != 1 or \
             template_text.count(config.STRUCTURE_END_MARKER) != 1:
-        raise GalaxyError(
-            f"{config.GALAXY_TEMPLATE_HTML_PATH.name}: the structure markers appear more than once, "
+        raise VisualisationError(
+            f"{config.VISUALISATION_TEMPLATE_HTML_PATH.name}: the structure markers appear more than once, "
             f"so the generator cannot tell which region it owns.\n  fix: leave exactly one pair."
         )
     return template_text[:begin] + block + template_text[end + len(config.STRUCTURE_END_MARKER):]
 
 
-def galaxy_html() -> str:
-    settings = load_config(config.GALAXY_CONFIG_JSON_PATH)
+def visualisation_html() -> str:
+    settings = load_config(config.VISUALISATION_CONFIG_JSON_PATH)
     nodes, edges, place, counts = build_structure(settings)
     meta = build_meta(settings, counts)
     islands = {"core": settings["core"]}
@@ -447,37 +447,37 @@ def galaxy_html() -> str:
     order = settings["story_order"] or list(settings["stories"])
     unknown = [s for s in order if s not in settings["stories"]]
     if unknown:
-        raise GalaxyError(
-            f'galaxy_config.json: "story_order" names {unknown[0]!r}, which "stories" does not define.\n'
+        raise VisualisationError(
+            f'visualisation_config.json: "story_order" names {unknown[0]!r}, which "stories" does not define.\n'
             f"  fix: list only defined story ids, or drop the key to use the order of \"stories\"."
         )
     block = build_structure_block(meta, islands, order, place, nodes, edges)
-    template_text = config.GALAXY_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
+    template_text = config.VISUALISATION_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
     return render_html(template_text, block), counts
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Render the tracked git tree into module_monitoring/repo_galaxy.html.")
+        description="Render the tracked git tree into module_monitoring/files_and_folders_visualisation.html.")
     parser.add_argument("--check", action="store_true",
                         help="regenerate in memory and compare with the committed page; "
                              "exit 1 on drift, say nothing when fresh")
     arguments = parser.parse_args()
 
     try:
-        html, counts = galaxy_html()
-    except GalaxyError as failure:
+        html, counts = visualisation_html()
+    except VisualisationError as failure:
         print(str(failure))
         return 1
 
-    out = config.MODULE_MONITORING_REPO_GALAXY_HTML_PATH
+    out = config.MODULE_MONITORING_FILES_AND_FOLDERS_VISUALISATION_HTML_PATH
     if arguments.check:
         committed = out.read_text(encoding="utf-8") if out.exists() else ""
         if committed == html:
             return 0
         print(f"{out.relative_to(config.REPO_ROOT)} is stale: the tree has moved since it was written.\n"
               f"  committed {len(committed)} bytes, regenerated {len(html)} bytes\n"
-              f"  fix: run `make visualisation-galaxy` and commit the result.")
+              f"  fix: run `make visualisation-generate` and commit the result.")
         return 1
 
     out.write_text(html, encoding="utf-8", newline="\n")

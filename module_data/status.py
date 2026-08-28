@@ -1,4 +1,4 @@
-"""Data-layer quality monitoring: stdout tables + module_monitoring/status.json.
+"""Data-layer quality monitoring: stdout tables + module_monitoring/data_status.json.
 
 Three basket-wide scans (one per venue table, one over the canonical series)
 plus three bounded per-symbol passes (largest 1m move, longest flat run, source
@@ -113,7 +113,7 @@ def _rounded(x, ndigits):
 
 def main() -> int:
     argparse.ArgumentParser(
-        description="data & DB monitoring -> stdout + module_monitoring/status.json"
+        description="data & DB monitoring -> stdout + module_monitoring/data_status.json"
     ).parse_args()
     if not config.STORE_DB_PATH.exists():
         raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make data-ingest` first")
@@ -224,7 +224,7 @@ def main() -> int:
     }
 
     config.MODULE_MONITORING_DIR.mkdir(parents=True, exist_ok=True)
-    out = config.MODULE_MONITORING_STATUS_JSON_PATH
+    out = config.MODULE_MONITORING_DATA_STATUS_JSON_PATH
     out.write_text(json.dumps(status, indent=1) + "\n", encoding="utf-8")
 
     f = status["flow"]
