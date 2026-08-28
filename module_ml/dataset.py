@@ -4,9 +4,9 @@ Loading X/Y and writing JSON are the only two things every stage needs from a
 common place, so they live together here. No artifact carries a provenance
 envelope: the git commit records which code produced a result, and
 ml_status.json carries the research window and the seed once, not in every
-file. The per-asset experiment configuration written by status.py is a
-different thing — the configuration a run used, read from config.py, not a
-statement about the file it sits next to.
+file. The `experiment_configuration` section of <TICKER>_parameters.json,
+written by hpo.py, is a different thing — the configuration a run used, read
+from config.py, not a statement about the file it sits next to.
 """
 
 from __future__ import annotations

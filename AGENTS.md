@@ -21,8 +21,9 @@ conflicts with this file, the change is wrong.
   from a fresh clone, every stage is idempotent, the dashboard opens itself.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the guards
-  the mathematics requires: causality invariants, arithmetic preconditions,
-  the fail-closed export. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
+  the mathematics requires: causality invariants (`indicators.asof_index`) and
+  arithmetic preconditions (the full canonical grid in `labels.load_research_1m`,
+  the basket-wide ingest). Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
   part of correctness, not a setting.
 - **Research logic over tooling.** External sources, libraries and
   infrastructure are implementation details. The repository should expose the
@@ -50,7 +51,7 @@ the data moves through them, and one non-runtime module:
 module_data/         sources → normalised raw 1m → ONE canonical DuckDB
 module_ml/           canonical dataset → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the two modules measured about themselves
-module_skills/     the contract's companions: methodology, skills, the register
+module_skills/       the contract's companions: the act, the register, the methodologies, the skills
 ```
 
 `module_skills` never participates in runtime imports or dataflow. A new
@@ -62,14 +63,14 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `store_Assets_artifacts/<TICKER>/<artifact>.<ext>`, `ml-<stage>` ↔
+  `download_bybit.py`, `store_Assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`module_data`,
   `module_ml`) measures its own domain state in `status.py`, and
   `module_monitoring` presents their snapshots;
 - **the kind comes first, so siblings sort together.** A listing is read by
   eye before it is parsed: `module_data`, `module_ml`, `module_monitoring`,
-  `module_skills`, then `store_db`, `store_raw_data_ss-01-hh-dd-MM`,
-  `store_Assets_artifacts` — two blocks, not seven scattered entries. If
+  `module_skills`, then `store_Assets_artifacts`, `store_db`,
+  `store_raw_data_ss-01-hh-dd-MM` — two blocks, not seven scattered entries. If
   renaming would put things of one kind next to each other, rename them.
   Checked with `ls -1d */`: one kind, one contiguous block;
 - short, predictable paths, built only in a module's `config.py` — never

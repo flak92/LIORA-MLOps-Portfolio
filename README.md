@@ -65,7 +65,7 @@ source-specific logic. Full methodology, endpoints and schema:
 
 ## The basket
 
-Ten assets, uniform market — USDT-margined perpetual futures:
+One uniform market — USDT-margined perpetual futures:
 
 `BTC ETH BNB XRP SOL TRX DOGE ZEC LINK ADA`
 
@@ -107,7 +107,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | download  | `make download`        | both APIs → `store_raw_data_ss-01-hh-dd-MM/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; 3 full scans           |
+| status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
@@ -153,14 +153,14 @@ strategy evaluation with explicit costs:
 
 Both `X` and `Y` read the canonical series — `X` before the decision, `Y` after
 it — so features and target describe the same canonical research object. The
-decision is taken at a 15m close and filled one minute later. Stages:
-`make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
-(or `make ml-all`) — every per-asset stage runs `JOBS = max(1, min(cores,
+decision is taken at a 15m close and filled one minute later. The stages run in the
+order `make ml-all` fixes — the Makefile is the one authority for stage order —
+and every per-asset stage runs `JOBS = max(1, min(cores,
 available GiB))` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
 describes itself: `<TICKER>_parameters.json` records the configuration and the winner
-the run used, and its `README.md` says what came out. Full methodology:
+the run used, and its `<TICKER>_README.md` says what came out. Full methodology:
 [module_skills/methodology_ml.md](module_skills/methodology_ml.md).
 

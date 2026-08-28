@@ -248,8 +248,9 @@ folds F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight
 `alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`, no
 early stopping. Label parameters, costs and the entry-edge-threshold grid are **never** in the
-space. `<TICKER>_OPTUNAs_XGB_HPOs_best_params.json` keeps the winner and the trial count; the trajectory of
-50 trials is a search diary, not a result.
+space. The `OPTUNAs_XGB_HPOs_best_params` section of `<TICKER>_parameters.json` keeps the
+winner, its log-loss and the trial count; the trajectory of 50 trials is a search
+diary, not a result.
 
 ## 8. Classification metric — relative log-loss skill against the training prior
 
@@ -337,36 +338,38 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 Per asset in `store_Assets_artifacts/<TICKER>/` — **one file per distinct artifact
 responsibility, no duplicate representations of the same result**, each named
 for what it holds, with the `<TICKER>_` prefix so every file identifies its
-asset on its own: the canonical OHLCV parquet, the features/labels/predictions
-parquets on the 15m decision grid, the Optuna→XGB best-params JSON and the two
+asset on its own: the three per-timeframe feature parquets, the label-events and
+out-of-sample predictions parquets on the 15m decision grid, and the two
 evaluation JSONs. The data files are
 gitignored and reconstructable; two text files are not, because they are what
-makes the rest readable without a run: **`<TICKER>_experiment_configuration.json`**, the
-configuration this run was executed under, and **`README.md`**, what the
-folder holds and what came out of it. Both are written by `module_ml/status.py`
-and carry no timestamp, so an unchanged experiment reproduces them byte for
+makes the rest readable without a run: **`<TICKER>_parameters.json`**, whose
+`experiment_configuration` section is the configuration this run was executed
+under and whose `OPTUNAs_XGB_HPOs_best_params` section is the search's winner
+(written by `module_ml/hpo.py` when the search runs), and **`<TICKER>_README.md`**,
+what the folder holds and what came out of it (written by `module_ml/status.py`).
+Neither carries a timestamp, so an unchanged experiment reproduces them byte for
 byte. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
 computed** — no provenance envelope, no hashes, no manifests. The experiment
 configuration is none of those three: it is read from `module_ml/config.py`
-when the folder is written, not recovered from the artifacts, so it proves
+when the search runs, not recovered from the artifacts, so it proves
 nothing about any file, gates nothing, and is compared against nothing. It
 answers the only question the folder could not otherwise answer — which
 settings this run used — which is what makes the artifacts reproducible
 without reading the source. The
 experiment is still identified once, globally, in
 `module_monitoring/ml_status.json`: research window and seed. Library versions
-are pinned once, in `requirements.txt`; model parameters live in
-`<TICKER>_OPTUNAs_XGB_HPOs_best_params.json`. Runs are reproducible by
+are pinned once, in `requirements.txt`; model parameters live in the
+`OPTUNAs_XGB_HPOs_best_params` section of `<TICKER>_parameters.json`. Runs are reproducible by
 construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
 product.
 
-Module layout — three top-level modules, in the order the data moves:
-`module_data` (sources → normalised raw 1m → one canonical DuckDB → published
-parquet) · `module_ml` (this document) · `module_monitoring` (presentation of
+Module layout — three runtime modules, in the order the data moves (the fourth,
+`module_skills`, carries the contract's companions and no dataflow):
+`module_data` (sources → normalised raw 1m → one canonical DuckDB) · `module_ml` (this document) · `module_monitoring` (presentation of
 what each module measured about itself). Inside `module_ml`:
 `module_ml/config` (frozen constants) · `module_ml/indicators`,
 `module_ml/validation`, `module_ml/model` (pure numpy / xgboost kernels) ·
@@ -377,9 +380,9 @@ JSON) · `module_ml/bars` (single DB writer) · `module_ml/features`,
 Constant convention: **experiment-semantic constants live in
 `module_ml/config.py`; implementation
 constants** (chunk sizes, `MILLISECONDS_PER_MINUTE`, equity-curve stride) **may stay local
-to their module**. The export invariants of `module_data/export.py` are the
-canonical-series gate; the documented order runs `make ml-all` after
-`make export`.
+to their module**. The canonical series is gated where it is read:
+`labels.load_research_1m` asserts the full 1m grid inside the research window,
+and the ingest stage rebuilds the basket as a whole.
 
 ## 11. Running the layer: one asset per process
 

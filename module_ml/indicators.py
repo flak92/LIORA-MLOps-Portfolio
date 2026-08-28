@@ -4,7 +4,7 @@ Recursive indicators (EMA, Wilder smoothing) run as explicit loops: at ~200k
 bars per series the cost is tens of milliseconds and the semantics are exact.
 Rolling statistics use sliding_window_view — never cumsum differences, which
 cancel catastrophically on long series. Values inside the lookback warm-up are
-NaN; the global research warm-up (ml.config.WARMUP_END_MS) starts far later,
+NaN; the global research warm-up (module_ml.config.WARMUP_END_MS) starts far later,
 and features assert no NaN survives past it.
 """
 

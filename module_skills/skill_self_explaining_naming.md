@@ -43,7 +43,7 @@ directory — must explain itself, so an agent never has to guess.
 ## Minting a new convention
 
 The grammars above are not the last ones this repository will need. A new one
-is worth establishing when it meets all five conditions, and it is not a
+is worth establishing when it meets all eight conditions, and it is not a
 convention when it misses any:
 
 - **Closed vocabulary.** The allowed words can be listed. `load_`, `write_`,

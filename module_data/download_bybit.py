@@ -94,9 +94,9 @@ def earliest_traded_day(out_dir: Path) -> str | None:
     byte threshold has to stand in for "this day has no rows". Computed once
     per symbol; the run keeps it current as it writes.
 
-    The limit this cannot cross: a transient empty response on the listing day
-    itself is indistinguishable from the day before listing, because no local
-    evidence precedes it.
+    The limit this cannot cross: a transient empty response on the listing day,
+    or on any unbroken run of empty days beginning with it, is indistinguishable
+    from pre-listing, because no local evidence precedes it.
     """
     for p in sorted(out_dir.glob("*_trade.zip")):
         with zipfile.ZipFile(p) as z:

@@ -55,7 +55,7 @@ function validationFolds(asset) {
   return Object.keys(asset.validation).sort();
 }
 
-/* ---- ML Research tab: the wide cross-section table (unchanged output) ---- */
+/* ---- ML Research tab: the wide cross-section table ---- */
 
 function renderResearch(mlStatus) {
   const table = document.getElementById("ml-assets");

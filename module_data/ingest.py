@@ -65,8 +65,6 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
 );
 """
 
-# ~3M-row build per symbol keeps memory bounded on small hosts; end_ms is the
-# shared global grid end so every symbol covers the identical window.
 OHLC_INTACT = """(isfinite(open) AND isfinite(high) AND isfinite(low)
           AND isfinite(close) AND isfinite(volume)
           AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
@@ -75,6 +73,8 @@ OHLC_INTACT = """(isfinite(open) AND isfinite(high) AND isfinite(low)
 # Tier order: traded Binance > traded Bybit > no-trade Binance > no-trade Bybit
 # > forward fill. use_binance collapses tiers 1 and 3: Binance wins whenever it is
 # valid and either traded or the Bybit candle did not trade either.
+# ~3M-row build per symbol keeps memory bounded on small hosts; end_ms is the
+# shared global grid end so every symbol covers the identical window.
 CANONICAL_INSERT = """
 INSERT INTO ohlcv_1m_canonical
 WITH

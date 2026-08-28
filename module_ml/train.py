@@ -94,6 +94,8 @@ def main() -> int:
         write_predictions(t, pred_rows)
 
         trainable = xy["sample_valid"]
+        # attribution of the final-holdout booster (fitted on F1-F4) — the one fit
+        # that saw the most history; the validation boosters are not kept
         gain = model.gain_importance(booster)
         payload = {
             "best_params": best,

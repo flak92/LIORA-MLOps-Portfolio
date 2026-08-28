@@ -7,7 +7,7 @@ CANONICAL, CONTINUOUS DATA SERIES.**
 
 # Methodology — the canonical 1m OHLCV database
 
-How `store_db/research_ohlcv.duckdb` and the per-asset Parquet files are created:
+How `store_db/research_ohlcv.duckdb` is created:
 sources and endpoints, units and time, the canonical source-priority
 definition, the schema and the known limitations.
 
@@ -184,6 +184,12 @@ rebuilding from a clean `store_db/` reproduces it bit-identically.
 - **No cross-exchange divergence cutoff.** Strongly diverging minutes are real
   market dislocations; the per-symbol distribution (mean / p99 / max) is
   exposed in monitoring.
+- **A short post-listing day stops the download.** A day after a symbol's first
+  traded day that a venue genuinely printed with fewer than 1440 minutes is
+  indistinguishable from a truncated response, so the download stage aborts on
+  it with no override (`download_binance.py`, `download_bybit.py`). No asset in
+  this basket has such a day; a future asset with a venue outage day needs that
+  guard revisited.
 
 ## 7. Known data-quality observations (current window)
 

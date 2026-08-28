@@ -1,18 +1,19 @@
-"""Report on the ML layer: the global payload and each asset folder.
+"""Report on the ML layer: the global payload and each asset's README.
 
-Observation only, and the single place the reports are assembled. Three
-outputs, none of which computes a result of its own:
+Observation only, and the single place the reports are assembled. Two
+outputs, neither of which computes a result of its own:
 
     module_monitoring/ml_status.json        the dashboard payload, all assets
-    <TICKER>_parameters.json                the one parameters file (written by hpo)
     <TICKER>_README.md                      what the folder holds and what came out
 
-The payload blocks follow the experiment flow (sample -> search -> validation
--> final holdout -> attribution -> strategy) and are written with sorted keys,
-so reading order lives in the dashboard and in methodology_ml.md, never in key names.
-The two per-asset files carry no timestamp: rerunning an unchanged experiment
-must reproduce them byte for byte, and the moment of generation is recorded
-once, globally, in ml_status.json.
+Both are built from the three per-asset result files — <TICKER>_parameters.json,
+<TICKER>_model_evaluation.json, <TICKER>_strategy_evaluation.json — and nothing
+else. The payload blocks follow the experiment flow (sample -> search ->
+validation -> final holdout -> attribution -> strategy) and are written with
+sorted keys, so reading order lives in the dashboard and in methodology_ml.md,
+never in key names. The per-asset README carries no timestamp: rerunning an
+unchanged experiment must reproduce it byte for byte, and the moment of
+generation is recorded once, globally, in ml_status.json.
 """
 
 from __future__ import annotations

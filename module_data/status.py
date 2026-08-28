@@ -1,7 +1,8 @@
 """Data-layer quality monitoring: stdout tables + module_monitoring/status.json.
 
-Three full scans (one per venue table, one over the canonical series) feed the
-whole report: per-venue availability (coverage, gaps, duplicates, OHLC
+Three basket-wide scans (one per venue table, one over the canonical series)
+plus three bounded per-symbol passes (largest 1m move, longest flat run, source
+switches) feed the report: per-venue availability (coverage, gaps, duplicates, OHLC
 violations), canonical source provenance (per-venue shares, forward fills,
 zero-volume candles, source switches and the largest move at a switch — the
 only place a cross-venue basis jump can enter the series) and the pipeline

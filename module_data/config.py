@@ -14,7 +14,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# Basket: 10 assets, one uniform market — USDT-margined perpetuals, one
+# Basket: one uniform market — USDT-margined perpetuals, one
 # primary-failover canonical series built from two venues (Binance USDS-M +
 # Bybit Linear). Every asset has Binance 1m
 # history starting before DATA_WINDOW_START_UTC (probed before every download);

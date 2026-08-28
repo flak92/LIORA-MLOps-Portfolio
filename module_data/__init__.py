@@ -1,1 +1,1 @@
-"""Reproducible 1m crypto market-data pipeline: Binance USDS-M klines -> Lean ZIPs -> DuckDB -> per-asset Parquet."""
+"""Reproducible 1m crypto market-data pipeline: Binance USDS-M + Bybit Linear 1m klines -> Lean ZIPs -> one canonical DuckDB."""

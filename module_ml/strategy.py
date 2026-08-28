@@ -2,8 +2,9 @@
 
     directional_probability_edge = p_long - p_short;  side = sign(edge)
     agreeing_trend_timeframe_count = #{timeframe : sign(trend_timeframe) == side}
-    enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral
+    enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral  AND  side != 0
             AND side == sign(trend_4h)  AND  agreeing_trend_timeframe_count >= 2
+            AND entry_observable
 
 The model picks the side, the hierarchy gates it. Two conditions that look
 alike must not be confused:
@@ -109,7 +110,9 @@ def signals_for_fold(inputs: dict, fold_id: int) -> dict:
 def fill_price(side: float, event_resolution: int, upper_barrier: float,
                lower_barrier: float, exit_reference_price: float) -> float:
     """Take-profit at the barrier; stop (and the adverse side of an ambiguous
-    minute) at the worse of the barrier and that minute's open."""
+    minute) at the worse of the barrier and that minute's open. A vertical exit
+    settles at the last event minute's close — a last-observed-price mark that,
+    unlike a barrier touch, needs no trade in that minute (methodology_ml.md §5)."""
     if event_resolution == config.EVENT_RESOLUTION_VERTICAL:
         return exit_reference_price                      # mark: last event minute's close
     if event_resolution == side:

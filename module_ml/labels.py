@@ -25,7 +25,9 @@ makes the purge rule exactly `event_end_ts <= oos_start`.
 A touch requires a trade: `volume = 0` means no observed trade in that minute,
 so hits are gated on `volume > 0`. Whether the minute was a provider candle
 that printed nothing or a synthesised continuity row is a provenance question,
-answered in the canonical table, not here. Both barriers inside one minute
+answered in the canonical table, not here. The vertical exit mark is not gated:
+the close of the last event minute is a last-observed-price mark, not a fill
+(methodology_ml.md §5). Both barriers inside one minute
 leave the order unknowable from OHLC, so the row is
 `label_valid = false` — never relabelled 0. That flag answers exactly one
 question, "can this event be classified?", and it is knowable only after the

@@ -31,7 +31,7 @@ confirmation; the rest of the concept column states what the name means.
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
-| a data provider, above the ingest boundary only | `binance` / `bybit`, in `module_data` | `venues.*`, `pct_binance` | Raw source | venue or exchange used below ingest |
+| a data provider, above the ingest boundary only | `binance` / `bybit`, in `module_data` | `venues.*`, `binance_pct` / `bybit_pct` | Raw source | venue or exchange used below ingest |
 | which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / ffill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-volume bars | carried-forward price (true only of forward-filled minutes) |
 | a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | ffill | gap, missing bar |
@@ -98,6 +98,7 @@ Every count says what it counts; a bare `n` names nothing.
 | share of a fold's trades that ended positive | `hit_rate` | `hit_rate` | hit | win rate |
 | mean cost-adjusted return of a trade | `average_trade_return` | `average_trade_return` | avg trade | expectancy, `avg_trade_ret` |
 | equity at the end of the fold, starting from 1.0 | `final_equity` | `final_equity` | final equity | PnL |
+| total gain per feature column of the final-holdout booster (fitted on F1–F4) | `gain_importance()` | `gain_importance` | FEATURES — total gain | importance, weight, a validation booster's gain |
 
 ## Artifacts
 
