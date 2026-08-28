@@ -76,7 +76,7 @@ function renderResearch(mlStatus) {
     cell(tr, formatNumber(finalHoldoutStrategy.sharpe, 2));
     cell(tr, (100 * finalHoldoutStrategy.max_drawdown).toFixed(1) + "%");
     cell(tr, formatCount(finalHoldoutStrategy.trade_count));
-    cell(tr, (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%");
+    cell(tr, finalHoldoutStrategy.hit_rate === null ? "-" : (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%");
     cell(tr, (100 * finalHoldoutStrategy.exposure).toFixed(1) + "%");
   }
   table.hidden = false;
@@ -143,8 +143,8 @@ function renderStrategy(mlStatus) {
         holdoutDegradation === null ? "-" : (holdoutDegradation >= 0 ? "+" : "") + holdoutDegradation.toFixed(2),
         (100 * finalHoldoutStrategy.max_drawdown).toFixed(1) + "%",
         formatCount(finalHoldoutStrategy.trade_count),
-        (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%",
-        finalHoldoutStrategy.avg_trade_ret === null ? "-" : (100 * finalHoldoutStrategy.avg_trade_ret).toFixed(3) + "%",
+        finalHoldoutStrategy.hit_rate === null ? "-" : (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%",
+        finalHoldoutStrategy.average_trade_return === null ? "-" : (100 * finalHoldoutStrategy.average_trade_return).toFixed(3) + "%",
         (100 * finalHoldoutStrategy.exposure).toFixed(1) + "%",
         formatNumber(finalHoldoutStrategy.final_equity, 3),
         exitCounts.upper_barrier + "/" + exitCounts.lower_barrier + "/" + exitCounts.vertical + "/" + exitCounts.ambiguous,

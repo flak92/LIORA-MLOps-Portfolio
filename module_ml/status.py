@@ -4,7 +4,7 @@ Observation only, and the single place the reports are assembled. Three
 outputs, none of which computes a result of its own:
 
     module_monitoring/ml_status.json        the dashboard payload, all assets
-    <asset>/experiment_configuration.json   the configuration this run used
+    <asset>/experiment_configuration.json   a-priori settings, recorded at report time
     <asset>/README.md                       what the folder holds and what came out
 
 The payload blocks follow the experiment flow (sample -> search -> validation
@@ -18,8 +18,6 @@ once, globally, in ml_status.json.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from importlib.metadata import version
-
 from . import config, dataset
 
 ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluation")
@@ -87,7 +85,7 @@ def _pnl_block(block: dict) -> dict:
         "max_drawdown": _rounded(block["max_drawdown"], 4),
         "trade_count": block["trade_count"],
         "hit_rate": _rounded(block["hit_rate"], 4),
-        "avg_trade_ret": _rounded(block["avg_trade_ret"], 6),
+        "average_trade_return": _rounded(block["average_trade_return"], 6),
         "exposure": _rounded(block["exposure"], 4),
         "final_equity": _rounded(block["final_equity"], 4),
         "exit_counts": dict(block["exit_counts"]),
@@ -132,7 +130,7 @@ FILE_NOTES = {
     "hyperparameter_search.json": "the winning point of the search",
     "model_evaluation.json": "classification metrics per fold",
     "strategy_evaluation.json": "threshold, PnL and the equity curve",
-    "experiment_configuration.json": "the configuration this run was executed under",
+    "experiment_configuration.json": "the a-priori experiment configuration, recorded at report time",
     "README.md": "this file",
 }
 
@@ -186,7 +184,8 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     def pnl_row(label, block):
         return [label, f"{block['sharpe']:+.3f}", f"{100 * block['max_drawdown']:.1f}%",
-                f"{block['trade_count']:,}", f"{100 * block['hit_rate']:.1f}%",
+                f"{block['trade_count']:,}",
+                f"{100 * block['hit_rate']:.1f}%" if block["hit_rate"] is not None else "—",
                 f"{100 * block['exposure']:.2f}%", f"{block['final_equity']:.4f}"]
 
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
@@ -205,7 +204,7 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the configuration this run was executed under.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
 
 ## Files
 
@@ -247,20 +246,15 @@ F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-
 """
 
 
-# the pinned direct dependencies — the four names in requirements.txt
-PINNED_DIRECT_DEPENDENCIES = ("duckdb", "numpy", "optuna", "xgboost-cpu")
-
-
 def experiment_configuration(ticker: str) -> dict:
-    """The frozen, a-priori configuration this run was executed under.
+    """The a-priori experiment configuration, recorded when the report is written.
 
-    Read from module_ml/config.py when the folder is written, not recovered
-    from the artifacts, so it describes the experiment and proves nothing
-    about any particular file. It answers the one question the folder cannot
-    otherwise answer — which settings this run used — so the artifacts can be
-    reproduced without reading the source. Everything the run *chose* — the
-    winning hyper-parameters, the entry edge threshold — lives in the result
-    files, never here.
+    Read from the current module_ml/config.py when the report is written, not
+    recovered from the artifacts — it describes the experiment's a-priori
+    settings and is not artifact provenance: it proves nothing about any
+    particular file. Everything the run *chose* — the winning
+    hyper-parameters, the entry edge threshold — lives in the result files,
+    never here.
     """
     return {
         "ticker": ticker,
@@ -323,11 +317,6 @@ def experiment_configuration(ticker: str) -> dict:
             "trend_gate_timeframe": config.TREND_GATE_TIMEFRAME,
             "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
             "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
-        },
-        "runtime": {
-            "libraries": {name: version(name) for name in PINNED_DIRECT_DEPENDENCIES},
-            "thread_caps": {"xgboost_nthread": config.XGBOOST_FIXED_PARAMETERS["nthread"],
-                            "omp_num_threads": 1},
         },
     }
 

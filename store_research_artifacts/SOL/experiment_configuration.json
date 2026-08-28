@@ -132,18 +132,6 @@
   "seed": 42,
   "start_utc": "2021-01-01"
  },
- "runtime": {
-  "libraries": {
-   "duckdb": "1.5.4",
-   "numpy": "2.5.2",
-   "optuna": "4.9.0",
-   "xgboost-cpu": "3.4.1"
-  },
-  "thread_caps": {
-   "omp_num_threads": 1,
-   "xgboost_nthread": 1
-  }
- },
  "strategy": {
   "annualisation_period_15m_bars": 35040,
   "entry_edge_threshold_grid": {

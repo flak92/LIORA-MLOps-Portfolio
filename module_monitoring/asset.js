@@ -167,8 +167,8 @@ function pnlRow(label, pnlMetrics, isFinalHoldout) {
     formatNumber(pnlMetrics.sharpe, 2),
     (100 * pnlMetrics.max_drawdown).toFixed(1) + "%",
     formatCount(pnlMetrics.trade_count),
-    (100 * pnlMetrics.hit_rate).toFixed(1) + "%",
-    pnlMetrics.avg_trade_ret === null ? "-" : (100 * pnlMetrics.avg_trade_ret).toFixed(3) + "%",
+    pnlMetrics.hit_rate === null ? "-" : (100 * pnlMetrics.hit_rate).toFixed(1) + "%",
+    pnlMetrics.average_trade_return === null ? "-" : (100 * pnlMetrics.average_trade_return).toFixed(3) + "%",
     (100 * pnlMetrics.exposure).toFixed(2) + "%",
     formatNumber(pnlMetrics.final_equity, 4),
   ];

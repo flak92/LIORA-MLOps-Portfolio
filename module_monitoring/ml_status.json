@@ -148,7 +148,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.000535,
+     "average_trade_return": -0.000535,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 56,
@@ -165,7 +165,7 @@
     "selection_score_mean_sharpe": -0.296,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": 0.000957,
+      "average_trade_return": 0.000957,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 21,
@@ -180,7 +180,7 @@
       "trade_count": 66
      },
      "fold_3": {
-      "avg_trade_ret": -0.000158,
+      "average_trade_return": -0.000158,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 18,
@@ -195,7 +195,7 @@
       "trade_count": 83
      },
      "fold_4": {
-      "avg_trade_ret": -0.001061,
+      "average_trade_return": -0.001061,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 29,
@@ -381,7 +381,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.000262,
+     "average_trade_return": -0.000262,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 43,
@@ -398,7 +398,7 @@
     "selection_score_mean_sharpe": -0.529,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": 0.000618,
+      "average_trade_return": 0.000618,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 45,
@@ -413,7 +413,7 @@
       "trade_count": 140
      },
      "fold_3": {
-      "avg_trade_ret": -0.001712,
+      "average_trade_return": -0.001712,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 41,
@@ -428,7 +428,7 @@
       "trade_count": 151
      },
      "fold_4": {
-      "avg_trade_ret": 0.000447,
+      "average_trade_return": 0.000447,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 23,
@@ -614,7 +614,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.001103,
+     "average_trade_return": -0.001103,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 10,
@@ -631,7 +631,7 @@
     "selection_score_mean_sharpe": 0.238,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": 0.001362,
+      "average_trade_return": 0.001362,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 39,
@@ -646,7 +646,7 @@
       "trade_count": 98
      },
      "fold_3": {
-      "avg_trade_ret": -0.001544,
+      "average_trade_return": -0.001544,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 11,
@@ -661,7 +661,7 @@
       "trade_count": 42
      },
      "fold_4": {
-      "avg_trade_ret": 0.002084,
+      "average_trade_return": 0.002084,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 9,
@@ -847,7 +847,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": 0.000218,
+     "average_trade_return": 0.000218,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 73,
@@ -864,7 +864,7 @@
     "selection_score_mean_sharpe": -0.274,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": -0.000678,
+      "average_trade_return": -0.000678,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 70,
@@ -879,7 +879,7 @@
       "trade_count": 221
      },
      "fold_3": {
-      "avg_trade_ret": -0.00105,
+      "average_trade_return": -0.00105,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 74,
@@ -894,7 +894,7 @@
       "trade_count": 228
      },
      "fold_4": {
-      "avg_trade_ret": 0.00152,
+      "average_trade_return": 0.00152,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 49,
@@ -1080,7 +1080,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": 0.001156,
+     "average_trade_return": 0.001156,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 22,
@@ -1097,7 +1097,7 @@
     "selection_score_mean_sharpe": -0.122,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": -0.003694,
+      "average_trade_return": -0.003694,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 7,
@@ -1112,7 +1112,7 @@
       "trade_count": 31
      },
      "fold_3": {
-      "avg_trade_ret": 0.005227,
+      "average_trade_return": 0.005227,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 15,
@@ -1127,7 +1127,7 @@
       "trade_count": 43
      },
      "fold_4": {
-      "avg_trade_ret": -0.002663,
+      "average_trade_return": -0.002663,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 8,
@@ -1313,7 +1313,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.001256,
+     "average_trade_return": -0.001256,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 61,
@@ -1330,7 +1330,7 @@
     "selection_score_mean_sharpe": -0.46,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": -0.002866,
+      "average_trade_return": -0.002866,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 35,
@@ -1345,7 +1345,7 @@
       "trade_count": 126
      },
      "fold_3": {
-      "avg_trade_ret": -0.001441,
+      "average_trade_return": -0.001441,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 31,
@@ -1360,7 +1360,7 @@
       "trade_count": 96
      },
      "fold_4": {
-      "avg_trade_ret": 0.002367,
+      "average_trade_return": 0.002367,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 38,
@@ -1546,7 +1546,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.000627,
+     "average_trade_return": -0.000627,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 75,
@@ -1563,7 +1563,7 @@
     "selection_score_mean_sharpe": 0.954,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": 0.002714,
+      "average_trade_return": 0.002714,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 77,
@@ -1578,7 +1578,7 @@
       "trade_count": 289
      },
      "fold_3": {
-      "avg_trade_ret": -0.000823,
+      "average_trade_return": -0.000823,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 75,
@@ -1593,7 +1593,7 @@
       "trade_count": 268
      },
      "fold_4": {
-      "avg_trade_ret": 0.00379,
+      "average_trade_return": 0.00379,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 51,
@@ -1779,7 +1779,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.001943,
+     "average_trade_return": -0.001943,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 18,
@@ -1796,7 +1796,7 @@
     "selection_score_mean_sharpe": -1.19,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": null,
+      "average_trade_return": null,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 0,
@@ -1805,13 +1805,13 @@
       },
       "exposure": 0.0,
       "final_equity": 1.0,
-      "hit_rate": 0.0,
+      "hit_rate": null,
       "max_drawdown": 0.0,
       "sharpe": 0.0,
       "trade_count": 0
      },
      "fold_3": {
-      "avg_trade_ret": -0.006972,
+      "average_trade_return": -0.006972,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 13,
@@ -1826,7 +1826,7 @@
       "trade_count": 56
      },
      "fold_4": {
-      "avg_trade_ret": -0.002164,
+      "average_trade_return": -0.002164,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 13,
@@ -2012,7 +2012,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.000751,
+     "average_trade_return": -0.000751,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 46,
@@ -2029,7 +2029,7 @@
     "selection_score_mean_sharpe": -0.831,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": -0.004904,
+      "average_trade_return": -0.004904,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 3,
@@ -2044,7 +2044,7 @@
       "trade_count": 16
      },
      "fold_3": {
-      "avg_trade_ret": -0.000207,
+      "average_trade_return": -0.000207,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 23,
@@ -2059,7 +2059,7 @@
       "trade_count": 72
      },
      "fold_4": {
-      "avg_trade_ret": -0.002806,
+      "average_trade_return": -0.002806,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 29,
@@ -2245,7 +2245,7 @@
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
-     "avg_trade_ret": -0.00091,
+     "average_trade_return": -0.00091,
      "exit_counts": {
       "ambiguous": 0,
       "lower_barrier": 23,
@@ -2262,7 +2262,7 @@
     "selection_score_mean_sharpe": 0.259,
     "validation": {
      "fold_2": {
-      "avg_trade_ret": 0.000487,
+      "average_trade_return": 0.000487,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 23,
@@ -2277,7 +2277,7 @@
       "trade_count": 88
      },
      "fold_3": {
-      "avg_trade_ret": 0.00039,
+      "average_trade_return": 0.00039,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 27,
@@ -2292,7 +2292,7 @@
       "trade_count": 127
      },
      "fold_4": {
-      "avg_trade_ret": 0.000685,
+      "average_trade_return": 0.000685,
       "exit_counts": {
        "ambiguous": 0,
        "lower_barrier": 10,
@@ -2332,7 +2332,7 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-08-27 23:53:09",
+ "generated_at_utc": "2026-08-28 08:20:52",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

@@ -168,9 +168,9 @@ def main() -> int:
                 "zero_volume_bars": int(r[5]),
                 "source_switches": int(switches),
                 "max_abs_ret_at_switch": round(float(max_ret_switch), 6) if max_ret_switch is not None else None,
-                "div_mean": round(float(r[6]), 8) if r[6] is not None else None,
-                "div_p99": round(float(r[7]), 8) if r[7] is not None else None,
-                "div_max": round(float(r[8]), 8) if r[8] is not None else None,
+                "relative_divergence_mean": round(float(r[6]), 8) if r[6] is not None else None,
+                "relative_divergence_p99": round(float(r[7]), 8) if r[7] is not None else None,
+                "relative_divergence_max": round(float(r[8]), 8) if r[8] is not None else None,
                 "ohlc_violations": int(r[10]),
                 "max_abs_ret_1m": round(float(canon_extra[symbol][0]), 6) if canon_extra[symbol][0] is not None else None,
                 "longest_flat_run_minutes": int(canon_extra[symbol][1]),
@@ -229,15 +229,15 @@ def main() -> int:
                   f"{s['gaps']:>8} {s['duplicates']:>4} {s['ohlc_violations']:>4} {s['zero_volume_bars']:>6} {s['flat_bars']:>6}")
     print("[canonical source]")
     print(f"{'symbol':9} {'rows':>9} {'bin%':>7} {'byb%':>6} {'ffill':>6} {'v0':>6} {'switch':>7} "
-          f"{'ret@sw':>8} {'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'div_p99':>10} {'div_max':>10}")
+          f"{'ret@sw':>8} {'ohlc':>4} {'flatrun':>7} {'maxret':>8} {'rdiv_p99':>10} {'rdiv_max':>10}")
     for s in canonical:
         print(f"{s['symbol']:9} {s['rows']:>9} {s['binance_pct']:>7.2f} {s['bybit_pct']:>6.2f} "
               f"{s['ffill_bars']:>6} {s['zero_volume_bars']:>6} {s['source_switches']:>7} "
               f"{s['max_abs_ret_at_switch'] if s['max_abs_ret_at_switch'] is not None else '-':>8} "
               f"{s['ohlc_violations']:>4} {s['longest_flat_run_minutes']:>7} "
               f"{s['max_abs_ret_1m'] if s['max_abs_ret_1m'] is not None else '-':>8} "
-              f"{s['div_p99'] if s['div_p99'] is not None else '-':>10} "
-              f"{s['div_max'] if s['div_max'] is not None else '-':>10}")
+              f"{s['relative_divergence_p99'] if s['relative_divergence_p99'] is not None else '-':>10} "
+              f"{s['relative_divergence_max'] if s['relative_divergence_max'] is not None else '-':>10}")
     print(f"wrote {out.relative_to(config.REPO_ROOT)}")
     return 0
 

@@ -35,7 +35,7 @@ confirmation; the rest of the concept column states what the name means.
 | which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / ffill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-volume bars | carried-forward price (true only of forward-filled minutes) |
 | a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | ffill | gap, missing bar |
-| quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | — (database columns; `rel_divergence` is published only as `div_mean` / `div_p99` / `div_max`) | — | signal, feature |
+| quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | — (database columns; `rel_divergence` is published only as `relative_divergence_mean` / `relative_divergence_p99` / `relative_divergence_max`) | — | signal, feature |
 
 ## Event and sample
 
@@ -96,7 +96,7 @@ Every count says what it counts; a bare `n` names nothing.
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
 | share of a fold's trades that ended positive | `hit_rate` | `hit_rate` | hit | win rate |
-| mean cost-adjusted return of a trade | `avg_trade_ret` | `avg_trade_ret` | avg trade | expectancy |
+| mean cost-adjusted return of a trade | `average_trade_return` | `average_trade_return` | avg trade | expectancy, `avg_trade_ret` |
 | equity at the end of the fold, starting from 1.0 | `final_equity` | `final_equity` | final equity | PnL |
 
 ## Artifacts
@@ -114,7 +114,7 @@ each file named after what it holds.
 | `oos_predictions.parquet` | `module_ml/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
 | `model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |
 | `strategy_evaluation.json` | `module_ml/strategy.py` | the entry edge threshold and the PnL |
-| `experiment_configuration.json` | `module_ml/status.py` | the configuration this run was executed under |
+| `experiment_configuration.json` | `module_ml/status.py` | the a-priori experiment configuration, recorded at report time |
 | `README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
 
 ## Features

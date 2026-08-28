@@ -1,6 +1,6 @@
 # TRX — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the configuration this run was executed under.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
 
 ## Files
 
@@ -13,7 +13,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `hyperparameter_search.json` | the winning point of the search | 323 B |
 | `model_evaluation.json` | classification metrics per fold | 2 KB |
 | `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
-| `experiment_configuration.json` | the configuration this run was executed under | 3 KB |
+| `experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
 | `README.md` | this file | — |
 
 `features.parquet` carries 16 rows more than `label_events.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
@@ -63,4 +63,4 @@ Final-holdout exits: upper_barrier 64, lower_barrier 61, vertical 106, ambiguous
 
 `canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
 
-F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills_for_the_project/ML_README.md`, the field names in `module_skills_for_the_project/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_guidance/methodology_ml.md`, the field names in `module_guidance/glossary.md`.

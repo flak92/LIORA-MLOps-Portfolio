@@ -143,9 +143,9 @@ fetch("status.json", { cache: "no-store" })
       cell(tr, formatCount(row.ohlc_violations), row.ohlc_violations > 0);
       cell(tr, formatCount(row.longest_flat_run_minutes));
       cell(tr, row.max_abs_ret_1m === null ? "-" : (100 * row.max_abs_ret_1m).toFixed(2) + "%");
-      cell(tr, formatDivergencePercent(row.div_mean));
-      cell(tr, formatDivergencePercent(row.div_p99));
-      cell(tr, formatDivergencePercent(row.div_max));
+      cell(tr, formatDivergencePercent(row.relative_divergence_mean));
+      cell(tr, formatDivergencePercent(row.relative_divergence_p99));
+      cell(tr, formatDivergencePercent(row.relative_divergence_max));
       ftbody.appendChild(tr);
     }
   })
