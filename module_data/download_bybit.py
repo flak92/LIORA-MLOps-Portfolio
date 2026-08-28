@@ -1,8 +1,9 @@
 """Download Bybit Linear USDT 1m klines into QuantConnect Lean minute-trade ZIPs.
 
 Keyless public v5 API, stdlib only. Mirrors the Binance downloader: the unit of
-work is one full UTC day = one ZIP, existing ZIPs are skipped (idempotent
-backfill and top-up with the same command). Because the v5 kline limit is 1000
+work is one UTC calendar day = one ZIP, existing ZIPs are skipped (idempotent
+backfill and top-up with the same command); a pre-listing day is empty, the
+listing day may be partial, every later day must be complete. Because the v5 kline limit is 1000
 candles (< 1440), one day is fetched as two 720-minute windows.
 
 Bybit specifics handled here:

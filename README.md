@@ -128,8 +128,10 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   same row count for every asset, continuous, no NULLs, values exactly as the
   winning source printed them (no rounding at any layer).
 - **Semantics**: `store_research_artifacts/<T>/canonical_1m.parquet` is a **canonical
-  primary-failover series**, not the raw feed of a single source — use it for ML and indicators;
-  for Lean backtests use the per-source raw ZIP trees. Step-by-step build
+  primary-failover series**, not the raw feed of a single source — the published
+  per-asset representation for external consumers; the ML stages in this
+  repository read the same canonical object from the DuckDB tables. For Lean
+  backtests use the per-source raw ZIP trees. Step-by-step build
   description: [module_guidance/methodology_data.md](module_guidance/methodology_data.md).
 
 ## Monitoring

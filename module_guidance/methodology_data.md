@@ -152,7 +152,7 @@ per symbol on every `make ingest`; what exports and ML read:
 `ohlcv_15m_canonical`, `ohlcv_1h_canonical`, `ohlcv_4h_canonical` — exact
 UTC-aligned aggregations of the canonical 1m series, rebuilt by `make ml-bars`
 inside the frozen research window (O first, H max, L min, C last, V sum;
-`arg_min`/`arg_max` by timestamp for determinism), plus `n_ffill` and
+`arg_min`/`arg_max` by timestamp for determinism), plus `ffill_bars` and
 `zero_volume_bars` — how many minutes inside the bar were forward-filled or
 traded nothing. Closed bars only: the window ends at a UTC midnight.
 

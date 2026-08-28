@@ -240,7 +240,7 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-`canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
+`canonical_1m.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_guidance/methodology_ml.md`, the field names in `module_guidance/glossary.md`.
 """

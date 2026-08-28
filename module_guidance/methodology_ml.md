@@ -431,7 +431,7 @@ precisely so the effect is visible and countable.
 Known limitations of this version: no regime-conditional gating, no per-asset
 feature selection, no CUSUM event sampling, no meta-labeling, no fractional
 differentiation, fixed costs, unit position sizing. The class distribution is
-dominated by `y = 0` (the `k = 2` barrier is rarely touched within one 4H
+dominated by `y = 0` (the 2×ATR barrier is rarely touched within one 4H
 block) — reported per asset, not resampled.
 
 ## 13. References (verified online 2026-08-26; DOIs resolve)

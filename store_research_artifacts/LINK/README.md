@@ -61,6 +61,6 @@ Final-holdout exits: upper_barrier 48, lower_barrier 46, vertical 89, ambiguous 
 
     python -m module_ml.features --tickers LINK && python -m module_ml.labels --tickers LINK && python -m module_ml.hpo --tickers LINK && python -m module_ml.train --tickers LINK && python -m module_ml.strategy --tickers LINK && python -m module_ml.status --tickers LINK
 
-`canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
+`canonical_1m.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_guidance/methodology_ml.md`, the field names in `module_guidance/glossary.md`.
