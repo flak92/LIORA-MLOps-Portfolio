@@ -2,9 +2,9 @@
 __pycache__/
 store_raw_data_ss-01-hh-dd-MM/
 store_db/
-# the artifacts themselves are reconstructable, but each folder's experiment
-# configuration and its README are the two files that make them readable
-# without a run
+# The artifacts themselves are regenerable from the database, so they stay out.
+# What is committed is what makes a folder readable without a run: the store's
+# manifest guide, and each asset's parameters and README.
 store_Assets_artifacts/**
 !store_Assets_artifacts/EXAMPLE_TICKER_README.md
 !store_Assets_artifacts/*/
