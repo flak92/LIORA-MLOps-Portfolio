@@ -10,8 +10,9 @@ Every value at decision_ts comes from the last CLOSED bar of its timeframe
 (asof_index asserts causality); the 15m timeframe uses the bar closing exactly at
 decision_ts.
 
-Output: store_Assets_artifacts/<TICKER>/<TICKER>_features_ss-15-hh-dd-MM.parquet with decision_ts + 15
-feature columns, from the global research warm-up onward, no NaN (asserted).
+Output: three parquets per asset, one per timeframe — <TICKER>_features_<slots>.parquet
+with decision_ts + the five family columns of that timeframe, from the global
+research warm-up onward, no NaN (asserted). The filename carries the timeframe.
 """
 
 from __future__ import annotations
@@ -68,26 +69,33 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
 
     x = np.column_stack([cols[c] for c in config.FEATURE_COLUMNS])
     assert np.isfinite(x).all(), "NaN/inf in X after the research warm-up"
-    return decision_ts, x
+    return decision_ts, cols
 
 
-def write_x(ticker: str, decision_ts: np.ndarray, x: np.ndarray) -> Path:
-    return dataset.write_parquet(
-        config.features_parquet(ticker),
-        {"decision_ts": "BIGINT", **{c: "DOUBLE" for c in config.FEATURE_COLUMNS}},
-        ([int(decision_ts[i])] + [repr(float(v)) for v in x[i]]
-         for i in range(decision_ts.size)),
-        order_by="decision_ts",
-    )
+def write_x(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.ndarray]) -> list[Path]:
+    """One parquet per timeframe: that timeframe's five family columns on the
+    decision grid. The filename carries the timeframe, so the columns do not."""
+    written = []
+    for timeframe in config.HIERARCHY_TIMEFRAMES:
+        written.append(dataset.write_parquet(
+            config.features_parquet(ticker, timeframe),
+            {"decision_ts": "BIGINT", **{family: "DOUBLE" for family in config.FAMILIES}},
+            ([int(decision_ts[i])] + [repr(float(cols[f"{family}_{timeframe}"][i]))
+                                      for family in config.FAMILIES]
+             for i in range(decision_ts.size)),
+            order_by="decision_ts",
+        ))
+    return written
 
 
 def main() -> int:
     args = config.ticker_parser("hierarchical feature matrix X per asset").parse_args()
     con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
     for t in config.parse_tickers(args.tickers):
-        decision_ts, x = build_x(con, t)
-        out = write_x(t, decision_ts, x)
-        print(f"{t} {out.name}: {decision_ts.size} rows x {x.shape[1]} features", flush=True)
+        decision_ts, cols = build_x(con, t)
+        written = write_x(t, decision_ts, cols)
+        print(f"{t} {', '.join(w.name for w in written)}: "
+              f"{decision_ts.size} rows x {len(config.FAMILIES)} families each", flush=True)
     con.close()
     return 0
 

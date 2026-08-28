@@ -17,8 +17,12 @@ from module_data.config import (  # noqa: F401  (re-exported)
 # ---- the asset folder manifest (module_skills/act_naming_conventions.md):
 # every per-asset file carries the <TICKER>_ prefix, a time series carries its
 # grid in timeframe slots. Paths are built here and nowhere else.
-def features_parquet(ticker):
-    return artifact_dir(ticker) / f"{ticker}_features_ss-15-hh-dd-MM.parquet"
+# the slot spelling of each timeframe (the act, § timeframe slots)
+TIMEFRAME_SLOT = {"15m": "ss-15-hh-dd-MM", "1h": "ss-mm-01-dd-MM", "4h": "ss-mm-04-dd-MM"}
+
+
+def features_parquet(ticker, timeframe):
+    return artifact_dir(ticker) / f"{ticker}_features_{TIMEFRAME_SLOT[timeframe]}.parquet"
 
 
 def label_events_parquet(ticker):

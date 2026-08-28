@@ -125,7 +125,9 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 FILE_MANIFEST = (
     (config.canonical_ohlcv_parquet, "the published canonical 1m series"),
     (config.experiment_configuration_json, "the a-priori experiment configuration, recorded at report time"),
-    (config.features_parquet, "X — 15 causal columns on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "4h"), "X — the five 4h family columns on the decision grid"),
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
     (config.oos_predictions_parquet, "out-of-fold class probabilities, full windows"),
@@ -210,7 +212,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {_table(["file", "holds", "size"], files)}
 
-`{config.features_parquet(ticker).name}` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
