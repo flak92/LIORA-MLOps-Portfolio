@@ -18,17 +18,18 @@ directory — must explain itself, so an agent never has to guess.
   Every layer has a closed grammar, fixed in `AGENTS.md`: a verb from a closed
   list for functions that act, no verb at all for functions that *are* a
   quantity, `<what>_<unit>` for quantities, `<population>_rows` for index
-  arrays, `<kind>_<detail>/` for directories. Given the layer, the name
+  arrays, `<category>_<detail>/` for directories. Given the layer, the name
   follows; there is nothing left to invent, and nothing to argue about.
 - **Units belong to quantities.** A name holding a number says its unit —
   counts, rates, durations, sizes, intervals — while enumerations, paths and
   names carry none, a collection keeps the unit of its values, and a local
   abbreviation is free inside one function.
-- **The kind comes first, so siblings sort together.** A listing is read by eye
+- **Taxonomic ordering — the category token comes first, so siblings sort
+  together.** A listing is read by eye
   before it is parsed. The eye takes a pattern for free and the mind enjoys
   finding simple logic inside a complicated subject; a scattered listing
   charges for both, because the reader has to scan and then remember where
-  things live. If renaming would place things of one kind next to each other,
+  things live. If renaming would place things of one category next to each other,
   rename them — `module_*` beside `module_*`, `store_*` beside `store_*`.
 - **A standard term beats an invented one.** If a concept already has a widely
   recognised name, that name wins; `AGENTS.md` holds the rule.
@@ -85,7 +86,8 @@ the rule that does the work.
 
 Names are architecture visible to the eye. Top-level persisted state starts
 with `store_`; top-level responsibilities start with `module_`; siblings of one
-kind keep the kind token in the same position, so they sort into one block.
+category keep the category token in the same position, so they sort into one
+block.
 The same concept keeps the same semantic root across the filesystem, Python,
 JSON and the interface, and a top-level path constant mirrors the exact
 directory token it names. Internal asset folders are the ticker in capitals;
@@ -106,10 +108,9 @@ report.
 
 ```
 act conventions       make conventions-check
-                      → eight checks pass. The act's conventions-data block is the rule set, and
-                        this check owns what used to be `kind-first blocks`, `collation invariance`
-                        and `make targets`: it rebuilds the listings from the index instead of ls,
-                        so a build artifact or a gitignored store cannot move the answer
+                      → eight checks pass. The act's conventions-data block is the rule set.
+                        Listings are rebuilt from the index, not read with ls, so a build artifact
+                        or a gitignored store cannot move the answer
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty
 constructors          git grep -nE '^def make_|_factory\(' -- '*.py'

@@ -4,10 +4,11 @@ A directory listing is read by eye before any parser reads it, and every
 machine sorts it lexicographically — so a name is designed for the order it
 will land in, on any server, under any locale.
 
-- **The kind comes first, so one kind is one block.** `module_*` beside
+- **Taxonomic ordering: the category token leads the name, so a lexicographic
+  listing groups siblings into one contiguous block.** `module_*` beside
   `module_*`, `store_*` beside `store_*`, `skill_*` beside `skill_*`: the eye
-  takes a contiguous block for free, while a kind scattered through the
-  alphabet charges a scan and a memory for every lookup.
+  takes the block for free, while a category scattered through the alphabet
+  charges a scan and a memory for every lookup.
 - **Digits sort before letters — build granularity order on that.** In ASCII
   the digits (0x30–0x39) precede every letter, so a slot filled with a number
   beats a letter placeholder at the same position. The timeframe slot standard

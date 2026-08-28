@@ -90,12 +90,13 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `docker-ml-<stage>` targets); each computational module (`module_data`,
   `module_ml`) measures its own domain state in `status.py`, and
   `module_monitoring` presents their snapshots;
-- **the kind comes first, so siblings sort together.** A listing is read by
-  eye before it is parsed: `module_data`, `module_ml`, `module_monitoring`,
-  `module_skills`, then `store_assets_artifacts`, `store_db`,
-  `store_raw_1m` — two blocks, not seven scattered entries. If
-  renaming would put things of one kind next to each other, rename them.
-  Checked with `ls -1d */`: one kind, one contiguous block;
+- **taxonomic ordering — the category token comes first, so siblings sort
+  together.** A listing is read by eye before it is parsed: `module_data`,
+  `module_ml`, `module_monitoring`, `module_skills`, then
+  `store_assets_artifacts`, `store_db`, `store_raw_1m` — two blocks, not seven
+  scattered entries. If renaming would put things of one category next to each
+  other, rename them. Checked with `ls -1d */`: one category, one contiguous
+  block;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree) —
@@ -185,7 +186,7 @@ from its layer's grammar, never invented:
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
-| directories | `<kind>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
+| directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (the act, § timeframe slots) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
 | JavaScript functions | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`; a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `mean`, `validationFolds` | `makeTable`, a bare noun for a builder (`cell()`, `sparkline()`) |
@@ -229,7 +230,7 @@ implementation that correctly closes the full pipeline.**
 
 Project-specific agent instructions live in `module_skills/` — the
 only other place agent guidance may exist in this tree. Its files are
-kind-first and are read in listing order, starting with the act: the enacted
+ordered by category and read in listing order, starting with the act: the enacted
 names (`act_naming_conventions.md`), the naming register (`glossary.md`), the
 methodology documents — `methodology_data.md` (how the canonical dataset is
 built) and `methodology_ml.md` (the research layer, equation by equation, with

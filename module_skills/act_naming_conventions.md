@@ -11,13 +11,13 @@ next reader from reinventing it.
 
 | # | enacted | not | why |
 |---|---|---|---|
-| 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/`, `module_visualisation/` | `src`, `core`, `lib` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
-| 2 | `store_assets_artifacts/` | `assets/`, `artifacts/` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
-| 3 | `store_db/` | `db`, `database` | kind first; `db` is unambiguous in this technical context |
+| 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/`, `module_visualisation/` | `src`, `core`, `lib` | category first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
+| 2 | `store_assets_artifacts/` | `assets/`, `artifacts/` | category first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
+| 3 | `store_db/` | `db`, `database` | category first; `db` is unambiguous in this technical context |
 | 4 | `store_raw_1m/`, and every future raw store as `store_raw_<timeframe>/` | a store spelling its timeframe in sorting slots, `raw_data` | a store is one object: its name says what it holds, in the compact timeframe token the code and the schema already speak (`ohlcv_1m_canonical`, `SOURCE_CANDLE_INTERVAL`), so the next raw store names itself. Sorting slots are for the file family that has to sort by granularity (§ timeframe slots) |
 | 5 | `<TICKER>/` in capitals inside `store_assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity, spelled the way the basket spells it; the exchange symbol belongs to the adapter boundary |
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
-| 7 | guidance files: `act_*`, `check_*`, `skill_*`, `methodology_*`, `glossary.md`; `module_skills/` holds **exactly one executable file**, the self-check | bare topic names, a second script in the law folder | kind first inside the folder, same rule as the tree above it. The one `.py` is the act's own enforcement, kept beside the act for the reason the block below gives — one law, two audiences. A second executable would make the law folder a code folder, and that is the drift this row now forbids by counting |
+| 7 | guidance files: `act_*`, `check_*`, `skill_*`, `methodology_*`, `glossary.md`; `module_skills/` holds **exactly one executable file**, the self-check | bare topic names, a second script in the law folder | category first inside the folder, same rule as the tree above it. The one `.py` is the act's own enforcement, kept beside the act for the reason the block below gives — one law, two audiences. A second executable would make the law folder a code folder, and that is the drift this row now forbids by counting |
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `features.parquet`, a bare `README.md` — any per-asset file that needs its folder to say which asset it belongs to | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
 | 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | a per-asset OHLCV parquet, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
 | 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep the a-priori configuration and the search result apart inside one file |
@@ -36,6 +36,7 @@ next reader from reinventing it.
 | 23 | the generative-structure rule lives in `AGENTS.md` § Canonical vocabulary; `module_skills/skill_agent_first_development.md` points at it | a second copy of the rule in a skill | it was minted in a skill and moved here-ward the same day. Two of the eight minting conditions failed: a rule lives in `AGENTS.md` and every other document points at it, and a rule must be able to fail. The second cannot be fixed — it forbids no specific name — so the block below records it as a preference this repository states, not a grammar it checks |
 | 24 | no debt marker in a tracked file: `TODO`, `FIXME`, `XXX`, `HACK`, and no code left inside a comment | a marker standing in for a decision | `main` is clean working logic. A marker is a decision postponed in public, and a commented-out line is a version git already remembers — the comment only hides which one is live. Zero of both when this row was written, which is exactly when the rule costs nothing to enact |
 | 25 | established terminology over local coinages; the rule lives in `AGENTS.md` § Canonical vocabulary | a local synonym for a concept that has a recognised name | a coinage costs every reader a translation step. It forbids no specific name, so the block records it as a preference, not a grammar |
+| 26 | `taxonomic ordering` for the rule that the category token leads a name | `kind-first` | `kind` is unqualified English and reads as a synonym for `type`; `prefix` already carries two other senses here (`<TICKER>_`, make-target stages), so a third would collide |
 
 ## External vocabularies
 
@@ -211,6 +212,7 @@ rejected_name  ambiguous | owned | 11 | the `count keys` one-liner of skill_self
 rejected_name  ret | owned | 11 | the `abbreviation ret` one-liner of skill_self_explaining_naming.md
 
 banned_stem  galaxy | 21 | the module, its targets, its page and its title all say visualisation
+banned_stem  kind-first | 26 | the category token leads the name; the term is taxonomic ordering
 banned_stem  viz | 18 | module_visualisation is spelled out
 banned_stem  utils | 18 | the responsibility already has an owner
 banned_stem  helpers | 18 | helpers names the author's convenience, not the responsibility
@@ -239,15 +241,15 @@ content_scan_exempt  module_skills/methodology_data.md | the venue symbol at the
 content_scan_exempt  module_data/download_binance.py | the Lean tree diagram in its docstring
 content_scan_exempt  module_data/download_bybit.py | the Lean tree diagram in its docstring
 
-top_level_kind  module_ | 1 | a top-level responsibility
-top_level_kind  store_ | 2 | persisted or generated state
+top_level_category  module_ | 1 | a top-level responsibility
+top_level_category  store_ | 2 | persisted or generated state
 
 enacted_path  module_data | 1 | the runtime ingest module
 enacted_path  module_ml | 1 | the runtime research module
 enacted_path  module_monitoring | 1 | the presentation module
 enacted_path  module_skills | 1 | the contract's companions
 enacted_path  module_visualisation | 18 | git index in, one HTML page out
-enacted_path  store_assets_artifacts | 2 | kind first, then what the store holds
+enacted_path  store_assets_artifacts | 2 | category first, then what the store holds
 enacted_path  module_data/lean.py | 6 | the Lean adapter owns the external spelling
 enacted_path  module_ml/strategy.py | 10 | one shared strategy for the whole project
 enacted_path  module_skills/act_naming_conventions.md | 7 | this act
@@ -266,7 +268,7 @@ enacted_path  store_assets_artifacts/EXAMPLE_TICKER_README.md | 15 | the store g
 enacted_path  <TICKER>_README.md | 14 | every asset folder describes itself
 enacted_path  <TICKER>_parameters.json | 10 | one parameters file per asset
 
-enacted_family  module_skills/ | .md | act_ methodology_ skill_ glossary.md | 7 | guidance files are kind first
+enacted_family  module_skills/ | .md | act_ methodology_ skill_ glossary.md | 7 | guidance files carry their category first
 
 ticker_store  store_assets_artifacts/ | 8 | every per-asset file carries the <TICKER>_ prefix
 ticker_tracked_file  <TICKER>_README.md | 14 | whitelisted by .gitignore
