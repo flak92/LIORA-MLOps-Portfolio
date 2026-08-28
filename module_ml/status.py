@@ -265,7 +265,8 @@ def main() -> int:
         assets.append(asset_report(t, hpo, metrics, strategy))
         config.asset_readme_md(t).write_text(asset_readme(t, hpo, metrics, strategy),
                                              encoding="utf-8")
-    assert assets, "no complete artifact set found — run the ML chain first"
+    if not assets:
+        raise SystemExit("no complete artifact set found — run `make ml-all` first")
 
     payload = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),

@@ -1,7 +1,8 @@
 """Causal 15m/1h/4h bars from the canonical 1m series.
 
 The ONLY writer of the ML layer: builds ohlcv_{15m,1h,4h}_canonical inside the
-frozen research window. Every other ML stage opens the database read-only.
+frozen research window, and therefore runs sequentially — `make ml-bars` never
+fans it out. Every other ML stage opens the database read-only.
 No source-specific table lives here: from the canonical database onwards the
 research layer knows one market object, not the sources that built it.
 
@@ -51,7 +52,7 @@ def main() -> int:
     tickers = config.parse_tickers(args.tickers)
 
     con = duckdb.connect(str(config.STORE_DB_PATH))
-    con.execute("SET memory_limit='4GB'")
+    con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     for timeframe, timeframe_duration_ms in config.TIMEFRAME_DURATION_MS.items():
         con.execute(BAR_DDL.format(timeframe=timeframe))

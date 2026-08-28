@@ -202,8 +202,7 @@ def main() -> int:
 
     config.STORE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(config.STORE_DB_PATH))
-    # small-host safety: spill early instead of hitting the allocator ceiling
-    con.execute("SET memory_limit='4GB'")
+    con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     con.execute("SET preserve_insertion_order=false")
     for venue in config.SOURCE_VENUES:

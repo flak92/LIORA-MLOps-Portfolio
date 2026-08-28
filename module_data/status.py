@@ -115,7 +115,7 @@ def main() -> int:
         raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make data-ingest` first")
     con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
 
-    con.execute("SET memory_limit='4GB'")
+    con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     venue_rows = {venue: load_rows_by_symbol(con, VENUE_SCAN.format(venue=venue))
                   for venue in config.SOURCE_VENUES}
@@ -209,10 +209,9 @@ def main() -> int:
         "duckdb_version": duckdb.__version__,
         "db_bytes": config.STORE_DB_PATH.stat().st_size,
         "flow": {
-            "binance_zip_count": sum(zip_counts["binance"].values()),
-            "bybit_zip_count": sum(zip_counts["bybit"].values()),
-            "binance_row_count": sum(r["row_count"] for r in venue_rows["binance"].values()),
-            "bybit_row_count": sum(r["row_count"] for r in venue_rows["bybit"].values()),
+            **{f"{venue}_zip_count": sum(zip_counts[venue].values()) for venue in config.SOURCE_VENUES},
+            **{f"{venue}_row_count": sum(r["row_count"] for r in venue_rows[venue].values())
+               for venue in config.SOURCE_VENUES},
             "canonical_row_count": sum(s["row_count"] for s in symbols),
         },
         "symbols": symbols,
@@ -227,8 +226,9 @@ def main() -> int:
     f = status["flow"]
     print(f"window [{status['window_start_utc']} .. {status['window_end_utc']})  "
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
-    print(f"flow: zips {f['binance_zip_count']}+{f['bybit_zip_count']} -> rows {f['binance_row_count']}+{f['bybit_row_count']} "
-          f"-> canonical {f['canonical_row_count']}")
+    print("flow: zips " + "+".join(str(f[f"{venue}_zip_count"]) for venue in config.SOURCE_VENUES)
+          + " -> rows " + "+".join(str(f[f"{venue}_row_count"]) for venue in config.SOURCE_VENUES)
+          + f" -> canonical {f['canonical_row_count']}")
     for venue in config.SOURCE_VENUES:
         print(f"[venue {venue}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")

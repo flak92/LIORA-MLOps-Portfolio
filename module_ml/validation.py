@@ -32,7 +32,8 @@ def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) ->
     The mean, over an event's minutes, of 1 / (events of this population open
     at that minute), exact via prefix sums. Concurrency is counted only among
     the events passed in, so the caller's choice of population *is* the
-    definition of the weight.
+    definition of the weight. An event alone in its population weighs exactly
+    1; overlap pulls a weight below that, never above it (a few ulps aside).
     """
     research_minute_count = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
     start = ((entry_ts - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE).astype(np.int64)

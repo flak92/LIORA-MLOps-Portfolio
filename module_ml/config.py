@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from module_data.config import (  # noqa: F401  (re-exported)
-    MILLISECONDS_PER_MINUTE, MODULE_MONITORING_DIR, STORE_DB_PATH, artifact_dir,
+    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, MODULE_MONITORING_DIR, STORE_DB_PATH, artifact_dir,
     parse_tickers, symbol, ticker_parser,
 )
 
