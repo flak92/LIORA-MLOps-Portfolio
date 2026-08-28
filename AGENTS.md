@@ -150,17 +150,16 @@ config, and never hand-edited; a hand edit to a generated file is a violation.
 index and `module_visualisation/visualisation_config.json`, and
 `make visualisation-check` is what makes this enforceable instead of hoped for.
 
-**Prefer generative structure over repeated project knowledge.** When a family —
+**Rule-derived structure over repeated project knowledge.** When a family —
 assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
-— is governed by one canonical definition, derive the repeated representations
-from that owner rather than copying the same list or naming decision into
-several files; adding the next member of an established family should need one
-local definition and predictable derivation. Keep it stupid simple: no
-generators, registries, metaprogramming or abstraction layers for a one-off
-value. Generation earns its place only when it removes duplicated knowledge and
-shortens the extension path, and it is a preference the repository states rather
-than a grammar it can check — `module_skills/act_naming_conventions.md` records
-it among the rules no grep can settle.
+— is governed by one definition, derive the repeated representations from it
+rather than copying the same list or naming decision into several files. Adding
+the next member of an established family should need one local definition and a
+predictable derivation. The limit is equally binding: no generator, registry,
+metaprogramming or abstraction layer for a one-off value. Derivation earns its
+place only where it removes duplicated knowledge and shortens the extension
+path. It forbids no specific name, so the act records it among the rules no grep
+can settle.
 
 Every layer has a closed grammar, the way CSS has BEM. A name is **derived**
 from its layer's grammar, never invented:
