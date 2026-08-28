@@ -20,7 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 MODULE_VISUALISATION_DIR = REPO_ROOT / "module_visualisation"
 VISUALISATION_CONFIG_JSON_PATH = MODULE_VISUALISATION_DIR / "visualisation_config.json"
-VISUALISATION_TEMPLATE_HTML_PATH = MODULE_VISUALISATION_DIR / "Files_and_Folders_Visualisation.html"
+VISUALISATION_TEMPLATE_HTML_PATH = MODULE_VISUALISATION_DIR / "files_and_folders_visualisation_template.html"
 
 MODULE_MONITORING_DIR = REPO_ROOT / "module_monitoring"
 MODULE_MONITORING_FILES_AND_FOLDERS_VISUALISATION_HTML_PATH = MODULE_MONITORING_DIR / "files_and_folders_visualisation.html"

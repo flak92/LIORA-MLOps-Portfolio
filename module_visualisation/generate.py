@@ -3,7 +3,7 @@
 The picture is not a drawing of the repository; it is the repository. Nodes are
 the files and folders `git ls-files` reports, edges are parent -> child and
 nothing else, and the whole structure is spliced into the one marked region of
-Files_and_Folders_Visualisation.html. Everything outside that region is
+files_and_folders_visualisation_template.html. Everything outside that region is
 hand-written rendering code this module never touches.
 
     git ls-files

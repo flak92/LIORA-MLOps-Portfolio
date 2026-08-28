@@ -62,7 +62,7 @@ of wrong. `fetch-depth: 0` in the workflow is load-bearing, not decoration.
 
 ## The template
 
-`Files_and_Folders_Visualisation.html` is the rendering shell. The generator owns exactly one region
+`files_and_folders_visualisation_template.html` is the rendering shell. The generator owns exactly one region
 of it:
 
 ```js

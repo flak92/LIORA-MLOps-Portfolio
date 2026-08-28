@@ -104,8 +104,7 @@ kind-first blocks     ls -1d */
                       → module_data module_ml module_monitoring module_skills module_visualisation, then store_assets_artifacts store_db store_raw_1m
 collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_1m; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
                       → empty (the packages are absent from the loop for the same reason the root is:
-                        their listings differ only by names the act exempts — the ecosystem-fixed ones
-                        of row 16, plus the template of row 20 in module_visualisation)
+                        their listings differ only by the ecosystem-fixed names of row 16)
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty
 constructors          git grep -nE '^def make_|_factory\(' -- '*.py'
