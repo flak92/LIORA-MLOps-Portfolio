@@ -97,8 +97,8 @@ report.
 
 ```
 kind-first blocks     ls -1d */
-                      → module_data module_ml module_monitoring module_skills, then store_assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM
-collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
+                      → module_data module_ml module_monitoring module_skills, then store_assets_artifacts store_db store_raw_1m
+collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_1m; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
                       → empty (the root and the packages differ only by the ecosystem-fixed names of act row 17)
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty

@@ -11,9 +11,11 @@ will land in, on any server, under any locale.
 - **Digits sort before letters — build granularity order on that.** In ASCII
   the digits (0x30–0x39) precede every letter, so a slot filled with a number
   beats a letter placeholder at the same position. The timeframe slot standard
-  `ss-mm-hh-dd-MM` (the act, § timeframe slots) uses exactly this: 1-minute
-  data is `ss-01-hh-dd-MM`, 1-hour is `ss-mm-01-dd-MM`, and every listing
-  orders them finest to coarsest without any tool knowing what a timeframe is.
+  `ss-mm-hh-dd-MM` (the act, § timeframe slots) uses exactly this: an asset's
+  15-minute features are `ss-15-hh-dd-MM`, its 1-hour features `ss-mm-01-dd-MM`,
+  its 4-hour features `ss-mm-04-dd-MM`, and every listing orders the three
+  finest-first without any tool knowing what a timeframe is. A store, which has
+  no siblings to order, names its granularity plainly instead: `store_raw_1m/`.
 - **Zero-pad every number.** `01 < 04 < 15` sorts numerically as text;
   unpadded `1, 4, 15` sorts as `1, 15, 4`. Two digits per slot until a real
   name needs three.

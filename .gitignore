@@ -1,6 +1,6 @@
 .venv/
 __pycache__/
-store_raw_data_ss-01-hh-dd-MM/
+store_raw_1m/
 store_db/
 # The artifacts themselves are regenerable from the database, so they stay out.
 # What is committed is what makes a folder readable without a run: the store's

@@ -14,7 +14,7 @@ next reader from reinventing it.
 | 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/` | `data_module`, `src`, `module_guidance`, `module_skills_for_the_project` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
 | 2 | `store_assets_artifacts/` | `assets/`, `store_Assets_artifacts` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
 | 3 | `store_db/` | `db`, `store_database` | kind first; `db` is unambiguous in this technical context |
-| 4 | `store_raw_data_ss-01-hh-dd-MM/` | `store_raw_1m`, `raw_downloaded_1m_data` | the timeframe slot standard (§ below): every future raw store sorts from the finest granularity to the coarsest |
+| 4 | `store_raw_1m/`, and every future raw store as `store_raw_<timeframe>/` | `store_raw_data_ss-01-hh-dd-MM`, `raw_downloaded_1m_data` | a store is one object: its name says what it holds, in the compact timeframe token the code and the schema already speak (`ohlcv_1m_canonical`, `SOURCE_CANDLE_INTERVAL`), so the next raw store names itself. Sorting slots are for the file family that has to sort by granularity (§ timeframe slots) |
 | 5 | `<TICKER>/` in capitals inside `store_assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity, spelled the way the basket spells it; the exchange symbol belongs to the adapter boundary |
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
 | 7 | guidance files: `act_*`, `skill_*`, `methodology_*`, `glossary.md` | bare topic names | kind first inside the folder, same rule as the tree above it |
@@ -93,7 +93,7 @@ file and its contents for a placeholder ticker.
 
 ## The timeframe slot standard
 
-A filesystem name that carries a timeframe writes it as five fixed slots,
+A file that belongs to a timeframe family writes its granularity as five fixed slots,
 finest to coarsest: `ss-mm-hh-dd-MM` (seconds, minutes, hours, days, months).
 The active granularity is a zero-padded number in its slot; every inactive
 slot keeps its unit letters as a placeholder.
@@ -115,9 +115,21 @@ numeric order inside a slot; the fixed slot count keeps listings
 column-aligned. The mechanics are the subject of
 `skill_sorting_files_naming_standard.md`.
 
-In a Python identifier the slot dashes become underscores:
-`store_raw_data_ss-01-hh-dd-MM/` mirrors to
-`STORE_RAW_DATA_SS_01_HH_DD_MM_DIR`.
+Two patterns, two jobs — a name follows the one that fits its object:
+
+```
+STORE, one object, an identity:     store_raw_<timeframe>/
+                                    store_raw_1m/   store_raw_5m/   store_raw_1h/
+
+FILES, a family that must sort by   <asset>_<artifact>_<timeframe-slot>.<ext>
+granularity inside one listing:     BTC_features_ss-15-hh-dd-MM.parquet
+                                    BTC_features_ss-mm-01-dd-MM.parquet
+                                    BTC_features_ss-mm-04-dd-MM.parquet
+```
+
+A store has no siblings to order, so it takes the token the rest of the project
+speaks; the three feature files of one asset are read as one block, so they take
+the slots that put the finest first.
 
 ## The serialized-schema boundary
 

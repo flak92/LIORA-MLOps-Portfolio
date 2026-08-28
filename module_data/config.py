@@ -44,7 +44,7 @@ USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
-STORE_RAW_DATA_SS_01_HH_DD_MM_DIR = REPO_ROOT / "store_raw_data_ss-01-hh-dd-MM"
+STORE_RAW_1M_DIR = REPO_ROOT / "store_raw_1m"
 STORE_DB_PATH = REPO_ROOT / "store_db" / "research_ohlcv.duckdb"
 # DuckDB spills to disk above this ceiling instead of hitting the allocator on a
 # small host; the thread cap next to it in every connection is determinism, not tuning
@@ -59,8 +59,8 @@ def symbol(ticker: str) -> str:
 
 
 def raw_symbol_dir(ticker: str, venue: str) -> Path:
-    """Lean-exact tree: store_raw_data_ss-01-hh-dd-MM/cryptofuture/<venue>/minute/<symbol>/"""
-    return STORE_RAW_DATA_SS_01_HH_DD_MM_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
+    """Lean-exact tree: store_raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
+    return STORE_RAW_1M_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 
 def artifact_dir(ticker: str) -> Path:

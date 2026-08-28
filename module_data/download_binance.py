@@ -9,7 +9,7 @@ Before downloading, every symbol's oldest available candle is probed
 window start — equal history for all assets is a hard requirement.
 
 Output tree (Lean-exact, byte-compatible with a Lean data folder):
-  store_raw_data_ss-01-hh-dd-MM/cryptofuture/binance/minute/<symbol>/YYYYMMDD_trade.zip
+  store_raw_1m/cryptofuture/binance/minute/<symbol>/YYYYMMDD_trade.zip
     -> YYYYMMDD_<symbol>_minute_trade_perp.csv
        rows: offset_ms_from_utc_midnight,open,high,low,close,volume  (ascending)
 
