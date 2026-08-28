@@ -4,8 +4,8 @@ Observation only, and the single place the reports are assembled. Three
 outputs, none of which computes a result of its own:
 
     module_monitoring/ml_status.json        the dashboard payload, all assets
-    <asset>/experiment_configuration.json   a-priori settings, recorded at report time
-    <asset>/README.md                       what the folder holds and what came out
+    <TICKER>_experiment_configuration.json  a-priori settings, recorded at report time
+    <TICKER>_README.md                      what the folder holds and what came out
 
 The payload blocks follow the experiment flow (sample -> search -> validation
 -> final holdout -> attribution -> strategy) and are written with sorted keys,
@@ -20,7 +20,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from . import config, dataset
 
-ARTIFACT_KINDS = ("hyperparameter_search", "model_evaluation", "strategy_evaluation")
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
 
@@ -122,17 +121,18 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     }
 
 
-FILE_NOTES = {
-    "canonical_ss-01-hh-dd-MM.parquet": "the published canonical 1m series",
-    "features.parquet": "X — 15 causal columns on the decision grid",
-    "label_events.parquet": "Y — triple-barrier outcome and the event prices",
-    "oos_predictions.parquet": "out-of-fold class probabilities, full windows",
-    "hyperparameter_search.json": "the winning point of the search",
-    "model_evaluation.json": "classification metrics per fold",
-    "strategy_evaluation.json": "threshold, PnL and the equity curve",
-    "experiment_configuration.json": "the a-priori experiment configuration, recorded at report time",
-    "README.md": "this file",
-}
+# the asset folder manifest, in listing order: (path descriptor, what it holds)
+FILE_MANIFEST = (
+    (config.canonical_ohlcv_parquet, "the published canonical 1m series"),
+    (config.experiment_configuration_json, "the a-priori experiment configuration, recorded at report time"),
+    (config.features_parquet, "X — 15 causal columns on the decision grid"),
+    (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
+    (config.model_evaluation_json, "classification metrics per fold"),
+    (config.oos_predictions_parquet, "out-of-fold class probabilities, full windows"),
+    (config.hpo_best_params_json, "the winning point of the Optuna→XGB search"),
+    (config.asset_readme_md, "this file"),
+    (config.strategy_evaluation_json, "threshold, PnL and the equity curve"),
+)
 
 
 def _size(path):
@@ -152,7 +152,6 @@ def _table(headers, rows):
 
 def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     """What this folder holds and what came out of it — no timestamp, by design."""
-    adir = config.artifact_dir(ticker)
     labels, counts = metrics["labels"], metrics["class_counts"]
     supervised = counts["short"] + counts["neutral"] + counts["long"]
     folds = [f"fold_{i}" for i in config.VALIDATION_FOLD_IDS]
@@ -160,10 +159,11 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     p = hpo["best_params"]
 
     files = []
-    for name, note in FILE_NOTES.items():
+    for descriptor, note in FILE_MANIFEST:
+        path = descriptor(ticker)
         # this file's own size would be self-referential: writing it changes it
-        size = "—" if name == "README.md" else _size(adir / name)
-        files.append([f"`{name}`", note, size])
+        size = "—" if descriptor is config.asset_readme_md else _size(path)
+        files.append([f"`{path.name}`", note, size])
 
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
                  f"{metrics['validation'][k]['model_logloss']:.6f}",
@@ -204,13 +204,13 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `{config.experiment_configuration_json(ticker).name}` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
 
 ## Files
 
 {_table(["file", "holds", "size"], files)}
 
-`features.parquet` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `label_events.parquet`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+`{config.features_parquet(ticker).name}` carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -240,7 +240,7 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-`canonical_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+`{config.canonical_ohlcv_parquet(ticker).name}` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """
@@ -326,8 +326,9 @@ def main() -> int:
 
     assets = []
     for t in config.parse_tickers(args.tickers):
-        adir = config.artifact_dir(t)
-        paths = {k: adir / f"{k}.json" for k in ARTIFACT_KINDS}
+        paths = {"hyperparameter_search": config.hpo_best_params_json(t),
+                 "model_evaluation": config.model_evaluation_json(t),
+                 "strategy_evaluation": config.strategy_evaluation_json(t)}
         if not all(p.exists() for p in paths.values()):
             continue
         loaded = {k: dataset.read_json(p) for k, p in paths.items()}
@@ -335,10 +336,10 @@ def main() -> int:
         metrics = loaded["model_evaluation"]
         strategy = loaded["strategy_evaluation"]
         assets.append(asset_report(t, hpo, metrics, strategy))
-        dataset.write_json(adir / "experiment_configuration.json",
+        dataset.write_json(config.experiment_configuration_json(t),
                            experiment_configuration(t))
-        (adir / "README.md").write_text(asset_readme(t, hpo, metrics, strategy),
-                                        encoding="utf-8")
+        config.asset_readme_md(t).write_text(asset_readme(t, hpo, metrics, strategy),
+                                             encoding="utf-8")
     assert assets, "no complete artifact set found — run the ML chain first"
 
     payload = {
@@ -361,7 +362,7 @@ def main() -> int:
               f"sharpe={a['strategy']['final_holdout']['sharpe']} "
               f"trades={a['strategy']['final_holdout']['trade_count']}")
     print(f"wrote {out} ({out.stat().st_size / 1024:.1f} KB) "
-          f"+ experiment_configuration.json and README.md in {len(assets)} asset folders")
+          f"+ <TICKER>_experiment_configuration.json and <TICKER>_README.md in {len(assets)} asset folders")
     return 0
 
 

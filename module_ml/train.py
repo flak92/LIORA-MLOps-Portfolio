@@ -1,7 +1,7 @@
 """Frozen-parameter training: out-of-fold predictions and the final-holdout report.
 
 With the parameters chosen by HPO, refit the expanding folds and store their
-out-of-fold probabilities (oos_predictions.parquet) — the only inputs the
+out-of-fold probabilities (<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet) — the only inputs the
 strategy layer may use to choose its threshold — then fit on everything before
 the final fold and evaluate that fold. The numbers are persisted; the model is
 not, because nothing in this repo performs inference yet.
@@ -18,7 +18,7 @@ from . import config, dataset, model, validation
 
 def write_predictions(ticker: str, rows: list[tuple]) -> Path:
     return dataset.write_parquet(
-        config.artifact_dir(ticker) / "oos_predictions.parquet",
+        config.oos_predictions_parquet(ticker),
         {"decision_ts": "BIGINT", "oos_fold_id": "TINYINT",
          "p_short": "DOUBLE", "p_neutral": "DOUBLE", "p_long": "DOUBLE"},
         ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in rows),
@@ -47,8 +47,7 @@ def main() -> int:
     args = config.ticker_parser("frozen-parameter training and the final-holdout report").parse_args()
 
     for t in config.parse_tickers(args.tickers):
-        adir = config.artifact_dir(t)
-        best = dataset.read_json(adir / "hyperparameter_search.json")["best_params"]
+        best = dataset.read_json(config.hpo_best_params_json(t))["best_params"]
         xy = dataset.load_xy(t)
         y_cls = model.to_class(xy["y"])
 
@@ -121,7 +120,7 @@ def main() -> int:
                 // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME],
             },
         }
-        dataset.write_json(adir / "model_evaluation.json", payload)
+        dataset.write_json(config.model_evaluation_json(t), payload)
         print(f"{t} model_evaluation: prior {final_holdout['prior_logloss']:.6f} "
               f"model {final_holdout['model_logloss']:.6f} "
               f"skill {final_holdout['relative_logloss_skill']:+.4f}", flush=True)

@@ -107,7 +107,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | download  | `make download`        | both APIs → `store_raw_data_ss-01-hh-dd-MM/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `store_Assets_artifacts/<T>/canonical_ss-01-hh-dd-MM.parquet`   | fail-closed: read-back invariants before the atomic replace |
+| export    | `make export`          | canonical → `store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet`   | fail-closed: read-back invariants before the atomic replace |
 | status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
@@ -127,7 +127,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 - **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
   same row count for every asset, continuous, no NULLs, values exactly as the
   winning source printed them (no rounding at any layer).
-- **Semantics**: `store_Assets_artifacts/<T>/canonical_ss-01-hh-dd-MM.parquet` is a **canonical
+- **Semantics**: `store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` is a **canonical
   primary-failover series**, not the raw feed of a single source — the published
   per-asset representation for external consumers; the ML stages in this
   repository read the same canonical object from the DuckDB tables. For Lean
@@ -164,7 +164,7 @@ available GiB))` assets in parallel, one process each, with the thread caps pinn
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
-describes itself: `experiment_configuration.json` records the configuration
+describes itself: `<TICKER>_experiment_configuration.json` records the configuration
 the run used, and its `README.md` says what came out. Full methodology:
 [module_skills/methodology_ml.md](module_skills/methodology_ml.md).
 

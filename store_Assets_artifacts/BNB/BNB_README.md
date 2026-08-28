@@ -1,22 +1,22 @@
 # BNB — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `BNB_experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
 
 ## Files
 
 | file | holds | size |
 | --- | --- | --- |
-| `canonical_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 45,189 KB |
-| `features.parquet` | X — 15 causal columns on the decision grid | 10,061 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,343 KB |
-| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,350 KB |
-| `hyperparameter_search.json` | the winning point of the search | 321 B |
-| `model_evaluation.json` | classification metrics per fold | 2 KB |
-| `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
-| `experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
-| `README.md` | this file | — |
+| `BNB_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 45,189 KB |
+| `BNB_experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
+| `BNB_features_ss-15-hh-dd-MM.parquet` | X — 15 causal columns on the decision grid | 10,061 KB |
+| `BNB_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,343 KB |
+| `BNB_model_evaluation.json` | classification metrics per fold | 2 KB |
+| `BNB_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-fold class probabilities, full windows | 2,350 KB |
+| `BNB_OPTUNAs_XGB_HPOs_best_params.json` | the winning point of the Optuna→XGB search | 321 B |
+| `BNB_README.md` | this file | — |
+| `BNB_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
-`features.parquet` carries 16 rows more than `label_events.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+`BNB_features_ss-15-hh-dd-MM.parquet` carries 16 rows more than `BNB_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BNB_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -61,6 +61,6 @@ Final-holdout exits: upper_barrier 12, lower_barrier 10, vertical 19, ambiguous 
 
     python -m module_ml.features --tickers BNB && python -m module_ml.labels --tickers BNB && python -m module_ml.hpo --tickers BNB && python -m module_ml.train --tickers BNB && python -m module_ml.strategy --tickers BNB && python -m module_ml.status --tickers BNB
 
-`canonical_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+`BNB_canonical_ohlcv_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.

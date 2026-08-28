@@ -1,6 +1,6 @@
 """Export per-asset Parquet files from the canonical series.
 
-One file per asset: store_Assets_artifacts/<TICKER>/canonical_ss-01-hh-dd-MM.parquet with pure
+One file per asset: store_Assets_artifacts/<TICKER>/<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet with pure
 timestamp_ms, open, high, low, close, volume columns — a continuous canonical
 series with no gaps. Provenance (source, zero_volume, validity, divergence)
 stays in the database and in the monitoring layer.
@@ -37,7 +37,7 @@ FROM read_parquet('{path}')
 
 
 def main() -> int:
-    ap = config.ticker_parser("ohlcv_1m_canonical -> store_Assets_artifacts/<T>/canonical_ss-01-hh-dd-MM.parquet")
+    ap = config.ticker_parser("ohlcv_1m_canonical -> store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet")
     args = ap.parse_args()
     tickers = config.parse_tickers(args.tickers)
 
@@ -48,7 +48,7 @@ def main() -> int:
     ).fetchone()[0]
     for t in tickers:
         symbol = config.symbol(t)
-        out = config.canonical_parquet(t)
+        out = config.canonical_ohlcv_parquet(t)
         out.parent.mkdir(parents=True, exist_ok=True)
         tmp = out.with_suffix(".parquet.tmp")
         con.execute(

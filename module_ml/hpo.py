@@ -4,7 +4,7 @@ Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
 validation folds F2-F4 (expanding training, purged before every OOS block).
 The populations and their weights do not depend on the hyper-parameters, so
 they are built once instead of once per trial.
-The final holdout fold is never touched here. hyperparameter_search.json keeps
+The final holdout fold is never touched here. <TICKER>_OPTUNAs_XGB_HPOs_best_params.json keeps
 the winner and the trial count; the trajectory of 50 trials is a search diary,
 not a result.
 """
@@ -57,7 +57,7 @@ def main() -> int:
             "best_logloss": study.best_value,
             "trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,
         }
-        out = config.artifact_dir(t) / "hyperparameter_search.json"
+        out = config.hpo_best_params_json(t)
         dataset.write_json(out, payload)
         print(f"{t} {out.name}: best logloss {study.best_value:.6f} "
               f"(trial {study.best_trial.number})", flush=True)

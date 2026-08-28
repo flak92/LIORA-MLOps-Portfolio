@@ -18,7 +18,28 @@ next reader from reinventing it.
 | 5 | `<TICKER>/` in capitals inside `store_Assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity; the exchange symbol belongs to the adapter boundary |
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
 | 7 | guidance files: `act_*`, `skill_*`, `methodology_*`, `glossary.md` | bare topic names | kind first inside the folder, same rule as the tree above it |
-| 8 | `canonical_ss-01-hh-dd-MM.parquet` | `canonical_1m.parquet` | a file with a timeframe in its name follows the slot standard |
+| 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `canonical_1m.parquet`, `features.parquet`, `hyperparameter_search.json`, a bare `README.md` | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
+
+## The asset folder manifest
+
+`store_Assets_artifacts/<TICKER>/` holds exactly these nine files — every one
+prefixed with its ticker, every time series carrying its grid in timeframe
+slots, paths built only by the descriptors in the modules' `config.py`:
+
+| file | holds | written by |
+|---|---|---|
+| `<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m OHLCV series (t, O, H, L, C, V) | `module_data/export.py` |
+| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | X — 15 causal feature columns on the 15m decision grid | `module_ml/features.py` |
+| `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier events on the 15m decision grid | `module_ml/labels.py` |
+| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full prediction windows | `module_ml/train.py` |
+| `<TICKER>_OPTUNAs_XGB_HPOs_best_params.json` | the winning point of the Optuna→XGB search, its log-loss and the trial count | `module_ml/hpo.py` |
+| `<TICKER>_model_evaluation.json` | classification metrics per fold, gain importance, populations | `module_ml/train.py` |
+| `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
+| `<TICKER>_experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | `module_ml/status.py` |
+| `<TICKER>_README.md` | what the folder holds and what came out of it | `module_ml/status.py` |
+
+A file copied out of its folder still says which asset it belongs to and which
+grid it lives on — the name does the folder's work when the folder is gone.
 
 ## The timeframe slot standard
 

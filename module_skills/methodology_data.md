@@ -162,7 +162,7 @@ native 1h klines gives **0 OHLC mismatches** and a maximum relative volume
 difference of **7.1e-16** — float64 epsilon. The minute grid this database is
 built on reproduces the exchange's own higher timeframes exactly.
 
-**Exports**: `store_Assets_artifacts/<TICKER>/canonical_ss-01-hh-dd-MM.parquet` (zstd) carries
+**Exports**: `store_Assets_artifacts/<TICKER>/<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` (zstd) carries
 only `timestamp_ms, open, high, low, close, volume` — identical row counts for
 every asset (full grid), continuous, no NULLs. Export is **fail-closed**: the
 Parquet is written to a temp file and replaced only after asserting the full

@@ -51,7 +51,7 @@ download-bybit:  ## Bybit Linear only
 ingest:          ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m module_data.ingest
 
-export:          ## write store_Assets_artifacts/<T>/canonical_ss-01-hh-dd-MM.parquet from the canonical series
+export:          ## write store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet from the canonical series
 	$(PY) -m module_data.export
 
 status:          ## data & DB monitoring -> stdout + module_monitoring/status.json

@@ -9,8 +9,44 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from module_data.config import (  # noqa: F401  (re-exported)
-    STORE_DB_PATH, MODULE_MONITORING_DIR, artifact_dir, parse_tickers, symbol, ticker_parser,
+    STORE_DB_PATH, MODULE_MONITORING_DIR, artifact_dir, canonical_ohlcv_parquet,
+    parse_tickers, symbol, ticker_parser,
 )
+
+
+# ---- the asset folder manifest (module_skills/act_naming_conventions.md):
+# every per-asset file carries the <TICKER>_ prefix, a time series carries its
+# grid in timeframe slots. Paths are built here and nowhere else.
+def features_parquet(ticker):
+    return artifact_dir(ticker) / f"{ticker}_features_ss-15-hh-dd-MM.parquet"
+
+
+def label_events_parquet(ticker):
+    return artifact_dir(ticker) / f"{ticker}_label_events_ss-15-hh-dd-MM.parquet"
+
+
+def oos_predictions_parquet(ticker):
+    return artifact_dir(ticker) / f"{ticker}_oos_predictions_ss-15-hh-dd-MM.parquet"
+
+
+def hpo_best_params_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_OPTUNAs_XGB_HPOs_best_params.json"
+
+
+def model_evaluation_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_model_evaluation.json"
+
+
+def strategy_evaluation_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_strategy_evaluation.json"
+
+
+def experiment_configuration_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_experiment_configuration.json"
+
+
+def asset_readme_md(ticker):
+    return artifact_dir(ticker) / f"{ticker}_README.md"
 
 SEED = 42
 

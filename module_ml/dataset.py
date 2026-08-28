@@ -89,8 +89,8 @@ def load_xy(ticker: str) -> dict[str, np.ndarray]:
     """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
     adir = config.artifact_dir(ticker)
     con = duckdb.connect()
-    x = con.execute(f"SELECT * FROM read_parquet('{adir}/features.parquet') ORDER BY decision_ts").fetchnumpy()
-    label_events = con.execute(f"SELECT * FROM read_parquet('{adir}/label_events.parquet') ORDER BY decision_ts").fetchnumpy()
+    x = con.execute(f"SELECT * FROM read_parquet('{config.features_parquet(ticker)}') ORDER BY decision_ts").fetchnumpy()
+    label_events = con.execute(f"SELECT * FROM read_parquet('{config.label_events_parquet(ticker)}') ORDER BY decision_ts").fetchnumpy()
     con.close()
     x_ts = x["decision_ts"].astype(np.int64)
     y_ts = label_events["decision_ts"].astype(np.int64)

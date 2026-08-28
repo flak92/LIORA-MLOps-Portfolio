@@ -64,8 +64,8 @@ def artifact_dir(ticker: str) -> Path:
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
-def canonical_parquet(ticker: str) -> Path:
-    return artifact_dir(ticker) / "canonical_ss-01-hh-dd-MM.parquet"
+def canonical_ohlcv_parquet(ticker: str) -> Path:
+    return artifact_dir(ticker) / f"{ticker}_canonical_ohlcv_ss-01-hh-dd-MM.parquet"
 
 
 def ticker_parser(description: str) -> "argparse.ArgumentParser":

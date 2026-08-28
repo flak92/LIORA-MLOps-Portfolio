@@ -64,7 +64,7 @@ def load_inputs(ticker: str) -> dict:
     con.close()
     c2 = duckdb.connect()
     preds = c2.execute(
-        f"SELECT * FROM read_parquet('{adir}/oos_predictions.parquet') ORDER BY oos_fold_id, decision_ts"
+        f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker)}') ORDER BY oos_fold_id, decision_ts"
     ).fetchnumpy()
     c2.close()
 
@@ -249,7 +249,7 @@ def main() -> int:
                               "equity_curve": equity_curve(final_holdout["equity_1m"],
                                                           holdout_start)},
         }
-        out = config.artifact_dir(t) / "strategy_evaluation.json"
+        out = config.strategy_evaluation_json(t)
         dataset.write_json(out, payload)
         print(f"{t} {out.name}: threshold={entry_edge_threshold} sharpe {final_holdout['sharpe']:.3f} "
               f"trades {final_holdout['trade_count']} maxDD {final_holdout['max_drawdown']:.3f} "

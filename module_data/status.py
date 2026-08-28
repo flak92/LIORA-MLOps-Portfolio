@@ -176,7 +176,7 @@ def main() -> int:
                 "longest_flat_run_minutes": int(canon_extra[symbol][1]),
             }
         )
-        pq = config.canonical_parquet(t)
+        pq = config.canonical_ohlcv_parquet(t)
         pq_rows = 0
         if pq.exists():
             c2 = duckdb.connect()

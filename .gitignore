@@ -7,5 +7,5 @@ store_db/
 # without a run
 store_Assets_artifacts/**
 !store_Assets_artifacts/*/
-!store_Assets_artifacts/*/experiment_configuration.json
-!store_Assets_artifacts/*/README.md
+!store_Assets_artifacts/*/*_experiment_configuration.json
+!store_Assets_artifacts/*/*_README.md

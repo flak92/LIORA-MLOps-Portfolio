@@ -10,7 +10,7 @@ Every value at decision_ts comes from the last CLOSED bar of its timeframe
 (asof_index asserts causality); the 15m timeframe uses the bar closing exactly at
 decision_ts.
 
-Output: store_Assets_artifacts/<TICKER>/features.parquet with decision_ts + 15
+Output: store_Assets_artifacts/<TICKER>/<TICKER>_features_ss-15-hh-dd-MM.parquet with decision_ts + 15
 feature columns, from the global research warm-up onward, no NaN (asserted).
 """
 
@@ -73,7 +73,7 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
 
 def write_x(ticker: str, decision_ts: np.ndarray, x: np.ndarray) -> Path:
     return dataset.write_parquet(
-        config.artifact_dir(ticker) / "features.parquet",
+        config.features_parquet(ticker),
         {"decision_ts": "BIGINT", **{c: "DOUBLE" for c in config.FEATURE_COLUMNS}},
         ([int(decision_ts[i])] + [repr(float(v)) for v in x[i]]
          for i in range(decision_ts.size)),

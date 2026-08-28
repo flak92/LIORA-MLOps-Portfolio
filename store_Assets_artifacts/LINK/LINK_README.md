@@ -1,22 +1,22 @@
 # LINK — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `LINK_experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
 
 ## Files
 
 | file | holds | size |
 | --- | --- | --- |
-| `canonical_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 43,312 KB |
-| `features.parquet` | X — 15 causal columns on the decision grid | 9,870 KB |
-| `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,420 KB |
-| `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,359 KB |
-| `hyperparameter_search.json` | the winning point of the search | 322 B |
-| `model_evaluation.json` | classification metrics per fold | 2 KB |
-| `strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
-| `experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
-| `README.md` | this file | — |
+| `LINK_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 43,312 KB |
+| `LINK_experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
+| `LINK_features_ss-15-hh-dd-MM.parquet` | X — 15 causal columns on the decision grid | 9,870 KB |
+| `LINK_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,420 KB |
+| `LINK_model_evaluation.json` | classification metrics per fold | 2 KB |
+| `LINK_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-fold class probabilities, full windows | 2,359 KB |
+| `LINK_OPTUNAs_XGB_HPOs_best_params.json` | the winning point of the Optuna→XGB search | 322 B |
+| `LINK_README.md` | this file | — |
+| `LINK_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
-`features.parquet` carries 16 rows more than `label_events.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `oos_predictions.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+`LINK_features_ss-15-hh-dd-MM.parquet` carries 16 rows more than `LINK_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `LINK_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -61,6 +61,6 @@ Final-holdout exits: upper_barrier 48, lower_barrier 46, vertical 89, ambiguous 
 
     python -m module_ml.features --tickers LINK && python -m module_ml.labels --tickers LINK && python -m module_ml.hpo --tickers LINK && python -m module_ml.train --tickers LINK && python -m module_ml.strategy --tickers LINK && python -m module_ml.status --tickers LINK
 
-`canonical_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+`LINK_canonical_ohlcv_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.

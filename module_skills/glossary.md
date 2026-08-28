@@ -27,7 +27,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | `canonical_ss-01-hh-dd-MM.parquet` | canonical dataset | fused series, index, blended price |
+| the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | `<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | canonical dataset | fused series, index, blended price |
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
@@ -66,7 +66,7 @@ confirmation; the rest of the concept column states what the name means.
 | whether any threshold on the grid cleared the trade floor | `entry_edge_threshold_constraint_met` | same | fallback | tau_constraint_met |
 | the trade floor — a selection guardrail, not an acceptance gate | `MINIMUM_TRADES_PER_VALIDATION_FOLD` = 30 | `strategy.minimum_trades_per_validation_fold` | — | TAU_MIN_TRADES, MIN_TRADES, acceptance gate |
 | how many timeframes must agree with the side | `MINIMUM_AGREEING_TREND_TIMEFRAMES`, `agreeing_trend_timeframe_count` | `minimum_agreeing_trend_timeframes` | at least 2 of 3 timeframes agree | AGREE_MIN, gate_min_agree, hierarchy_min_agree, n_agree, level |
-| replaying the strategy over the canonical price path | `backtest()` | `strategy_evaluation.json` | STRATEGY | live execution, exchange execution |
+| replaying the strategy over the canonical price path | `backtest()` | `<TICKER>_strategy_evaluation.json` | STRATEGY | live execution, exchange execution |
 | the execution cost charged on entry and on exit | `EXECUTION_COST_RATE_PER_TRADE_SIDE` = 0.0006 | `execution_cost_rate_per_trade_side` | cost per side | costs_per_side, cost_per_side, fees |
 
 The symbol τ may stay in equations and in table headers; its first use in any
@@ -107,15 +107,15 @@ each file named after what it holds.
 
 | file | written by | holds |
 |---|---|---|
-| `canonical_ss-01-hh-dd-MM.parquet` | `module_data/export.py` | the published canonical series |
-| `features.parquet` | `module_ml/features.py` | X — 15 causal columns |
-| `label_events.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
-| `hyperparameter_search.json` | `module_ml/hpo.py` | the winning point of the search and the trial count |
-| `oos_predictions.parquet` | `module_ml/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
-| `model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |
-| `strategy_evaluation.json` | `module_ml/strategy.py` | the entry edge threshold and the PnL |
-| `experiment_configuration.json` | `module_ml/status.py` | the a-priori experiment configuration, recorded at report time |
-| `README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
+| `<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | `module_data/export.py` | the published canonical series |
+| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | `module_ml/features.py` | X — 15 causal columns on the decision grid |
+| `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
+| `<TICKER>_OPTUNAs_XGB_HPOs_best_params.json` | `module_ml/hpo.py` | the winning point of the Optuna→XGB search and the trial count |
+| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
+| `<TICKER>_model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |
+| `<TICKER>_strategy_evaluation.json` | `module_ml/strategy.py` | the entry edge threshold and the PnL |
+| `<TICKER>_experiment_configuration.json` | `module_ml/status.py` | the a-priori experiment configuration, recorded at report time |
+| `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
 
 ## Features
 

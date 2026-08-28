@@ -134,7 +134,7 @@ def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: 
 
 def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
     return dataset.write_parquet(
-        config.artifact_dir(ticker) / "label_events.parquet",
+        config.label_events_parquet(ticker),
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),

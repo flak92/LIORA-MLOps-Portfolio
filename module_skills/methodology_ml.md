@@ -198,7 +198,7 @@ The training weights therefore feed `model.fit` and the class prior, the
 scoring weights feed the log-losses of that same fold, and neither can be
 used in place of the other.
 
-`label_events.parquet` also carries the prices the backtest needs —
+`<TICKER>_label_events_ss-15-hh-dd-MM.parquet` also carries the prices the backtest needs —
 `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` — so the
 strategy replays exactly the event that produced the label instead of
 recomputing it.
@@ -248,7 +248,7 @@ folds F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight
 `alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`, no
 early stopping. Label parameters, costs and the entry-edge-threshold grid are **never** in the
-space. `hyperparameter_search.json` keeps the winner and the trial count; the trajectory of
+space. `<TICKER>_OPTUNAs_XGB_HPOs_best_params.json` keeps the winner and the trial count; the trajectory of
 50 trials is a search diary, not a result.
 
 ## 8. Classification metric — relative log-loss skill against the training prior
@@ -336,11 +336,12 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 Per asset in `store_Assets_artifacts/<TICKER>/` — **one file per distinct artifact
 responsibility, no duplicate representations of the same result**, each named
-for what it holds: `canonical_ss-01-hh-dd-MM.parquet`, `features.parquet`, `label_events.parquet`,
-`hyperparameter_search.json`, `oos_predictions.parquet`,
-`model_evaluation.json`, `strategy_evaluation.json`. The data files are
+for what it holds, with the `<TICKER>_` prefix so every file identifies its
+asset on its own: the canonical OHLCV parquet, the features/labels/predictions
+parquets on the 15m decision grid, the Optuna→XGB best-params JSON and the two
+evaluation JSONs. The data files are
 gitignored and reconstructable; two text files are not, because they are what
-makes the rest readable without a run: **`experiment_configuration.json`**, the
+makes the rest readable without a run: **`<TICKER>_experiment_configuration.json`**, the
 configuration this run was executed under, and **`README.md`**, what the
 folder holds and what came out of it. Both are written by `module_ml/status.py`
 and carry no timestamp, so an unchanged experiment reproduces them byte for
@@ -354,9 +355,10 @@ answers the only question the folder could not otherwise answer — which
 settings this run used — which is what makes the artifacts reproducible
 without reading the source. The
 experiment is still identified once, globally, in
-`module_monitoring/ml_status.json`: research window and seed. Library versions are pinned in `requirements.txt` and the versions a run
-resolved are recorded per asset in `experiment_configuration.json`
-(`runtime.libraries`); model parameters live in `hyperparameter_search.json`. Runs are reproducible by construction — fixed seed,
+`module_monitoring/ml_status.json`: research window and seed. Library versions
+are pinned once, in `requirements.txt`; model parameters live in
+`<TICKER>_OPTUNAs_XGB_HPOs_best_params.json`. Runs are reproducible by
+construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is
 persisted: nothing in this repo performs inference, so the numbers are the
