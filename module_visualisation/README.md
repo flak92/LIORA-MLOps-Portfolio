@@ -55,6 +55,11 @@ walk is what makes the workflow's own commit harmless: without it, the bot's reg
 would become the newest commit, the next run would stamp a different hash for an identical tree, and
 `visualisation-galaxy-check` would fail on the commit the workflow had just made.
 
+A shallow clone is refused rather than stamped. At a graft every file looks new, so the walk stops on
+the first commit it sees and a page-only commit would be stamped as if it were the tree's own — the
+page comes out byte-for-byte the same length with a different hash inside it, which is the worst kind
+of wrong. `fetch-depth: 0` in the workflow is load-bearing, not decoration.
+
 ## The template
 
 `Files_and_Folders_Visualisation.html` is the rendering shell. The generator owns exactly one region

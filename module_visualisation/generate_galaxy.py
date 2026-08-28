@@ -78,6 +78,13 @@ def load_provenance_stamp(output_relative: str) -> tuple[str, str]:
     page, so the next run would produce different bytes for an identical tree
     and the freshness check would fail on the commit the workflow had just made.
     """
+    if _git("rev-parse", "--is-shallow-repository").strip() == "true":
+        raise GalaxyError(
+            "the repository is a shallow clone, so the stamp cannot be trusted: at a graft every\n"
+            "  file looks new, the walk stops on the first commit it sees, and a page-only commit\n"
+            "  would be stamped as though it were the tree's own.\n"
+            "  fix: fetch the history — the workflow pins `fetch-depth: 0` for exactly this reason."
+        )
     commit = _git("rev-parse", "HEAD").strip()
     for _ in range(PROVENANCE_WALK_LIMIT):
         changed = [line.strip() for line in
