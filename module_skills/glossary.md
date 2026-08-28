@@ -120,6 +120,25 @@ Written by `module_data/status.py`; every SQL alias in its scans is the key it b
 | equity at the end of the fold, starting from 1.0 | `final_equity` | `final_equity` | final equity | PnL |
 | total gain per feature column of the final-holdout booster (fitted on F1–F4) | `gain_importance()` | `gain_importance` | FEATURES — total gain | importance, weight, a validation booster's gain |
 
+## Payload structure
+
+The container and envelope keys of the two snapshots, so that every published
+key is in this register.
+
+| concept | artifact key | holds |
+|---|---|---|
+| when the snapshot was written | `generated_at_utc` | the one timestamp of a payload |
+| the frozen experiment, once, globally | `research_window` with `start_utc`, `end_utc`, `seed` | the same three values `<TICKER>_parameters.json` carries per asset |
+| the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `gain_importance`, `strategy` | the experiment flow, sample → search → validation → holdout → attribution → strategy |
+| the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
+| how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
+| the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
+| the three tables of status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
+| the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count` |
+| the database envelope | `db_bytes`, `duckdb_version` | size on disk and the engine that wrote it |
+| day files a venue's tree holds | `zip_count` | one per UTC calendar day |
+| the longest run of flat no-trade minutes | `longest_flat_run_minutes` | a duration, in minutes |
+
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations

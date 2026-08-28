@@ -87,3 +87,53 @@ carries its semantic name even inside a function. A name must remove a
 reasoning step, not merely satisfy a pattern. The sorting mechanics live in
 `skill_sorting_files_naming_standard.md`; the names the project enacted, with
 their rejected forms, live in `act_naming_conventions.md`.
+
+## Checks
+
+Every grammar row of `AGENTS.md` has one read-only command, and the command
+has an expected answer. Run them before a merge and after any rename; a rule
+whose command cannot fail is a preference, so each one names the hit it would
+report.
+
+```
+kind-first blocks     ls -1d */
+                      → module_data module_ml module_monitoring module_skills, then store_Assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM
+collation invariance  for d in module_monitoring module_skills store_Assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
+                      → empty (the root and the packages differ only by the ecosystem-fixed names of act row 17)
+I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
+                      → empty
+constructors          git grep -nE '^def make_|_factory\(' -- '*.py'
+                      → empty
+private helpers       git grep -nE '^from \.[a-z_]* import .*\b_[a-z]|^from module_[a-z]+\.[a-z_]+ import .*\b_[a-z]' -- '*.py'
+                      → empty (a `_` name is never imported across modules)
+paths at point of use git grep -n '_DIR /' -- '*.py' | grep -v config.py
+                      → empty
+Lean names            git grep -n 'trade\.zip\|minute_trade_perp' -- '*.py' | grep -v module_data/lean.py
+                      → only the tree diagrams in the two downloader docstrings
+statement constants   grep -nE '^[A-Z_]+ = ("""|re\.compile)' module_data/*.py module_ml/*.py | grep -vE '_(DDL|INSERT|SCAN|PREDICATE|PATTERN|COLUMNS) ='
+                      → empty
+SQL aliases           grep -nE ' AS (n_|div_|chg|prev|ts_|rows)\b' module_data/status.py
+                      → empty
+positional reads      grep -nE '\br\[[0-9]+\]' module_data/status.py
+                      → empty
+count keys            git grep -nE '"(rows|gaps|duplicates|ambiguous|unobservable|trainable|n_[a-z]+)":' -- '*.py'
+                      → empty
+time suffixes         git grep -nE '"[a-z_]+_ts":' -- '*.py' | grep -vE 'decision_ts|entry_ts|event_end_ts'
+                      → empty (the three `_ts` columns are the act's schema boundary)
+abbreviation ret      git grep -nE '_ret\b|_ret_' -- '*.py' '*.js' '*.md' ':!store_Assets_artifacts/*/*'
+                      → only the rejected forms in the act and the register, and the retired `max_phantom_ret` in the data changelog
+conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'module_data/config.py\|module_data/lean.py'
+                      → empty
+JavaScript verbs      grep -hoE '^function [a-zA-Z]+' module_monitoring/*.js | grep -vE 'function (build|render|format|append|select|init)[A-Z]|^function (validationFolds|mean)$'
+                      → empty
+make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|dashboard|docker-build|docker-up|docker-down|(data|ml)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
+                      → empty
+.PHONY completeness   comm -3 <(grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | sort -u) <(sed -n '/^\.PHONY:/,/^$/p' Makefile | tr ' \\' '\n' | grep -v PHONY | grep . | sort -u)
+                      → empty
+port                  git grep -n 8900 -- Makefile docker-compose.yml
+                      → Makefile's `PORT ?=` and the two `${PORT:-8900}` defaults of compose, nothing else
+boundaries            the pre-sweep grep of the act, § External vocabularies
+                      → hits only inside the owning files listed there
+register              python3 -c "import json;g=open('module_skills/glossary.md').read();s=json.load(open('module_monitoring/status.json'));m=json.load(open('module_monitoring/ml_status.json'));a=m['assets'][0];k=set(s)|set(s['flow'])|{x for r in s['symbols']+s['canonical_source']+s['venues']['binance'] for x in r}|set(m)|set(m['research_window'])|set(a)|set(a['sample'])|set(a['strategy'])|set(a['strategy']['final_holdout'])|set(a['final_holdout'])|set(a['hyperparameter_search']);print(sorted(x for x in k if '\x60'+x+'\x60' not in g))"
+                      → [] (every published key is in the register)
+```

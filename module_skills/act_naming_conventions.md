@@ -22,8 +22,39 @@ next reader from reinventing it.
 | 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | `<TICKER>_canonical_ohlcv_*.parquet`, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
 | 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep a-priori configuration and the search's winner apart inside one file |
 | 11 | every count key is `<what>_count`: `row_count`, `gap_count`, `duplicate_count`, `ohlc_violation_count`, `source_switch_count`, `decision_count`, `ambiguous_event_count`, `unobservable_entry_count`, `trainable_row_count`; a UTC string is `_utc` (`window_start_utc`, `first_observation_utc`); `return` is spelled out (`max_abs_return_1m`) | `rows`, `gaps`, `duplicates`, `ambiguous`, `trainable`, `first_ts` for a string, `max_abs_ret_1m` | one grammar for a number: the suffix says it is a count, the word says of what; a bare plural or an adjective made the reader guess, and `_ts` already means epoch milliseconds in the parquets |
-| 13 | make targets `data-download`, `data-download-binance`, `data-download-bybit`, `data-ingest`, `data-status` and the container twins `docker-data-download`, `docker-data-ingest`, `docker-data-status`; `docker-build`, `docker-up`, `docker-down` are compose lifecycle, not twins, and the single-venue downloads have no twin | bare `download`, `ingest`, `status`; `docker-download` | `<module>-<stage>` beside `ml-<stage>`: `make help` lists one module as one block, and `status` stops being ambiguous next to `ml-status` |
 | 12 | the asset folder manifest is written in `LC_COLLATE=C` listing order wherever it is written (this act, the register, `FILE_MANIFEST`, the store guide) | reading order, artifact-responsibility order | one order that a byte-comparing `ls` reproduces; three orders made the same nine files look like three manifests |
+| 13 | make targets `data-download`, `data-download-binance`, `data-download-bybit`, `data-ingest`, `data-status` and the container twins `docker-data-download`, `docker-data-ingest`, `docker-data-status`; `docker-build`, `docker-up`, `docker-down` are compose lifecycle, not twins, and the single-venue downloads have no twin | bare `download`, `ingest`, `status`; `docker-download` | `<module>-<stage>` beside `ml-<stage>`: `make help` lists one module as one block, and `status` stops being ambiguous next to `ml-status` |
+| 14 | the JSON section name `OPTUNAs_XGB_HPOs_best_params` inside `<TICKER>_parameters.json` | `optuna_xgb_best_params`, a file of that name | the author's own label for the search product — the one registered exception to the snake_case key grammar; it is a section, never a file name |
+| 15 | `<TICKER>_README.md` with README in capitals | `<TICKER>_readme.md`, a bare `README.md` | README is a convention older than this act; it is the one manifest entry whose position depends on collation (first under `LC_COLLATE=C`, eighth under `en_US.UTF-8`) — the `<TICKER>_*` block stays contiguous under both, and GitHub renders neither spelling as the folder's README |
+| 16 | `EXAMPLE_TICKER_README.md` sorts inside the ticker block of `store_Assets_artifacts/` | a store-root `README.md` | the guide is found where a reader looks for an asset folder; `ls -1d */` sees only the ten ticker directories |
+| 17 | ecosystem-fixed file names keep their spelling: `__init__.py`, `AGENTS.md`, `Dockerfile`, `Makefile`, `README.md`, `docker-compose.yml`, `requirements.txt` | project-cased variants | a boundary like Lean's casing (row 6); they are the only names whose sort position depends on collation, so the collation check binds every other directory |
+| 18 | the stage order lives in the Makefile (`all:`, `ml-all:`); every document points there | a second copy of the chain in README or a methodology | two copies drift; the per-asset reproduce line of `<TICKER>_README.md` is derived from the same order by `module_ml/status.py` |
+| 19 | `STORE_ASSETS_ARTIFACTS_DIR` → `store_Assets_artifacts/` | `STORE_Assets_ARTIFACTS_DIR` | a Python constant cannot carry case; the directory's capital A is read from row 2, the way slot dashes are read as underscores (§ timeframe slots) |
+
+## External vocabularies
+
+Row 6 is the first instance of a rule that holds at every boundary: inside the
+call that speaks an external format or library, the external spelling wins, and
+the project's names begin at the return value. An unnamed boundary is the class
+of names a mechanical sweep once broke (`viewBox` → `renderBox`, repaired in
+`cc92945`), so every one is listed here with the file that owns it.
+
+| boundary | owning file | words that stay external |
+|---|---|---|
+| QuantConnect Lean minute-trade format | `module_data/lean.py` (names, writer, full-day predicate); the tree above the file name comes from `module_data/config.py` | `cryptofuture/<venue>/minute/<symbol>/`, `YYYYMMDD_trade.zip`, `YYYYMMDD_<symbol>_minute_trade_perp.csv` |
+| Binance REST | `module_data/download_binance.py` | `symbol`, `interval`, `startTime`, `endTime`, `limit` |
+| Bybit REST v5 | `module_data/download_bybit.py` | `category`, `interval="1"`, `start`, `end`, `limit`, `retCode`, `retMsg`, `result.list` |
+| xgboost, and the sklearn pair it borrows | `module_ml/model.py` | `DMatrix`, `train`, `num_boost_round`, `predict`, `get_score`, `fit`, `predict_proba`, the hyper-parameter names in `best_params` |
+| optuna | `module_ml/model.py`, `module_ml/hpo.py` | `trial.suggest_int/float`, `create_study`, `TPESampler`, `n_trials`, `n_jobs`, `best_trial` — and the borrowed verb `suggest_params`, legal because the closed I/O verb list binds I/O functions only |
+| argparse | `module_data/config.py` (`ticker_parser`) | `ArgumentParser`, `add_argument`, `parse_args` |
+| SVG / DOM | `module_monitoring/*.js` | `setAttribute`, `viewBox`, `preserveAspectRatio`, `x1`, `y1`, `points`, `insertRow`, `createTHead`, `textContent` |
+| DuckDB SQL | `module_data/ingest.py`, `module_data/status.py`, `module_ml/bars.py`, `module_ml/dataset.py`, `module_ml/features.py`, `module_ml/labels.py`, `module_ml/strategy.py` | `read_csv`, `read_parquet`, `arg_min`, `arg_max`, `FILTER`, `quantile_cont`, `last_value … IGNORE NULLS`, `fetchnumpy` |
+| docker compose | `Makefile` (`docker-up`, `docker-down`), `docker-compose.yml` | `up`, `down`, `run --rm`, `${PORT:-8900}` |
+
+The browser is a boundary of its own: it has no config module, so `app.js` and
+`ml.js` fetch the two snapshots by literal name. Before any mechanical rename,
+run the pre-sweep grep and confirm that every hit sits inside an owning file
+above: `git grep -n 'setAttribute("\|suggest_\|retCode\|startTime\|DMatrix\|read_csv\|read_parquet' -- '*.py' '*.js'`.
 
 ## The asset folder manifest
 
@@ -48,6 +79,10 @@ README use the same one, so the three can be checked against each other by eye:
 | `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample probabilities (regenerable work product) | `module_ml/train.py` |
 | `<TICKER>_parameters.json` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner, its log-loss, the trial count) | `module_ml/hpo.py` |
 | `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
+
+The `.gitignore` whitelist is the manifest's fifth site: it names the two
+tracked files, `<TICKER>_parameters.json` and `<TICKER>_README.md`; the other
+seven are regenerable and stay out.
 
 The columns inside a per-timeframe features file carry only their family
 names — the filename already says the timeframe, and a name repeats nothing
@@ -94,3 +129,12 @@ The slot standard governs filesystem names. Serialized schema — DuckDB tables
 tokens: those names are contracts with the files on disk, and a schema
 migration is not a naming cleanup. They adopt the standard only at the next
 schema-breaking change, recorded here when it happens.
+
+The same deferral covers three more names the schema already carries: the
+epoch-millisecond columns `decision_ts`, `entry_ts`, `event_end_ts` of the
+parquets (the key grammar says `_ms`; no new `_ts` is minted), the DuckDB column
+`rel_divergence` (published only as `relative_divergence_*`), and the key
+`folds.warmup_4h_bars` of `<TICKER>_parameters.json` (a rewrite of the
+parameters file is a search run). A compact timeframe token inside a Python
+identifier (`WARMUP_4H_BARS`, `equity_15m`) is the timeframe vocabulary of
+code, not a slot.

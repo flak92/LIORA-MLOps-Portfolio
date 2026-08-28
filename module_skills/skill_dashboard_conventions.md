@@ -13,7 +13,10 @@ The dashboard is a static dial-up-minimal page; keep it one.
   (`build`, `render`, `format`, `append`, `select`, `init`);
   a domain object (an asset, a payload, a strategy block) is never a
   one-letter alias, while equation and geometry locals may stay short inside
-  one tight kernel; booleans answer a question. No linter, bundler or
+  one tight kernel; booleans answer a question. A table builds its header
+  beside its rows, in the render function that emits the cells
+  (`appendHeaderRow`, `renderTable`) — `index.html` carries an empty `<thead>`,
+  so adding a column is one edit in one file. No linter, bundler or
   framework enforces this — the review does.
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;
   single-class utility blocks stay single-class.

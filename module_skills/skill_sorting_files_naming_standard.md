@@ -25,9 +25,13 @@ will land in, on any server, under any locale.
   compare case-insensitively. A standard survives them all when its order
   never depends on case or punctuation alone — digits-before-letters holds
   everywhere, which is why the slot scheme was verified identical under both
-  `C` and `en_US.UTF-8` before it was enacted.
+  `C` and `en_US.UTF-8` before it was enacted. Three names are exempt by
+  decision, not by accident — the ecosystem-fixed root files and `__init__.py`
+  (act row 17) and `<TICKER>_README.md` (act row 15); the invariance claim
+  binds every project-minted name, and the `Checks` section of
+  `skill_self_explaining_naming.md` runs the `diff` that proves it.
 - **The enacted names live in the act.** This skill explains the mechanics;
   `act_naming_conventions.md` records which exact names the project decided,
   with the rejected forms. A new sortable pattern is minted like any other
-  convention: closed vocabulary, derivable, grep-checkable, able to fail —
+  convention — the eight conditions of `skill_self_explaining_naming.md` —
   and enters the act in the commit that enacts it.

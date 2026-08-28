@@ -23,7 +23,10 @@ conflicts with this file, the change is wrong.
   validation frameworks or precautionary guards. What stays are the guards
   the mathematics requires: causality invariants (`indicators.asof_index`) and
   arithmetic preconditions (the full canonical grid in `labels.load_research_1m`,
-  the basket-wide ingest). Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
+  the aligned decision grids of the arrays `dataset.load_xy` joins by position,
+  the basket-wide ingest, the download that aborts on a short post-listing day).
+  A check that could only fail on a stale artifact from another run is not one
+  of them. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
   part of correctness, not a setting.
 - **Research logic over tooling.** External sources, libraries and
   infrastructure are implementation details. The repository should expose the
@@ -75,8 +78,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   Checked with `ls -1d */`: one kind, one contiguous block;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
-  file names, built by its adapter (`module_data/lean.py` for the Lean tree);
-  one asset is one folder,
+  file names, built by its adapter (`module_data/lean.py` for the Lean tree) —
+  and the browser, which has no config module and fetches its two snapshots by
+  literal name (`app.js`, `ml.js`); one asset is one folder,
   `store_Assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a
@@ -145,6 +149,9 @@ invented just to satisfy the schema. The parameter word follows the mechanics
 — `SPAN` for an EMA,
 `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
 window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
+A compact timeframe token inside an identifier (`WARMUP_4H_BARS`, `equity_15m`,
+`ohlcv_15m_canonical`) is the timeframe vocabulary of code and schema; the slot
+standard governs filesystem names only.
 Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
 and are spelled out on first use in the documentation; local ones (`N`, `W`,
 `TF`, `MIN`, `MAX`, `K`, `XGB`) never cross a function boundary. A one-letter
@@ -155,10 +162,13 @@ payload, a strategy, a metrics block) carries its semantic name even inside a
 function. Write
 "QuantConnect Lean" on first use, "Lean" afterwards. British spelling
 throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling. At an
-external-format boundary the external vocabulary wins: the raw tree is the
-QuantConnect Lean layout (`cryptofuture/<venue>/minute/<symbol lowercase>/`,
-`YYYYMMDD_trade.zip`) and the adapter speaks Lean's own terms — a boundary
-exception the conventions name rather than an inconsistency they tolerate.
+external-format or external-library boundary the external vocabulary wins
+inside the call that speaks it, and project names begin at the return value:
+the raw tree is the QuantConnect Lean layout and `module_data/lean.py` speaks
+Lean's own terms; the same holds for the exchange REST parameters, xgboost,
+optuna, argparse, the SVG attributes and DuckDB SQL — every boundary is a row
+of the act's *External vocabularies* table, an exception the conventions name
+rather than an inconsistency they tolerate.
 
 ## The default choice
 
@@ -167,9 +177,10 @@ implementation that correctly closes the full pipeline.**
 
 Project-specific agent instructions live in `module_skills/` — the
 only other place agent guidance may exist in this tree. Its files are
-kind-first: the enacted names (`act_naming_conventions.md`), the naming
-register (`glossary.md`), the skills (`skill_*.md`) and
-the methodology documents — `methodology_data.md` (how the canonical dataset
-is built) and `methodology_ml.md` (the research layer, equation by equation,
-with the citations). A module-specific guidance subfolder is created at the
+kind-first and are read in listing order, starting with the act: the enacted
+names (`act_naming_conventions.md`), the naming register (`glossary.md`), the
+methodology documents — `methodology_data.md` (how the canonical dataset is
+built) and `methodology_ml.md` (the research layer, equation by equation, with
+the citations) — and the skills (`skill_*.md`), among which
+`skill_self_explaining_naming.md` carries the check for every grammar row. A module-specific guidance subfolder is created at the
 third module-specific document, not before.

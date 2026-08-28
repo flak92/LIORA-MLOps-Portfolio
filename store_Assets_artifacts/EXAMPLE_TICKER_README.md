@@ -96,5 +96,5 @@ fold (`validation.fold_2..4`, `final_holdout`): `sharpe`, `max_drawdown`,
 
 `<TICKER>_parameters.json` and `<TICKER>_README.md` are committed — they make
 a folder readable without a run. Everything else is regenerable from the
-DuckDB database: `make ml-features ml-labels ml-hpo ml-train ml-strategy
-ml-status` (HPO is the expensive step; the rest takes seconds).
+DuckDB database by the ML chain of `make ml-all` (the Makefile is the one
+authority for stage order; HPO is the expensive step, the rest takes seconds).
