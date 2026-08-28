@@ -33,11 +33,11 @@ def _rounded(x, ndigits):
 def sample_block(metrics: dict) -> dict:
     labels = metrics["labels"]
     return {
-        "rows": labels["rows"],
-        "ambiguous": labels["ambiguous"],
-        "unobservable": labels["unobservable"],
-        "trainable": labels["trainable"],
-        "trainable_pct": round(100.0 * labels["trainable"] / labels["rows"], 4),
+        "decision_count": labels["decision_count"],
+        "ambiguous_event_count": labels["ambiguous_event_count"],
+        "unobservable_entry_count": labels["unobservable_entry_count"],
+        "trainable_row_count": labels["trainable_row_count"],
+        "trainable_row_pct": round(100.0 * labels["trainable_row_count"] / labels["decision_count"], 4),
         "warmup_excluded_decision_count": metrics["segments"]["warmup_excluded_decision_count"],
         "class_counts": dict(metrics["class_counts"]),
     }
@@ -77,7 +77,7 @@ def equity_curve_block(curve: dict, final_equity: float) -> dict:
     end = round(final_equity, 4)
     if values[-1] != end:
         values.append(end)
-    return {"equity": values, "final_equity": end}
+    return {"equity": values}
 
 
 def _pnl_block(block: dict) -> dict:
@@ -122,16 +122,17 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     }
 
 
-# the asset folder manifest, in listing order: (path descriptor, what it holds)
+# the asset folder manifest in LC_COLLATE=C listing order (the act, § manifest):
+# (path descriptor, what it holds)
 FILE_MANIFEST = (
-    (config.parameters_json, "the one parameters file: a-priori configuration + the Optuna→XGB winner"),
+    (config.asset_readme_md, "this file"),
     (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "4h"), "X — the five 4h family columns on the decision grid"),
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
-    (config.oos_predictions_parquet, "out-of-fold class probabilities, full windows"),
-    (config.asset_readme_md, "this file"),
+    (config.oos_predictions_parquet, "out-of-sample class probabilities, full windows"),
+    (config.parameters_json, "the one parameters file: a-priori configuration + the Optuna→XGB winner"),
     (config.strategy_evaluation_json, "threshold, PnL and the equity curve"),
 )
 
@@ -215,7 +216,7 @@ Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TI
 
 ## Labels
 
-{labels['rows']:,} decisions, of which **{labels['trainable']:,} supervised** ({100 * labels['trainable'] / labels['rows']:.3f}%) — {labels['ambiguous']:,} events resolve ambiguously and {labels['unobservable']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
+{labels['decision_count']:,} decisions, of which **{labels['trainable_row_count']:,} supervised** ({100 * labels['trainable_row_count'] / labels['decision_count']:.3f}%) — {labels['ambiguous_event_count']:,} events resolve ambiguously and {labels['unobservable_entry_count']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
 
 ## Model
 
@@ -269,8 +270,8 @@ def main() -> int:
     payload = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "research_window": {"start_utc": config.RESEARCH_START_UTC,
-                            "end_utc": config.RESEARCH_END_UTC},
-        "seed": config.SEED,
+                            "end_utc": config.RESEARCH_END_UTC,
+                            "seed": config.SEED},
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
         "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,

@@ -64,7 +64,7 @@ function headerLine(asset, mlStatus) {
   const line = document.createElement("p");
   line.className = "sub";
   line.textContent = asset.ticker + " · " + mlStatus.research_window.start_utc.slice(0, 7) + " → "
-    + mlStatus.research_window.end_utc.slice(0, 7) + " · " + formatCount(asset.sample.rows) + " decisions";
+    + mlStatus.research_window.end_utc.slice(0, 7) + " · " + formatCount(asset.sample.decision_count) + " decisions";
   return line;
 }
 
@@ -76,10 +76,10 @@ function labelFrame(asset) {
     className, formatCount(classCounts[className]), [buildShareCell(classCounts[className], total)],
   ])));
   frame.body.appendChild(buildKeyValueBox([
-    ["trainable rows", formatCount(asset.sample.trainable) + " of " + formatCount(asset.sample.rows)
-      + " (" + asset.sample.trainable_pct.toFixed(3) + "%)"],
-    ["excluded", formatCount(asset.sample.ambiguous) + " ambiguous · "
-      + formatCount(asset.sample.unobservable) + " unobservable entry"],
+    ["trainable rows", formatCount(asset.sample.trainable_row_count) + " of " + formatCount(asset.sample.decision_count)
+      + " (" + asset.sample.trainable_row_pct.toFixed(3) + "%)"],
+    ["excluded", formatCount(asset.sample.ambiguous_event_count) + " ambiguous · "
+      + formatCount(asset.sample.unobservable_entry_count) + " unobservable entry"],
     ["warm-up excluded", formatCount(asset.sample.warmup_excluded_decision_count) + " decisions"],
   ]));
   return frame.frame;
@@ -127,7 +127,7 @@ function strategyFrame(asset, mlStatus) {
   frame.body.appendChild(sparkline(equityCurve.equity, 1.0,
     "equity on the final holdout fold; dashed line = 1.0 (flat)"));
   frame.body.appendChild(buildFootnote("final holdout equity: start 1.000 · end "
-    + equityCurve.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
+    + asset.strategy.final_holdout.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
     + "from the 15m equity series and the drawdown measured on the 1m path, "
     + "both from the starting capital; the curve above is weekly-sampled."));
   return frame.frame;

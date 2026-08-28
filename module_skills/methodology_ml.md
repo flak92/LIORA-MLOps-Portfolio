@@ -430,7 +430,7 @@ change provider between two minutes, and the two providers quote a real basis
 symbol, and ZEC switches 2368 times against 16–44 elsewhere). A single barrier
 touch can therefore come from a source switch rather than from the market
 moving. That is a property of a constructed market object, not a defect hidden
-by it: `source_switches` and `rel_divergence` are monitored per symbol
+by it: `source_switch_count` and `rel_divergence` are monitored per symbol
 precisely so the effect is visible and countable.
 
 Known limitations of this version: no regime-conditional gating, no per-asset

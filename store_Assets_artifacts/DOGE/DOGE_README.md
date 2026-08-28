@@ -6,14 +6,14 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 | file | holds | size |
 | --- | --- | --- |
-| `DOGE_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
+| `DOGE_README.md` | this file | — |
 | `DOGE_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,458 KB |
 | `DOGE_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,240 KB |
 | `DOGE_features_ss-mm-04-dd-MM.parquet` | X — the five 4h family columns on the decision grid | 1,241 KB |
 | `DOGE_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,554 KB |
 | `DOGE_model_evaluation.json` | classification metrics per fold | 2 KB |
-| `DOGE_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-fold class probabilities, full windows | 2,371 KB |
-| `DOGE_README.md` | this file | — |
+| `DOGE_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,371 KB |
+| `DOGE_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
 | `DOGE_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
 Each of the three feature parquets carries 16 rows more than `DOGE_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `DOGE_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.

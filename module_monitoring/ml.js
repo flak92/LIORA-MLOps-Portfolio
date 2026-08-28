@@ -64,7 +64,7 @@ function renderResearch(mlStatus) {
     const finalHoldoutStrategy = asset.strategy.final_holdout;
     const tr = tbody.insertRow();
     cell(tr, asset.ticker);
-    cell(tr, formatCount(asset.sample.rows));
+    cell(tr, formatCount(asset.sample.decision_count));
     cell(tr, formatCount(asset.sample.class_counts.short) + "/" + formatCount(asset.sample.class_counts.neutral) +
              "/" + formatCount(asset.sample.class_counts.long));
     cell(tr, asset.hyperparameter_search.best_params.max_depth + " / " + asset.hyperparameter_search.best_params.eta.toFixed(3) +
@@ -86,16 +86,16 @@ function renderResearch(mlStatus) {
 
 function renderLabels(mlStatus) {
   fillTable("cs-labels",
-    ["asset", "rows", "warm-up excl", "trainable", "short", "neutral share",
+    ["asset", "decisions", "warm-up excl", "trainable rows", "short", "neutral share",
      "long", "scored (holdout)"],
     mlStatus.assets.map((asset) => {
       const classCounts = asset.sample.class_counts;
       const total = classCounts.short + classCounts.neutral + classCounts.long;
       return [
         [tickerLink(asset.ticker)],
-        formatCount(asset.sample.rows),
+        formatCount(asset.sample.decision_count),
         formatCount(asset.sample.warmup_excluded_decision_count),
-        formatCount(asset.sample.trainable) + " (" + asset.sample.trainable_pct.toFixed(3) + "%)",
+        formatCount(asset.sample.trainable_row_count) + " (" + asset.sample.trainable_row_pct.toFixed(3) + "%)",
         formatCount(classCounts.short),
         [buildShareCell(classCounts.neutral, total)],
         formatCount(classCounts.long),
@@ -196,7 +196,7 @@ fetch("ml_status.json", { cache: "no-store" })
   .then((mlStatus) => {
     const envelope =
       "research window: [" + mlStatus.research_window.start_utc + " .. " + mlStatus.research_window.end_utc + ") UTC\n" +
-      "seed:            " + mlStatus.seed + "\n" +
+      "seed:            " + mlStatus.research_window.seed + "\n" +
       "generated:       " + mlStatus.generated_at_utc + " UTC";
     document.getElementById("ml-meta").textContent = envelope;
     document.getElementById("asset-meta").textContent = envelope;

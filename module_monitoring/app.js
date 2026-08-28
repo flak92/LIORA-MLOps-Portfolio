@@ -85,16 +85,16 @@ function renderRawSource(tableId, venueRows) {
     const tr = document.createElement("tr");
     cell(tr, row.symbol);
     cell(tr, formatCount(row.zip_count));
-    cell(tr, formatCount(row.rows));
+    cell(tr, formatCount(row.row_count));
     cell(tr, buildPercentageCell(row.coverage_pct));
-    cell(tr, formatCount(row.gaps));
-    cell(tr, formatCount(row.gaps_after_first_observation), row.gaps_after_first_observation > 0);
-    cell(tr, formatCount(row.duplicates), row.duplicates > 0);
-    cell(tr, formatCount(row.ohlc_violations), row.ohlc_violations > 0);
+    cell(tr, formatCount(row.gap_count));
+    cell(tr, formatCount(row.gap_count_after_first_observation), row.gap_count_after_first_observation > 0);
+    cell(tr, formatCount(row.duplicate_count), row.duplicate_count > 0);
+    cell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
     cell(tr, formatCount(row.zero_volume_bars));
     cell(tr, formatCount(row.flat_bars));
-    cell(tr, row.first_ts || "-");
-    cell(tr, row.last_ts || "-");
+    cell(tr, row.first_observation_utc || "-");
+    cell(tr, row.last_observation_utc || "-");
     tbody.appendChild(tr);
   }
 }
@@ -104,20 +104,20 @@ fetch("status.json", { cache: "no-store" })
   .then((status) => {
     document.getElementById("meta").textContent =
       "generated: " + status.generated_at_utc + " UTC\n" +
-      "window:    [" + status.window_start + " .. " + status.window_end + ") UTC\n" +
+      "window:    [" + status.window_start_utc + " .. " + status.window_end_utc + ") UTC\n" +
       "database:  " + formatBytes(status.db_bytes) + "  (duckdb " + status.duckdb_version + ")";
     const flow = status.flow;
     document.getElementById("flow").textContent =
-      "flow: " + formatCount(flow.zips_binance + flow.zips_bybit) + " raw ZIPs" +
-      " -> " + formatCount(flow.rows_binance + flow.rows_bybit) + " raw rows" +
-      " -> " + formatCount(flow.rows_canonical) + " canonical rows";
+      "flow: " + formatCount(flow.binance_zip_count + flow.bybit_zip_count) + " raw ZIPs" +
+      " -> " + formatCount(flow.binance_row_count + flow.bybit_row_count) + " raw rows" +
+      " -> " + formatCount(flow.canonical_row_count) + " canonical rows";
 
     const table = document.getElementById("symbols");
     const tbody = table.querySelector("tbody");
     for (const row of status.symbols) {
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
-      cell(tr, formatCount(row.rows));
+      cell(tr, formatCount(row.row_count));
       cell(tr, buildPercentageCell(row.real_data_pct));
       cell(tr, formatCount(row.ffill_bars), row.ffill_bars > 0);
       tbody.appendChild(tr);
@@ -131,16 +131,16 @@ fetch("status.json", { cache: "no-store" })
     for (const row of status.canonical_source) {
       const tr = document.createElement("tr");
       cell(tr, row.symbol);
-      cell(tr, formatCount(row.rows));
+      cell(tr, formatCount(row.row_count));
       cell(tr, buildPercentageCell(row.binance_pct));
       cell(tr, row.bybit_pct.toFixed(2) + "%");
       cell(tr, formatCount(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
       cell(tr, formatCount(row.zero_volume_bars));
-      cell(tr, formatCount(row.source_switches));
-      cell(tr, row.max_abs_ret_at_switch === null ? "-" : (100 * row.max_abs_ret_at_switch).toFixed(2) + "%");
-      cell(tr, formatCount(row.ohlc_violations), row.ohlc_violations > 0);
+      cell(tr, formatCount(row.source_switch_count));
+      cell(tr, row.max_abs_return_at_switch === null ? "-" : (100 * row.max_abs_return_at_switch).toFixed(2) + "%");
+      cell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
       cell(tr, formatCount(row.longest_flat_run_minutes));
-      cell(tr, row.max_abs_ret_1m === null ? "-" : (100 * row.max_abs_ret_1m).toFixed(2) + "%");
+      cell(tr, row.max_abs_return_1m === null ? "-" : (100 * row.max_abs_return_1m).toFixed(2) + "%");
       cell(tr, formatDivergencePercent(row.relative_divergence_mean));
       cell(tr, formatDivergencePercent(row.relative_divergence_p99));
       cell(tr, formatDivergencePercent(row.relative_divergence_max));

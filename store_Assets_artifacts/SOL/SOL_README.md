@@ -6,14 +6,14 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 | file | holds | size |
 | --- | --- | --- |
-| `SOL_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
+| `SOL_README.md` | this file | — |
 | `SOL_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,568 KB |
 | `SOL_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,240 KB |
 | `SOL_features_ss-mm-04-dd-MM.parquet` | X — the five 4h family columns on the decision grid | 1,241 KB |
 | `SOL_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,450 KB |
 | `SOL_model_evaluation.json` | classification metrics per fold | 2 KB |
-| `SOL_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-fold class probabilities, full windows | 2,363 KB |
-| `SOL_README.md` | this file | — |
+| `SOL_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,363 KB |
+| `SOL_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
 | `SOL_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
 Each of the three feature parquets carries 16 rows more than `SOL_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `SOL_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.

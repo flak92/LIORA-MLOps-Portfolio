@@ -98,7 +98,6 @@ def main() -> int:
         # that saw the most history; the validation boosters are not kept
         gain = model.gain_importance(booster)
         payload = {
-            "best_params": best,
             "validation": per_fold,
             "final_holdout": final_holdout,
             "gain_importance": gain,
@@ -111,10 +110,10 @@ def main() -> int:
                 "long": int((trainable & (xy["y"] == 1)).sum()),
             },
             "labels": {
-                "rows": int(xy["y"].size),
-                "ambiguous": int((~xy["label_valid"]).sum()),
-                "unobservable": int((~xy["entry_observable"]).sum()),
-                "trainable": int(trainable.sum()),
+                "decision_count": int(xy["y"].size),
+                "ambiguous_event_count": int((~xy["label_valid"]).sum()),
+                "unobservable_entry_count": int((~xy["entry_observable"]).sum()),
+                "trainable_row_count": int(trainable.sum()),
             },
             "segments": {
                 **segments,

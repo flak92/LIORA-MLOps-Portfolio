@@ -21,6 +21,8 @@ next reader from reinventing it.
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `canonical_1m.parquet`, `features.parquet`, `hyperparameter_search.json`, a bare `README.md` | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
 | 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | `<TICKER>_canonical_ohlcv_*.parquet`, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
 | 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep a-priori configuration and the search's winner apart inside one file |
+| 11 | every count key is `<what>_count`: `row_count`, `gap_count`, `duplicate_count`, `ohlc_violation_count`, `source_switch_count`, `decision_count`, `ambiguous_event_count`, `unobservable_entry_count`, `trainable_row_count`; a UTC string is `_utc` (`window_start_utc`, `first_observation_utc`); `return` is spelled out (`max_abs_return_1m`) | `rows`, `gaps`, `duplicates`, `ambiguous`, `trainable`, `first_ts` for a string, `max_abs_ret_1m` | one grammar for a number: the suffix says it is a count, the word says of what; a bare plural or an adjective made the reader guess, and `_ts` already means epoch milliseconds in the parquets |
+| 12 | the asset folder manifest is written in `LC_COLLATE=C` listing order wherever it is written (this act, the register, `FILE_MANIFEST`, the store guide) | reading order, artifact-responsibility order | one order that a byte-comparing `ls` reproduces; three orders made the same nine files look like three manifests |
 
 ## The asset folder manifest
 
@@ -31,17 +33,20 @@ file is prefixed with its ticker, every time series carries its grid in
 timeframe slots, and paths are built only by the descriptors in the modules'
 `config.py`:
 
+The table is in `LC_COLLATE=C` listing order — the register and the generated
+README use the same one, so the three can be checked against each other by eye:
+
 | file | holds | written by |
 |---|---|---|
+| `<TICKER>_README.md` | what the folder holds and what came out of it | `module_ml/status.py` |
 | `<TICKER>_features_ss-15-hh-dd-MM.parquet` | the five 15m family columns on the decision grid | `module_ml/features.py` |
 | `<TICKER>_features_ss-mm-01-dd-MM.parquet` | the five 1h family columns on the decision grid | `module_ml/features.py` |
 | `<TICKER>_features_ss-mm-04-dd-MM.parquet` | the five 4h family columns on the decision grid | `module_ml/features.py` |
-| `<TICKER>_parameters.json` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner, its log-loss, the trial count) | `module_ml/hpo.py` |
-| `<TICKER>_model_evaluation.json` | classification results per fold, gain importance, populations | `module_ml/train.py` |
-| `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier events (regenerable work product) | `module_ml/labels.py` |
+| `<TICKER>_model_evaluation.json` | classification results per fold, gain importance, populations | `module_ml/train.py` |
 | `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample probabilities (regenerable work product) | `module_ml/train.py` |
-| `<TICKER>_README.md` | what the folder holds and what came out of it | `module_ml/status.py` |
+| `<TICKER>_parameters.json` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner, its log-loss, the trial count) | `module_ml/hpo.py` |
+| `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
 
 The columns inside a per-timeframe features file carry only their family
 names — the filename already says the timeframe, and a name repeats nothing

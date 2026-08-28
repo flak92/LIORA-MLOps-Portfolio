@@ -39,16 +39,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 7,
+    "ambiguous_event_count": 7,
     "class_counts": {
      "long": 24193,
      "neutral": 144031,
      "short": 26601
     },
-    "rows": 194832,
-    "trainable": 194825,
-    "trainable_pct": 99.9964,
-    "unobservable": 0,
+    "decision_count": 194832,
+    "trainable_row_count": 194825,
+    "trainable_row_pct": 99.9964,
+    "unobservable_entry_count": 0,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -143,8 +143,7 @@
       0.8586,
       0.8515,
       0.8743
-     ],
-     "final_equity": 0.8743
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -272,16 +271,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 13,
+    "ambiguous_event_count": 13,
     "class_counts": {
      "long": 23854,
      "neutral": 143281,
      "short": 27680
     },
-    "rows": 194832,
-    "trainable": 194815,
-    "trainable_pct": 99.9913,
-    "unobservable": 4,
+    "decision_count": 194832,
+    "trainable_row_count": 194815,
+    "trainable_row_pct": 99.9913,
+    "unobservable_entry_count": 4,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -376,8 +375,7 @@
       0.8926,
       0.8863,
       0.9421
-     ],
-     "final_equity": 0.9421
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -505,16 +503,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 4,
+    "ambiguous_event_count": 4,
     "class_counts": {
      "long": 22740,
      "neutral": 144879,
      "short": 27204
     },
-    "rows": 194832,
-    "trainable": 194823,
-    "trainable_pct": 99.9954,
-    "unobservable": 5,
+    "decision_count": 194832,
+    "trainable_row_count": 194823,
+    "trainable_row_pct": 99.9954,
+    "unobservable_entry_count": 5,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -609,8 +607,7 @@
       0.9593,
       0.9593,
       0.951
-     ],
-     "final_equity": 0.951
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -738,16 +735,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 0,
+    "ambiguous_event_count": 0,
     "class_counts": {
      "long": 21988,
      "neutral": 146600,
      "short": 26240
     },
-    "rows": 194832,
-    "trainable": 194828,
-    "trainable_pct": 99.9979,
-    "unobservable": 4,
+    "decision_count": 194832,
+    "trainable_row_count": 194828,
+    "trainable_row_pct": 99.9979,
+    "unobservable_entry_count": 4,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -842,8 +839,7 @@
       0.9432,
       0.9286,
       1.0017
-     ],
-     "final_equity": 1.0017
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -971,16 +967,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 8,
+    "ambiguous_event_count": 8,
     "class_counts": {
      "long": 23813,
      "neutral": 145753,
      "short": 25254
     },
-    "rows": 194832,
-    "trainable": 194820,
-    "trainable_pct": 99.9938,
-    "unobservable": 4,
+    "decision_count": 194832,
+    "trainable_row_count": 194820,
+    "trainable_row_pct": 99.9938,
+    "unobservable_entry_count": 4,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -1075,8 +1071,7 @@
       1.0862,
       1.0862,
       1.0535
-     ],
-     "final_equity": 1.0535
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -1204,16 +1199,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 0,
+    "ambiguous_event_count": 0,
     "class_counts": {
      "long": 23988,
      "neutral": 143385,
      "short": 27455
     },
-    "rows": 194832,
-    "trainable": 194828,
-    "trainable_pct": 99.9979,
-    "unobservable": 4,
+    "decision_count": 194832,
+    "trainable_row_count": 194828,
+    "trainable_row_pct": 99.9979,
+    "unobservable_entry_count": 4,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -1308,8 +1303,7 @@
       0.7371,
       0.7329,
       0.7411
-     ],
-     "final_equity": 0.7411
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -1437,16 +1431,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 0,
+    "ambiguous_event_count": 0,
     "class_counts": {
      "long": 23257,
      "neutral": 145293,
      "short": 26276
     },
-    "rows": 194832,
-    "trainable": 194826,
-    "trainable_pct": 99.9969,
-    "unobservable": 6,
+    "decision_count": 194832,
+    "trainable_row_count": 194826,
+    "trainable_row_pct": 99.9969,
+    "unobservable_entry_count": 6,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -1541,8 +1535,7 @@
       0.7118,
       0.7112,
       0.7919
-     ],
-     "final_equity": 0.7919
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -1670,16 +1663,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 0,
+    "ambiguous_event_count": 0,
     "class_counts": {
      "long": 22425,
      "neutral": 148163,
      "short": 24135
     },
-    "rows": 194832,
-    "trainable": 194723,
-    "trainable_pct": 99.9441,
-    "unobservable": 109,
+    "decision_count": 194832,
+    "trainable_row_count": 194723,
+    "trainable_row_pct": 99.9441,
+    "unobservable_entry_count": 109,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -1774,8 +1767,7 @@
       0.8818,
       0.8818,
       0.8467
-     ],
-     "final_equity": 0.8467
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -1903,16 +1895,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 1,
+    "ambiguous_event_count": 1,
     "class_counts": {
      "long": 22803,
      "neutral": 146901,
      "short": 25127
     },
-    "rows": 194832,
-    "trainable": 194831,
-    "trainable_pct": 99.9995,
-    "unobservable": 0,
+    "decision_count": 194832,
+    "trainable_row_count": 194831,
+    "trainable_row_pct": 99.9995,
+    "unobservable_entry_count": 0,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -2007,8 +1999,7 @@
       0.8604,
       0.859,
       0.8489
-     ],
-     "final_equity": 0.8489
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -2136,16 +2127,16 @@
     "trial_count": 50
    },
    "sample": {
-    "ambiguous": 10,
+    "ambiguous_event_count": 10,
     "class_counts": {
      "long": 21853,
      "neutral": 147677,
      "short": 25288
     },
-    "rows": 194832,
-    "trainable": 194818,
-    "trainable_pct": 99.9928,
-    "unobservable": 4,
+    "decision_count": 194832,
+    "trainable_row_count": 194818,
+    "trainable_row_pct": 99.9928,
+    "unobservable_entry_count": 4,
     "warmup_excluded_decision_count": 3200
    },
    "strategy": {
@@ -2240,8 +2231,7 @@
       0.9709,
       0.9422,
       0.8996
-     ],
-     "final_equity": 0.8996
+     ]
     },
     "execution_cost_rate_per_trade_side": 0.0006,
     "final_holdout": {
@@ -2332,11 +2322,11 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-08-28 09:44:38",
+ "generated_at_utc": "2026-08-28 11:45:47",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",
+  "seed": 42,
   "start_utc": "2021-01-01"
- },
- "seed": 42
+ }
 }

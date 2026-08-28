@@ -32,7 +32,7 @@ confirmation; the rest of the concept column states what the name means.
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
 | a data provider, above the ingest boundary only | `binance` / `bybit`, in `module_data` | `venues.*`, `binance_pct` / `bybit_pct` | Raw source | venue or exchange used below ingest |
-| which provider a canonical minute came from | `source`, `source_switches` | same | primary / secondary / ffill | — |
+| which provider a canonical minute came from | `source`, `source_switch_count` | same | primary / secondary / ffill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-volume bars | carried-forward price (true only of forward-filled minutes) |
 | a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | ffill | gap, missing bar |
 | quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | — (database columns; `rel_divergence` is published only as `relative_divergence_mean` / `relative_divergence_p99` / `relative_divergence_max`) | — | signal, feature |
@@ -51,9 +51,9 @@ confirmation; the rest of the concept column states what the name means.
 | the price that closes the event | `exit_reference_price` | `exit_reference_price` | — | exit_ref |
 | how the event ended | `event_resolution` | `event_resolution`, `exit_counts.*` | upper_barrier / lower_barrier / vertical / ambiguous | reason, exit_reason |
 | the four resolutions | `EVENT_RESOLUTION_{UPPER_BARRIER, LOWER_BARRIER, VERTICAL, AMBIGUOUS}` | `labels.event_resolution_codes` | — | bare 1 / −1 / 0 / 9 |
-| the entry minute traded at all — knowable at `entry_ts`, may gate an entry | `entry_observable` | `entry_observable`, `unobservable` | unobservable entry | tradable, valid entry |
-| the event can be classified — knowable only afterwards, never gates an entry | `label_valid` | `label_valid`, `ambiguous` | ambiguous | masked, mask_ok |
-| the supervised population: both of the above | `sample_valid` | `trainable`, `trainable_pct` | trainable rows | valid rows |
+| the entry minute traded at all — knowable at `entry_ts`, may gate an entry | `entry_observable` | `entry_observable`; its complement is counted as `unobservable_entry_count` | unobservable entry | tradable, valid entry |
+| the event can be classified — knowable only afterwards, never gates an entry | `label_valid` | `label_valid`; its complement is counted as `ambiguous_event_count` | ambiguous | masked, mask_ok |
+| the supervised population: both of the above | `sample_valid` | `trainable_row_count`, `trainable_row_pct` | trainable rows | valid rows |
 | how little an event overlaps its neighbours **within one population** — measured after the purge, never stored in Y | `average_uniqueness_weight()`, `train_weight` / `scoring_weight` | — | — | `weight` as a Y column, uniqueness_weight_mean, class weight |
 
 ## Signal and strategy
@@ -74,15 +74,35 @@ document or on any page spells out `entry edge threshold`.
 
 ## Counts
 
-Every count says what it counts; a bare `n` names nothing.
+Every count is `<what>_count`; a bare `n`, a bare plural (`gaps`) or an
+adjective (`ambiguous`) names no number.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
+| decisions on the 15m grid after the warm-up | `decision_count` | `decision_count` | decisions | rows, `n` |
 | rows a fold's metrics were computed on | `scored_row_count` | `scored_row_count` | scored | `n` |
 | rows the model was fitted on, and the events purged before them | `training_row_count`, `purged_event_count` | same | trained on / purged | n_train, n_purged |
 | rows in a prediction window | `window_row_count` | `window_row_count` | window | n_window |
 | trades a fold produced | `trade_count` | `trade_count` | trades | n_trades |
 | trials the search ran | `trial_count` | `trial_count` | trials | n_trials |
+
+## Data quality (status.json)
+
+Written by `module_data/status.py`; every SQL alias in its scans is the key it becomes.
+
+| concept | artifact key | UI label | never |
+|---|---|---|---|
+| minutes a venue printed / the canonical grid holds | `row_count` | rows | rows, n |
+| grid minutes a venue did not print (whole window / since its first observation) | `gap_count`, `gap_count_after_first_observation` | gaps | gaps |
+| minutes printed more than once | `duplicate_count` | dups | duplicates |
+| candles whose OHLC ordering is broken | `ohlc_violation_count` | ohlc bad | ohlc_violations |
+| minutes whose source differs from the previous minute | `source_switch_count` | switches | source_switches |
+| the largest 1m move at a switch / anywhere on the canonical series | `max_abs_return_at_switch`, `max_abs_return_1m` | max \|ret\| | `*_ret_*` |
+| a venue's first and last printed minute | `first_observation_utc`, `last_observation_utc` | first / last | `first_ts` (a `_ts` is epoch ms) |
+| the data window | `window_start_utc`, `window_end_utc` | window | `window_start` |
+| totals across the flow | `binance_zip_count`, `bybit_zip_count`, `binance_row_count`, `bybit_row_count`, `canonical_row_count` | flow | `zips_binance`, `rows_canonical` |
+| bars of a kind inside a bar or a series (a unit, not a bare count) | `ffill_bars`, `zero_volume_bars`, `flat_bars` | ffill / zero-vol / flat | `n_ffill` |
+| shares | `coverage_pct`, `binance_pct`, `bybit_pct`, `ffill_pct`, `real_data_pct` | % | ratio without `_pct` |
 
 ## Metrics
 
@@ -106,15 +126,18 @@ Every count says what it counts; a bare `n` names nothing.
 of the same result.** One directory per ticker under `store_Assets_artifacts/`,
 each file named after what it holds.
 
+In `LC_COLLATE=C` listing order — the one order the act, this register and the
+generated README share:
+
 | file | written by | holds |
 |---|---|---|
+| `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
 | `<TICKER>_features_<timeframe slots>.parquet` ×3 | `module_ml/features.py` | X — one file per timeframe: that timeframe's five family columns on the decision grid |
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
-| `<TICKER>_parameters.json` | `module_ml/hpo.py` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner) |
-| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | out-of-fold probabilities for the full windows; metrics score only the supervised subset |
 | `<TICKER>_model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |
+| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | out-of-sample probabilities for the full windows; metrics score only the supervised subset |
+| `<TICKER>_parameters.json` | `module_ml/hpo.py` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner) |
 | `<TICKER>_strategy_evaluation.json` | `module_ml/strategy.py` | the entry edge threshold and the PnL |
-| `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
 
 ## Features
 

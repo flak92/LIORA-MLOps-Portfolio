@@ -114,11 +114,11 @@ Properties:
   real market, so **no averaged synthetic price is introduced** and the
   weight-shift artifact of the v1 index is gone. That is a statement about
   blending *within* a minute: a return that *spans* a source switch may still
-  carry the cross-source basis, which is exactly what `source_switches` and
-  `max_abs_ret_at_switch` measure.
+  carry the cross-source basis, which is exactly what `source_switch_count` and
+  `max_abs_return_at_switch` measure.
 - The only place a cross-venue basis difference can enter the series is a
   minute whose source differs from the previous minute — monitored as
-  `source_switches` and `max_abs_ret_at_switch` per symbol.
+  `source_switch_count` and `max_abs_return_at_switch` per symbol.
 - `rel_divergence` (`|c_bin − c_byb| / mid` when both candles are valid) is a
   **data-quality signal only** — it is never a model feature.
 - Rows before a symbol's first valid candle would stay NULL; the Binance
@@ -179,7 +179,7 @@ rebuilding from a clean `store_db/` reproduces it bit-identically.
 - **Source switches carry the cross-venue basis.** A switch between venues can
   move the canonical close by the current Binance–Bybit basis without either
   venue moving; the count and the largest such move are monitored per symbol
-  (`source_switches`, `max_abs_ret_at_switch`). No smoothing is applied — the
+  (`source_switch_count`, `max_abs_return_at_switch`). No smoothing is applied — the
   switch is visible, not hidden.
 - **No cross-exchange divergence cutoff.** Strongly diverging minutes are real
   market dislocations; the per-symbol distribution (mean / p99 / max) is
@@ -212,7 +212,7 @@ switching is frequent but not violent.
   2022-11-09) — moves no venue printed — and rounded prices to present-day
   tick sizes. Replaced by the primary-failover definition above: verbatim
   venue candles, no weighting, no rounding, no synthetic averaged
-  price; `max_phantom_ret` monitoring retired, `source_switches` /
-  `max_abs_ret_at_switch` added — a switch can still carry the basis from one
+  price; `max_phantom_ret` monitoring retired, `source_switch_count` /
+  `max_abs_return_at_switch` added — a switch can still carry the basis from one
   minute to the next, and those two metrics are how it stays visible.
 - **v1 (2026-08-26).** Notional-weighted two-venue index (superseded).
