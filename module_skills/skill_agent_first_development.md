@@ -30,5 +30,15 @@ How to work on this repository as an agent.
   dependencies follow pipeline direction — downstream consumes upstream
   artifacts, upstream never imports downstream. No `utils`, `common`, `core`,
   `manager` or `service` modules: the responsibility already has an owner.
+- **Prefer generative structure over repeated project knowledge.** When a
+  family of assets, venues, timeframes, paths, artifact files, payload keys or
+  pipeline stages is governed by one canonical definition, derive the repeated
+  representations from that owner instead of copying the same list or naming
+  decision into several files. Adding the next member of an established family
+  should normally require one local definition and predictable downstream
+  derivation. Keep this stupid simple: do not add generators, registries,
+  metaprogramming or abstraction layers for a one-off value; generation is
+  useful only when it removes duplicated knowledge and shortens the extension
+  path.
 - Prove a change by running the affected stages, not by adding a framework
   that promises to.
