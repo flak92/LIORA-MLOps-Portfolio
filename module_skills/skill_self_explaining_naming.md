@@ -56,7 +56,7 @@ The grammars above are not the last ones this repository will need. A new one
 is worth establishing when it meets all eight conditions, and it is not a
 convention when it misses any:
 
-- **Closed vocabulary.** The allowed words can be listed. `load_`, `write_`,
+- **Closed list.** The allowed words can be listed. `load_`, `write_`,
   `fetch_`, `parse_`, `to_`, `build_` is a list; "use a sensible verb" is not.
 - **Derivable.** A reader can construct the correct name without asking anyone
   and without reading a second document.
