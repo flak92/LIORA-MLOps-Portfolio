@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1m Crypto Research Pipeline — Status</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>1m crypto research pipeline — status</h1>
+  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB &rarr; features &amp; labels &rarr; research</p>
+
+  <nav id="tabs" class="pills" data-pills="tab">
+    <button class="pill pill--active" data-key="pipeline">Pipeline</button>
+    <button class="pill" data-key="quality">Data Quality</button>
+    <button class="pill" data-key="ml">ML Research</button>
+    <button class="pill" data-key="asset">ML Assets</button>
+  </nav>
+
+  <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
+    <div id="meta" class="box">loading status.json&hellip;</div>
+    <div id="flow" class="box"></div>
+    <table id="symbols" hidden>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
+    <h2>Raw source: Binance USDS-M</h2>
+    <table id="raw-binance">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Raw source: Bybit Linear</h2>
+    <table id="raw-bybit">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Canonical dataset construction</h2>
+    <table id="canonical-source">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">the two sources above are the only place a provider is named: from the
+      canonical table onwards the dataset is one market object. Tier order, the verbatim-candle
+      rule and the reason it beats averaging are in methodology_data.md.</p>
+  </section>
+
+  <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
+    <div id="ml-meta" class="box">loading ml_status.json&hellip;</div>
+    <table id="ml-assets" hidden>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">final-holdout numbers are computed with parameters frozen on F2–F4: fold F5
+      never participates in feature, hyper-parameter, entry-edge-threshold or strategy-rule selection.</p>
+  </section>
+
+  <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
+    <div id="asset-meta" class="box">loading ml_status.json&hellip;</div>
+
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">cross-section</span>
+        <span class="pills" data-pills="mlview">
+          <button class="pill pill--active" data-key="labels">Labels &amp; data</button>
+          <button class="pill" data-key="classification">Classification</button>
+          <button class="pill" data-key="strategy">Strategy</button>
+          <button class="pill" data-key="search">Search</button>
+        </span>
+      </div>
+      <div class="frame__body">
+        <div data-panel="mlview" data-key="labels"><table id="cs-labels"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="classification" hidden><table id="cs-classification"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="strategy" hidden><table id="cs-strategy"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="search" hidden><table id="cs-search"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">asset</span>
+        <span class="pills" id="asset-pills" data-pills="asset"></span>
+      </div>
+    </div>
+    <div id="asset-detail"></div>
+    <p class="foot">the final holdout fold (F5) is shown in bold: it selects nothing — no feature,
+      hyper-parameter, entry edge threshold or strategy rule was chosen by looking at it.</p>
+  </section>
+
+  <p class="foot">static page &middot; data from <code>status.json</code> / <code>ml_status.json</code>
+    (regenerate with <code>make data-status</code> / <code>make ml-status</code>)</p>
+  <script src="app.js"></script>
+  <script src="asset.js"></script>
+  <script src="ml.js"></script>
+</body>
+</html>

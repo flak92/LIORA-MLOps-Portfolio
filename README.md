@@ -10,8 +10,8 @@ XGBoost → research strategy simulation → monitoring.
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
 skills, the naming register and the two methodology documents in
-[Skills_For_The_Project/](Skills_For_The_Project/). The working path
-through the repo is `AGENTS.md → module names → Skills_For_The_Project → code`;
+[module_skills/](module_skills/). The working path
+through the repo is `AGENTS.md → module names → module_skills → code`;
 this README is the general overview.
 
 ```
@@ -61,11 +61,11 @@ divergence and every other anomaly are recorded by the monitoring layer and
 shown on the dashboard. Downstream ML code reads a continuous `t,O,H,L,C,V`
 series whose every printed price existed on a real market, and needs no
 source-specific logic. Full methodology, endpoints and schema:
-[Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
+[module_skills/methodology_data.md](module_skills/methodology_data.md).
 
 ## The basket
 
-Ten assets, uniform market — USDT-margined perpetual futures:
+One uniform market — USDT-margined perpetual futures:
 
 `BTC ETH BNB XRP SOL TRX DOGE ZEC LINK ADA`
 
@@ -86,16 +86,16 @@ with `tree_method=hist` and `nthread=1`, so the GPU stack would be weight
 without function.
 
 ```bash
-make all              # venv -> download -> ingest -> export -> status -> full ML chain
+make all              # venv -> data-download -> data-ingest -> data-status -> full ML chain
 make dashboard        # serve http://127.0.0.1:8900/  (loopback only)
 ```
 
-Every stage also runs on its own (`make setup download ingest export status`
+Every stage also runs on its own (`make setup data-download data-ingest data-status`
 for the data half, `make ml-all` for the ML half) — the data stages are in the
 table below, the ML chain in *ML research layer*.
 
 The same stages run inside Docker: `make docker-build`, then
-`make docker-download / docker-ingest / docker-export / docker-status` for the
+`make docker-data-download / docker-data-ingest / docker-data-status` for the
 data half and `make docker-ml-all` (or any single `docker-ml-<stage>`) for the
 ML half, and `make docker-up` / `make docker-down` for the dashboard container.
 Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
@@ -104,11 +104,10 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make download`        | both APIs → `raw_downloaded_1m_data/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
-|           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
-| ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `research_artifacts/<T>/canonical_1m.parquet`   | fail-closed: read-back invariants before the atomic replace |
-| status    | `make status`          | DuckDB → stdout + `monitoring_module/status.json`           | read-only; 3 full scans           |
+| download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
+|           | `make data-download-binance` / `make data-download-bybit` | one source at a time               | independently parallelisable      |
+| ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
+| status    | `make data-status`     | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
@@ -119,26 +118,25 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   `offset_ms_from_utc_midnight,open,high,low,close,volume`.
 - **Timestamps** are bar OPEN times, UTC epoch milliseconds, strict 60 000 ms
   grid. **Volume** is base-asset volume, never quote turnover.
-- **DuckDB** `db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
+- **DuckDB** `store_db/research_ohlcv.duckdb`: `ohlcv_1m_binance`, `ohlcv_1m_bybit`
   (raw), `ohlcv_1m_canonical` (primary-failover, with provenance columns
   `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`),
   and the exact aggregations `ohlcv_15m_canonical`, `ohlcv_1h_canonical`,
   `ohlcv_4h_canonical` written by `make ml-bars`.
-- **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
-  same row count for every asset, continuous, no NULLs, values exactly as the
-  winning source printed them (no rounding at any layer).
-- **Semantics**: `research_artifacts/<T>/canonical_1m.parquet` is a **canonical
-  primary-failover series**, not the raw feed of a single source — use it for ML and indicators;
-  for Lean backtests use the per-source raw ZIP trees. Step-by-step build
-  description: [Skills_For_The_Project/DATA_README.md](Skills_For_The_Project/DATA_README.md).
+- **Semantics**: the canonical primary-failover series and its 15m/1h/4h
+  aggregations live **only in DuckDB** — the market object every ML stage
+  reads. The asset folder carries no price series: its parquets are the
+  per-timeframe feature columns. For Lean backtests use the per-source raw
+  ZIP trees. Step-by-step build description:
+  [module_skills/methodology_data.md](module_skills/methodology_data.md).
 
 ## Monitoring
 
-`make status` reports the full flow (`zips → raw rows → canonical rows →
-parquet rows`) and feeds the dashboard:
+`make data-status` reports the full flow (`zips → raw rows → canonical rows`) and
+feeds the dashboard:
 
-- **Pipeline** — canonical rows, real-data share, forward-filled bars and
-  Parquet artifacts per asset;
+- **Pipeline** — canonical rows, real-data share and forward-filled bars per
+  asset;
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
   zero-volume bars for each provider separately, then canonical construction:
   primary/secondary/forward-fill shares, source switches, the largest 1m move at
@@ -146,7 +144,7 @@ parquet rows`) and feeds the dashboard:
 
 ## ML research layer
 
-`ml_module/` builds — per asset, deterministically — a fixed 15-column hierarchical
+`module_ml/` builds — per asset, deterministically — a fixed 15-column hierarchical
 feature matrix (15m/1h/4h) from the canonical series, triple-barrier
 labels resolved on the **canonical** 1-minute path, a purged walk-forward
 protocol with average-uniqueness sample weights and Optuna hyper-parameter search
@@ -155,14 +153,14 @@ strategy evaluation with explicit costs:
 
 Both `X` and `Y` read the canonical series — `X` before the decision, `Y` after
 it — so features and target describe the same canonical research object. The
-decision is taken at a 15m close and filled one minute later. Stages:
-`make ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status`
-(or `make ml-all`) — every per-asset stage runs `JOBS = max(1, min(cores,
+decision is taken at a 15m close and filled one minute later. The stages run in the
+order `make ml-all` fixes — the Makefile is the one authority for stage order —
+and every per-asset stage runs `JOBS = max(1, min(cores,
 available GiB))` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
-describes itself: `experiment_configuration.json` records the configuration
-the run used, and its `README.md` says what came out. Full methodology:
-[Skills_For_The_Project/ML_README.md](Skills_For_The_Project/ML_README.md).
+describes itself: `<TICKER>_parameters.json` records the a-priori configuration and
+the result of the search, and its `<TICKER>_README.md` says what came out. Full methodology:
+[module_skills/methodology_ml.md](module_skills/methodology_ml.md).
 

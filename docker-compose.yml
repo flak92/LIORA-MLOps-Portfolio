@@ -11,8 +11,8 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     # 0.0.0.0 inside the container is required for the port mapping;
     # the host-side bind below keeps the dashboard loopback-only.
-    command: python -m http.server 8900 --bind 0.0.0.0 --directory monitoring_module
+    command: python -m http.server ${PORT:-8900} --bind 0.0.0.0 --directory module_monitoring
     ports:
-      - "127.0.0.1:8900:8900"
+      - "127.0.0.1:${PORT:-8900}:${PORT:-8900}"
     volumes:
       - .:/app

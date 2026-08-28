@@ -1,11 +1,12 @@
 .venv/
 __pycache__/
-raw_downloaded_1m_data/
-db/
-# the artifacts themselves are reconstructable, but each folder's experiment
-# configuration and its README are the two files that make them readable
-# without a run
-research_artifacts/**
-!research_artifacts/*/
-!research_artifacts/*/experiment_configuration.json
-!research_artifacts/*/README.md
+store_raw_1m/
+store_db/
+# The artifacts themselves are regenerable from the database, so they stay out.
+# What is committed is what makes a folder readable without a run: the store's
+# manifest guide, and each asset's parameters and README.
+store_assets_artifacts/**
+!store_assets_artifacts/EXAMPLE_TICKER_README.md
+!store_assets_artifacts/*/
+!store_assets_artifacts/*/*_parameters.json
+!store_assets_artifacts/*/*_README.md
