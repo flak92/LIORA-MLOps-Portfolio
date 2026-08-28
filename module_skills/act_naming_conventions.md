@@ -12,10 +12,10 @@ next reader from reinventing it.
 | # | enacted | not | why |
 |---|---|---|---|
 | 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/` | `data_module`, `src`, `module_guidance`, `module_skills_for_the_project` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
-| 2 | `store_Assets_artifacts/` | `store_research_artifacts`, `store_assets_artifacts` | the capital A signals what the folder holds — one `<TICKER>/` in capitals per asset; the eye reads the signal before the parser reads the contents |
+| 2 | `store_assets_artifacts/` | `assets/`, `store_Assets_artifacts` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
 | 3 | `store_db/` | `db`, `store_database` | kind first; `db` is unambiguous in this technical context |
 | 4 | `store_raw_data_ss-01-hh-dd-MM/` | `store_raw_1m`, `raw_downloaded_1m_data` | the timeframe slot standard (§ below): every future raw store sorts from the finest granularity to the coarsest |
-| 5 | `<TICKER>/` in capitals inside `store_Assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity; the exchange symbol belongs to the adapter boundary |
+| 5 | `<TICKER>/` in capitals inside `store_assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity, spelled the way the basket spells it; the exchange symbol belongs to the adapter boundary |
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
 | 7 | guidance files: `act_*`, `skill_*`, `methodology_*`, `glossary.md` | bare topic names | kind first inside the folder, same rule as the tree above it |
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `canonical_1m.parquet`, `features.parquet`, `hyperparameter_search.json`, a bare `README.md` | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
@@ -25,10 +25,9 @@ next reader from reinventing it.
 | 12 | the asset folder manifest is written in `LC_COLLATE=C` listing order wherever it is written (this act, the register, `FILE_MANIFEST`, the store guide) | reading order, artifact-responsibility order | one order that a byte-comparing `ls` reproduces; three orders made the same nine files look like three manifests |
 | 13 | make targets `data-download`, `data-download-binance`, `data-download-bybit`, `data-ingest`, `data-status` and the container twins `docker-data-download`, `docker-data-ingest`, `docker-data-status`; `docker-build`, `docker-up`, `docker-down` are compose lifecycle, not twins, and the single-venue downloads have no twin | bare `download`, `ingest`, `status`; `docker-download` | `<module>-<stage>` beside `ml-<stage>`: `make help` lists one module as one block, and `status` stops being ambiguous next to `ml-status` |
 | 15 | `<TICKER>_README.md` with README in capitals | `<TICKER>_readme.md`, a bare `README.md` | README is a convention older than this act; it is the one manifest entry whose position depends on collation (first under `LC_COLLATE=C`, eighth under `en_US.UTF-8`) — the `<TICKER>_*` block stays contiguous under both, and GitHub renders neither spelling as the folder's README |
-| 16 | `EXAMPLE_TICKER_README.md` sorts inside the ticker block of `store_Assets_artifacts/` | a store-root `README.md` | the guide is found where a reader looks for an asset folder; `ls -1d */` sees only the ten ticker directories |
+| 16 | `EXAMPLE_TICKER_README.md` sorts inside the ticker block of `store_assets_artifacts/` | a store-root `README.md` | the guide is found where a reader looks for an asset folder; `ls -1d */` sees only the ten ticker directories |
 | 17 | ecosystem-fixed file names keep their spelling: `__init__.py`, `AGENTS.md`, `Dockerfile`, `Makefile`, `README.md`, `docker-compose.yml`, `requirements.txt` | project-cased variants | a boundary like Lean's casing (row 6); they are the only names whose sort position depends on collation, so the collation check binds every other directory |
 | 18 | the stage order lives in the Makefile (`all:`, `ml-all:`); every document points there | a second copy of the chain in README or a methodology | two copies drift; the per-asset reproduce line of `<TICKER>_README.md` is derived from the same order by `module_ml/status.py` |
-| 19 | `STORE_ASSETS_ARTIFACTS_DIR` → `store_Assets_artifacts/` | `STORE_Assets_ARTIFACTS_DIR` | a Python constant cannot carry case; the directory's capital A is read from row 2, the way slot dashes are read as underscores (§ timeframe slots) |
 
 ## External vocabularies
 
@@ -57,7 +56,7 @@ above: `git grep -n 'setAttribute("\|suggest_\|retCode\|startTime\|DMatrix\|read
 
 ## The asset folder manifest
 
-`store_Assets_artifacts/<TICKER>/` holds exactly these nine files. No OHLCV:
+`store_assets_artifacts/<TICKER>/` holds exactly these nine files. No OHLCV:
 the canonical series and its aggregations live only in DuckDB — the asset
 folder carries the asset's features, parameters, evaluations and guide. Every
 file is prefixed with its ticker, every time series carries its grid in
@@ -89,7 +88,7 @@ its scope states. The strategy itself is one shared file for the whole
 project, `module_ml/strategy.py`: code is common, parameters are per asset.
 A file copied out of its folder still says which asset it belongs to and
 which grid it lives on. The store root carries one committed guide,
-`store_Assets_artifacts/EXAMPLE_TICKER_README.md`, describing every manifest
+`store_assets_artifacts/EXAMPLE_TICKER_README.md`, describing every manifest
 file and its contents for a placeholder ticker.
 
 ## The timeframe slot standard

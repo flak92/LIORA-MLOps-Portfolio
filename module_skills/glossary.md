@@ -143,7 +143,7 @@ key is in this register.
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations
-of the same result.** One directory per ticker under `store_Assets_artifacts/`,
+of the same result.** One directory per ticker under `store_assets_artifacts/`,
 each file named after what it holds.
 
 In `LC_COLLATE=C` listing order — the one order the act, this register and the

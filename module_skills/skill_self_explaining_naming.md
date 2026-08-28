@@ -97,8 +97,8 @@ report.
 
 ```
 kind-first blocks     ls -1d */
-                      → module_data module_ml module_monitoring module_skills, then store_Assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM
-collation invariance  for d in module_monitoring module_skills store_Assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
+                      → module_data module_ml module_monitoring module_skills, then store_assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM
+collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_data_ss-01-hh-dd-MM; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
                       → empty (the root and the packages differ only by the ecosystem-fixed names of act row 17)
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty
@@ -120,7 +120,7 @@ count keys            git grep -nE '"(rows|gaps|duplicates|ambiguous|unobservabl
                       → empty
 time suffixes         git grep -nE '"[a-z_]+_ts":' -- '*.py' | grep -vE 'decision_ts|entry_ts|event_end_ts'
                       → empty (the three `_ts` columns are the act's schema boundary)
-abbreviation ret      git grep -nE '_ret\b|_ret_' -- '*.py' '*.js' '*.md' ':!store_Assets_artifacts/*/*'
+abbreviation ret      git grep -nE '_ret\b|_ret_' -- '*.py' '*.js' '*.md' ':!store_assets_artifacts/*/*'
                       → only the rejected forms in the act and the register, and the retired `max_phantom_ret` in the data changelog
 conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'module_data/config.py\|module_data/lean.py'
                       → empty

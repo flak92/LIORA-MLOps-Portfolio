@@ -5,8 +5,8 @@ store_db/
 # The artifacts themselves are regenerable from the database, so they stay out.
 # What is committed is what makes a folder readable without a run: the store's
 # manifest guide, and each asset's parameters and README.
-store_Assets_artifacts/**
-!store_Assets_artifacts/EXAMPLE_TICKER_README.md
-!store_Assets_artifacts/*/
-!store_Assets_artifacts/*/*_parameters.json
-!store_Assets_artifacts/*/*_README.md
+store_assets_artifacts/**
+!store_assets_artifacts/EXAMPLE_TICKER_README.md
+!store_assets_artifacts/*/
+!store_assets_artifacts/*/*_parameters.json
+!store_assets_artifacts/*/*_README.md

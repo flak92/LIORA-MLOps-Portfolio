@@ -66,13 +66,13 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `store_Assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
+  `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`module_data`,
   `module_ml`) measures its own domain state in `status.py`, and
   `module_monitoring` presents their snapshots;
 - **the kind comes first, so siblings sort together.** A listing is read by
   eye before it is parsed: `module_data`, `module_ml`, `module_monitoring`,
-  `module_skills`, then `store_Assets_artifacts`, `store_db`,
+  `module_skills`, then `store_assets_artifacts`, `store_db`,
   `store_raw_data_ss-01-hh-dd-MM` — two blocks, not seven scattered entries. If
   renaming would put things of one kind next to each other, rename them.
   Checked with `ls -1d */`: one kind, one contiguous block;
@@ -81,7 +81,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   file names, built by its adapter (`module_data/lean.py` for the Lean tree) —
   and the browser, which has no config module and fetches its two snapshots by
   literal name (`app.js`, `ml.js`); one asset is one folder,
-  `store_Assets_artifacts/<TICKER>/`, one file per distinct artifact
+  `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a
   boundary, not an inconsistency to tidy away. A top-level path constant

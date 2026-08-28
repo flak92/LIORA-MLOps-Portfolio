@@ -335,7 +335,7 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `store_Assets_artifacts/<TICKER>/` — **one file per distinct artifact
+Per asset in `store_assets_artifacts/<TICKER>/` — **one file per distinct artifact
 responsibility, no duplicate representations of the same result**, each named
 for what it holds, with the `<TICKER>_` prefix so every file identifies its
 asset on its own: the three per-timeframe feature parquets, the label-events and

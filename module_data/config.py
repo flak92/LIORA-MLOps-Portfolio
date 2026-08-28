@@ -49,7 +49,7 @@ STORE_DB_PATH = REPO_ROOT / "store_db" / "research_ohlcv.duckdb"
 # DuckDB spills to disk above this ceiling instead of hitting the allocator on a
 # small host; the thread cap next to it in every connection is determinism, not tuning
 DUCKDB_MEMORY_LIMIT = "4GB"
-STORE_ASSETS_ARTIFACTS_DIR = REPO_ROOT / "store_Assets_artifacts"
+STORE_ASSETS_ARTIFACTS_DIR = REPO_ROOT / "store_assets_artifacts"
 MODULE_MONITORING_DIR = REPO_ROOT / "module_monitoring"
 MODULE_MONITORING_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "status.json"
 
