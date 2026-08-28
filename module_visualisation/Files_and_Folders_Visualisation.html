@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repo Silk Galaxy</title>
+<style>
+:root{
+--bg-deep:#070C1C; --bg-glow:#101A3C;
+--text:#D9E2F6; --dim:#7E90B8; --line:#22304F;
+--s1:#5B8DEF; --s2:#2BD4BD; --s3:#F2B24E; --s4:#A98BFA; --s5:#3FD68F; --core:#EDF2FF;
+--mono:ui-monospace,'SF Mono','Cascadia Code',Consolas,Menlo,monospace;
+--body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html,body{height:100%; overflow:hidden; background:var(--bg-deep);}
+canvas#space{position:fixed; inset:0; display:block; cursor:grab;}
+canvas#space.dragging{cursor:grabbing;}
+.hud{position:fixed; top:16px; left:18px; pointer-events:none; font-family:var(--mono);}
+.hud .eyebrow{font-size:10px; letter-spacing:.28em; color:var(--dim); text-transform:uppercase;}
+.hud h1{font-size:17px; font-weight:700; letter-spacing:.22em; color:var(--text); text-transform:uppercase; margin-top:4px;}
+.hud .sub{font-size:11px; color:var(--dim); margin-top:4px; letter-spacing:.04em;}
+#treeWrap{position:fixed; top:84px; left:18px; bottom:96px; width:254px; z-index:5;
+transition:transform .25s ease;}
+#treeWrap.closed{transform:translateX(calc(-100% - 18px));}
+nav#tree{position:absolute; inset:0; overflow-y:auto; background:rgba(9,15,34,.92);
+border:1px solid var(--line); border-radius:4px; padding:6px 0;
+font-family:var(--mono); font-size:11px;}
+#treeTab{position:absolute; right:-27px; top:6px; width:26px; height:36px;
+border:1px solid var(--line); border-left:none; border-radius:0 4px 4px 0;
+background:rgba(10,17,38,.9); color:var(--text); font-family:var(--mono);
+font-size:12px; cursor:pointer;}
+#treeTab:hover{border-color:#31456F;}
+.trow{display:flex; align-items:center; gap:6px; padding:3px 10px 3px 0; cursor:pointer;
+color:var(--dim); white-space:nowrap;}
+.trow:hover{color:var(--text); background:rgba(24,36,70,.6);}
+.trow .chev{width:14px; text-align:center; flex:none; color:#5E7099; cursor:pointer;}
+.trow .chev:hover{color:var(--text);}
+.trow .dot{width:7px; height:7px; border-radius:50%; flex:none;}
+.trow.tfolder{color:#C7D3EE; font-weight:600;}
+.trow.active{color:#FFFFFF; background:rgba(31,45,86,.9);}
+.trow.inset{color:var(--text); background:rgba(20,30,60,.55);}
+.edgekey{position:fixed; left:18px; bottom:44px; font-family:var(--mono); font-size:10px;
+color:var(--dim); display:flex; flex-direction:column; gap:4px; pointer-events:none;}
+.edgekey span{display:flex; align-items:center; gap:8px;}
+.edgekey i{width:26px; height:0; border-top:2px solid var(--dim); display:inline-block;}
+.edgekey i.tt{border-top-width:2.5px; border-color:#5F79B8;}
+.edgekey i.tf{border-top-width:1px; border-color:#3A4C74;}
+.hint{position:fixed; left:18px; bottom:14px; font-family:var(--mono); font-size:10px;
+letter-spacing:.06em; color:var(--dim); pointer-events:none;}
+.controls{position:fixed; top:16px; right:16px; display:flex; gap:6px; font-family:var(--mono);}
+.controls button{
+width:34px; height:30px; border:1px solid var(--line); border-radius:3px;
+background:rgba(10,17,38,.72); color:var(--text); font-size:13px; cursor:pointer;
+}
+.controls button:hover{border-color:#31456F;}
+.controls button:focus-visible{outline:2px solid var(--text); outline-offset:2px;}
+aside#panel{
+position:fixed; top:56px; right:16px; width:296px; max-width:calc(100vw - 32px);
+background:rgba(9,15,34,.94); border:1px solid var(--line); border-radius:4px;
+padding:14px 16px 16px; font-family:var(--body); color:var(--text);
+display:none; backdrop-filter:blur(4px);
+}
+aside#panel.open{display:block;}
+aside#panel .path{font-family:var(--mono); font-size:12px; color:var(--text);
+word-break:break-all; padding-right:22px;}
+aside#panel .story{display:inline-flex; align-items:center; gap:6px; margin-top:8px;
+font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);}
+aside#panel .story .dot{width:7px; height:7px; border-radius:50%;}
+aside#panel .desc{font-size:12.5px; line-height:1.5; color:#B9C6E4; margin-top:10px;}
+aside#panel button.close{position:absolute; top:8px; right:8px; width:22px; height:22px;
+border:none; background:none; color:var(--dim); font-size:14px; cursor:pointer; font-family:var(--mono);}
+aside#panel button.close:hover{color:var(--text);}
+@media (max-width:640px){
+#treeWrap{width:min(74vw, 254px); top:76px; bottom:120px;}
+.edgekey{display:none;}
+.hint{display:none;}
+aside#panel{top:auto; bottom:110px; left:12px; right:12px; width:auto;}
+}
+@media (prefers-reduced-motion:reduce){ .motionoff{display:none;} }
+</style>
+</head>
+<body>
+<canvas id="space"></canvas>
+<header class="hud">
+<div class="eyebrow" id="hudEyebrow"></div>
+<h1 id="hudTitle"></h1>
+<div class="sub" id="hudSub"></div>
+</header>
+<div id="treeWrap">
+<nav id="tree" aria-label="File tree"></nav>
+<button id="treeTab" title="File tree (slide in / out)">&#10216;</button>
+</div>
+<div class="edgekey">
+<span><i class="tt"></i>folder &ndash; folder</span>
+<span><i class="tf"></i>folder &ndash; file</span>
+</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll / pinch zoom &middot; 1&ndash;5 isolate story &middot; 0 all &middot; space pause</div>
+<div class="controls">
+<button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
+<button id="btnReset" title="Reset view (0)">&#10226;</button>
+</div>
+<aside id="panel" aria-live="polite">
+<button class="close" id="panelClose" title="Close">&#10005;</button>
+<div class="path" id="pPath"></div>
+<div class="story" id="pStory"></div>
+<div class="desc" id="pDesc"></div>
+</aside>
+<script>
+'use strict';
+const CONFIG = {
+ISLAND_RADIUS: 310,     // distance of story islands from the core
+RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
+CAM_DIST: 1100,         // camera distance
+FOV: 760,               // projection focal length
+FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the galaxy
+ZOOM_MIN: 0.4,
+ZOOM_MAX: 2.4,
+AUTO_SPEED: 0.10,       // rad/s auto-rotation
+START_ROT_Y: 3.491,     // scanned: best node separation at start
+START_ROT_X: -0.40,
+DIM_ALPHA: 0.10,        // opacity of out-of-focus elements
+STAR_COUNT: 90,         // lighter background
+MAX_DPR: 1.5            // pixel-ratio cap
+};
+/* GALAXY:STRUCTURE:BEGIN - written by module_visualisation/generate_galaxy.py, do not edit by hand */
+const META = {
+title: 'Repo Silk Galaxy',
+eyebrow: 'owner / repository',
+subtitle: 'tree as of 0000000 - never generated',
+config: {}
+};
+const ISLANDS = {
+core: { name: 'Repository root', color: '#EDF2FF' },
+S1: { name: 'S1', color: '#5B8DEF' }
+};
+const ISLAND_ORDER = ['S1'];
+const PLACE = {};
+const NODES = [
+{ id:'root', path:'repo/', island:'core', type:'core', role:'root', desc:'' },
+{ id:'placeholder', path:'placeholder', island:'S1', type:'file', hub:true, role:'doc', desc:'' }
+];
+const EDGES = [
+{ from:'root', to:'placeholder', kind:'tree', thick:false }
+];
+/* GALAXY:STRUCTURE:END */
+Object.assign(CONFIG, META.config);
+document.title = META.documentTitle;
+document.getElementById('hudEyebrow').textContent = META.eyebrow;
+document.getElementById('hudTitle').textContent = META.title;
+document.getElementById('hudSub').textContent = META.subtitle;
+const nodeById = {};
+NODES.forEach(function(n){ nodeById[n.id] = n; });
+const PARENT_OF = {};
+EDGES.forEach(function(e){ if (e.kind === 'tree') PARENT_OF[e.to] = e.from; });
+function childrenOf(id){
+return EDGES.filter(function(e){ return e.kind === 'tree' && e.from === id; })
+.map(function(e){ return nodeById[e.to]; });
+}
+function ringAround(c, members, radius, startAngle, yJitter){
+members.forEach(function(m, j){
+var phi = startAngle + (j + 0.5) * (2*Math.PI / members.length);
+m.p = {
+x: c.x + radius * Math.cos(phi),
+y: c.y + [1, 0, -1][j % 3] * yJitter,   // 3-phase jitter breaks view-ray alignment
+z: c.z + radius * Math.sin(phi)
+};
+});
+}
+function pathDepth(n){ return (n.path.match(/\//g) || []).length; }
+function layout(){
+nodeById['root'].p = { x:0, y:8, z:0 };
+ISLAND_ORDER.forEach(function(key, i){
+// the island count comes from the data, so a story added in JSON needs no code change
+var theta = -Math.PI/2 + i * (2*Math.PI/ISLAND_ORDER.length);
+var members = NODES.filter(function(n){ return n.island === key; });
+var hub = members.find(function(n){ return n.hub; });
+hub.p = {
+x: CONFIG.ISLAND_RADIUS * Math.cos(theta),
+y: 0,
+z: CONFIG.ISLAND_RADIUS * Math.sin(theta)
+};
+members.forEach(function(n){
+var pl = PLACE[n.id];
+if (pl){
+var a = theta + pl.da, r = CONFIG.ISLAND_RADIUS * pl.r;
+n.p = { x: r*Math.cos(a), y: pl.y, z: r*Math.sin(a) };
+}
+});
+// a member whose tree parent lives on another island can never be reached by a folder ring,
+// so it takes its slot first. Folders are then walked shallowest first, which is what
+// guarantees a parent already holds a position before its children are ringed around it —
+// the ordering the hand-built galaxy got away with only because every non-hub folder
+// happened to carry an explicit placement.
+var loose = members.filter(function(n){
+var parent = nodeById[PARENT_OF[n.id]];
+return !n.hub && !n.p && (!parent || parent.island !== key);
+});
+if (loose.length){
+ringAround(hub.p, loose, 80, theta, CONFIG.RING_Y_JITTER);
+}
+members.filter(function(n){ return n.type === 'folder'; })
+.sort(function(a, b){ return pathDepth(a) - pathDepth(b); })
+.forEach(function(f){
+if (!f.p) return;
+var kids = childrenOf(f.id);
+if (!kids.length) return;
+var rr = Math.max(72, 30 + kids.length * 6.5);
+var pl = PLACE[f.id];
+var jit = (pl && pl.jit != null) ? pl.jit : CONFIG.RING_Y_JITTER;
+ringAround(f.p, kids, rr, theta, jit);
+});
+var leftover = members.filter(function(n){ return !n.p; });
+if (leftover.length){
+ringAround(hub.p, leftover, 110, theta, CONFIG.RING_Y_JITTER);
+}
+});
+}
+layout();
+function sampleEdge(e){
+var a = nodeById[e.from].p, b = nodeById[e.to].p;
+var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
+var len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+var bend = 0.05, lift = 8;
+var px = -dz/len, pz = dx/len;                    // perpendicular in XZ
+var m = { x:(a.x+b.x)/2 + px*len*bend, y:(a.y+b.y)/2 + lift, z:(a.z+b.z)/2 + pz*len*bend };
+var N = 12;
+var pts = [];
+for (var i=0; i<=N; i++){
+var t = i/N, u = 1-t;
+pts.push({
+x: u*u*a.x + 2*u*t*m.x + t*t*b.x,
+y: u*u*a.y + 2*u*t*m.y + t*t*b.y,
+z: u*u*a.z + 2*u*t*m.z + t*t*b.z
+});
+}
+e.pts = pts;
+}
+EDGES.forEach(sampleEdge);
+var STARS = [];
+(function(){
+var seed = 42;
+function rnd(){ seed = (seed*1103515245 + 12345) % 2147483648; return seed/2147483648; }
+for (var i=0; i<CONFIG.STAR_COUNT; i++){
+var u = rnd()*2-1, ang = rnd()*Math.PI*2;
+var r = 950 + rnd()*550, s = Math.sqrt(1-u*u);
+STARS.push({ x:r*s*Math.cos(ang), y:r*u*0.6, z:r*s*Math.sin(ang), m:0.35+rnd()*0.6 });
+}
+})();
+var canvas = document.getElementById('space');
+var ctx = canvas.getContext('2d');
+var W = 0, H = 0, DPR = 1;
+var rotY = CONFIG.START_ROT_Y, rotX = CONFIG.START_ROT_X, zoom = 1;
+var playing = true, timeMs = 0;
+var activeIsland = null, selectedId = null, hoverId = null;
+var subtreeId = null, subtreeSet = null;
+var userZoomed = false;
+var bgGrad = null;   /* the one and only declaration — resize() fills it before first draw */
+function makeBgGrad(){
+var g = ctx.createRadialGradient(W/2, H*0.42, 60, W/2, H*0.42, Math.max(W, H)*0.75);
+g.addColorStop(0, '#101A3C');
+g.addColorStop(1, '#070C1C');
+return g;
+}
+function fitZoom(){
+return Math.max(CONFIG.ZOOM_MIN, Math.min(1, W / CONFIG.FIT_WIDTH));
+}
+function resize(){
+DPR = Math.min(window.devicePixelRatio || 1, CONFIG.MAX_DPR);
+W = window.innerWidth; H = window.innerHeight;
+canvas.width = W * DPR; canvas.height = H * DPR;
+ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+bgGrad = makeBgGrad();
+if (!userZoomed){ zoom = fitZoom(); }
+invalidate();
+}
+window.addEventListener('resize', resize);
+resize();
+function projectInto(p, o){
+var cy = Math.cos(rotY), sy = Math.sin(rotY);
+var cx = Math.cos(rotX), sx = Math.sin(rotX);
+var x1 = p.x*cy - p.z*sy;
+var z1 = p.x*sy + p.z*cy;
+var y2 = p.y*cx - z1*sx;
+var z2 = p.y*sx + z1*cx;
+var d = z2 + CONFIG.CAM_DIST;
+if (d < 80) d = 80;
+var s = (CONFIG.FOV * zoom) / d;
+o.x = W/2 + x1*s;
+o.y = H/2 - 40 + y2*s;
+o.s = s;
+o.d = d;
+return o;
+}
+function project(p){
+return projectInto(p, { x:0, y:0, s:0, d:0 });
+}
+function fog(d){
+var a = 1 - (d - (CONFIG.CAM_DIST - 330)) / 660;
+return Math.max(0.30, Math.min(1, a));
+}
+function neighbourSet(id){
+var set = {}; set[id] = true;
+EDGES.forEach(function(e){
+if (e.from === id) set[e.to] = true;
+if (e.to === id) set[e.from] = true;
+});
+return set;
+}
+function nodeAlpha(n){
+if (selectedId){ return neighbourSet(selectedId)[n.id] ? 1 : CONFIG.DIM_ALPHA; }
+if (hoverId){ return neighbourSet(hoverId)[n.id] ? 1 : CONFIG.DIM_ALPHA; }
+if (subtreeSet){ return subtreeSet[n.id] ? 1 : CONFIG.DIM_ALPHA; }
+if (activeIsland){ return (n.island === activeIsland || n.island === 'core') ? 1 : CONFIG.DIM_ALPHA; }
+return 1;
+}
+function edgeAlpha(e){
+var a = nodeAlpha(nodeById[e.from]), b = nodeAlpha(nodeById[e.to]);
+var focusId = selectedId || hoverId;
+if (focusId && e.from !== focusId && e.to !== focusId) return CONFIG.DIM_ALPHA * 0.7;
+return Math.min(a, b);
+}
+var TAU = Math.PI * 2;
+function hexToRgb(hex){
+var v = parseInt(hex.slice(1), 16);
+return [(v>>16)&255, (v>>8)&255, v&255];
+}
+function tintStr(hex, t){
+var c = hexToRgb(hex);
+var r = Math.round(c[0] + (255-c[0])*t);
+var g = Math.round(c[1] + (255-c[1])*t);
+var b = Math.round(c[2] + (255-c[2])*t);
+return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+var PAL = {};
+Object.keys(ISLANDS).forEach(function(k){
+var col = ISLANDS[k].color;
+PAL[k] = {
+line:       col,
+folderBody: tintStr(col, 0.28),
+folderTab:  tintStr(col, 0.14),
+topline:    tintStr(col, 0.75),
+fileBody:   tintStr(col, 0.32),
+fileFold:   tintStr(col, 0.78),
+stroke:     tintStr(col, 0.72),
+lines:      tintStr(col, 0.85)
+};
+});
+var STAR_SCR = { x:0, y:0, s:0, d:0 };
+function drawBackground(){
+if (!bgGrad){ bgGrad = makeBgGrad(); }
+ctx.globalAlpha = 1;
+ctx.fillStyle = bgGrad;
+ctx.fillRect(0, 0, W, H);
+ctx.fillStyle = '#9FB6E8';
+for (var i=0; i<STARS.length; i++){
+var st = STARS[i];
+projectInto(st, STAR_SCR);
+if (STAR_SCR.d < 100) continue;
+ctx.globalAlpha = 0.16 * st.m * fog(STAR_SCR.d) + 0.04;
+ctx.fillRect(STAR_SCR.x, STAR_SCR.y, st.m > 0.8 ? 1.6 : 1, st.m > 0.8 ? 1.6 : 1);
+}
+}
+function strokeEdge(e){
+var alpha = edgeAlpha(e);
+var pts = e.scr;
+var midFog = fog(pts[pts.length >> 1].d);
+ctx.beginPath();
+ctx.moveTo(pts[0].x, pts[0].y);
+for (var i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+if (e.thick){          /* folder – folder */
+ctx.strokeStyle = '#5F79B8';
+ctx.globalAlpha = 0.75 * alpha * midFog;
+ctx.lineWidth = 2.2;
+} else {               /* folder – file */
+ctx.strokeStyle = '#3A4C74';
+ctx.globalAlpha = 0.45 * alpha * midFog;
+ctx.lineWidth = 1;
+}
+ctx.stroke();
+}
+function pathRoundRect(x, y, w, h, r){
+ctx.beginPath();
+ctx.moveTo(x + r, y);
+ctx.lineTo(x + w - r, y);
+ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+ctx.lineTo(x + w, y + h - r);
+ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+ctx.lineTo(x + r, y + h);
+ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+ctx.lineTo(x, y + r);
+ctx.quadraticCurveTo(x, y, x + r, y);
+ctx.closePath();
+}
+function drawFolderIcon(pr, P, alpha, u, isCore){
+var bw = 2.3*u, bh = 1.5*u, tw = 1.0*u, th = 0.42*u;
+var rad = Math.max(1.2, 0.16*u);
+var x0 = pr.x - bw/2, y0 = pr.y - bh/2 + th*0.3;
+ctx.globalAlpha = alpha;
+pathRoundRect(x0, y0 - th, tw, th + rad*2, rad);
+ctx.fillStyle = isCore ? '#DDE5F6' : P.folderTab;
+ctx.fill();
+pathRoundRect(x0, y0, bw, bh, rad);
+ctx.fillStyle = isCore ? '#EEF2FB' : P.folderBody;
+ctx.fill();
+ctx.strokeStyle = isCore ? '#7E90B8' : P.stroke;
+ctx.lineWidth = 1;
+ctx.stroke();
+ctx.globalAlpha = alpha * 0.6;
+ctx.beginPath();
+ctx.moveTo(x0 + rad, y0 + 1);
+ctx.lineTo(x0 + bw - rad, y0 + 1);
+ctx.strokeStyle = P.topline;
+ctx.stroke();
+}
+function drawFileIcon(pr, P, alpha, u, isArtifact){
+var fw = 1.55*u, fh = 2.0*u, fold = 0.55*u;
+var x0 = pr.x - fw/2, y0 = pr.y - fh/2;
+if (isArtifact){
+ctx.globalAlpha = alpha * 0.30;   /* cheap halo instead of shadowBlur */
+ctx.fillStyle = P.line;
+ctx.beginPath();
+ctx.arc(pr.x, pr.y, 1.7*u, 0, TAU);
+ctx.fill();
+}
+ctx.globalAlpha = alpha;
+ctx.beginPath();
+ctx.moveTo(x0, y0);
+ctx.lineTo(x0 + fw - fold, y0);
+ctx.lineTo(x0 + fw, y0 + fold);
+ctx.lineTo(x0 + fw, y0 + fh);
+ctx.lineTo(x0, y0 + fh);
+ctx.closePath();
+ctx.fillStyle = P.fileBody;
+ctx.fill();
+ctx.strokeStyle = P.stroke;
+ctx.lineWidth = 1;
+ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(x0 + fw - fold, y0);
+ctx.lineTo(x0 + fw - fold, y0 + fold);
+ctx.lineTo(x0 + fw, y0 + fold);
+ctx.closePath();
+ctx.fillStyle = P.fileFold;
+ctx.fill();
+if (isArtifact){
+var s = 0.42*u;
+ctx.save();
+ctx.translate(pr.x, y0 + fh*0.62);
+ctx.rotate(Math.PI/4);
+ctx.globalAlpha = alpha * 0.92;
+ctx.fillStyle = '#FFFFFF';
+ctx.fillRect(-s/2, -s/2, s, s);
+ctx.strokeStyle = P.line;
+ctx.strokeRect(-s/2, -s/2, s, s);
+ctx.restore();
+} else if (fw > 11){
+ctx.globalAlpha = alpha * 0.5;
+ctx.strokeStyle = P.lines;
+ctx.lineWidth = 1;
+for (var i = 0; i < 3; i++){
+var ly = y0 + fh*0.40 + i*fh*0.17;
+ctx.beginPath();
+ctx.moveTo(x0 + fw*0.18, ly);
+ctx.lineTo(x0 + fw*0.78, ly);
+ctx.stroke();
+}
+}
+}
+function drawNode(n, pr){
+var P = PAL[n.island];
+var alpha = nodeAlpha(n) * fog(pr.d);
+var base = (n.type === 'core') ? 17 : (n.type === 'folder') ? 13 : (n.hub ? 13 : 8);
+var u = base * pr.s;
+if (n.type === 'folder' || n.type === 'core'){
+drawFolderIcon(pr, P, alpha, u, n.type === 'core');
+} else {
+drawFileIcon(pr, P, alpha, u, n.role === 'artifact');
+}
+if (n.type === 'core' || n.hub){
+ctx.globalAlpha = 0.45 * alpha;
+ctx.beginPath();
+ctx.strokeStyle = P.line;
+ctx.lineWidth = 1;
+ctx.arc(pr.x, pr.y, 1.8*u, 0, TAU);
+ctx.stroke();
+}
+if (n.id === selectedId){
+ctx.globalAlpha = 0.55 + 0.30*Math.sin(timeMs/300);
+ctx.beginPath();
+ctx.strokeStyle = '#FFFFFF';
+ctx.lineWidth = 1.4;
+ctx.arc(pr.x, pr.y, 2.1*u, 0, TAU);
+ctx.stroke();
+}
+}
+function labelVisible(n){
+if (n.hub || n.type === 'core') return true;
+if (subtreeSet && subtreeSet[n.id]) return true;
+if (selectedId && neighbourSet(selectedId)[n.id]) return true;
+if (hoverId && neighbourSet(hoverId)[n.id]) return true;
+if (activeIsland && n.island === activeIsland) return true;
+return false;
+}
+function drawLabel(n, pr){
+if (!labelVisible(n)) return;
+var alpha = nodeAlpha(n) * fog(pr.d);
+if (alpha < 0.2 || pr.s < 0.45) return;
+var name = n.path.replace(/\/$/, '').split('/').pop() + (n.type !== 'file' ? '/' : '');
+if (n.type === 'core') name = 'repo/';
+ctx.globalAlpha = 0.92 * alpha;
+var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
+var lift = ((n.type === 'folder' || n.type === 'core') ? 1.25 : 1.05) * base * pr.s;
+ctx.fillText(name, pr.x, pr.y - lift - 7);
+}
+var prefersReducedMotion = window.matchMedia &&
+window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var projCache = {};
+var rafId = null, needsFrame = true, lastDraw = 0;
+function draw(){
+drawBackground();
+var i, e, n, j;
+for (i=0; i<EDGES.length; i++){
+e = EDGES[i];
+if (!e.scr){
+e.scr = [];
+for (j=0; j<e.pts.length; j++) e.scr.push({ x:0, y:0, s:0, d:0 });
+}
+for (j=0; j<e.pts.length; j++) projectInto(e.pts[j], e.scr[j]);
+}
+var edgeOrder = EDGES.slice().sort(function(a, b){
+return b.scr[b.scr.length >> 1].d - a.scr[a.scr.length >> 1].d;
+});
+for (i=0; i<edgeOrder.length; i++) strokeEdge(edgeOrder[i]);
+for (i=0; i<NODES.length; i++){
+n = NODES[i];
+if (!n.scr) n.scr = { x:0, y:0, s:0, d:0 };
+projCache[n.id] = projectInto(n.p, n.scr);
+}
+var order = NODES.slice().sort(function(a, b){
+return projCache[b.id].d - projCache[a.id].d;
+});
+for (i=0; i<order.length; i++) drawNode(order[i], projCache[order[i].id]);
+ctx.font = '10.5px ui-monospace, Consolas, monospace';
+ctx.textAlign = 'center';
+ctx.fillStyle = '#D9E2F6';
+for (i=0; i<order.length; i++) drawLabel(order[i], projCache[order[i].id]);
+ctx.globalAlpha = 1;
+}
+function tick(now){
+rafId = null;
+var animating = playing && !prefersReducedMotion;
+var dt = lastDraw ? Math.min(now - lastDraw, 100) : 16;
+if (animating && !dragState.down){ rotY += CONFIG.AUTO_SPEED * dt / 1000; }
+timeMs = now;
+draw();               /* every vsync frame while animating — even pacing, no judder */
+lastDraw = now;
+needsFrame = false;
+if (animating || needsFrame){ scheduleFrame(); }
+}
+function scheduleFrame(){
+if (rafId == null){ rafId = requestAnimationFrame(tick); }
+}
+function invalidate(){
+needsFrame = true;
+scheduleFrame();
+}
+scheduleFrame();
+var dragState = { down:false, moved:false, x:0, y:0, id:null };
+var pointers = {};
+function hitTest(mx, my){
+var best = null, bestDist = 1e9;
+NODES.forEach(function(n){
+var pr = projCache[n.id] || project(n.p);
+var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
+var r = Math.max(1.3 * base * pr.s + 8, 15);
+var dx = mx - pr.x, dy = my - pr.y;
+var d2 = dx*dx + dy*dy;
+if (d2 < r*r && d2 < bestDist){ best = n; bestDist = d2; }
+});
+return best;
+}
+canvas.addEventListener('pointerdown', function(ev){
+canvas.setPointerCapture(ev.pointerId);
+pointers[ev.pointerId] = { x:ev.clientX, y:ev.clientY };
+dragState.down = true; dragState.moved = false;
+dragState.x = ev.clientX; dragState.y = ev.clientY;
+canvas.classList.add('dragging');
+});
+canvas.addEventListener('pointermove', function(ev){
+if (pointers[ev.pointerId]){
+pointers[ev.pointerId].x = ev.clientX;
+pointers[ev.pointerId].y = ev.clientY;
+}
+var keys = Object.keys(pointers);
+if (keys.length === 2){
+var p1 = pointers[keys[0]], p2 = pointers[keys[1]];
+var dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+if (dragState.pinch){
+userZoomed = true;
+zoom = Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.ZOOM_MAX, zoom * dist / dragState.pinch));
+invalidate();
+}
+dragState.pinch = dist;
+dragState.moved = true;
+return;
+}
+dragState.pinch = null;
+if (dragState.down){
+var dx = ev.clientX - dragState.x, dy = ev.clientY - dragState.y;
+if (Math.abs(dx) + Math.abs(dy) > 4) dragState.moved = true;
+rotY += dx * 0.005;
+rotX = Math.max(-1.2, Math.min(1.2, rotX + dy * 0.005));
+dragState.x = ev.clientX; dragState.y = ev.clientY;
+invalidate();
+} else if (ev.pointerType === 'mouse'){
+var h = hitTest(ev.clientX, ev.clientY);
+var hid = h ? h.id : null;
+if (hid !== hoverId){
+hoverId = hid;
+invalidate();
+}
+canvas.style.cursor = h ? 'pointer' : 'grab';
+}
+});
+function endPointer(ev){
+delete pointers[ev.pointerId];
+if (Object.keys(pointers).length < 2) dragState.pinch = null;
+if (Object.keys(pointers).length === 0){
+canvas.classList.remove('dragging');
+if (dragState.down && !dragState.moved){
+var h = hitTest(ev.clientX, ev.clientY);
+if (h){ select(h.id); } else { select(null); }
+}
+dragState.down = false;
+}
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('wheel', function(ev){
+ev.preventDefault();
+userZoomed = true;
+zoom = Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.ZOOM_MAX, zoom * (1 - ev.deltaY * 0.0012)));
+invalidate();
+}, { passive:false });
+var panel = document.getElementById('panel');
+function select(id){
+selectedId = id;
+invalidate();
+if (!id){ panel.classList.remove('open'); return; }
+var n = nodeById[id];
+var isl = ISLANDS[n.island];
+document.getElementById('pPath').textContent = n.path;
+var st = document.getElementById('pStory');
+st.innerHTML = '';
+var dot = document.createElement('span');
+dot.className = 'dot'; dot.style.background = isl.color;
+st.appendChild(dot);
+st.appendChild(document.createTextNode(isl.name + ' · ' + n.role));
+document.getElementById('pDesc').textContent = n.desc;
+panel.classList.add('open');
+}
+document.getElementById('panelClose').addEventListener('click', function(){ select(null); });
+var treeWrap = document.getElementById('treeWrap');
+var treeEl = document.getElementById('tree');
+var treeTab = document.getElementById('treeTab');
+var TREE_CHILDREN = {};
+var TREE_PARENT = {};
+EDGES.forEach(function(e){
+if (e.kind !== 'tree') return;
+if (!TREE_CHILDREN[e.from]) TREE_CHILDREN[e.from] = [];
+TREE_CHILDREN[e.from].push(e.to);
+TREE_PARENT[e.to] = e.from;
+});
+var expanded = { root: true };   /* IDE default: root open, subfolders closed */
+var TREE_ROWS = [];
+function descendantSet(id){
+var set = {};
+var stack = [id];
+while (stack.length){
+var cur = stack.pop();
+if (set[cur]) continue;
+set[cur] = true;
+(TREE_CHILDREN[cur] || []).forEach(function(c){ stack.push(c); });
+}
+return set;
+}
+function isRowVisible(id){
+var p = TREE_PARENT[id];
+while (p !== undefined){
+if (!expanded[p]) return false;
+p = TREE_PARENT[p];
+}
+return true;
+}
+function refreshTree(){
+TREE_ROWS.forEach(function(row){
+var id = row.dataset.id;
+row.style.display = isRowVisible(id) ? 'flex' : 'none';
+row.classList.toggle('active', subtreeId !== null && id === subtreeId);
+row.classList.toggle('inset',
+!!(subtreeSet && subtreeSet[id] && id !== subtreeId));
+if (row.chevEl && row.hasKids){
+row.chevEl.textContent = expanded[id] ? '▾' : '▸';
+}
+});
+}
+function clearSubtree(){
+subtreeId = null; subtreeSet = null;
+refreshTree();
+invalidate();
+}
+function expandBranch(id){
+Object.keys(descendantSet(id)).forEach(function(k){
+if (TREE_CHILDREN[k]) expanded[k] = true;
+});
+}
+function setSubtree(id){
+if (subtreeId === id){ clearSubtree(); return; }
+subtreeId = id;
+subtreeSet = descendantSet(id);
+activeIsland = null;
+select(null);
+expandBranch(id);   /* highlighting a folder opens its branch, IDE-style */
+refreshTree();
+invalidate();
+}
+function buildTree(){
+function addRow(id, depth){
+var nd = nodeById[id];
+var hasKids = !!TREE_CHILDREN[id];
+var row = document.createElement('div');
+row.className = 'trow ' + ((nd.type === 'file') ? 'tfile' : 'tfolder');
+row.dataset.id = id;
+row.style.paddingLeft = (6 + depth*14) + 'px';
+var chev = document.createElement('span');
+chev.className = 'chev';
+chev.textContent = hasKids ? '▸' : ' ';
+if (hasKids){
+chev.addEventListener('click', function(ev){
+ev.stopPropagation();
+expanded[id] = !expanded[id];
+refreshTree();
+});
+}
+row.appendChild(chev);
+row.chevEl = chev;
+row.hasKids = hasKids;
+var dot = document.createElement('span');
+dot.className = 'dot';
+dot.style.background = ISLANDS[nd.island].color;
+row.appendChild(dot);
+var name = nd.path.replace(/\/$/, '').split('/').pop() + (nd.type !== 'file' ? '/' : '');
+if (nd.type === 'core') name = 'repo/';
+row.appendChild(document.createTextNode(name));
+row.addEventListener('click', function(){
+if (nd.type === 'file'){ select(id); } else { setSubtree(id); }
+});
+treeEl.appendChild(row);
+TREE_ROWS.push(row);
+// code-point order, not localeCompare: the sidebar has to agree with the order the
+// generator emitted, and localeCompare answers differently per locale
+var kids = (TREE_CHILDREN[id] || []).slice().sort(function(a, b){
+var na = nodeById[a], nb = nodeById[b];
+var fa = (na.type === 'file') ? 1 : 0, fb = (nb.type === 'file') ? 1 : 0;
+if (fa !== fb) return fa - fb;
+return na.path < nb.path ? -1 : na.path > nb.path ? 1 : 0;
+});
+kids.forEach(function(c){ addRow(c, depth + 1); });
+}
+addRow('root', 0);
+refreshTree();
+}
+buildTree();
+function setTreeOpen(open){
+treeWrap.classList.toggle('closed', !open);
+treeTab.textContent = open ? '⟨' : '⟩';
+}
+treeTab.addEventListener('click', function(){
+setTreeOpen(treeWrap.classList.contains('closed'));
+});
+setTreeOpen(window.innerWidth > 640);
+function setIsland(key){
+activeIsland = (activeIsland === key) ? null : key;
+clearSubtree();
+selectedId = null;
+panel.classList.remove('open');
+invalidate();
+}
+var btnPlay = document.getElementById('btnPlay');
+function setPlaying(v){
+playing = v;
+btnPlay.textContent = playing ? '⏸' : '▶';
+invalidate();
+}
+btnPlay.addEventListener('click', function(){ setPlaying(!playing); });
+function resetView(){
+rotY = CONFIG.START_ROT_Y; rotX = CONFIG.START_ROT_X;
+userZoomed = false; zoom = fitZoom();
+activeIsland = null;
+clearSubtree();
+select(null);
+}
+document.getElementById('btnReset').addEventListener('click', resetView);
+window.addEventListener('keydown', function(ev){
+if (ev.key === ' '){ ev.preventDefault(); setPlaying(!playing); }
+else if (ev.key >= '1' && ev.key <= '9'){ setIsland('S' + ev.key); }
+else if (ev.key === '0' || ev.key === 'Escape'){ resetView(); }
+});
+</script>
+</body>
+</html>

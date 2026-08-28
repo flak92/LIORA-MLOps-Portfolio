@@ -9,7 +9,10 @@ How to work on this repository as an agent.
   correctness wins.
 - This repository is **educational, not production**. Subtract, don't add:
   no test suites, no security layers, no precautionary guardrails. The guards
-  that stay are the ones the computation itself requires.
+  that stay are the ones the computation itself requires. The one workflow in
+  `.github/` regenerates the repository's own picture and commits it; it proves
+  nothing and gates nothing, and it is the only automation of its kind the
+  repository accepts.
 - The goal of every change is one thing: **the full pipeline runs end to end**
   — data → canonical → features/labels → training → strategy → dashboard —
   without excess additions around it.

@@ -173,3 +173,22 @@ Never `trend`, `momentum`, `volatility`, `structure` or `activity` as a column
 name — those name a category, not a computation. The strategy hierarchy reads
 the first family through `config.TREND_FAMILY`, so the name appears once in the
 code rather than in three string literals.
+
+## Repository picture
+
+The concepts of `module_visualisation`. They name parts of a drawing, not of the
+research pipeline, and they never appear in a measurement payload.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| the generated page: the tracked tree drawn as one self-contained file | `galaxy_html()` | `module_monitoring/repo_galaxy.html` | Repo Silk Galaxy | diagram, graph, chart |
+| one file or folder drawn in the picture | `node`, `NODES` | `id`, `path`, `type` | — | vertex, item, entry |
+| a parent → child line, the only kind of line the picture has | tree edge, `EDGES` | `kind: "tree"` | folder – folder / folder – file | link, dependency, flow |
+| an edge whose two ends are both folders, drawn heavier | `thick` | `thick` | folder – folder | bold, primary edge |
+| one band of the repository a path is classified into | story, `island` | `island`, `story_map` | `S1` … `S5` | group, category, cluster, section |
+| the node drawn at the centre of a story | `hub` | `hub` | — | root of the story, anchor |
+| a folder collapsed to a single node, its contents left out of the picture | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
+| the commit the tree was read from, and its committer date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date, timestamp |
+| the one region of the template the generator writes | structure block | `GALAXY:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
+| regenerating and byte-comparing against the committed page | `--check` | — | — | test, validate, lint |
+

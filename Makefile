@@ -23,7 +23,8 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 # every target is a command, not a file — .PHONY stops make from ever looking
 # for a file of the target's own name (and from searching implicit rules for it)
 .PHONY: help all setup data-download data-download-binance data-download-bybit data-ingest data-status \
-        dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
+        dashboard visualisation-galaxy visualisation-galaxy-check \
+        ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-data-download \
         docker-data-ingest docker-data-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
@@ -57,6 +58,15 @@ data-status:     ## data & DB monitoring -> stdout + module_monitoring/status.js
 dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory module_monitoring
+
+# python3, not $(PY): the generator is standard library only and has to run on a
+# CI runner that has no .venv. Installing duckdb, numpy, optuna and xgboost to
+# render an HTML file would be the wrong trade.
+visualisation-galaxy: ## regenerate module_monitoring/repo_galaxy.html from the tracked tree
+	python3 -m module_visualisation.generate_galaxy
+
+visualisation-galaxy-check: ## fail if the committed galaxy no longer matches the tree
+	python3 -m module_visualisation.generate_galaxy --check
 
 ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
 	$(PY) -m module_ml.bars

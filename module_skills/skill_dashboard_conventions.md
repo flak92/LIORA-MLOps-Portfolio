@@ -31,3 +31,24 @@ The dashboard is a static dial-up-minimal page; keep it one.
   adding a fact.
 - Verify rendering headless: serve on loopback, `chromium --headless
   --dump-dom`, assert no `undefined`/`NaN` and the expected frames.
+
+## The generated page
+
+`module_monitoring/repo_galaxy.html` is written by `module_visualisation`, not by hand, and the
+rules above bind it only where they still mean something.
+
+- It obeys the ones that matter: plain HTML, CSS and JS, no framework, no build step, and **no
+  external resource of any kind** — the whole page, including its data, is one file.
+- It carries its data inside itself instead of fetching `status.json` / `ml_status.json`, because
+  its subject is the repository's own tree rather than anything a stage measured. That is the one
+  page for which "reads the two committed snapshots" does not apply.
+- Colour on that page separates stories; it encodes no magnitude, so "bars, not colours" is not at
+  stake. Edge weight carries the only ordinal distinction there is — folder to folder, or folder to
+  file — and it is fixed in the renderer, not configurable.
+- The closed verb list for file-scope JavaScript binds the hand-written dashboard scripts. The
+  galaxy's inline renderer is a generated artifact reviewed as a whole; the `JavaScript verbs`
+  check greps `module_monitoring/*.js` and deliberately does not reach it.
+- Verify it the same way as the rest: serve on loopback, `chromium --headless --dump-dom`, and
+  assert the file tree rendered — an empty `#tree` means the layout threw before the first frame,
+  which is the failure this page actually has. Ignore `undefined` inside the `<script>` block; the
+  assertion is about rendered content.
