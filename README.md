@@ -161,7 +161,7 @@ strategy evaluation with explicit costs:
 Both `X` and `Y` read the canonical series — `X` before the decision, `Y` after
 it — so features and target describe the same canonical research object. The
 decision is taken at a 15m close and filled one minute later. The stages run in the
-order `make ml-all` fixes — the Makefile is the one authority for stage order —
+order `make ml-all` fixes — the Makefile is the normative source for stage order —
 and every per-asset stage runs `JOBS = max(1, min(cores,
 available GiB))` assets in parallel, one process each, with the thread caps pinned at one;
 results on the dashboard's **ML Research** tab (ten-asset

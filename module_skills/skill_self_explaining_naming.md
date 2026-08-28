@@ -63,7 +63,7 @@ convention when it misses any:
 - **Checkable by grep.** A violation can be found mechanically — `ls -1d */`
   for the sorting rule, a pattern for the verb list. A rule nobody can test is
   a preference.
-- **One authority.** The rule lives in exactly one place, `AGENTS.md`, and
+- **Normative source.** The rule lives in exactly one place, `AGENTS.md`, and
   every other document points at it. Two copies of a rule drift, and the drift
   is discovered by the reader who trusted the wrong copy.
 - **It must be able to fail.** There is a name the rule forbids. A rule that

@@ -10,7 +10,7 @@ never a rule hidden in Python.
 It carries no list of its own. That is deliberate and load-bearing: the tokens it
 hunts live in the act, so its own checks can scan this file without an exemption,
 and the act is the one document the content scan skips — because its
-rejected-forms column is the authority for exactly those tokens.
+rejected-forms column is the normative source for exactly those tokens.
 
 Some rejected forms are prose rather than names, and some are already settled by
 a one-liner in `skill_self_explaining_naming.md`. Both sets stay in the block

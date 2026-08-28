@@ -2,7 +2,7 @@
 
 `AGENTS.md` holds the grammars — how a name is derived. This act holds the
 decisions — which exact names the project enacted where a grammar left a
-choice. One authority each: a rule lives in the contract, a decision lives
+choice. One normative source each: a rule lives in the contract, a decision lives
 here, and a new decision enters this act in the commit that enacts it. Every
 entry names the rejected form, because the rejected form is what stops the
 next reader from reinventing it.
@@ -37,6 +37,7 @@ next reader from reinventing it.
 | 24 | no debt marker in a tracked file: `TODO`, `FIXME`, `XXX`, `HACK`, and no code left inside a comment | a marker standing in for a decision | `main` is clean working logic. A marker is a decision postponed in public, and a commented-out line is a version git already remembers — the comment only hides which one is live. Zero of both when this row was written, which is exactly when the rule costs nothing to enact |
 | 25 | established terminology over local coinages; the rule lives in `AGENTS.md` § Canonical vocabulary | a local synonym for a concept that has a recognised name | a coinage costs every reader a translation step. It forbids no specific name, so the block records it as a preference, not a grammar |
 | 26 | `taxonomic ordering` for the rule that the category token leads a name | `kind-first` | `kind` is unqualified English and reads as a synonym for `type`; `prefix` already carries two other senses here (`<TICKER>_`, make-target stages), so a third would collide |
+| 27 | `normative source` for the one document that holds a rule | `One authority`, `one canonical owner`, `single source of truth` | `normative` against `informative` is the ISO/IETF distinction between binding and explanatory text. `single source of truth` is already taken in `module_data/config.py` with a different referent |
 
 ## External vocabularies
 
@@ -212,6 +213,7 @@ rejected_name  ambiguous | owned | 11 | the `count keys` one-liner of skill_self
 rejected_name  ret | owned | 11 | the `abbreviation ret` one-liner of skill_self_explaining_naming.md
 
 banned_stem  galaxy | 21 | the module, its targets, its page and its title all say visualisation
+banned_stem  authority | 27 | the term is normative source
 banned_stem  generative | 23 | the term is rule-derived structure
 banned_stem  kind-first | 26 | the category token leads the name; the term is taxonomic ordering
 banned_stem  viz | 18 | module_visualisation is spelled out
@@ -231,7 +233,7 @@ collation_exempt  .gitignore | 16 | ecosystem-fixed; the collation key drops a l
 collation_exempt  .dockerignore | 16 | ecosystem-fixed; the collation key drops a leading dot
 collation_exempt  <TICKER>_README.md | 14 | README in capitals, by decision
 
-content_scan_exempt  module_skills/act_naming_conventions.md | its rejected-forms column and this block are the authority for those tokens
+content_scan_exempt  module_skills/act_naming_conventions.md | its rejected-forms column and this block are the normative source for those tokens
 content_scan_exempt  AGENTS.md | the `what it forbids` column of the grammar table, and its prose bans
 content_scan_exempt  module_skills/glossary.md | every `never` column
 content_scan_exempt  module_skills/skill_agent_first_development.md | the utils/common/core/manager/service ban
