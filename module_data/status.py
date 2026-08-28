@@ -13,6 +13,7 @@ scan rows by column name, never by position.
 
 from __future__ import annotations
 
+import argparse
 import json
 from datetime import UTC, datetime
 
@@ -111,6 +112,9 @@ def _rounded(x, ndigits):
 
 
 def main() -> int:
+    argparse.ArgumentParser(
+        description="data & DB monitoring -> stdout + module_monitoring/status.json"
+    ).parse_args()
     if not config.STORE_DB_PATH.exists():
         raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make data-ingest` first")
     con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)

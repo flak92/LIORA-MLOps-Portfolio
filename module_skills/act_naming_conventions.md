@@ -12,7 +12,7 @@ next reader from reinventing it.
 | # | enacted | not | why |
 |---|---|---|---|
 | 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/` | `src`, `core`, `lib` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
-| 2 | `store_assets_artifacts/` | `assets/`, `store_Assets_artifacts` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
+| 2 | `store_assets_artifacts/` | `assets/`, `artifacts/` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
 | 3 | `store_db/` | `db`, `database` | kind first; `db` is unambiguous in this technical context |
 | 4 | `store_raw_1m/`, and every future raw store as `store_raw_<timeframe>/` | a store spelling its timeframe in sorting slots, `raw_data` | a store is one object: its name says what it holds, in the compact timeframe token the code and the schema already speak (`ohlcv_1m_canonical`, `SOURCE_CANDLE_INTERVAL`), so the next raw store names itself. Sorting slots are for the file family that has to sort by granularity (§ timeframe slots) |
 | 5 | `<TICKER>/` in capitals inside `store_assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity, spelled the way the basket spells it; the exchange symbol belongs to the adapter boundary |

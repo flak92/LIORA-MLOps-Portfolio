@@ -201,7 +201,9 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 
     reproduce = " ".join(
         f"python -m module_ml.{stage} --tickers {ticker} &&"
-        for stage in ("features", "labels", "hyperparameter_search_result", "train", "strategy")
+        # the stage names are module names: module_ml/hpo.py writes the
+        # hyperparameter_search_result section, it is not named after it
+        for stage in ("features", "labels", "hpo", "train", "strategy")
     ) + f" python -m module_ml.status --tickers {ticker}"
 
     return f"""# {ticker} — research artifacts

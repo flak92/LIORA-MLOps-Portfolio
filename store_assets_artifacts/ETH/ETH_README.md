@@ -59,7 +59,7 @@ Final-holdout exits: upper_barrier 43, lower_barrier 43, vertical 84, ambiguous 
 
 ## Reproducing the ML artifacts in this folder
 
-    python -m module_ml.features --tickers ETH && python -m module_ml.labels --tickers ETH && python -m module_ml.hyperparameter_search_result --tickers ETH && python -m module_ml.train --tickers ETH && python -m module_ml.strategy --tickers ETH && python -m module_ml.status --tickers ETH
+    python -m module_ml.features --tickers ETH && python -m module_ml.labels --tickers ETH && python -m module_ml.hpo --tickers ETH && python -m module_ml.train --tickers ETH && python -m module_ml.strategy --tickers ETH && python -m module_ml.status --tickers ETH
 
 The OHLCV itself lives only in the DuckDB tables — the market object the whole chain reads; the asset folder carries no price series.
 
