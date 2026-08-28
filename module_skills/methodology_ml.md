@@ -248,8 +248,8 @@ folds F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight
 `alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`, no
 early stopping. Label parameters, costs and the entry-edge-threshold grid are **never** in the
-space. The `OPTUNAs_XGB_HPOs_best_params` section of `<TICKER>_parameters.json` keeps the
-winner, its log-loss and the trial count; the trajectory of 50 trials is a search
+space. The `hyperparameter_search_result` section of `<TICKER>_parameters.json` keeps the
+chosen point, its log-loss and the trial count; the trajectory of 50 trials is a search
 diary, not a result.
 
 ## 8. Classification metric — relative log-loss skill against the training prior
@@ -344,7 +344,7 @@ evaluation JSONs. The data files are
 gitignored and reconstructable; two text files are not, because they are what
 makes the rest readable without a run: **`<TICKER>_parameters.json`**, whose
 `experiment_configuration` section is the configuration this run was executed
-under and whose `OPTUNAs_XGB_HPOs_best_params` section is the search's winner
+under and whose `hyperparameter_search_result` section is what the search chose
 (written by `module_ml/hpo.py` when the search runs), and **`<TICKER>_README.md`**,
 what the folder holds and what came out of it (written by `module_ml/status.py`).
 Neither carries a timestamp, so an unchanged experiment reproduces them byte for
@@ -360,7 +360,7 @@ without reading the source. The
 experiment is still identified once, globally, in
 `module_monitoring/ml_status.json`: research window and seed. Library versions
 are pinned once, in `requirements.txt`; model parameters live in the
-`OPTUNAs_XGB_HPOs_best_params` section of `<TICKER>_parameters.json`. Runs are reproducible by
+`hyperparameter_search_result` section of `<TICKER>_parameters.json`. Runs are reproducible by
 construction — fixed seed,
 `nthread = 1`, pinned versions — and that claim is not backed by a hash gate,
 because such a gate proves the metadata, not the mathematics. No booster is

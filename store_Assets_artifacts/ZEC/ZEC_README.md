@@ -1,6 +1,6 @@
 # ZEC — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `ZEC_parameters.json` next to this file is the one parameters file: the a-priori experiment configuration plus the winning point of the Optuna→XGB search, written when the search runs — it is not artifact provenance.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `ZEC_parameters.json` next to this file is the one parameters file: its `experiment_configuration` section is the a-priori configuration and its `hyperparameter_search_result` section is what the search chose, both written when the search runs — it is not artifact provenance.
 
 ## Files
 
@@ -13,7 +13,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `ZEC_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,304 KB |
 | `ZEC_model_evaluation.json` | classification metrics per fold | 2 KB |
 | `ZEC_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,339 KB |
-| `ZEC_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
+| `ZEC_parameters.json` | the one parameters file: the a-priori configuration and the search result | 4 KB |
 | `ZEC_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
 Each of the three feature parquets carries 16 rows more than `ZEC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `ZEC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
@@ -59,7 +59,7 @@ Final-holdout exits: upper_barrier 16, lower_barrier 18, vertical 39, ambiguous 
 
 ## Reproducing the ML artifacts in this folder
 
-    python -m module_ml.features --tickers ZEC && python -m module_ml.labels --tickers ZEC && python -m module_ml.hpo --tickers ZEC && python -m module_ml.train --tickers ZEC && python -m module_ml.strategy --tickers ZEC && python -m module_ml.status --tickers ZEC
+    python -m module_ml.features --tickers ZEC && python -m module_ml.labels --tickers ZEC && python -m module_ml.hyperparameter_search_result --tickers ZEC && python -m module_ml.train --tickers ZEC && python -m module_ml.strategy --tickers ZEC && python -m module_ml.status --tickers ZEC
 
 The OHLCV itself lives only in the DuckDB tables — the market object the whole chain reads; the asset folder carries no price series.
 

@@ -1,18 +1,4 @@
 {
- "OPTUNAs_XGB_HPOs_best_params": {
-  "best_logloss": 0.7714371361867038,
-  "best_params": {
-   "alpha": 0.99822291493646,
-   "colsample_bytree": 0.649458078638865,
-   "eta": 0.011538210737771596,
-   "lambda": 0.9643820238353603,
-   "max_depth": 2,
-   "min_child_weight": 4,
-   "num_boost_round": 500,
-   "subsample": 0.5286150738752249
-  },
-  "trial_count": 50
- },
  "experiment_configuration": {
   "features": {
    "atr_wilder_smoothing_period_bars": 14,
@@ -161,5 +147,19 @@
    "trend_gate_timeframe": "4h"
   },
   "ticker": "ADA"
+ },
+ "hyperparameter_search_result": {
+  "best_logloss": 0.7714371361867038,
+  "best_params": {
+   "alpha": 0.99822291493646,
+   "colsample_bytree": 0.649458078638865,
+   "eta": 0.011538210737771596,
+   "lambda": 0.9643820238353603,
+   "max_depth": 2,
+   "min_child_weight": 4,
+   "num_boost_round": 500,
+   "subsample": 0.5286150738752249
+  },
+  "trial_count": 50
  }
 }

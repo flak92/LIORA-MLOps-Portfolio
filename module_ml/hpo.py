@@ -131,7 +131,7 @@ def main() -> int:
                        n_trials=config.HYPERPARAMETER_SEARCH_TRIAL_COUNT, n_jobs=1)
         payload = {
             "experiment_configuration": experiment_configuration(t),
-            "OPTUNAs_XGB_HPOs_best_params": {
+            "hyperparameter_search_result": {
                 "best_params": study.best_trial.params,
                 "best_logloss": study.best_value,
                 "trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,

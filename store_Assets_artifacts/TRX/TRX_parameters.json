@@ -1,18 +1,4 @@
 {
- "OPTUNAs_XGB_HPOs_best_params": {
-  "best_logloss": 0.8018253415631168,
-  "best_params": {
-   "alpha": 0.7617773613444665,
-   "colsample_bytree": 0.7594126937433104,
-   "eta": 0.013195393205014457,
-   "lambda": 0.37642953225767195,
-   "max_depth": 2,
-   "min_child_weight": 27,
-   "num_boost_round": 300,
-   "subsample": 0.5733120943443322
-  },
-  "trial_count": 50
- },
  "experiment_configuration": {
   "features": {
    "atr_wilder_smoothing_period_bars": 14,
@@ -161,5 +147,19 @@
    "trend_gate_timeframe": "4h"
   },
   "ticker": "TRX"
+ },
+ "hyperparameter_search_result": {
+  "best_logloss": 0.8018253415631168,
+  "best_params": {
+   "alpha": 0.7617773613444665,
+   "colsample_bytree": 0.7594126937433104,
+   "eta": 0.013195393205014457,
+   "lambda": 0.37642953225767195,
+   "max_depth": 2,
+   "min_child_weight": 27,
+   "num_boost_round": 300,
+   "subsample": 0.5733120943443322
+  },
+  "trial_count": 50
  }
 }

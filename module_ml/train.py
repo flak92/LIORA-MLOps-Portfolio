@@ -78,7 +78,7 @@ def main() -> int:
     args = config.ticker_parser("frozen-parameter training and the final-holdout report").parse_args()
 
     for t in config.parse_tickers(args.tickers):
-        best = dataset.load_json(config.parameters_json(t))["OPTUNAs_XGB_HPOs_best_params"]["best_params"]
+        best = dataset.load_json(config.parameters_json(t))["hyperparameter_search_result"]["best_params"]
         xy = dataset.load_xy(t)
         y_cls = model.to_class(xy["y"])
 

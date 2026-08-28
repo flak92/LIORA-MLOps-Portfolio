@@ -87,12 +87,12 @@ function buildLabelFrame(asset) {
 
 function buildModelFrame(asset, mlStatus) {
   const frame = buildFrame("MODEL — skill against the training class prior");
-  const bestParameters = asset.hyperparameter_search.best_params;
+  const bestParameters = asset.hyperparameter_search_result.best_params;
   frame.body.appendChild(buildKeyValueBox([
     ["parameters", "depth " + bestParameters.max_depth + " · eta " + bestParameters.eta.toFixed(4)
       + " · rounds " + bestParameters.num_boost_round + " · subsample " + bestParameters.subsample.toFixed(2)],
-    ["search", asset.hyperparameter_search.trial_count + " Optuna trials · best mean F2-F4 log-loss "
-      + asset.hyperparameter_search.best_logloss.toFixed(6)],
+    ["search", asset.hyperparameter_search_result.trial_count + " Optuna trials · best mean F2-F4 log-loss "
+      + asset.hyperparameter_search_result.best_logloss.toFixed(6)],
   ]));
   const rows = validationFolds(asset).map((foldKey) => ["F" + foldKey.split("_")[1], asset.validation[foldKey]]);
   rows.push(["F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.final_holdout]);

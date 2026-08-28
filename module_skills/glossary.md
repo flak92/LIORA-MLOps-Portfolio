@@ -111,7 +111,8 @@ Written by `module_data/status.py`; every SQL alias in its scans is the key it b
 | log-loss of the weighted training class prior | `prior_logloss` | `prior_logloss` | prior log-loss | baseline |
 | log-loss of the model on the evaluated block | `model_logloss` | `model_logloss` | model log-loss | loss |
 | information beyond the prior, `1 − model / prior` | `relative_logloss_skill` | `relative_logloss_skill` | skill | accuracy, edge |
-| the HPO objective value at the winner | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss | best_value, score |
+| the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss | best_value, score |
+| what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
@@ -155,7 +156,7 @@ generated README share:
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
 | `<TICKER>_model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |
 | `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | out-of-sample probabilities for the full windows; metrics score only the supervised subset |
-| `<TICKER>_parameters.json` | `module_ml/hpo.py` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner) |
+| `<TICKER>_parameters.json` | `module_ml/hpo.py` | the one parameters file: sections `experiment_configuration` (a-priori) and `hyperparameter_search_result` (what the search chose) |
 | `<TICKER>_strategy_evaluation.json` | `module_ml/strategy.py` | the entry edge threshold and the PnL |
 
 ## Features

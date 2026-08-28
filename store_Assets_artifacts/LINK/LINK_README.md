@@ -1,6 +1,6 @@
 # LINK — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `LINK_parameters.json` next to this file is the one parameters file: the a-priori experiment configuration plus the winning point of the Optuna→XGB search, written when the search runs — it is not artifact provenance.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `LINK_parameters.json` next to this file is the one parameters file: its `experiment_configuration` section is the a-priori configuration and its `hyperparameter_search_result` section is what the search chose, both written when the search runs — it is not artifact provenance.
 
 ## Files
 
@@ -13,7 +13,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `LINK_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,420 KB |
 | `LINK_model_evaluation.json` | classification metrics per fold | 2 KB |
 | `LINK_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,359 KB |
-| `LINK_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
+| `LINK_parameters.json` | the one parameters file: the a-priori configuration and the search result | 4 KB |
 | `LINK_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
 Each of the three feature parquets carries 16 rows more than `LINK_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `LINK_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
@@ -59,7 +59,7 @@ Final-holdout exits: upper_barrier 48, lower_barrier 46, vertical 89, ambiguous 
 
 ## Reproducing the ML artifacts in this folder
 
-    python -m module_ml.features --tickers LINK && python -m module_ml.labels --tickers LINK && python -m module_ml.hpo --tickers LINK && python -m module_ml.train --tickers LINK && python -m module_ml.strategy --tickers LINK && python -m module_ml.status --tickers LINK
+    python -m module_ml.features --tickers LINK && python -m module_ml.labels --tickers LINK && python -m module_ml.hyperparameter_search_result --tickers LINK && python -m module_ml.train --tickers LINK && python -m module_ml.strategy --tickers LINK && python -m module_ml.status --tickers LINK
 
 The OHLCV itself lives only in the DuckDB tables — the market object the whole chain reads; the asset folder carries no price series.
 

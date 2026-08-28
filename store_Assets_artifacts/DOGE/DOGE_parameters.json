@@ -1,18 +1,4 @@
 {
- "OPTUNAs_XGB_HPOs_best_params": {
-  "best_logloss": 0.7891154576045264,
-  "best_params": {
-   "alpha": 0.0933068416661099,
-   "colsample_bytree": 0.9067434860320593,
-   "eta": 0.014616620160434165,
-   "lambda": 0.3099528561347086,
-   "max_depth": 5,
-   "min_child_weight": 23,
-   "num_boost_round": 250,
-   "subsample": 0.5210894112333008
-  },
-  "trial_count": 50
- },
  "experiment_configuration": {
   "features": {
    "atr_wilder_smoothing_period_bars": 14,
@@ -161,5 +147,19 @@
    "trend_gate_timeframe": "4h"
   },
   "ticker": "DOGE"
+ },
+ "hyperparameter_search_result": {
+  "best_logloss": 0.7891154576045264,
+  "best_params": {
+   "alpha": 0.0933068416661099,
+   "colsample_bytree": 0.9067434860320593,
+   "eta": 0.014616620160434165,
+   "lambda": 0.3099528561347086,
+   "max_depth": 5,
+   "min_child_weight": 23,
+   "num_boost_round": 250,
+   "subsample": 0.5210894112333008
+  },
+  "trial_count": 50
  }
 }

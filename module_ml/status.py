@@ -43,11 +43,11 @@ def sample_block(metrics: dict) -> dict:
     }
 
 
-def hpo_block(hpo: dict) -> dict:
+def hyperparameter_search_result_block(hyperparameter_search_result: dict) -> dict:
     return {
-        "trial_count": hpo["trial_count"],
-        "best_logloss": round(hpo["best_logloss"], 6),
-        "best_params": dict(sorted(hpo["best_params"].items())),
+        "trial_count": hyperparameter_search_result["trial_count"],
+        "best_logloss": round(hyperparameter_search_result["best_logloss"], 6),
+        "best_params": dict(sorted(hyperparameter_search_result["best_params"].items())),
     }
 
 
@@ -108,13 +108,13 @@ def strategy_block(strategy: dict) -> dict:
     }
 
 
-def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
+def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> dict:
     validation, final_holdout = classification_block(metrics)
     gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
-        "hyperparameter_search": hpo_block(hpo),
+        "hyperparameter_search_result": hyperparameter_search_result_block(hyperparameter_search_result),
         "validation": validation,
         "final_holdout": final_holdout,
         "gain_importance": gain,
@@ -132,7 +132,7 @@ FILE_MANIFEST = (
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
     (config.oos_predictions_parquet, "out-of-sample class probabilities, full windows"),
-    (config.parameters_json, "the one parameters file: a-priori configuration + the Optuna→XGB winner"),
+    (config.parameters_json, "the one parameters file: the a-priori configuration and the search result"),
     (config.strategy_evaluation_json, "threshold, PnL and the equity curve"),
 )
 
@@ -152,13 +152,13 @@ def markdown_table(headers, rows):
     return "\n".join([markdown_table_row(headers), markdown_table_row(["---"] * len(headers))] + [markdown_table_row(r) for r in rows])
 
 
-def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
+def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> str:
     """What this folder holds and what came out of it — no timestamp, by design."""
     labels, counts = metrics["labels"], metrics["class_counts"]
     supervised = counts["short"] + counts["neutral"] + counts["long"]
     folds = [f"fold_{i}" for i in config.VALIDATION_FOLD_IDS]
     holdout = f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"
-    p = hpo["best_params"]
+    p = hyperparameter_search_result["best_params"]
 
     files = []
     for descriptor, note in FILE_MANIFEST:
@@ -201,12 +201,12 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     reproduce = " ".join(
         f"python -m module_ml.{stage} --tickers {ticker} &&"
-        for stage in ("features", "labels", "hpo", "train", "strategy")
+        for stage in ("features", "labels", "hyperparameter_search_result", "train", "strategy")
     ) + f" python -m module_ml.status --tickers {ticker}"
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `{config.parameters_json(ticker).name}` next to this file is the one parameters file: the a-priori experiment configuration plus the winning point of the Optuna→XGB search, written when the search runs — it is not artifact provenance.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `{config.parameters_json(ticker).name}` next to this file is the one parameters file: its `experiment_configuration` section is the a-priori configuration and its `hyperparameter_search_result` section is what the search chose, both written when the search runs — it is not artifact provenance.
 
 ## Files
 
@@ -220,7 +220,7 @@ Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TI
 
 ## Model
 
-Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
+Search: {hyperparameter_search_result['trial_count']} Optuna trials, best log-loss {hyperparameter_search_result['best_logloss']:.6f}. Winner: depth {p['max_depth']}, eta {p['eta']:.4f}, {p['num_boost_round']} rounds, subsample {p['subsample']:.3f}, colsample {p['colsample_bytree']:.3f}, min_child_weight {p['min_child_weight']}, lambda {p['lambda']:.4f}, alpha {p['alpha']:.4f}.
 
 {markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
 
@@ -259,11 +259,11 @@ def main() -> int:
         if not all(p.exists() for p in paths.values()):
             continue
         loaded = {k: dataset.load_json(p) for k, p in paths.items()}
-        hpo = loaded["parameters"]["OPTUNAs_XGB_HPOs_best_params"]
+        hyperparameter_search_result = loaded["parameters"]["hyperparameter_search_result"]
         metrics = loaded["model_evaluation"]
         strategy = loaded["strategy_evaluation"]
-        assets.append(asset_report(t, hpo, metrics, strategy))
-        config.asset_readme_md(t).write_text(asset_readme(t, hpo, metrics, strategy),
+        assets.append(asset_report(t, hyperparameter_search_result, metrics, strategy))
+        config.asset_readme_md(t).write_text(asset_readme(t, hyperparameter_search_result, metrics, strategy),
                                              encoding="utf-8")
     if not assets:
         raise SystemExit("no complete artifact set found — run `make ml-all` first")

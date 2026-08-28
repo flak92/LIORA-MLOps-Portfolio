@@ -46,8 +46,8 @@ function renderResearch(mlStatus) {
     appendCell(tr, formatCount(asset.sample.decision_count));
     appendCell(tr, formatCount(asset.sample.class_counts.short) + "/" + formatCount(asset.sample.class_counts.neutral) +
              "/" + formatCount(asset.sample.class_counts.long));
-    appendCell(tr, asset.hyperparameter_search.best_params.max_depth + " / " + asset.hyperparameter_search.best_params.eta.toFixed(3) +
-             " / " + asset.hyperparameter_search.best_params.num_boost_round);
+    appendCell(tr, asset.hyperparameter_search_result.best_params.max_depth + " / " + asset.hyperparameter_search_result.best_params.eta.toFixed(3) +
+             " / " + asset.hyperparameter_search_result.best_params.num_boost_round);
     appendCell(tr, asset.final_holdout.prior_logloss.toFixed(4));
     appendCell(tr, asset.final_holdout.model_logloss.toFixed(4));
     appendCell(tr, (100 * asset.final_holdout.relative_logloss_skill).toFixed(2) + "%");
@@ -136,11 +136,11 @@ function renderSearch(mlStatus) {
     ["asset", "trials", "best LL", "depth", "eta",
      "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
     mlStatus.assets.map((asset) => {
-      const bestParameters = asset.hyperparameter_search.best_params;
+      const bestParameters = asset.hyperparameter_search_result.best_params;
       return [
         [buildTickerLink(asset.ticker)],
-        asset.hyperparameter_search.trial_count,
-        asset.hyperparameter_search.best_logloss.toFixed(4),
+        asset.hyperparameter_search_result.trial_count,
+        asset.hyperparameter_search_result.best_logloss.toFixed(4),
         bestParameters.max_depth,
         bestParameters.eta.toFixed(4),
         bestParameters.min_child_weight,

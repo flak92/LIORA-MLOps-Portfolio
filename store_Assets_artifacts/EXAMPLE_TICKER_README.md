@@ -78,8 +78,8 @@ The one parameters file — everything the strategy runs with, written by
   rule, resolution codes), `hyperparameter_search` (sampler, seed, trial
   count, objective, space, fixed XGBoost parameters), `strategy` (cost rate,
   threshold grid, minimum trades, trend gate).
-- `OPTUNAs_XGB_HPOs_best_params` — the chosen point: `best_params` (the eight
-  searched XGBoost hyper-parameters), `best_logloss`, `trial_count`.
+- `hyperparameter_search_result` — what the search chose: `best_params` (the
+  eight searched XGBoost hyper-parameters), `best_logloss`, `trial_count`.
 
 ### `<TICKER>_strategy_evaluation.json`
 

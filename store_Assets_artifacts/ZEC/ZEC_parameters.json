@@ -1,18 +1,4 @@
 {
- "OPTUNAs_XGB_HPOs_best_params": {
-  "best_logloss": 0.7714643369764774,
-  "best_params": {
-   "alpha": 0.1698294515955395,
-   "colsample_bytree": 0.8454698440323074,
-   "eta": 0.010941287893552008,
-   "lambda": 0.18915827801025079,
-   "max_depth": 3,
-   "min_child_weight": 46,
-   "num_boost_round": 350,
-   "subsample": 0.7697057642274028
-  },
-  "trial_count": 50
- },
  "experiment_configuration": {
   "features": {
    "atr_wilder_smoothing_period_bars": 14,
@@ -161,5 +147,19 @@
    "trend_gate_timeframe": "4h"
   },
   "ticker": "ZEC"
+ },
+ "hyperparameter_search_result": {
+  "best_logloss": 0.7714643369764774,
+  "best_params": {
+   "alpha": 0.1698294515955395,
+   "colsample_bytree": 0.8454698440323074,
+   "eta": 0.010941287893552008,
+   "lambda": 0.18915827801025079,
+   "max_depth": 3,
+   "min_child_weight": 46,
+   "num_boost_round": 350,
+   "subsample": 0.7697057642274028
+  },
+  "trial_count": 50
  }
 }

@@ -1,18 +1,4 @@
 {
- "OPTUNAs_XGB_HPOs_best_params": {
-  "best_logloss": 0.8109676709785383,
-  "best_params": {
-   "alpha": 0.7831030940448331,
-   "colsample_bytree": 0.648624347600626,
-   "eta": 0.012363203444231837,
-   "lambda": 2.8078997092265223,
-   "max_depth": 5,
-   "min_child_weight": 32,
-   "num_boost_round": 550,
-   "subsample": 0.5246198598687903
-  },
-  "trial_count": 50
- },
  "experiment_configuration": {
   "features": {
    "atr_wilder_smoothing_period_bars": 14,
@@ -161,5 +147,19 @@
    "trend_gate_timeframe": "4h"
   },
   "ticker": "BTC"
+ },
+ "hyperparameter_search_result": {
+  "best_logloss": 0.8109676709785383,
+  "best_params": {
+   "alpha": 0.7831030940448331,
+   "colsample_bytree": 0.648624347600626,
+   "eta": 0.012363203444231837,
+   "lambda": 2.8078997092265223,
+   "max_depth": 5,
+   "min_child_weight": 32,
+   "num_boost_round": 550,
+   "subsample": 0.5246198598687903
+  },
+  "trial_count": 50
  }
 }
