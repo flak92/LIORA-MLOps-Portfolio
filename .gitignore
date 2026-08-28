@@ -6,6 +6,7 @@ store_db/
 # configuration and its README are the two files that make them readable
 # without a run
 store_Assets_artifacts/**
+!store_Assets_artifacts/EXAMPLE_TICKER_README.md
 !store_Assets_artifacts/*/
 !store_Assets_artifacts/*/*_parameters.json
 !store_Assets_artifacts/*/*_README.md

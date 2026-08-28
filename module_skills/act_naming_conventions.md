@@ -48,7 +48,9 @@ names — the filename already says the timeframe, and a name repeats nothing
 its scope states. The strategy itself is one shared file for the whole
 project, `module_ml/strategy.py`: code is common, parameters are per asset.
 A file copied out of its folder still says which asset it belongs to and
-which grid it lives on.
+which grid it lives on. The store root carries one committed guide,
+`store_Assets_artifacts/EXAMPLE_TICKER_README.md`, describing every manifest
+file and its contents for a placeholder ticker.
 
 ## The timeframe slot standard
 
