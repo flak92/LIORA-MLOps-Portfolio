@@ -30,11 +30,13 @@ conflicts with this file, the change is wrong.
   the aligned decision grids of the arrays `dataset.load_xy` joins by position,
   the basket-wide ingest, the download that aborts on a short post-listing day).
   A check that could only fail on a stale artifact from another run is not one
-  of them. The single workflow in `.github/` is not an exception to this rule
-  but a consequence of the one above it: it runs no tests, asserts nothing and
-  blocks no merge — it regenerates one artifact whose whole purpose is to equal
-  the tree. A workflow that lints, gates or proves anything does not belong here,
-  and a second workflow is the signal that this one has been misread. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
+  of them. The single workflow in `.github/` does **exactly two** things, and the
+  count is the rule: it regenerates one artifact whose whole purpose is to equal
+  the tree, and it checks the tree against the names this project enacted. Both
+  are the contract keeping itself true, neither asserts anything about the
+  mathematics, and neither adds a dependency. A test suite, a linter, a coverage
+  gate or a merge block does not belong here — and a third thing, or a second
+  workflow, is the signal that this one has been misread. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
   part of correctness, not a setting.
 - **Research logic over tooling.** External sources, libraries and
   infrastructure are implementation details. The repository should expose the

@@ -17,7 +17,7 @@ next reader from reinventing it.
 | 4 | `store_raw_1m/`, and every future raw store as `store_raw_<timeframe>/` | a store spelling its timeframe in sorting slots, `raw_data` | a store is one object: its name says what it holds, in the compact timeframe token the code and the schema already speak (`ohlcv_1m_canonical`, `SOURCE_CANDLE_INTERVAL`), so the next raw store names itself. Sorting slots are for the file family that has to sort by granularity (§ timeframe slots) |
 | 5 | `<TICKER>/` in capitals inside `store_assets_artifacts/` | `btc`, `BTCUSDT` | the ticker is the project's asset identity, spelled the way the basket spells it; the exchange symbol belongs to the adapter boundary |
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
-| 7 | guidance files: `act_*`, `skill_*`, `methodology_*`, `glossary.md` | bare topic names | kind first inside the folder, same rule as the tree above it |
+| 7 | guidance files: `act_*`, `check_*`, `skill_*`, `methodology_*`, `glossary.md`; `module_skills/` holds **exactly one executable file**, the self-check | bare topic names, a second script in the law folder | kind first inside the folder, same rule as the tree above it. The one `.py` is the act's own enforcement, kept beside the act for the reason the block below gives — one law, two audiences. A second executable would make the law folder a code folder, and that is the drift this row now forbids by counting |
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `features.parquet`, a bare `README.md` — any per-asset file that needs its folder to say which asset it belongs to | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
 | 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | a per-asset OHLCV parquet, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
 | 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep the a-priori configuration and the search result apart inside one file |
@@ -33,6 +33,8 @@ next reader from reinventing it.
 | 20 | `files_and_folders_visualisation_template.html` for the shell, `module_monitoring/files_and_folders_visualisation.html` for the page it renders | `Files_and_Folders_Visualisation.html`, `galaxy_template.html`, a template and a page sharing one basename | the template is named for what a reader opens it to see, and the `_template` suffix keeps the shell and its output apart at a glance. Lowercase **retires** the collation exemption this row used to carry: measured, `module_visualisation/` now differs between `LC_COLLATE=C` and `en_US.UTF-8` only by `README.md` and `__init__.py`, which is row 16 — exactly like every other package. The closed exception list got shorter, not longer |
 | 21 | one stem for the picture: `module_visualisation/generate.py`, `visualisation_config.json`, `module_monitoring/files_and_folders_visualisation.html`, `.github/workflows/visualisation.yml`, `VisualisationError`, `visualisation_html()`, `VISUALISATION:STRUCTURE:*`, and the page titled `Files and Folders` | the whole `galaxy` family: `generate_galaxy.py`, `galaxy_config.json`, `repo_galaxy.html`, `galaxy.yml`, `GalaxyError`, `galaxy_html()`, `GALAXY:STRUCTURE:*`, `Repo Silk Galaxy` | one thing, one vocabulary. `galaxy` was a metaphor: it named the picture's prettiness, never its subject, so a reader met it first in the page title and learned nothing. The stem is banned outright, which is checkable — a metaphor that appears nowhere cannot come back by halves |
 | 22 | make target `monitoring-dashboard`; the compose **service** stays `dashboard` | a bare `dashboard` target | it was the last non-lifecycle target without its module, and the reason row 13 gives for `data-status` applies unchanged: `make help` lists one module as one block. The compose service keeps the short name because a service name is a different namespace — `$(COMPOSE) up -d dashboard` addresses compose, not make, and renaming it would have been a rename of somebody else's vocabulary |
+| 23 | the generative-structure rule lives in `AGENTS.md` § Canonical vocabulary; `module_skills/skill_agent_first_development.md` points at it | a second copy of the rule in a skill | it was minted in a skill and moved here-ward the same day. Two of the eight minting conditions failed: a rule lives in `AGENTS.md` and every other document points at it, and a rule must be able to fail. The second cannot be fixed — it forbids no specific name — so the block below records it as a preference this repository states, not a grammar it checks |
+| 24 | no debt marker in a tracked file: `TODO`, `FIXME`, `XXX`, `HACK`, and no code left inside a comment | a marker standing in for a decision | `main` is clean working logic. A marker is a decision postponed in public, and a commented-out line is a version git already remembers — the comment only hides which one is live. Zero of both when this row was written, which is exactly when the rule costs nothing to enact |
 
 ## External vocabularies
 
@@ -155,3 +157,160 @@ parquets (the key grammar says `_ms`; no new `_ts` is minted), the DuckDB column
 token inside an identifier or a key (`WARMUP_4H_BARS`, `folds.warmup_4h_bars`,
 `equity_15m`) is not a deferral at all: it is the timeframe vocabulary of code
 and schema, and the slots are for the file family that sorts by granularity.
+
+## Machine-checkable form
+
+The prose above is the law a human reads. The block below is the same law in the
+form a script can settle, and `module_skills/check_conventions.py` reads nothing
+else — no list lives in that file, which is why its own checks can scan it
+without an exemption. One law, two audiences, and no third copy to drift.
+
+A rejected form is rejected **in a role**, not everywhere: `core` is a directory
+this act refused and a live key of the picture's config; `BTCUSDT` is a folder
+name it refused and the venue's own symbol, published four times in
+`data_status.json`. The `mode` cell says which role, and that is what keeps the
+exemption list short instead of keeping the check quiet.
+
+Some rejected forms are prose — "project-cased variants" is not a token — and
+some are already settled by another check here or by a one-liner in
+`skill_self_explaining_naming.md`. Both sets stay in the block with their reason,
+and the verifier prints their count on every run, so it never looks more complete
+than it is.
+
+```conventions-data
+# One rule per line: <key> <cell> | <cell> | ... — cells are trimmed, # is a comment.
+# mode: path_segment = not a component of any tracked path; path_exact = not a
+# tracked path; owned = settled by the check or one-liner named in the fix.
+
+rejected_name  src | path_segment | 1 | a top-level responsibility is module_<domain>
+rejected_name  core | path_segment | 1 | a top-level responsibility is module_<domain>
+rejected_name  lib | path_segment | 1 | a top-level responsibility is module_<domain>
+rejected_name  assets | path_segment | 2 | the store is store_assets_artifacts/
+rejected_name  artifacts | path_segment | 2 | the store is store_assets_artifacts/
+rejected_name  db | path_segment | 3 | the store is store_db/; db_bytes is a key, not a directory
+rejected_name  database | path_segment | 3 | the store is store_db/
+rejected_name  raw_data | path_segment | 4 | a raw store is store_raw_<timeframe>/
+rejected_name  btc | path_segment | 5 | an asset folder is the ticker in capitals
+rejected_name  BTCUSDT | path_segment | 5 | the venue symbol stays at the adapter boundary
+rejected_name  common | path_segment | 18 | the responsibility already has an owner
+rejected_name  store_assets_artifacts/README.md | path_exact | 15 | the store guide is EXAMPLE_TICKER_README.md
+rejected_name  features.parquet | owned | 8 | ticker_manifest requires the <TICKER>_ prefix
+rejected_name  download | owned | 13 | target_prefixes rejects a bare stage
+rejected_name  ingest | owned | 13 | target_prefixes rejects a bare stage
+rejected_name  status | owned | 13 | target_prefixes rejects a bare stage
+rejected_name  docker-download | owned | 13 | target_prefixes rejects a twin named after the tool
+rejected_name  dashboard | owned | 22 | target_prefixes rejects it as a make target; the compose service keeps it
+rejected_name  galaxy-check | owned | 21 | single_vocabulary bans the stem outright
+rejected_name  galaxy_template.html | owned | 21 | single_vocabulary bans the stem outright
+rejected_name  module_viz | owned | 18 | single_vocabulary bans the viz stem
+rejected_name  module_visualisation_helpers | owned | 18 | single_vocabulary bans the helpers stem
+rejected_name  rows | owned | 11 | the `count keys` one-liner of skill_self_explaining_naming.md
+rejected_name  gaps | owned | 11 | the `count keys` one-liner of skill_self_explaining_naming.md
+rejected_name  ambiguous | owned | 11 | the `count keys` one-liner of skill_self_explaining_naming.md
+rejected_name  ret | owned | 11 | the `abbreviation ret` one-liner of skill_self_explaining_naming.md
+
+banned_stem  galaxy | 21 | the module, its targets, its page and its title all say visualisation
+banned_stem  viz | 18 | module_visualisation is spelled out
+banned_stem  utils | 18 | the responsibility already has an owner
+banned_stem  helpers | 18 | helpers names the author's convenience, not the responsibility
+banned_stem  manager | 18 | the responsibility already has an owner
+
+collation_exempt  __init__.py | 16 | ecosystem-fixed
+collation_exempt  AGENTS.md | 16 | ecosystem-fixed
+collation_exempt  Dockerfile | 16 | ecosystem-fixed
+collation_exempt  Makefile | 16 | ecosystem-fixed
+collation_exempt  README.md | 16 | ecosystem-fixed
+collation_exempt  docker-compose.yml | 16 | ecosystem-fixed
+collation_exempt  requirements.txt | 16 | ecosystem-fixed
+collation_exempt  .github | 16 | ecosystem-fixed; the collation key drops a leading dot
+collation_exempt  .gitignore | 16 | ecosystem-fixed; the collation key drops a leading dot
+collation_exempt  .dockerignore | 16 | ecosystem-fixed; the collation key drops a leading dot
+collation_exempt  <TICKER>_README.md | 14 | README in capitals, by decision
+
+content_scan_exempt  module_skills/act_naming_conventions.md | its rejected-forms column and this block are the authority for those tokens
+content_scan_exempt  AGENTS.md | the `what it forbids` column of the grammar table, and its prose bans
+content_scan_exempt  module_skills/glossary.md | every `never` column
+content_scan_exempt  module_skills/skill_agent_first_development.md | the utils/common/core/manager/service ban
+content_scan_exempt  module_skills/skill_self_explaining_naming.md | its Checks block embeds the forbidden patterns
+content_scan_exempt  module_skills/skill_sorting_files_naming_standard.md | it names the collation exemptions
+content_scan_exempt  module_skills/skill_dashboard_conventions.md | it names the generated page and its exceptions
+content_scan_exempt  module_skills/methodology_data.md | the venue symbol at the ingest boundary
+content_scan_exempt  module_data/download_binance.py | the Lean tree diagram in its docstring
+content_scan_exempt  module_data/download_bybit.py | the Lean tree diagram in its docstring
+
+top_level_kind  module_ | 1 | a top-level responsibility
+top_level_kind  store_ | 2 | persisted or generated state
+
+enacted_path  module_data | 1 | the runtime ingest module
+enacted_path  module_ml | 1 | the runtime research module
+enacted_path  module_monitoring | 1 | the presentation module
+enacted_path  module_skills | 1 | the contract's companions
+enacted_path  module_visualisation | 18 | git index in, one HTML page out
+enacted_path  store_assets_artifacts | 2 | kind first, then what the store holds
+enacted_path  module_data/lean.py | 6 | the Lean adapter owns the external spelling
+enacted_path  module_ml/strategy.py | 10 | one shared strategy for the whole project
+enacted_path  module_skills/act_naming_conventions.md | 7 | this act
+enacted_path  module_skills/check_conventions.py | 7 | the one executable module_skills owns
+enacted_path  module_skills/glossary.md | 7 | the naming register
+enacted_path  module_visualisation/generate.py | 21 | the generator
+enacted_path  module_visualisation/visualisation_config.json | 21 | the whole configuration surface
+enacted_path  module_visualisation/files_and_folders_visualisation_template.html | 20 | the rendering shell
+enacted_path  module_monitoring/files_and_folders_visualisation.html | 20 | the generated page
+enacted_path  module_monitoring/data_status.json | 13 | the data module's snapshot
+enacted_path  module_monitoring/ml_status.json | 13 | the ml module's snapshot
+enacted_path  module_monitoring/data.js | 13 | the data half of the dashboard
+enacted_path  module_monitoring/ml.js | 13 | the ml half of the dashboard
+enacted_path  .github/workflows/visualisation.yml | 16 | the one workflow
+enacted_path  store_assets_artifacts/EXAMPLE_TICKER_README.md | 15 | the store guide sorts inside the ticker block
+enacted_path  <TICKER>_README.md | 14 | every asset folder describes itself
+enacted_path  <TICKER>_parameters.json | 10 | one parameters file per asset
+
+enacted_family  module_skills/ | .md | act_ methodology_ skill_ glossary.md | 7 | guidance files are kind first
+
+ticker_store  store_assets_artifacts/ | 8 | every per-asset file carries the <TICKER>_ prefix
+ticker_tracked_file  <TICKER>_README.md | 14 | whitelisted by .gitignore
+ticker_tracked_file  <TICKER>_parameters.json | 10 | whitelisted by .gitignore
+
+make_lifecycle_target  all | 13 | lifecycle
+make_lifecycle_target  help | 13 | lifecycle
+make_lifecycle_target  setup | 13 | lifecycle
+make_lifecycle_target  conventions-check | 7 | repo-wide, not a module stage
+make_lifecycle_target  docker-build | 13 | compose lifecycle
+make_lifecycle_target  docker-up | 13 | compose lifecycle
+make_lifecycle_target  docker-down | 13 | compose lifecycle
+make_stage_prefix  data- | 13 | a stage carries its module
+make_stage_prefix  ml- | 13 | a stage carries its module
+make_stage_prefix  monitoring- | 22 | a stage carries its module
+make_stage_prefix  visualisation- | 19 | a stage carries its module
+make_stage_prefix  docker-data- | 13 | the container twin carries its module
+make_stage_prefix  docker-ml- | 13 | the container twin carries its module
+
+debt_marker  TODO | 24 | main is clean working logic; a marker is a decision postponed in public
+debt_marker  FIXME | 24 | main is clean working logic
+debt_marker  XXX | 24 | main is clean working logic
+debt_marker  HACK | 24 | main is clean working logic
+
+generated_path  module_monitoring/files_and_folders_visualisation.html | 20 | it embeds every tracked path, so counting it as a source would make reachability vacuous
+
+reachability_rule  python_import | 1 | a module is named by its import path, not by its file name
+reachability_rule  ticker_placeholder | 14 | a per-asset file is named by the <TICKER> placeholder, never ten times over
+reachability_glob  skill_*.md | 7 | AGENTS.md names the guidance family by its glob, which is that family's own grammar
+reachability_ecosystem_owned  .dockerignore | 16 | docker build finds it by the fixed name; no tracked file has to mention it
+reachability_ignored_region  module_visualisation/visualisation_config.json | exclude | 20 | naming a path in `exclude` keeps it OUT of the picture, which is the opposite of a reference
+
+# Rejected forms this act states in prose. Nothing here is checked; it is listed
+# so the gap is visible, and counted on every run.
+unenforceable  project-cased variants | 6 | a casing family is not a token list; the `Lean names` one-liner binds the tree spelling instead
+unenforceable  project-cased variants | 16 | same, for the ecosystem-fixed names
+unenforceable  bare topic names | 7 | enacted_family checks the positive rule instead
+unenforceable  a store spelling its timeframe in sorting slots | 4 | the rejected form is a shape, not a token
+unenforceable  any per-asset file that needs its folder to say which asset it belongs to | 8 | ticker_manifest checks the positive prefix rule instead
+unenforceable  a per-asset OHLCV parquet | 9 | every candidate is gitignored, so no tracked name can carry it
+unenforceable  a parameters file per stage | 10 | ticker_manifest bounds the folder instead
+unenforceable  a strategy file per asset | 10 | ticker_manifest bounds the folder instead
+unenforceable  a bare plural, an adjective holding a number | 11 | the `count keys` one-liner covers the published keys; identifiers are unbounded
+unenforceable  reading order, artifact-responsibility order | 12 | an ordering claim about four documents, not a name
+unenforceable  a second copy of the chain in README or a methodology | 17 | prose duplication is not a token
+unenforceable  a page generator folded into module_monitoring/ | 18 | a placement judgement, not a name
+unenforceable  prefer generative structure over repeated project knowledge | 23 | the rule forbids no specific name, so no grep can settle it; it is a preference this repository states, not a grammar it checks
+```

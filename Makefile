@@ -23,7 +23,7 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 # every target is a command, not a file — .PHONY stops make from ever looking
 # for a file of the target's own name (and from searching implicit rules for it)
 .PHONY: help all setup data-download data-download-binance data-download-bybit data-ingest data-status \
-        monitoring-dashboard visualisation-generate visualisation-check \
+        monitoring-dashboard visualisation-generate visualisation-check conventions-check \
         ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-data-download \
         docker-data-ingest docker-data-status docker-ml-bars \
@@ -67,6 +67,11 @@ visualisation-generate: ## regenerate module_monitoring/files_and_folders_visual
 
 visualisation-check: ## fail if the committed picture no longer matches the tree
 	python3 -m module_visualisation.generate --check
+
+# a plain script path, not -m: module_skills never participates in runtime
+# imports, and -m would invite the misreading that it does
+conventions-check: ## verify the enacted names of the act against the tree
+	python3 module_skills/check_conventions.py
 
 ml-bars:         ## canonical 1m -> 15m/1h/4h bars (single DB writer)
 	$(PY) -m module_ml.bars

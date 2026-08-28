@@ -37,6 +37,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      - run: make conventions-check
+
       - run: make visualisation-generate
 
       - name: commit the page when the tree has moved
