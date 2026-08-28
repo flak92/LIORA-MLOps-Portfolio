@@ -1,53 +1,30 @@
 /* ML Research and ML Assets tabs: one fetch of ml_status.json feeds the
    cross-section table, the four summary views and — through asset.js — the
-   per-asset panel. Classic script sharing the helpers (cell, meter,
-   buildPercentageCell, formatCount, formatNumber, initPills, PILL_HOOKS)
-   defined in app.js. */
+   per-asset panel. Classic script using appendCell, appendHeaderRow,
+   appendRows, renderTable, buildMeter, formatCount and formatNumber from
+   app.js. */
 "use strict";
 
 const CLASS_NAMES = ["short", "neutral", "long"];
 let ML_STATUS = null;
 
-function headerRow(table, labels) {
-  const tr = table.querySelector("thead").insertRow();
-  labels.forEach((label) => {
-    const th = document.createElement("th");
-    th.innerHTML = label;
-    tr.appendChild(th);
-  });
-}
-
-function addRows(table, rows) {
-  const tbody = table.querySelector("tbody") || table.createTBody();
-  rows.forEach((cells) => {
-    const tr = tbody.insertRow();
-    cells.forEach((content) => (Array.isArray(content) ? cell(tr, content[0], content[1]) : cell(tr, content)));
-  });
-}
-
-function fillTable(id, headers, rows) {
-  const table = document.getElementById(id);
-  headerRow(table, headers);
-  addRows(table, rows);
-}
-
-function makeTable(headers, rows) {
+function buildTable(headers, rows) {
   const table = document.createElement("table");
   table.createTHead();
-  headerRow(table, headers);
-  addRows(table, rows);
+  appendHeaderRow(table, headers);
+  appendRows(table, rows);
   return table;
 }
 
 function buildShareCell(part, whole) {
   const pctValue = whole ? (100 * part) / whole : 0;
   const wrap = document.createElement("span");
-  wrap.appendChild(meter(pctValue));
+  wrap.appendChild(buildMeter(pctValue));
   wrap.appendChild(document.createTextNode(formatCount(part) + " (" + pctValue.toFixed(1) + "%)"));
   return wrap;
 }
 
-function meanOf(values) {
+function mean(values) {
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
@@ -59,25 +36,27 @@ function validationFolds(asset) {
 
 function renderResearch(mlStatus) {
   const table = document.getElementById("ml-assets");
+  appendHeaderRow(table, ["asset", "decisions", "classes &minus;/0/+", "depth/eta/rounds", "prior LL", "model LL",
+                          "skill", "&tau; (entry edge threshold)", "Sharpe", "maxDD", "trades", "hit", "exposure"]);
   const tbody = table.querySelector("tbody");
   for (const asset of mlStatus.assets) {
     const finalHoldoutStrategy = asset.strategy.final_holdout;
     const tr = tbody.insertRow();
-    cell(tr, asset.ticker);
-    cell(tr, formatCount(asset.sample.decision_count));
-    cell(tr, formatCount(asset.sample.class_counts.short) + "/" + formatCount(asset.sample.class_counts.neutral) +
+    appendCell(tr, asset.ticker);
+    appendCell(tr, formatCount(asset.sample.decision_count));
+    appendCell(tr, formatCount(asset.sample.class_counts.short) + "/" + formatCount(asset.sample.class_counts.neutral) +
              "/" + formatCount(asset.sample.class_counts.long));
-    cell(tr, asset.hyperparameter_search.best_params.max_depth + " / " + asset.hyperparameter_search.best_params.eta.toFixed(3) +
+    appendCell(tr, asset.hyperparameter_search.best_params.max_depth + " / " + asset.hyperparameter_search.best_params.eta.toFixed(3) +
              " / " + asset.hyperparameter_search.best_params.num_boost_round);
-    cell(tr, asset.final_holdout.prior_logloss.toFixed(4));
-    cell(tr, asset.final_holdout.model_logloss.toFixed(4));
-    cell(tr, (100 * asset.final_holdout.relative_logloss_skill).toFixed(2) + "%");
-    cell(tr, asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
-    cell(tr, formatNumber(finalHoldoutStrategy.sharpe, 2));
-    cell(tr, (100 * finalHoldoutStrategy.max_drawdown).toFixed(1) + "%");
-    cell(tr, formatCount(finalHoldoutStrategy.trade_count));
-    cell(tr, finalHoldoutStrategy.hit_rate === null ? "-" : (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%");
-    cell(tr, (100 * finalHoldoutStrategy.exposure).toFixed(1) + "%");
+    appendCell(tr, asset.final_holdout.prior_logloss.toFixed(4));
+    appendCell(tr, asset.final_holdout.model_logloss.toFixed(4));
+    appendCell(tr, (100 * asset.final_holdout.relative_logloss_skill).toFixed(2) + "%");
+    appendCell(tr, asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : " !"));
+    appendCell(tr, formatNumber(finalHoldoutStrategy.sharpe, 2));
+    appendCell(tr, (100 * finalHoldoutStrategy.max_drawdown).toFixed(1) + "%");
+    appendCell(tr, formatCount(finalHoldoutStrategy.trade_count));
+    appendCell(tr, finalHoldoutStrategy.hit_rate === null ? "-" : (100 * finalHoldoutStrategy.hit_rate).toFixed(1) + "%");
+    appendCell(tr, (100 * finalHoldoutStrategy.exposure).toFixed(1) + "%");
   }
   table.hidden = false;
 }
@@ -85,14 +64,14 @@ function renderResearch(mlStatus) {
 /* ---- ML Assets tab: four complementary cross-section views ---- */
 
 function renderLabels(mlStatus) {
-  fillTable("cs-labels",
+  renderTable("cs-labels",
     ["asset", "decisions", "warm-up excl", "trainable rows", "short", "neutral share",
      "long", "scored (holdout)"],
     mlStatus.assets.map((asset) => {
       const classCounts = asset.sample.class_counts;
       const total = classCounts.short + classCounts.neutral + classCounts.long;
       return [
-        [tickerLink(asset.ticker)],
+        [buildTickerLink(asset.ticker)],
         formatCount(asset.sample.decision_count),
         formatCount(asset.sample.warmup_excluded_decision_count),
         formatCount(asset.sample.trainable_row_count) + " (" + asset.sample.trainable_row_pct.toFixed(3) + "%)",
@@ -106,16 +85,16 @@ function renderLabels(mlStatus) {
 
 function renderClassification(mlStatus) {
   const foldKeys = validationFolds(mlStatus.assets[0]);
-  fillTable("cs-classification",
+  renderTable("cs-classification",
     ["asset", ...foldKeys.map((foldKey) => "val skill F" + foldKey.split("_")[1]),
      "mean val skill", "holdout prior LL", "holdout model LL", "holdout skill"],
     mlStatus.assets.map((asset) => {
       const folds = validationFolds(asset);
       const foldSkills = folds.map((foldKey) => asset.validation[foldKey].relative_logloss_skill);
       return [
-        [tickerLink(asset.ticker)],
+        [buildTickerLink(asset.ticker)],
         ...foldSkills.map((skill) => (100 * skill).toFixed(2) + "%"),
-        (100 * meanOf(foldSkills)).toFixed(2) + "%",
+        (100 * mean(foldSkills)).toFixed(2) + "%",
         asset.final_holdout.prior_logloss.toFixed(4),
         asset.final_holdout.model_logloss.toFixed(4),
         (100 * asset.final_holdout.relative_logloss_skill).toFixed(2) + "%",
@@ -124,7 +103,7 @@ function renderClassification(mlStatus) {
 }
 
 function renderStrategy(mlStatus) {
-  fillTable("cs-strategy",
+  renderTable("cs-strategy",
     ["asset", "entry edge threshold", "constraint met", "selection score", "holdout Sharpe", "degradation",
      "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
      "exits: upper/lower/vertical/ambiguous"],
@@ -135,7 +114,7 @@ function renderStrategy(mlStatus) {
         ? null : finalHoldoutStrategy.sharpe - selectionScore;
       const exitCounts = finalHoldoutStrategy.exit_counts;
       return [
-        [tickerLink(asset.ticker)],
+        [buildTickerLink(asset.ticker)],
         asset.strategy.entry_edge_threshold.toFixed(2),
         asset.strategy.entry_edge_threshold_constraint_met ? "yes" : "fallback",
         formatNumber(selectionScore, 2),
@@ -153,13 +132,13 @@ function renderStrategy(mlStatus) {
 }
 
 function renderSearch(mlStatus) {
-  fillTable("cs-search",
+  renderTable("cs-search",
     ["asset", "trials", "best LL", "depth", "eta",
      "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
     mlStatus.assets.map((asset) => {
       const bestParameters = asset.hyperparameter_search.best_params;
       return [
-        [tickerLink(asset.ticker)],
+        [buildTickerLink(asset.ticker)],
         asset.hyperparameter_search.trial_count,
         asset.hyperparameter_search.best_logloss.toFixed(4),
         bestParameters.max_depth,
@@ -174,9 +153,9 @@ function renderSearch(mlStatus) {
     }));
 }
 
-function tickerLink(ticker) {
+function buildTickerLink(ticker) {
   const button = document.createElement("button");
-  button.className = "linkish";
+  button.className = "ticker-link";
   button.textContent = ticker;
   button.addEventListener("click", () => selectAsset(ticker));
   return button;

@@ -130,7 +130,8 @@ from its layer's grammar, never invented:
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | directories | `<kind>_<detail>/`; a timeframe in a filesystem name uses the slot standard `ss-mm-hh-dd-MM` (enacted names and slots: `module_skills/act_naming_conventions.md`) | `module_*`, `store_*`, `store_raw_data_ss-01-hh-dd-MM` | a kind scattered through the alphabet, `store_raw_1m` |
-| CSS | BEM `block__element--modifier` | `frame__head`, `pill--active` | `.red` |
+| CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
+| JavaScript functions | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`; a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `mean`, `validationFolds` | `makeTable`, a bare noun for a builder (`cell()`, `sparkline()`) |
 
 Constants that carry a numeric quantity — a count, a rate, a duration, a
 size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the

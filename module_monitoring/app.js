@@ -1,7 +1,8 @@
-/* Pipeline and Data Quality tabs, plus shared helpers used by ml.js and
-   asset.js (formatCount, formatBytes, formatNumber, formatDivergencePercent,
-   meter, buildPercentageCell, cell, initPills, PILL_HOOKS). Vanilla JS,
-   classic scripts sharing one global scope, no external resources. */
+/* Pipeline and Data Quality tabs, plus the helpers ml.js and asset.js share:
+   formatCount, formatNumber, buildMeter, appendCell, appendHeaderRow,
+   appendRows, renderTable, initPills, PILL_HOOKS. Vanilla JS, classic
+   scripts sharing one global scope, no external resources. Every function
+   takes its verb from the JavaScript row of the AGENTS.md grammar table. */
 "use strict";
 
 function formatCount(value) {
@@ -20,7 +21,7 @@ function formatDivergencePercent(value) {
   return value === null || value === undefined ? "-" : (100 * value).toFixed(4) + "%";
 }
 
-function meter(pctValue) {
+function buildMeter(pctValue) {
   const track = document.createElement("span");
   track.className = "meter";
   const fill = document.createElement("span");
@@ -32,18 +33,41 @@ function meter(pctValue) {
 
 function buildPercentageCell(pctValue) {
   const wrap = document.createElement("span");
-  wrap.appendChild(meter(pctValue));
+  wrap.appendChild(buildMeter(pctValue));
   wrap.appendChild(document.createTextNode(pctValue.toFixed(3) + "%"));
   return wrap;
 }
 
-function cell(row, content, warn) {
+function appendCell(row, content, warn) {
   const td = document.createElement("td");
   if (content instanceof Node) td.appendChild(content);
   else td.textContent = content;
   if (warn) td.className = "warn";
   row.appendChild(td);
   return td;
+}
+
+function appendHeaderRow(table, labels) {
+  const tr = table.querySelector("thead").insertRow();
+  labels.forEach((label) => {
+    const th = document.createElement("th");
+    th.innerHTML = label;
+    tr.appendChild(th);
+  });
+}
+
+function appendRows(table, rows) {
+  const tbody = table.querySelector("tbody") || table.createTBody();
+  rows.forEach((cells) => {
+    const tr = tbody.insertRow();
+    cells.forEach((content) => (Array.isArray(content) ? appendCell(tr, content[0], content[1]) : appendCell(tr, content)));
+  });
+}
+
+function renderTable(id, headers, rows) {
+  const table = document.getElementById(id);
+  appendHeaderRow(table, headers);
+  appendRows(table, rows);
 }
 
 /* One pill component for every group: top tabs, summary views, ticker rows.
@@ -80,21 +104,24 @@ function formatNumber(value, decimals) {
 initPills(document);
 
 function renderRawSource(tableId, venueRows) {
-  const tbody = document.querySelector("#" + tableId + " tbody");
+  const table = document.getElementById(tableId);
+  appendHeaderRow(table, ["symbol", "zips", "rows", "coverage", "gaps", "gaps (since first obs.)",
+                          "dups", "ohlc bad", "zero-vol", "flat", "first", "last"]);
+  const tbody = table.querySelector("tbody");
   for (const row of venueRows) {
     const tr = document.createElement("tr");
-    cell(tr, row.symbol);
-    cell(tr, formatCount(row.zip_count));
-    cell(tr, formatCount(row.row_count));
-    cell(tr, buildPercentageCell(row.coverage_pct));
-    cell(tr, formatCount(row.gap_count));
-    cell(tr, formatCount(row.gap_count_after_first_observation), row.gap_count_after_first_observation > 0);
-    cell(tr, formatCount(row.duplicate_count), row.duplicate_count > 0);
-    cell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
-    cell(tr, formatCount(row.zero_volume_bars));
-    cell(tr, formatCount(row.flat_bars));
-    cell(tr, row.first_observation_utc || "-");
-    cell(tr, row.last_observation_utc || "-");
+    appendCell(tr, row.symbol);
+    appendCell(tr, formatCount(row.zip_count));
+    appendCell(tr, formatCount(row.row_count));
+    appendCell(tr, buildPercentageCell(row.coverage_pct));
+    appendCell(tr, formatCount(row.gap_count));
+    appendCell(tr, formatCount(row.gap_count_after_first_observation), row.gap_count_after_first_observation > 0);
+    appendCell(tr, formatCount(row.duplicate_count), row.duplicate_count > 0);
+    appendCell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
+    appendCell(tr, formatCount(row.zero_volume_bars));
+    appendCell(tr, formatCount(row.flat_bars));
+    appendCell(tr, row.first_observation_utc || "-");
+    appendCell(tr, row.last_observation_utc || "-");
     tbody.appendChild(tr);
   }
 }
@@ -113,13 +140,14 @@ fetch("status.json", { cache: "no-store" })
       " -> " + formatCount(flow.canonical_row_count) + " canonical rows";
 
     const table = document.getElementById("symbols");
+    appendHeaderRow(table, ["symbol", "canonical rows", "real-data share", "ffill bars"]);
     const tbody = table.querySelector("tbody");
     for (const row of status.symbols) {
       const tr = document.createElement("tr");
-      cell(tr, row.symbol);
-      cell(tr, formatCount(row.row_count));
-      cell(tr, buildPercentageCell(row.real_data_pct));
-      cell(tr, formatCount(row.ffill_bars), row.ffill_bars > 0);
+      appendCell(tr, row.symbol);
+      appendCell(tr, formatCount(row.row_count));
+      appendCell(tr, buildPercentageCell(row.real_data_pct));
+      appendCell(tr, formatCount(row.ffill_bars), row.ffill_bars > 0);
       tbody.appendChild(tr);
     }
     table.hidden = false;
@@ -127,23 +155,27 @@ fetch("status.json", { cache: "no-store" })
     renderRawSource("raw-binance", status.venues.binance);
     renderRawSource("raw-bybit", status.venues.bybit);
 
-    const ftbody = document.querySelector("#canonical-source tbody");
+    const canonicalTable = document.getElementById("canonical-source");
+    appendHeaderRow(canonicalTable, ["symbol", "rows", "primary", "secondary", "ffill", "zero-vol", "switches",
+                                     "max |ret| at switch", "ohlc bad", "flat run (min)", "max |ret| 1m",
+                                     "rel. divergence mean", "p99", "max"]);
+    const ftbody = canonicalTable.querySelector("tbody");
     for (const row of status.canonical_source) {
       const tr = document.createElement("tr");
-      cell(tr, row.symbol);
-      cell(tr, formatCount(row.row_count));
-      cell(tr, buildPercentageCell(row.binance_pct));
-      cell(tr, row.bybit_pct.toFixed(2) + "%");
-      cell(tr, formatCount(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
-      cell(tr, formatCount(row.zero_volume_bars));
-      cell(tr, formatCount(row.source_switch_count));
-      cell(tr, row.max_abs_return_at_switch === null ? "-" : (100 * row.max_abs_return_at_switch).toFixed(2) + "%");
-      cell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
-      cell(tr, formatCount(row.longest_flat_run_minutes));
-      cell(tr, row.max_abs_return_1m === null ? "-" : (100 * row.max_abs_return_1m).toFixed(2) + "%");
-      cell(tr, formatDivergencePercent(row.relative_divergence_mean));
-      cell(tr, formatDivergencePercent(row.relative_divergence_p99));
-      cell(tr, formatDivergencePercent(row.relative_divergence_max));
+      appendCell(tr, row.symbol);
+      appendCell(tr, formatCount(row.row_count));
+      appendCell(tr, buildPercentageCell(row.binance_pct));
+      appendCell(tr, row.bybit_pct.toFixed(2) + "%");
+      appendCell(tr, formatCount(row.ffill_bars) + " (" + row.ffill_pct.toFixed(3) + "%)", row.ffill_bars > 0);
+      appendCell(tr, formatCount(row.zero_volume_bars));
+      appendCell(tr, formatCount(row.source_switch_count));
+      appendCell(tr, row.max_abs_return_at_switch === null ? "-" : (100 * row.max_abs_return_at_switch).toFixed(2) + "%");
+      appendCell(tr, formatCount(row.ohlc_violation_count), row.ohlc_violation_count > 0);
+      appendCell(tr, formatCount(row.longest_flat_run_minutes));
+      appendCell(tr, row.max_abs_return_1m === null ? "-" : (100 * row.max_abs_return_1m).toFixed(2) + "%");
+      appendCell(tr, formatDivergencePercent(row.relative_divergence_mean));
+      appendCell(tr, formatDivergencePercent(row.relative_divergence_p99));
+      appendCell(tr, formatDivergencePercent(row.relative_divergence_max));
       ftbody.appendChild(tr);
     }
   })

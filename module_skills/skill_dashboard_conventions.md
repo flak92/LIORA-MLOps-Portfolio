@@ -8,8 +8,9 @@ The dashboard is a static dial-up-minimal page; keep it one.
   directly, and the container binds `0.0.0.0` inside its own namespace while
   compose publishes it on `127.0.0.1` alone. Remote viewing goes through an
   SSH tunnel, never a bind to a public interface of the host.
-- JavaScript follows native **lowerCamelCase**; file-scope functions say their
-  action and object (`formatBytes`, `renderStrategy`, `buildKeyValueBox`);
+- JavaScript follows native **lowerCamelCase**; file-scope functions take their
+  verb from the closed list in the JavaScript row of the AGENTS.md grammar table
+  (`build`, `render`, `format`, `append`, `select`, `init`);
   a domain object (an asset, a payload, a strategy block) is never a
   one-letter alias, while equation and geometry locals may stay short inside
   one tight kernel; booleans answer a question. No linter, bundler or

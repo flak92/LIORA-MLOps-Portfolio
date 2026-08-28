@@ -1,6 +1,6 @@
-/* ML Assets tab: the per-asset panel. Classic script — uses the helpers from
-   app.js (meter, formatCount, formatNumber) and the table builders from ml.js
-   (makeTable, buildShareCell, validationFolds, CLASS_NAMES, ML_STATUS). */
+/* ML Assets tab: the per-asset panel. Classic script — uses buildMeter,
+   formatCount and formatNumber from app.js, and buildTable, buildShareCell,
+   validationFolds, CLASS_NAMES and ML_STATUS from ml.js. */
 "use strict";
 
 function buildFrame(title) {
@@ -24,7 +24,7 @@ function buildKeyValueBox(pairs) {
 
 /* single-series line with a dashed reference level; no legend needed, the
    frame title names the series. Native <title> carries the hover summary. */
-function sparkline(values, baseline, caption) {
+function buildSparkline(values, baseline, caption) {
   const NS = "http://www.w3.org/2000/svg";
   const W = 700;
   const H = 120;
@@ -60,7 +60,7 @@ function buildFootnote(text) {
   return paragraph;
 }
 
-function headerLine(asset, mlStatus) {
+function buildHeaderLine(asset, mlStatus) {
   const line = document.createElement("p");
   line.className = "sub";
   line.textContent = asset.ticker + " · " + mlStatus.research_window.start_utc.slice(0, 7) + " → "
@@ -68,11 +68,11 @@ function headerLine(asset, mlStatus) {
   return line;
 }
 
-function labelFrame(asset) {
+function buildLabelFrame(asset) {
   const frame = buildFrame("LABEL — triple barrier on the canonical 1m path");
   const classCounts = asset.sample.class_counts;
   const total = classCounts.short + classCounts.neutral + classCounts.long;
-  frame.body.appendChild(makeTable(["class", "count", "share"], CLASS_NAMES.map((className) => [
+  frame.body.appendChild(buildTable(["class", "count", "share"], CLASS_NAMES.map((className) => [
     className, formatCount(classCounts[className]), [buildShareCell(classCounts[className], total)],
   ])));
   frame.body.appendChild(buildKeyValueBox([
@@ -85,7 +85,7 @@ function labelFrame(asset) {
   return frame.frame;
 }
 
-function modelFrame(asset, mlStatus) {
+function buildModelFrame(asset, mlStatus) {
   const frame = buildFrame("MODEL — skill against the training class prior");
   const bestParameters = asset.hyperparameter_search.best_params;
   frame.body.appendChild(buildKeyValueBox([
@@ -96,12 +96,12 @@ function modelFrame(asset, mlStatus) {
   ]));
   const rows = validationFolds(asset).map((foldKey) => ["F" + foldKey.split("_")[1], asset.validation[foldKey]]);
   rows.push(["F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.final_holdout]);
-  frame.body.appendChild(makeTable(
+  frame.body.appendChild(buildTable(
     ["fold", "prior log-loss", "model log-loss", "rel. skill", "scored rows"],
     rows.map(([label, metrics], i) => {
       const name = document.createElement("span");
       name.textContent = label;
-      if (i === rows.length - 1) name.className = "diag";
+      if (i === rows.length - 1) name.className = "final-holdout";
       return [[name], metrics.prior_logloss.toFixed(6), metrics.model_logloss.toFixed(6),
               (100 * metrics.relative_logloss_skill).toFixed(2) + "%", formatCount(metrics.scored_row_count)];
     })));
@@ -110,7 +110,7 @@ function modelFrame(asset, mlStatus) {
   return frame.frame;
 }
 
-function strategyFrame(asset, mlStatus) {
+function buildStrategyFrame(asset, mlStatus) {
   const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
   frame.body.appendChild(buildKeyValueBox([
     ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
@@ -118,13 +118,13 @@ function strategyFrame(asset, mlStatus) {
     ["cost per side", (100 * asset.strategy.execution_cost_rate_per_trade_side).toFixed(2)
       + "%  (execution-cost-adjusted, excluding funding)"],
   ]));
-  const rows = validationFolds(asset).map((foldKey) => pnlRow("F" + foldKey.split("_")[1], asset.strategy.validation[foldKey], false));
-  rows.push(pnlRow("F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.strategy.final_holdout, true));
-  frame.body.appendChild(makeTable(
+  const rows = validationFolds(asset).map((foldKey) => buildPnlRow("F" + foldKey.split("_")[1], asset.strategy.validation[foldKey], false));
+  rows.push(buildPnlRow("F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.strategy.final_holdout, true));
+  frame.body.appendChild(buildTable(
     ["fold", "Sharpe", "maxDD", "trades", "hit rate", "avg trade", "exposure", "final equity"],
     rows));
   const equityCurve = asset.strategy.equity_curve;
-  frame.body.appendChild(sparkline(equityCurve.equity, 1.0,
+  frame.body.appendChild(buildSparkline(equityCurve.equity, 1.0,
     "equity on the final holdout fold; dashed line = 1.0 (flat)"));
   frame.body.appendChild(buildFootnote("final holdout equity: start 1.000 · end "
     + asset.strategy.final_holdout.final_equity.toFixed(3) + " · dashed line = 1.0. Sharpe is annualised "
@@ -133,13 +133,13 @@ function strategyFrame(asset, mlStatus) {
   return frame.frame;
 }
 
-function featuresFrame(asset) {
+function buildFeaturesFrame(asset) {
   const frame = buildFrame("FEATURES — XGBoost total gain");
   const items = Object.entries(asset.gain_importance).sort((a, b) => b[1] - a[1]);
   const max = items[0][1] || 1;
-  frame.body.appendChild(makeTable(["feature", "total gain"], items.map((kv) => {
+  frame.body.appendChild(buildTable(["feature", "total gain"], items.map((kv) => {
     const wrap = document.createElement("span");
-    wrap.appendChild(meter((100 * kv[1]) / max));
+    wrap.appendChild(buildMeter((100 * kv[1]) / max));
     wrap.appendChild(document.createTextNode(formatCount(Math.round(kv[1]))));
     return [kv[0], [wrap]];
   })));
@@ -153,15 +153,15 @@ function renderAsset(ticker) {
   const asset = mlStatus.assets.find((candidate) => candidate.ticker === ticker);
   if (!asset) return;
   host.textContent = "";
-  host.appendChild(headerLine(asset, mlStatus));
-  [labelFrame(asset), modelFrame(asset, mlStatus), strategyFrame(asset, mlStatus), featuresFrame(asset)]
+  host.appendChild(buildHeaderLine(asset, mlStatus));
+  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeaturesFrame(asset)]
     .forEach((el) => host.appendChild(el));
 }
 
-function pnlRow(label, pnlMetrics, isFinalHoldout) {
+function buildPnlRow(label, pnlMetrics, isFinalHoldout) {
   const name = document.createElement("span");
   name.textContent = label;
-  if (isFinalHoldout) name.className = "diag";
+  if (isFinalHoldout) name.className = "final-holdout";
   return [
     [name],
     formatNumber(pnlMetrics.sharpe, 2),
