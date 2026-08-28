@@ -8,6 +8,12 @@ The dashboard is a static dial-up-minimal page; keep it one.
   directly, and the container binds `0.0.0.0` inside its own namespace while
   compose publishes it on `127.0.0.1` alone. Remote viewing goes through an
   SSH tunnel, never a bind to a public interface of the host.
+- JavaScript follows native **lowerCamelCase**; file-scope functions say their
+  action and object (`formatBytes`, `renderStrategy`, `buildKeyValueBox`);
+  a domain object (an asset, a payload, a strategy block) is never a
+  one-letter alias, while equation and geometry locals may stay short inside
+  one tight kernel; booleans answer a question. No linter, bundler or
+  framework enforces this — the review does.
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold

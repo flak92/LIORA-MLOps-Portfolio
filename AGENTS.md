@@ -42,13 +42,20 @@ conflicts with this file, the change is wrong.
 
 ## Architecture shape
 
-Three modules, in the order the data moves through them:
+`module_*` is a top-level project responsibility; `store_*` is persisted or
+generated state. Four project modules — three runtime modules, in the order
+the data moves through them, and one non-runtime module:
 
 ```
 module_data/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
 module_ml/           canonical dataset → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the two modules measured about themselves
+module_guidance/     the contract's companions: methodology, skills, the register
 ```
+
+`module_guidance` never participates in runtime imports or dataflow. A new
+`module_<domain>` is justified only by a distinct responsibility with a stable
+input/output boundary; until then the owning module is extended.
 
 Regular, predictable, symmetrical, easy to scan — the structure should be
 recognisable by eye before it is parsed (neuro-optical consistency):
@@ -70,7 +77,10 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `store_research_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a
-  boundary, not an inconsistency to tidy away;
+  boundary, not an inconsistency to tidy away. A top-level path constant
+  begins with the exact canonical root token, so the name predicts the
+  directory: `STORE_RAW_1M_DIR` → `store_raw_1m/`, `MODULE_MONITORING_DIR` →
+  `module_monitoring/`;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 
@@ -99,8 +109,11 @@ from its layer's grammar, never invented:
 | layer | grammar | in this repo | what it forbids |
 |---|---|---|---|
 | constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `RSI_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
-| functions that act or cross a boundary | `<verb>_<object>`, verb from the closed list `load_`, `write_`, `fetch_`, `parse_`, `to_`, `build_` | `load_xy`, `write_parquet`, `fetch_klines`, `to_class` | `get_`, `process_`, `handle_` |
+| external I/O functions | `<verb>_<object>`, verb from the closed list `fetch_` (network), `load_` (storage → memory), `write_` (persist), `parse_` (bytes → values) | `fetch_klines`, `load_xy`, `write_parquet`, `parse_zip` | `get_`, `process_`, `handle_` |
+| conversions | `to_<representation>` | `to_class`, `to_json_safe` | ambiguous `convert` |
+| composite constructors | `build_<object>` | `build_x` | `make_stuff` |
 | functions that *are* a quantity | no verb — the name is what it returns | `rsi`, `atr`, `sharpe_annualised`, `triple_barrier` | `calculate_rsi` |
+| pure descriptors | a noun phrase naming the returned object | `symbol`, `artifact_dir`, `fold_bounds` | `get_fold_bounds`, `fetch_symbol` |
 | populations of rows | `<population>_set` / `_window` | `training_set`, `scoring_set`, `prediction_window` | `get_train_indices` |
 | report fragments | `<section>_block` | `sample_block`, `hpo_block` | `make_sample_dict` |
 | quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `returns_15m` | `n_min`, `off` |
@@ -125,9 +138,18 @@ invented just to satisfy the schema. The parameter word follows the mechanics
 window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
 Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
 and are spelled out on first use in the documentation; local ones (`N`, `W`,
-`TF`, `MIN`, `MAX`, `K`, `XGB`) never cross a function boundary. Write
+`TF`, `MIN`, `MAX`, `K`, `XGB`) never cross a function boundary. A one-letter
+name is legal because of its semantic role, never merely because it is local:
+loop indices, the symbols of a published equation inside its tight kernel, and
+SVG geometry may stay short — a domain object (a ticker, an asset, a status
+payload, a strategy, a metrics block) carries its semantic name even inside a
+function. Write
 "QuantConnect Lean" on first use, "Lean" afterwards. British spelling
-throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling.
+throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling. At an
+external-format boundary the external vocabulary wins: the raw tree is the
+QuantConnect Lean layout (`cryptofuture/<venue>/minute/<symbol lowercase>/`,
+`YYYYMMDD_trade.zip`) and the adapter speaks Lean's own terms — a boundary
+exception the conventions name rather than an inconsistency they tolerate.
 
 ## The default choice
 

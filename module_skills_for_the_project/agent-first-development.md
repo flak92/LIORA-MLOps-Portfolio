@@ -21,6 +21,11 @@ How to work on this repository as an agent.
   goes into `glossary.md` in the same commit that introduces it; a synonym
   never enters.
 - Before writing, check whether an existing module already owns the
-  responsibility; extend it rather than wrapping it.
+  responsibility; extend it rather than wrapping it. A new `module_<domain>`
+  exists only for a distinct responsibility with a stable input/output
+  boundary and at least one independently consumable outcome. Runtime
+  dependencies follow pipeline direction — downstream consumes upstream
+  artifacts, upstream never imports downstream. No `utils`, `common`, `core`,
+  `manager` or `service` modules: the responsibility already has an owner.
 - Prove a change by running the affected stages, not by adding a framework
   that promises to.

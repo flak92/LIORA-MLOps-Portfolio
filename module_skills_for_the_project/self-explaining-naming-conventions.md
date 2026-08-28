@@ -59,7 +59,30 @@ convention when it misses any:
 - **It must be able to fail.** There is a name the rule forbids. A rule that
   excludes nothing describes taste, not structure.
 
+- **Scope.** A convention states which language, layer and object kind it
+  governs; a rule with no stated scope collects exceptions instead of naming
+  them.
+- **Boundary.** A convention states where an external format overrides it —
+  the Lean raw tree keeps Lean's casing and layout, and the adapter speaks the
+  external vocabulary. A named exception is a boundary; an unnamed one is rot.
+- **Migration cost.** A convention is minted only when the ambiguity it
+  removes is worth more than the one-time cost of the renames it forces.
+
 Mint at the **third** occurrence of a pattern: two is a coincidence, three is a
 convention. Write it into `AGENTS.md` in the same commit that makes the third
 name follow it, and state what it forbids — the forbidden form is the half of
 the rule that does the work.
+
+## Neuro-optical consistency
+
+Names are architecture visible to the eye. Top-level persisted state starts
+with `store_`; top-level responsibilities start with `module_`; siblings of one
+kind keep the kind token in the same position, so they sort into one block.
+The same concept keeps the same semantic root across the filesystem, Python,
+JSON and the interface, and a top-level path constant mirrors the exact
+directory token it names. Internal asset folders are the ticker in capitals;
+an external format keeps its required spelling at the adapter boundary.
+One-letter names are reserved for loop indices, the symbols of a published
+equation inside its own kernel, and tiny geometry callbacks — a domain object
+carries its semantic name even inside a function. A name must remove a
+reasoning step, not merely satisfy a pattern.
