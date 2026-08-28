@@ -84,4 +84,6 @@ an external format keeps its required spelling at the adapter boundary.
 One-letter names are reserved for loop indices, the symbols of a published
 equation inside its own kernel, and tiny geometry callbacks — a domain object
 carries its semantic name even inside a function. A name must remove a
-reasoning step, not merely satisfy a pattern.
+reasoning step, not merely satisfy a pattern. The sorting mechanics live in
+`skill_sorting_files_naming_standard.md`; the names the project enacted, with
+their rejected forms, live in `act_naming_conventions.md`.

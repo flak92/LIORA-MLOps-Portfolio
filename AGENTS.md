@@ -122,7 +122,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it, suffixes `_count`, `_ms`, `_pct`, `_utc` | `scored_row_count`, `generated_at_utc` | a separate vocabulary for JSON |
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| directories | `<kind>_<detail>/` | `module_*`, `store_*` | a kind scattered through the alphabet |
+| directories | `<kind>_<detail>/`; a timeframe in a filesystem name uses the slot standard `ss-mm-hh-dd-MM` (enacted names and slots: `module_skills/act_naming_conventions.md`) | `module_*`, `store_*`, `store_raw_data_ss-01-hh-dd-MM` | a kind scattered through the alphabet, `store_raw_1m` |
 | CSS | BEM `block__element--modifier` | `frame__head`, `pill--active` | `.red` |
 
 Constants that carry a numeric quantity — a count, a rate, a duration, a
@@ -158,7 +158,8 @@ implementation that correctly closes the full pipeline.**
 
 Project-specific agent instructions live in `module_skills/` — the
 only other place agent guidance may exist in this tree. Its files are
-kind-first: the naming register (`glossary.md`), the skills (`skill_*.md`) and
+kind-first: the enacted names (`act_naming_conventions.md`), the naming
+register (`glossary.md`), the skills (`skill_*.md`) and
 the methodology documents — `methodology_data.md` (how the canonical dataset
 is built) and `methodology_ml.md` (the research layer, equation by equation,
 with the citations). A module-specific guidance subfolder is created at the
