@@ -6,7 +6,6 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 | file | holds | size |
 | --- | --- | --- |
-| `BNB_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 45,189 KB |
 | `BNB_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
 | `BNB_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,657 KB |
 | `BNB_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,245 KB |
@@ -62,6 +61,6 @@ Final-holdout exits: upper_barrier 12, lower_barrier 10, vertical 19, ambiguous 
 
     python -m module_ml.features --tickers BNB && python -m module_ml.labels --tickers BNB && python -m module_ml.hpo --tickers BNB && python -m module_ml.train --tickers BNB && python -m module_ml.strategy --tickers BNB && python -m module_ml.status --tickers BNB
 
-`BNB_canonical_ohlcv_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+The OHLCV itself lives only in the DuckDB tables — the market object the whole chain reads; the asset folder carries no price series.
 
 F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.

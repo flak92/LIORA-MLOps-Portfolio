@@ -110,7 +110,7 @@ fetch("status.json", { cache: "no-store" })
     document.getElementById("flow").textContent =
       "flow: " + formatCount(flow.zips_binance + flow.zips_bybit) + " raw ZIPs" +
       " -> " + formatCount(flow.rows_binance + flow.rows_bybit) + " raw rows" +
-      " -> " + formatCount(flow.rows_canonical) + " canonical rows -> " + formatCount(flow.rows_parquet) + " parquet rows";
+      " -> " + formatCount(flow.rows_canonical) + " canonical rows";
 
     const table = document.getElementById("symbols");
     const tbody = table.querySelector("tbody");
@@ -120,8 +120,6 @@ fetch("status.json", { cache: "no-store" })
       cell(tr, formatCount(row.rows));
       cell(tr, buildPercentageCell(row.real_data_pct));
       cell(tr, formatCount(row.ffill_bars), row.ffill_bars > 0);
-      cell(tr, formatCount(row.rows_parquet), row.rows_parquet !== row.rows);
-      cell(tr, formatBytes(row.parquet_bytes));
       tbody.appendChild(tr);
     }
     table.hidden = false;

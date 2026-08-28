@@ -86,16 +86,16 @@ with `tree_method=hist` and `nthread=1`, so the GPU stack would be weight
 without function.
 
 ```bash
-make all              # venv -> download -> ingest -> export -> status -> full ML chain
+make all              # venv -> download -> ingest -> status -> full ML chain
 make dashboard        # serve http://127.0.0.1:8900/  (loopback only)
 ```
 
-Every stage also runs on its own (`make setup download ingest export status`
+Every stage also runs on its own (`make setup download ingest status`
 for the data half, `make ml-all` for the ML half) — the data stages are in the
 table below, the ML chain in *ML research layer*.
 
 The same stages run inside Docker: `make docker-build`, then
-`make docker-download / docker-ingest / docker-export / docker-status` for the
+`make docker-download / docker-ingest / docker-status` for the
 data half and `make docker-ml-all` (or any single `docker-ml-<stage>`) for the
 ML half, and `make docker-up` / `make docker-down` for the dashboard container.
 Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
@@ -107,7 +107,6 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 | download  | `make download`        | both APIs → `store_raw_data_ss-01-hh-dd-MM/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| export    | `make export`          | canonical → `store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet`   | fail-closed: read-back invariants before the atomic replace |
 | status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; 3 full scans           |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
@@ -124,23 +123,20 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence`),
   and the exact aggregations `ohlcv_15m_canonical`, `ohlcv_1h_canonical`,
   `ohlcv_4h_canonical` written by `make ml-bars`.
-- **Parquet** (zstd): pure `timestamp_ms, open, high, low, close, volume` —
-  same row count for every asset, continuous, no NULLs, values exactly as the
-  winning source printed them (no rounding at any layer).
-- **Semantics**: `store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` is a **canonical
-  primary-failover series**, not the raw feed of a single source — the published
-  per-asset representation for external consumers; the ML stages in this
-  repository read the same canonical object from the DuckDB tables. For Lean
-  backtests use the per-source raw ZIP trees. Step-by-step build
-  description: [module_skills/methodology_data.md](module_skills/methodology_data.md).
+- **Semantics**: the canonical primary-failover series and its 15m/1h/4h
+  aggregations live **only in DuckDB** — the market object every ML stage
+  reads. The asset folder carries no price series: its parquets are the
+  per-timeframe feature columns. For Lean backtests use the per-source raw
+  ZIP trees. Step-by-step build description:
+  [module_skills/methodology_data.md](module_skills/methodology_data.md).
 
 ## Monitoring
 
-`make status` reports the full flow (`zips → raw rows → canonical rows →
-parquet rows`) and feeds the dashboard:
+`make status` reports the full flow (`zips → raw rows → canonical rows`) and
+feeds the dashboard:
 
-- **Pipeline** — canonical rows, real-data share, forward-filled bars and
-  Parquet artifacts per asset;
+- **Pipeline** — canonical rows, real-data share and forward-filled bars per
+  asset;
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
   zero-volume bars for each provider separately, then canonical construction:
   primary/secondary/forward-fill shares, source switches, the largest 1m move at

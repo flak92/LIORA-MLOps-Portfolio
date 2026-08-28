@@ -176,20 +176,13 @@ def main() -> int:
                 "longest_flat_run_minutes": int(canon_extra[symbol][1]),
             }
         )
-        pq = config.canonical_ohlcv_parquet(t)
-        pq_rows = 0
-        if pq.exists():
-            c2 = duckdb.connect()
-            pq_rows = c2.execute(f"SELECT count(*) FROM read_parquet('{pq}')").fetchone()[0]
-            c2.close()
+
         symbols.append(
             {
                 "symbol": symbol,
                 "rows": rows,
                 "ffill_bars": ffill_bars,
                 "real_data_pct": pct(rows - ffill_bars, rows),
-                "rows_parquet": pq_rows,
-                "parquet_bytes": pq.stat().st_size if pq.exists() else 0,
             }
         )
 
@@ -205,7 +198,6 @@ def main() -> int:
             "rows_binance": sum(r[1] for r in venue_rows["binance"].values()),
             "rows_bybit": sum(r[1] for r in venue_rows["bybit"].values()),
             "rows_canonical": sum(s["rows"] for s in symbols),
-            "rows_parquet": sum(s["rows_parquet"] for s in symbols),
         },
         "symbols": symbols,
         "venues": venues,
@@ -220,7 +212,7 @@ def main() -> int:
     print(f"window [{status['window_start']} .. {status['window_end']})  "
           f"db {status['db_bytes'] / 1e6:.1f} MB  duckdb {status['duckdb_version']}")
     print(f"flow: zips {f['zips_binance']}+{f['zips_bybit']} -> rows {f['rows_binance']}+{f['rows_bybit']} "
-          f"-> canonical {f['rows_canonical']} -> parquet {f['rows_parquet']}")
+          f"-> canonical {f['rows_canonical']}")
     for venue in config.SOURCE_VENUES:
         print(f"[venue {venue}]")
         print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'cover%':>8} {'gaps':>8} {'dups':>4} {'ohlc':>4} {'v0':>6} {'flat':>6}")

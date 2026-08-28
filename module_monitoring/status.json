@@ -1,5 +1,5 @@
 {
- "generated_at_utc": "2026-08-28 09:24:33",
+ "generated_at_utc": "2026-08-28 09:44:38",
  "window_start": "2021-01-01 00:00",
  "window_end": "2026-08-26 00:00",
  "duckdb_version": "1.5.4",
@@ -9,89 +9,68 @@
   "zips_bybit": 20630,
   "rows_binance": 29707200,
   "rows_bybit": 27589891,
-  "rows_canonical": 29707200,
-  "rows_parquet": 29707200
+  "rows_canonical": 29707200
  },
  "symbols": [
   {
    "symbol": "BTCUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 54270595
+   "real_data_pct": 100.0
   },
   {
    "symbol": "ETHUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 53935910
+   "real_data_pct": 100.0
   },
   {
    "symbol": "BNBUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 46273983
+   "real_data_pct": 100.0
   },
   {
    "symbol": "XRPUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 40873254
+   "real_data_pct": 100.0
   },
   {
    "symbol": "SOLUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 44740046
+   "real_data_pct": 100.0
   },
   {
    "symbol": "TRXUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 39785297
+   "real_data_pct": 100.0
   },
   {
    "symbol": "DOGEUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 45878820
+   "real_data_pct": 100.0
   },
   {
    "symbol": "ZECUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 40709316
+   "real_data_pct": 100.0
   },
   {
    "symbol": "LINKUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 44351241
+   "real_data_pct": 100.0
   },
   {
    "symbol": "ADAUSDT",
    "rows": 2970720,
    "ffill_bars": 0,
-   "real_data_pct": 100.0,
-   "rows_parquet": 2970720,
-   "parquet_bytes": 38773318
+   "real_data_pct": 100.0
   }
  ],
  "venues": {

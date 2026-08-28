@@ -22,10 +22,10 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 
 # every target is a command, not a file — without this `make dashboard` would
 # be "up to date" because the module_monitoring/ directory exists
-.PHONY: help all setup download download-binance download-bybit ingest export status \
+.PHONY: help all setup download download-binance download-bybit ingest status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-download \
-        docker-ingest docker-export docker-status docker-ml-bars \
+        docker-ingest docker-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
         docker-ml-strategy docker-ml-status docker-ml-all docker-up docker-down
 
@@ -33,7 +33,7 @@ help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
 
 all:             ## full pipeline from a fresh clone: venv, data, canonical, ML, snapshots
-	$(MAKE) setup download ingest export status ml-all
+	$(MAKE) setup download ingest status ml-all
 
 setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -50,9 +50,6 @@ download-bybit:  ## Bybit Linear only
 
 ingest:          ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m module_data.ingest
-
-export:          ## write store_Assets_artifacts/<T>/<T>_canonical_ohlcv_ss-01-hh-dd-MM.parquet from the canonical series
-	$(PY) -m module_data.export
 
 status:          ## data & DB monitoring -> stdout + module_monitoring/status.json
 	$(PY) -m module_data.status
@@ -94,9 +91,6 @@ docker-download: ## run both download stages inside the container
 
 docker-ingest:   ## run the ingest stage inside the container
 	$(COMPOSE) run --rm pipeline python -m module_data.ingest
-
-docker-export:   ## run the export stage inside the container
-	$(COMPOSE) run --rm pipeline python -m module_data.export
 
 docker-status:   ## run the status stage inside the container
 	$(COMPOSE) run --rm pipeline python -m module_data.status

@@ -123,7 +123,6 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 
 # the asset folder manifest, in listing order: (path descriptor, what it holds)
 FILE_MANIFEST = (
-    (config.canonical_ohlcv_parquet, "the published canonical 1m series"),
     (config.parameters_json, "the one parameters file: a-priori configuration + the Optuna→XGB winner"),
     (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
@@ -241,7 +240,7 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-`{config.canonical_ohlcv_parquet(ticker).name}` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+The OHLCV itself lives only in the DuckDB tables — the market object the whole chain reads; the asset folder carries no price series.
 
 F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """

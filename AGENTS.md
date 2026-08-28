@@ -47,7 +47,7 @@ generated state. Four project modules — three runtime modules, in the order
 the data moves through them, and one non-runtime module:
 
 ```
-module_data/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
+module_data/         sources → normalised raw 1m → ONE canonical DuckDB
 module_ml/           canonical dataset → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the two modules measured about themselves
 module_skills/     the contract's companions: methodology, skills, the register

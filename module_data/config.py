@@ -64,10 +64,6 @@ def artifact_dir(ticker: str) -> Path:
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
-def canonical_ohlcv_parquet(ticker: str) -> Path:
-    return artifact_dir(ticker) / f"{ticker}_canonical_ohlcv_ss-01-hh-dd-MM.parquet"
-
-
 def ticker_parser(description: str) -> "argparse.ArgumentParser":
     """The one CLI every stage shares: --tickers with the full basket default."""
     ap = argparse.ArgumentParser(description=description)

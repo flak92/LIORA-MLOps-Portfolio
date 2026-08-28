@@ -122,7 +122,7 @@ Properties:
 - `rel_divergence` (`|c_bin − c_byb| / mid` when both candles are valid) is a
   **data-quality signal only** — it is never a model feature.
 - Rows before a symbol's first valid candle would stay NULL; the Binance
-  listing probe pins this to zero and the export invariants enforce it.
+  listing probe pins this to zero.
 
 ## 5. Database schema
 
@@ -136,7 +136,7 @@ Properties:
 | `volume` | DOUBLE | base-asset volume of that venue |
 
 `ohlcv_1m_canonical` — the primary-failover series, rebuilt deterministically
-per symbol on every `make ingest`; what exports and ML read:
+per symbol on every `make ingest`; what the ML stages read:
 
 | column | type | meaning |
 |---|---|---|
@@ -162,17 +162,13 @@ native 1h klines gives **0 OHLC mismatches** and a maximum relative volume
 difference of **7.1e-16** — float64 epsilon. The minute grid this database is
 built on reproduces the exchange's own higher timeframes exactly.
 
-**Exports**: `store_Assets_artifacts/<TICKER>/<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` (zstd) carries
-only `timestamp_ms, open, high, low, close, volume` — identical row counts for
-every asset (full grid), continuous, no NULLs. Export is **fail-closed**: the
-Parquet is written to a temp file and replaced only after asserting the full
-grid row count, distinct on-grid timestamps, no NULL / non-finite values and
-intact OHLC on every row; a failing assertion leaves the previous file
-untouched. **Semantics: a canonical primary-failover series, not raw exchange
-data of a single venue.** Use it for ML and indicators; for Lean backtests use
-the per-venue raw ZIP trees. The whole database is a pure function of the two
-raw trees: rebuilding from a clean `store_db/` reproduces bit-identical Parquet
-files.
+**Where the series lives**: the canonical primary-failover series and its
+15m/1h/4h aggregations live **only in this DuckDB database** — no OHLCV is
+published as a per-asset file, and the asset folder's parquets carry feature
+columns, not prices. **Semantics: a canonical primary-failover series, not raw
+exchange data of a single venue.** For Lean backtests use the per-venue raw
+ZIP trees. The whole database is a pure function of the two raw trees:
+rebuilding from a clean `store_db/` reproduces it bit-identically.
 
 ## 6. Known limitations
 
@@ -194,8 +190,8 @@ files.
 Two per-symbol numbers stand out in `make status` and are documented rather
 than smoothed away. Bybit **LINKUSDT** has exactly **one** OHLC-violating
 minute out of 2 970 720; the row fails `bybit_valid`, so the canonical series
-takes the Binance candle for that minute and the violation never reaches an
-export. **ZECUSDT** shows **2 368 source switches** against 16–44 for every
+takes the Binance candle for that minute and the violation never reaches the
+canonical series. **ZECUSDT** shows **2 368 source switches** against 16–44 for every
 other symbol, with 0.043 % of minutes served by Bybit (the highest share in
 the basket) — a thin-liquidity symbol whose Binance feed prints no-trade
 minutes often enough to hand the tier to Bybit repeatedly. The largest 1m move
