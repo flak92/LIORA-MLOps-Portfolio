@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Files and Folders</title>
 <style>
 :root{
@@ -71,13 +70,6 @@ aside#panel .desc{font-size:12.5px; line-height:1.5; color:#B9C6E4; margin-top:1
 aside#panel button.close{position:absolute; top:8px; right:8px; width:22px; height:22px;
 border:none; background:none; color:var(--dim); font-size:14px; cursor:pointer; font-family:var(--mono);}
 aside#panel button.close:hover{color:var(--text);}
-@media (max-width:640px){
-#treeWrap{width:min(74vw, 254px); top:76px; bottom:120px;}
-.edgekey{display:none;}
-.hint{display:none;}
-aside#panel{top:auto; bottom:110px; left:12px; right:12px; width:auto;}
-}
-@media (prefers-reduced-motion:reduce){ .motionoff{display:none;} }
 </style>
 </head>
 <body>
@@ -95,7 +87,7 @@ aside#panel{top:auto; bottom:110px; left:12px; right:12px; width:auto;}
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
 </div>
-<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll / pinch zoom &middot; 1&ndash;5 isolate story &middot; 0 all &middot; space pause</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; 1&ndash;5 isolate story &middot; 0 all &middot; space pause</div>
 <div class="controls">
 <button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
 <button id="btnReset" title="Reset view (0)">&#10226;</button>
@@ -592,20 +584,6 @@ if (pointers[ev.pointerId]){
 pointers[ev.pointerId].x = ev.clientX;
 pointers[ev.pointerId].y = ev.clientY;
 }
-var keys = Object.keys(pointers);
-if (keys.length === 2){
-var p1 = pointers[keys[0]], p2 = pointers[keys[1]];
-var dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-if (dragState.pinch){
-userZoomed = true;
-zoom = Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.ZOOM_MAX, zoom * dist / dragState.pinch));
-invalidate();
-}
-dragState.pinch = dist;
-dragState.moved = true;
-return;
-}
-dragState.pinch = null;
 if (dragState.down){
 var dx = ev.clientX - dragState.x, dy = ev.clientY - dragState.y;
 if (Math.abs(dx) + Math.abs(dy) > 4) dragState.moved = true;
@@ -625,7 +603,6 @@ canvas.style.cursor = h ? 'pointer' : 'grab';
 });
 function endPointer(ev){
 delete pointers[ev.pointerId];
-if (Object.keys(pointers).length < 2) dragState.pinch = null;
 if (Object.keys(pointers).length === 0){
 canvas.classList.remove('dragging');
 if (dragState.down && !dragState.moved){
@@ -779,7 +756,7 @@ treeTab.textContent = open ? '⟨' : '⟩';
 treeTab.addEventListener('click', function(){
 setTreeOpen(treeWrap.classList.contains('closed'));
 });
-setTreeOpen(window.innerWidth > 640);
+setTreeOpen(true);
 function setIsland(key){
 activeIsland = (activeIsland === key) ? null : key;
 clearSubtree();

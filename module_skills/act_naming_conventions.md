@@ -41,6 +41,7 @@ enacted names are the decisions.
 | 26 | `taxonomic ordering` for the rule that the category token leads a name | `kind-first` | `kind` is unqualified English and reads as a synonym for `type`; `prefix` already carries two other senses here (`<TICKER>_`, make-target stages), so a third would collide |
 | 27 | `normative source` for the one document that holds a rule | `One authority`, `one canonical owner`, `single source of truth` | `normative` against `informative` is the ISO/IETF distinction between binding and explanatory text. `single source of truth` is already taken in `module_data/config.py` with a different referent |
 | 28 | `closed list` for the enumerable set of allowed words; `closed grammar` stays, and names the formation rule that draws from it | `closed vocabulary` | two names for the set was the defect; the grammar is a different concept and keeps its own name |
+| 29 | the desktop viewport is the only target for the front end | a mobile or tablet layout, a width breakpoint, a touch-only gesture, a viewport meta | one viewport is one layout to reason about. Pointer events and `prefers-reduced-motion` are not mobile and stay |
 
 ## External vocabularies
 
@@ -219,6 +220,14 @@ banned_stem  galaxy | 21 | the module, its targets, its page and its title all s
 banned_stem  authority | 27 | the term is normative source
 banned_stem  generative | 23 | the term is rule-derived structure
 banned_stem  kind-first | 26 | the category token leads the name; the term is taxonomic ordering
+banned_stem  mobile | 29 | the desktop viewport is the only target
+banned_stem  responsive | 29 | the desktop viewport is the only target
+banned_stem  tablet | 29 | the desktop viewport is the only target
+banned_stem  tablets | 29 | the desktop viewport is the only target
+banned_stem  phone | 29 | the desktop viewport is the only target
+banned_stem  phones | 29 | the desktop viewport is the only target
+banned_stem  breakpoint | 29 | the desktop viewport is the only target
+banned_stem  breakpoints | 29 | the desktop viewport is the only target
 banned_stem  viz | 18 | module_visualisation is spelled out
 banned_stem  utils | 18 | the responsibility already has an owner
 banned_stem  helpers | 18 | helpers names the author's convenience, not the responsibility
@@ -321,6 +330,7 @@ unenforceable  a bare plural, an adjective holding a number | 11 | the `count ke
 unenforceable  reading order, artifact-responsibility order | 12 | an ordering claim about four documents, not a name
 unenforceable  a second copy of the chain in README or a methodology | 17 | prose duplication is not a token
 unenforceable  a page generator folded into module_monitoring/ | 18 | a placement judgement, not a name
+unenforceable  a width breakpoint or a touch-only gesture | 29 | the ban covers the vocabulary, not the CSS pattern: `@media (max-width:...)` contains none of the banned words
 unenforceable  established terminology over local coinages | 25 | no closed list of coinages exists, so no grep can settle it
 unenforceable  rule-derived structure over repeated project knowledge | 23 | the rule forbids no specific name, so no grep can settle it; it is a preference this repository states, not a grammar it checks
 ```
