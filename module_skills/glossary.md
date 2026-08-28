@@ -185,7 +185,7 @@ research pipeline, and they never appear in a measurement payload.
 |---|---|---|---|---|
 | the generated page: the tracked tree drawn as one self-contained file | `visualisation_html()` | `module_monitoring/files_and_folders_visualisation.html` | Files and Folders | diagram, graph, chart |
 | one file or folder drawn in the picture | `node`, `NODES` | `id`, `path`, `type` | — | vertex, item, entry |
-| a parent → child line, the only kind of line the picture has | tree edge, `EDGES` | `kind: "tree"` | folder – folder / folder – file | link, dependency, flow |
+| a parent → child line, the only line the picture draws | tree edge, `EDGES` | `type: "tree"` | folder – folder / folder – file | link, dependency, flow |
 | an edge whose two ends are both folders, drawn heavier | `thick` | `thick` | folder – folder | bold, primary edge |
 | one band of the repository a path is classified into | story, `island` | `island`, `story_map` | `S1` … `S5` | group, category, cluster, section |
 | the node drawn at the centre of a story | `hub` | `hub` | — | root of the story, anchor |
