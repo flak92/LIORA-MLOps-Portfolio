@@ -9,7 +9,7 @@ outputs, none of which computes a result of its own:
 
 The payload blocks follow the experiment flow (sample -> search -> validation
 -> final holdout -> attribution -> strategy) and are written with sorted keys,
-so reading order lives in the dashboard and in ML_README, never in key names.
+so reading order lives in the dashboard and in methodology_ml.md, never in key names.
 The two per-asset files carry no timestamp: rerunning an unchanged experiment
 must reproduce them byte for byte, and the moment of generation is recorded
 once, globally, in ml_status.json.
@@ -243,7 +243,7 @@ Final-holdout exits: {exits}.
 
 `canonical_1m.parquet` is not produced by that chain: it is published by the data layer (`make export`) and read as the market object.
 
-F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills_for_the_project/ML_README.md`, the field names in `module_skills_for_the_project/glossary.md`.
+F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_guidance/methodology_ml.md`, the field names in `module_guidance/glossary.md`.
 """
 
 

@@ -8,7 +8,7 @@ Parallelism matters for wall-clock time, with one governing rule:
 - Speed comes exclusively from **external parallelism**: independent,
   processes side by side (one asset per process), all under the same fixed
   `SEED`. Never
-  from raising thread caps inside a worker — see `determinism.md`.
+  from raising thread caps inside a worker — see `skill_determinism.md`.
 - Width is **measured at invocation, never hardcoded**: `JOBS = max(1,
   min(cores, available GiB))` in the Makefile — the floor matters, because
   `xargs -P 0` means no limit at all. The machine changes size; a literal

@@ -1,4 +1,4 @@
-# ML_README — Research layer on the 1-minute series
+# Methodology — the research layer on the 1-minute series
 
 Per asset, independently, and all of it on one market object — the canonical
 research series: a fixed 15-column hierarchical feature matrix, a triple-barrier
@@ -66,7 +66,7 @@ construction —
 the division that made `X` observation and `Y` execution is gone, and with it the
 claim that this repository simulates trading on a named exchange. It does not:
 it simulates a strategy on a canonical market model, with the costs stated.
-`DATA_README` §1 and §4 carry the construction rule and why verbatim candles
+`methodology_data.md` §1 and §4 carry the construction rule and why verbatim candles
 beat an average.
 
 ## 3. Time semantics
@@ -99,7 +99,7 @@ assumed). Bars are exact UTC-aligned aggregations of the canonical 1m series
 (O first, H max, L min, C last, V sum; `arg_min` / `arg_max` by timestamp for
 determinism). That the minute grid reproduces a venue's own higher timeframes
 exactly is a property of the data layer, verified once and recorded in
-`DATA_README` §5.
+`methodology_data.md` §5.
 
 ## 4. Features — fixed contract, 15 columns
 
@@ -144,7 +144,7 @@ gives `y = +1`, whose low touches `lower_barrier` gives `y = −1`, neither give
 **A touch requires a trade.** `volume = 0` means no observed trade in that
 minute, so both hit conditions are gated on `volume > 0`. Whether such a minute
 is a provider candle that printed nothing or a synthesised continuity row is a
-provenance question, answered in the canonical table and in `DATA_README.md`,
+provenance question, answered in the canonical table and in `methodology_data.md`,
 not here:
 
 ```

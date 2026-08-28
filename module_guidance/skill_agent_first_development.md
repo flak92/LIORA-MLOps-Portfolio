@@ -17,7 +17,7 @@ How to work on this repository as an agent.
   concept multiply the thoughts an agent must think, forcing it to decide
   whether `test`, `test_fold` and `F5` are one thing or three. One concept,
   one name — one thought — and the name must be self-explanatory before it is
-  project-specific (`self-explaining-naming-conventions.md`). Every new name
+  project-specific (`skill_self_explaining_naming.md`). Every new name
   goes into `glossary.md` in the same commit that introduces it; a synonym
   never enters.
 - Before writing, check whether an existing module already owns the

@@ -58,7 +58,6 @@ convention when it misses any:
   is discovered by the reader who trusted the wrong copy.
 - **It must be able to fail.** There is a name the rule forbids. A rule that
   excludes nothing describes taste, not structure.
-
 - **Scope.** A convention states which language, layer and object kind it
   governs; a rule with no stated scope collects exceptions instead of naming
   them.

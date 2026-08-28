@@ -5,7 +5,7 @@ absolute timestamps, then DELETE + INSERT ... SELECT FROM read_csv (bulk load,
 idempotent re-runs). Timestamps are bar OPEN, UTC epoch ms, on a 60000 ms grid.
 
 The canonical table ohlcv_1m_canonical is a PRIMARY-FAILOVER series (full text
-in DATA_README.md): every canonical bar is ONE venue's candle copied verbatim —
+in methodology_data.md): every canonical bar is ONE venue's candle copied verbatim —
 no weighting, no rounding. Per minute, the first existing tier wins:
   1. Binance candle, OHLC intact, volume > 0
   2. Bybit candle,   OHLC intact, volume > 0

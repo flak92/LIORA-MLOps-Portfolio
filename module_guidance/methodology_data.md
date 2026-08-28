@@ -5,7 +5,7 @@ BINANCE AND BYBIT — STORED IN THE QUANTCONNECT LEAN DATA FORMAT AND
 CONSOLIDATED IN ONE DUCKDB DATABASE. AS A RESULT, ML MODELS CONSUME ONE
 CANONICAL, CONTINUOUS DATA SERIES.**
 
-# DATA_README — Canonical 1m OHLCV Database
+# Methodology — the canonical 1m OHLCV database
 
 How `store_db/research_ohlcv.duckdb` and the per-asset Parquet files are created:
 sources and endpoints, units and time, the canonical source-priority
@@ -38,7 +38,7 @@ price is an average of two sources, because an average prints quotes that
 existed nowhere. This series, and nothing upstream of it, is the object the
 research layer studies: features, labels, validation, modelling and the
 strategy simulation all read it and none of them knows which provider printed
-a given minute ([ML_README.md](ML_README.md) §2).
+a given minute ([methodology_ml.md](methodology_ml.md) §2).
 
 The provenance columns (`source`, `zero_volume`, `binance_valid`,
 `bybit_valid`, `rel_divergence`) and the per-source statistics below are

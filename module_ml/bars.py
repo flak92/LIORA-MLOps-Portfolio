@@ -9,7 +9,7 @@ Bars are exact UTC-aligned aggregations (O first, H max, L min, C last, V sum;
 arg_min/arg_max by timestamp for determinism) — closed bars only, because the
 window ends at a UTC midnight. That these aggregations reproduce a provider's
 own higher timeframes exactly is a property of the data layer, verified once
-and recorded in DATA_README.
+and recorded in methodology_data.md.
 """
 
 from __future__ import annotations
