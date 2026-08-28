@@ -43,6 +43,37 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     }
 
 
+def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], "object"]:
+    """Fit before the fold's window, predict the FULL window, score the supervised
+    subset only. Returns (metrics, segment, prediction_rows, booster)."""
+    oos_start, oos_end = validation.fold_bounds(fold_id)
+    training_rows, train_weight = validation.training_set(
+        xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start)
+    window_rows = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
+    scoring_rows, scoring_weight = validation.scoring_set(
+        xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+        xy["sample_valid"], oos_start, oos_end)
+    prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
+    assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
+    booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight)
+    window_proba = model.predict_proba(booster, xy["x"][window_rows])
+    pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
+    assert np.array_equal(window_rows[pos], scoring_rows)
+    metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
+    prediction_rows = [
+        (xy["decision_ts"][i], fold_id, window_proba[k, 0], window_proba[k, 1], window_proba[k, 2])
+        for k, i in enumerate(window_rows)
+    ]
+    eligible = int((xy["sample_valid"] & (xy["decision_ts"] < oos_start)).sum())
+    segment = {
+        "training_row_count": int(training_rows.size),
+        "purged_event_count": eligible - int(training_rows.size),
+        "window_row_count": int(window_rows.size),
+        "scored_row_count": int(scoring_rows.size),
+    }
+    return metrics, segment, prediction_rows, booster
+
+
 def main() -> int:
     args = config.ticker_parser("frozen-parameter training and the final-holdout report").parse_args()
 
@@ -51,46 +82,15 @@ def main() -> int:
         xy = dataset.load_xy(t)
         y_cls = model.to_class(xy["y"])
 
-        pred_rows: list[tuple] = []
-        per_fold, segments = {}, {}
-
-        def run_fold(fold_id: int) -> tuple[dict, "np.ndarray"]:
-            """Fit before the fold's window, predict the FULL window, score the
-            supervised subset only. Returns (metrics, the fitted booster)."""
-            oos_start, oos_end = validation.fold_bounds(fold_id)
-            training_rows, train_weight = validation.training_set(
-                xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
-                xy["sample_valid"], oos_start)
-            window_rows = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
-            scoring_rows, scoring_weight = validation.scoring_set(
-                xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
-                xy["sample_valid"], oos_start, oos_end)
-            prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
-            assert (prior_train > 0).all(), "a class has zero weighted mass in the training segment"
-            booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight)
-            window_proba = model.predict_proba(booster, xy["x"][window_rows])
-            pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
-            assert np.array_equal(window_rows[pos], scoring_rows)
-            metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
-            pred_rows.extend(
-                (xy["decision_ts"][i], fold_id, window_proba[k, 0], window_proba[k, 1], window_proba[k, 2])
-                for k, i in enumerate(window_rows)
-            )
-            eligible = int((xy["sample_valid"] & (xy["decision_ts"] >= config.WARMUP_END_MS)
-                            & (xy["decision_ts"] < oos_start)).sum())
-            segments[f"fold_{fold_id}"] = {
-                "training_row_count": int(training_rows.size),
-                "purged_event_count": eligible - int(training_rows.size),
-                "window_row_count": int(window_rows.size),
-                "scored_row_count": int(scoring_rows.size),
-            }
-            return metrics, booster
-
+        pred_rows, per_fold, segments = [], {}, {}
         for fold_id in config.VALIDATION_FOLD_IDS:
-            per_fold[f"fold_{fold_id}"], _ = run_fold(fold_id)
+            per_fold[f"fold_{fold_id}"], segments[f"fold_{fold_id}"], rows, _ = fold_evaluation(xy, y_cls, best, fold_id)
+            pred_rows.extend(rows)
 
         # the final holdout: fitted on everything before it, never used for a choice
-        final_holdout, booster = run_fold(config.FINAL_HOLDOUT_FOLD_ID)
+        final_holdout, segments[f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"], rows, booster = fold_evaluation(
+            xy, y_cls, best, config.FINAL_HOLDOUT_FOLD_ID)
+        pred_rows.extend(rows)
         write_predictions(t, pred_rows)
 
         trainable = xy["sample_valid"]

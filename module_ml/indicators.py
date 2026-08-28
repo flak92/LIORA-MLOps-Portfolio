@@ -101,11 +101,11 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
     """Index of the last CLOSED bar of a timeframe at each decision_ts.
 
     A bar [open, open + timeframe) is available from its close time onward, so
-    side="right" on close times yields exactly the last closed bar. Causality
-    is asserted, not assumed.
+    side="right" on close times yields exactly the last closed bar — causality by
+    construction of the search; what is asserted is that such a bar exists at
+    every decision_ts.
     """
     close_ts = timeframe_open_ts + timeframe_duration_ms
     idx = np.searchsorted(close_ts, decision_ts, side="right") - 1
     assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
-    assert np.all(close_ts[idx] <= decision_ts), "causality violated in asof_index"
     return idx

@@ -45,13 +45,12 @@ import numpy as np
 
 from . import config, dataset, validation
 
-MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
 EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES = 1440    # one equity point per day for the dashboard curve
-BAR_CLOSE_OFFSET_MINUTES = 14          # a 15m bar closes on the 15th minute of its block
+DECISION_BAR_MINUTES = config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME] // config.MILLISECONDS_PER_MINUTE
+BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on the last minute of its block
 
 
 def load_inputs(ticker: str) -> dict:
-    adir = config.artifact_dir(ticker)
     symbol = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
@@ -125,8 +124,8 @@ def backtest(inputs: dict, signals: dict, entry_edge_threshold: float,
              fold_start_ms: int, fold_end_ms: int) -> dict:
     """Single-position state machine producing one continuous equity path."""
     c = config.EXECUTION_COST_RATE_PER_TRADE_SIDE
-    fold_start_minute = (fold_start_ms - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
-    fold_minute_count = (fold_end_ms - fold_start_ms) // MILLISECONDS_PER_MINUTE
+    fold_start_minute = (fold_start_ms - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
+    fold_minute_count = (fold_end_ms - fold_start_ms) // config.MILLISECONDS_PER_MINUTE
     close_1m = inputs["close_1m"]
     equity_1m = np.empty(fold_minute_count)
 
@@ -144,12 +143,12 @@ def backtest(inputs: dict, signals: dict, entry_edge_threshold: float,
     equity, cursor, in_pos_ms = 1.0, 0, 0
     trades = []
     # the exit counts are counts by event_resolution, so they carry its names
-    exits = {name: 0 for name in config.EVENT_RESOLUTION_NAME.values()}
+    exits = {name: 0 for name in config.EVENT_RESOLUTION_NAMES.values()}
     for k in take:
         i = int((signals["entry_ts"][k] - config.RESEARCH_START_MS)
-                // MILLISECONDS_PER_MINUTE) - fold_start_minute
+                // config.MILLISECONDS_PER_MINUTE) - fold_start_minute
         j = int((signals["event_end_ts"][k] - config.RESEARCH_START_MS)
-                // MILLISECONDS_PER_MINUTE) - fold_start_minute - 1
+                // config.MILLISECONDS_PER_MINUTE) - fold_start_minute - 1
         if i < cursor:
             continue                                     # position still open
         s = float(signals["side"][k])
@@ -167,13 +166,13 @@ def backtest(inputs: dict, signals: dict, entry_edge_threshold: float,
         cursor = j + 1
         in_pos_ms += int(signals["event_end_ts"][k] - signals["entry_ts"][k])
         trades.append(r)
-        exits[config.EVENT_RESOLUTION_NAME[resolution]] += 1
+        exits[config.EVENT_RESOLUTION_NAMES[resolution]] += 1
     equity_1m[cursor:] = equity
 
     trade_returns = np.asarray(trades)
     # the same path sampled at bar closes, starting from the capital itself:
     # without E0 the first 15 minutes of the fold produce no return at all
-    equity_15m = np.concatenate(([1.0], equity_1m[BAR_CLOSE_OFFSET_MINUTES::15]))
+    equity_15m = np.concatenate(([1.0], equity_1m[BAR_CLOSE_OFFSET_MINUTES::DECISION_BAR_MINUTES]))
     returns_15m = np.diff(equity_15m) / equity_15m[:-1]
     return {
         "equity_1m": equity_1m,
@@ -196,7 +195,7 @@ def without_equity_path(result: dict) -> dict:
 def equity_curve(equity_1m: np.ndarray, fold_start_ms: int) -> dict:
     idx = np.arange(0, equity_1m.size, EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES)
     return {
-        "timestamp_ms": (fold_start_ms + idx * MILLISECONDS_PER_MINUTE).tolist(),
+        "timestamp_ms": (fold_start_ms + idx * config.MILLISECONDS_PER_MINUTE).tolist(),
         "equity": np.round(equity_1m[idx], 6).tolist(),
     }
 
@@ -217,10 +216,13 @@ def main() -> int:
         # loop reads like the artifact it writes
         entry_edge_threshold, selection_score_mean_sharpe = None, -np.inf
         validation_by_fold, entry_edge_threshold_constraint_met = None, False
+        results_at_grid_floor = None                     # kept for the fallback below
         for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
             results_by_fold = {fold_id: backtest(inputs, validation_rows[fold_id], threshold,
                                                  *validation_bounds[fold_id])
                                for fold_id in config.VALIDATION_FOLD_IDS}
+            if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:
+                results_at_grid_floor = results_by_fold
             if any(r["trade_count"] < config.MINIMUM_TRADES_PER_VALIDATION_FOLD
                    for r in results_by_fold.values()):
                 continue
@@ -230,10 +232,8 @@ def main() -> int:
                 entry_edge_threshold, selection_score_mean_sharpe = threshold, score
                 validation_by_fold = results_by_fold
         if not entry_edge_threshold_constraint_met:      # deterministic fallback, reported as such
-            entry_edge_threshold = 0.0
-            validation_by_fold = {fold_id: backtest(inputs, validation_rows[fold_id],
-                                                    entry_edge_threshold, *validation_bounds[fold_id])
-                                  for fold_id in config.VALIDATION_FOLD_IDS}
+            entry_edge_threshold = config.ENTRY_EDGE_THRESHOLD_GRID[0]
+            validation_by_fold = results_at_grid_floor
             selection_score_mean_sharpe = float(
                 np.mean([r["sharpe"] for r in validation_by_fold.values()]))
 

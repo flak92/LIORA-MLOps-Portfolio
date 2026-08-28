@@ -25,7 +25,7 @@ def objective_factory(xy: dict[str, np.ndarray]):
     for fold_id in config.VALIDATION_FOLD_IDS:
         oos_start, oos_end = validation.fold_bounds(fold_id)
         folds.append((
-            validation.training_set(xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
+            validation.training_set(xy["entry_ts"], xy["event_end_ts"],
                                     xy["sample_valid"], oos_start),
             validation.scoring_set(xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
                                    xy["sample_valid"], oos_start, oos_end),
@@ -73,7 +73,7 @@ def experiment_configuration(ticker: str) -> dict:
         "features": {
             "hierarchy_timeframes": list(config.HIERARCHY_TIMEFRAMES),
             "decision_timeframe": config.DECISION_TIMEFRAME,
-            "families": list(config.FAMILIES),
+            "families": list(config.FEATURE_FAMILIES),
             "columns": list(config.FEATURE_COLUMNS),
             "ema_fast_span_bars": config.EMA_FAST_SPAN_BARS,
             "ema_slow_span_bars": config.EMA_SLOW_SPAN_BARS,
@@ -88,7 +88,7 @@ def experiment_configuration(ticker: str) -> dict:
             "sigma": "ATR14 of the last closed canonical 1h bar",
             "touch_requires": "volume > 0",
             "event_resolution_codes": {
-                name: code for code, name in config.EVENT_RESOLUTION_NAME.items()},
+                name: code for code, name in config.EVENT_RESOLUTION_NAMES.items()},
             "supervised_population": "sample_valid = entry_observable & label_valid",
         },
         "hyperparameter_search": {

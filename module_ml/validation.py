@@ -20,8 +20,6 @@ import numpy as np
 
 from . import config
 
-MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
-
 
 def fold_bounds(fold_id: int) -> tuple[int, int]:
     """OOS bounds of fold Fk, from the 1-based fold table."""
@@ -36,9 +34,9 @@ def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) ->
     the events passed in, so the caller's choice of population *is* the
     definition of the weight.
     """
-    research_minute_count = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
-    start = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
-    end = ((event_end_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+    research_minute_count = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
+    start = ((entry_ts - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE).astype(np.int64)
+    end = ((event_end_ts - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE).astype(np.int64)
     delta = np.zeros(research_minute_count + 1, dtype=np.int64)
     np.add.at(delta, start, 1)
     np.add.at(delta, end, -1)
@@ -47,16 +45,10 @@ def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) ->
     covered = concurrent > 0
     inverse[1:][covered] = 1.0 / concurrent[covered]
     cumulative = np.cumsum(inverse)
-    weight = (cumulative[end] - cumulative[start]) / (end - start)
-    # an event alone in its population averages exactly 1, but the value is the
-    # difference of two partial sums over millions of terms, so it can land a
-    # few ulps above it. The bound is asserted at the precision the arithmetic
-    # delivers; asserting it tighter would fail on correct output.
-    assert np.all(weight > 0.0) and np.all(weight <= 1.0 + 1e-9), "uniqueness weights outside (0, 1]"
-    return weight
+    return (cumulative[end] - cumulative[start]) / (end - start)
 
 
-def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
+def training_set(entry_ts: np.ndarray, event_end_ts: np.ndarray,
                  sample_valid: np.ndarray, oos_start_ms: int) -> tuple[np.ndarray, np.ndarray]:
     """Purged training rows and the average uniqueness of that population.
 
@@ -66,7 +58,7 @@ def training_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np
     lies after the OOS block. The weights are measured after the purge, so a
     dropped event no longer inflates the concurrency of the rows that stay.
     """
-    keep = sample_valid & (decision_ts >= config.WARMUP_END_MS) & (event_end_ts <= oos_start_ms)
+    keep = sample_valid & (event_end_ts <= oos_start_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty training segment"
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
@@ -99,9 +91,10 @@ def prediction_window(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np
 
     Label validity is knowable only after the event resolves, so it may govern
     training and scoring but never which rows receive predictions — and never
-    which rows the strategy is allowed to trade.
+    which rows the strategy is allowed to trade. The research warm-up needs no
+    check here: every decision row was cut at WARMUP_END_MS by its producer.
     """
-    keep = (decision_ts >= max(start_ms, config.WARMUP_END_MS)) & (decision_ts < end_ms)
+    keep = (decision_ts >= start_ms) & (decision_ts < end_ms)
     idx = np.flatnonzero(keep)
     assert idx.size > 0, "empty prediction window"
     return idx

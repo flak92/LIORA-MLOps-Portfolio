@@ -13,43 +13,6 @@ from module_data.config import (  # noqa: F401  (re-exported)
     parse_tickers, symbol, ticker_parser,
 )
 
-MODULE_MONITORING_ML_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "ml_status.json"
-
-
-# ---- the asset folder manifest (module_skills/act_naming_conventions.md):
-# every per-asset file carries the <TICKER>_ prefix, a time series carries its
-# grid in timeframe slots. Paths are built here and nowhere else.
-# the slot spelling of each timeframe (the act, § timeframe slots)
-TIMEFRAME_SLOT = {"15m": "ss-15-hh-dd-MM", "1h": "ss-mm-01-dd-MM", "4h": "ss-mm-04-dd-MM"}
-
-
-def features_parquet(ticker, timeframe):
-    return artifact_dir(ticker) / f"{ticker}_features_{TIMEFRAME_SLOT[timeframe]}.parquet"
-
-
-def label_events_parquet(ticker):
-    return artifact_dir(ticker) / f"{ticker}_label_events_ss-15-hh-dd-MM.parquet"
-
-
-def oos_predictions_parquet(ticker):
-    return artifact_dir(ticker) / f"{ticker}_oos_predictions_ss-15-hh-dd-MM.parquet"
-
-
-def parameters_json(ticker):
-    return artifact_dir(ticker) / f"{ticker}_parameters.json"
-
-
-def model_evaluation_json(ticker):
-    return artifact_dir(ticker) / f"{ticker}_model_evaluation.json"
-
-
-def strategy_evaluation_json(ticker):
-    return artifact_dir(ticker) / f"{ticker}_strategy_evaluation.json"
-
-
-def asset_readme_md(ticker):
-    return artifact_dir(ticker) / f"{ticker}_README.md"
-
 SEED = 42
 
 # ---- frozen research window (later data top-ups do not change this experiment)
@@ -72,19 +35,19 @@ DECISION_TIMEFRAME = "15m"
 # ---- feature contract: 5 families x 3 timeframes = 15 columns
 # each family is named after what it computes, not after the category it belongs
 # to, so a column name is readable without the documentation
-FAMILIES = (
+FEATURE_FAMILIES = (
     "ema20_minus_ema50_over_atr14",
     "centered_rsi14",
     "atr14_over_close",
     "range_position_20",
     "log_volume_zscore_50",
 )
-TREND_FAMILY = FAMILIES[0]          # the family the strategy hierarchy reads
+TREND_FAMILY = FEATURE_FAMILIES[0]  # the family the strategy hierarchy reads
 TREND_GATE_TIMEFRAME = HIERARCHY_TIMEFRAMES[-1]   # the top timeframe that vetoes a side
 # the 2-of-3 trend agreement the strategy needs is a rule over these columns,
 # not a sixteenth feature: it carries nothing the three trend columns lack
 FEATURE_COLUMNS = tuple(f"{family}_{timeframe}"
-                        for timeframe in HIERARCHY_TIMEFRAMES for family in FAMILIES)
+                        for timeframe in HIERARCHY_TIMEFRAMES for family in FEATURE_FAMILIES)
 EMA_FAST_SPAN_BARS = 20
 EMA_SLOW_SPAN_BARS = 50
 ATR_WILDER_SMOOTHING_PERIOD_BARS = 14
@@ -92,7 +55,7 @@ RSI_WILDER_SMOOTHING_PERIOD_BARS = 14
 RANGE_POSITION_LOOKBACK_BARS = 20
 LOG_VOLUME_ZSCORE_LOOKBACK_BARS = 50
 WARMUP_4H_BARS = 200                # 4 x EMA_SLOW_SPAN_BARS on the top timeframe
-WARMUP_END_MS = RESEARCH_START_MS + WARMUP_4H_BARS * TIMEFRAME_DURATION_MS["4h"]
+WARMUP_END_MS = RESEARCH_START_MS + WARMUP_4H_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
 
 # ---- label contract: triple barrier resolved on the 1m path
 ATR_BARRIER_MULTIPLIER = 2.0     # barriers at entry_price +- this multiple of ATR14(last closed 1h bar)
@@ -102,7 +65,7 @@ EVENT_RESOLUTION_LOWER_BARRIER = -1
 EVENT_RESOLUTION_VERTICAL = 0
 EVENT_RESOLUTION_UPPER_BARRIER = 1
 EVENT_RESOLUTION_AMBIGUOUS = 9
-EVENT_RESOLUTION_NAME = {                # the name of each code, used wherever
+EVENT_RESOLUTION_NAMES = {               # the name of each code, used wherever
     EVENT_RESOLUTION_UPPER_BARRIER: "upper_barrier",     # events are counted or
     EVENT_RESOLUTION_LOWER_BARRIER: "lower_barrier",     # reported
     EVENT_RESOLUTION_VERTICAL: "vertical",
@@ -148,3 +111,38 @@ MINIMUM_TRADES_PER_VALIDATION_FOLD = 30  # selection guardrail, not an acceptanc
 ANNUALISATION_PERIOD_15M_BARS = 96 * 365        # crypto trades 24/7
 # timeframes whose trend sign must agree with the side before an entry is taken
 MINIMUM_AGREEING_TREND_TIMEFRAMES = 2
+
+# ---- the asset folder manifest (module_skills/act_naming_conventions.md):
+# every per-asset file carries the <TICKER>_ prefix, a time series carries its
+# grid in timeframe slots (the act, § timeframe slots). Paths are built here and
+# nowhere else.
+TIMEFRAME_SLOT = {"15m": "ss-15-hh-dd-MM", "1h": "ss-mm-01-dd-MM", "4h": "ss-mm-04-dd-MM"}
+MODULE_MONITORING_ML_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "ml_status.json"
+
+
+def features_parquet(ticker, timeframe):
+    return artifact_dir(ticker) / f"{ticker}_features_{TIMEFRAME_SLOT[timeframe]}.parquet"
+
+
+def label_events_parquet(ticker):
+    return artifact_dir(ticker) / f"{ticker}_label_events_{TIMEFRAME_SLOT[DECISION_TIMEFRAME]}.parquet"
+
+
+def oos_predictions_parquet(ticker):
+    return artifact_dir(ticker) / f"{ticker}_oos_predictions_{TIMEFRAME_SLOT[DECISION_TIMEFRAME]}.parquet"
+
+
+def parameters_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_parameters.json"
+
+
+def model_evaluation_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_model_evaluation.json"
+
+
+def strategy_evaluation_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_strategy_evaluation.json"
+
+
+def asset_readme_md(ticker):
+    return artifact_dir(ticker) / f"{ticker}_README.md"

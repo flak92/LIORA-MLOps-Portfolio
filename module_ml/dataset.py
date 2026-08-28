@@ -87,19 +87,20 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
 
 def load_xy(ticker: str) -> dict[str, np.ndarray]:
     """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
-    adir = config.artifact_dir(ticker)
     con = duckdb.connect()
-    x = {}
+    x, decision_grids = {}, []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         per_timeframe = con.execute(
             f"SELECT * FROM read_parquet('{config.features_parquet(ticker, timeframe)}') ORDER BY decision_ts"
         ).fetchnumpy()
-        for family in config.FAMILIES:
+        for family in config.FEATURE_FAMILIES:
             x[f"{family}_{timeframe}"] = per_timeframe[family]
-        x["decision_ts"] = per_timeframe["decision_ts"]
+        decision_grids.append(per_timeframe["decision_ts"].astype(np.int64))
     label_events = con.execute(f"SELECT * FROM read_parquet('{config.label_events_parquet(ticker)}') ORDER BY decision_ts").fetchnumpy()
     con.close()
-    x_ts = x["decision_ts"].astype(np.int64)
+    # the three files are joined by position, so they must share one decision grid
+    x_ts = decision_grids[0]
+    assert all(np.array_equal(x_ts, grid) for grid in decision_grids[1:]), "per-timeframe feature parquets disagree on the decision grid"
     y_ts = label_events["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"

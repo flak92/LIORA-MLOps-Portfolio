@@ -3,7 +3,8 @@
 Pure functions over numpy arrays (xgboost DMatrix is the only container).
 Classes {-1, 0, +1} map to {0, 1, 2} in exactly one place. Determinism:
 tree_method=hist with nthread=1 and a fixed seed; no early stopping —
-num_boost_round is a tuned hyper-parameter.
+num_boost_round is a tuned hyper-parameter. `fit`, `predict_proba` and
+`suggest_*` are the libraries' own vocabulary — the boundary the act names.
 """
 
 from __future__ import annotations
@@ -13,6 +14,14 @@ import xgboost as xgb
 
 from . import config
 
+# one Optuna draw per kind of search-space entry (kind, low, high[, step])
+SUGGESTERS = {
+    "int": lambda trial, name, spec: trial.suggest_int(name, spec[1], spec[2]),
+    "int_step": lambda trial, name, spec: trial.suggest_int(name, spec[1], spec[2], step=spec[3]),
+    "float": lambda trial, name, spec: trial.suggest_float(name, spec[1], spec[2]),
+    "log": lambda trial, name, spec: trial.suggest_float(name, spec[1], spec[2], log=True),
+}
+
 
 def to_class(y: np.ndarray) -> np.ndarray:
     """{-1, 0, +1} -> {0, 1, 2}."""
@@ -20,21 +29,9 @@ def to_class(y: np.ndarray) -> np.ndarray:
 
 
 def suggest_params(trial) -> dict:
-    """Draw one point of the HPO space from an Optuna trial."""
-    out = {}
-    for name, spec in config.HYPERPARAMETER_SEARCH_SPACE.items():
-        kind = spec[0]
-        if kind == "int":
-            out[name] = trial.suggest_int(name, spec[1], spec[2])
-        elif kind == "int_step":
-            out[name] = trial.suggest_int(name, spec[1], spec[2], step=spec[3])
-        elif kind == "float":
-            out[name] = trial.suggest_float(name, spec[1], spec[2])
-        elif kind == "log":
-            out[name] = trial.suggest_float(name, spec[1], spec[2], log=True)
-        else:
-            raise ValueError(f"unknown space kind {kind}")
-    return out
+    """Draw one point of the HPO space from an Optuna trial, in the space's order."""
+    return {name: SUGGESTERS[spec[0]](trial, name, spec)
+            for name, spec in config.HYPERPARAMETER_SEARCH_SPACE.items()}
 
 
 def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray) -> xgb.Booster:

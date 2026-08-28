@@ -49,8 +49,9 @@ def timeframe_features(bars: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     }
 
 
-def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np.ndarray]:
-    """Return (decision_ts, X matrix ordered as config.FEATURE_COLUMNS)."""
+def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """Return (decision_ts, the named feature columns of config.FEATURE_COLUMNS);
+    the stacked matrix is built only to assert finiteness across all of them."""
     symbol = config.symbol(ticker)
     timeframes = {timeframe: load_timeframe(con, symbol, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
     feats = {timeframe: timeframe_features(timeframes[timeframe])
@@ -64,7 +65,7 @@ def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, np
         idx = indicators.asof_index(decision_ts,
                                     timeframes[timeframe]["timestamp_ms"].astype(np.int64),
                                     config.TIMEFRAME_DURATION_MS[timeframe])
-        for family in config.FAMILIES:
+        for family in config.FEATURE_FAMILIES:
             cols[f"{family}_{timeframe}"] = feats[timeframe][family][idx]
 
     x = np.column_stack([cols[c] for c in config.FEATURE_COLUMNS])
@@ -79,9 +80,9 @@ def write_x(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.ndarray]) -
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         written.append(dataset.write_parquet(
             config.features_parquet(ticker, timeframe),
-            {"decision_ts": "BIGINT", **{family: "DOUBLE" for family in config.FAMILIES}},
+            {"decision_ts": "BIGINT", **{family: "DOUBLE" for family in config.FEATURE_FAMILIES}},
             ([int(decision_ts[i])] + [repr(float(cols[f"{family}_{timeframe}"][i]))
-                                      for family in config.FAMILIES]
+                                      for family in config.FEATURE_FAMILIES]
              for i in range(decision_ts.size)),
             order_by="decision_ts",
         ))
@@ -95,7 +96,7 @@ def main() -> int:
         decision_ts, cols = build_x(con, t)
         written = write_x(t, decision_ts, cols)
         print(f"{t} {', '.join(w.name for w in written)}: "
-              f"{decision_ts.size} rows x {len(config.FAMILIES)} families each", flush=True)
+              f"{decision_ts.size} rows x {len(config.FEATURE_FAMILIES)} families each", flush=True)
     con.close()
     return 0
 

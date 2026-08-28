@@ -65,7 +65,6 @@ import numpy as np
 from . import config, dataset, indicators
 
 LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
-MILLISECONDS_PER_MINUTE = config.MILLISECONDS_PER_MINUTE
 LABEL_HORIZON_MINUTES = config.LABEL_HORIZON_MINUTES
 
 Y_COLUMNS = {
@@ -87,7 +86,7 @@ def load_research_1m(con: duckdb.DuckDBPyConnection, symbol: str) -> dict[str, n
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
-    expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE
+    expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
     assert bars_1m["open"].size == expected, "canonical 1m grid incomplete inside the research window"
     return bars_1m
 
@@ -98,7 +97,7 @@ def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: 
     Returns (y, t_res, event_resolution, entry_price, upper_barrier,
     lower_barrier, exit_reference_price).
     """
-    idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+    idx = ((entry_ts - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE).astype(np.int64)
     entry_price = bars_1m["open"][idx]
     upper_barrier = entry_price + config.ATR_BARRIER_MULTIPLIER * sigma
     lower_barrier = entry_price - config.ATR_BARRIER_MULTIPLIER * sigma
@@ -165,7 +164,7 @@ def main() -> int:
         ).fetchnumpy()["timestamp_ms"].astype(np.int64)
 
         decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
-        entry_ts = decision_ts + MILLISECONDS_PER_MINUTE
+        entry_ts = decision_ts + config.MILLISECONDS_PER_MINUTE
         keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
 
@@ -180,9 +179,9 @@ def main() -> int:
         (y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier,
          exit_reference_price) = triple_barrier(bars_1m, entry_ts, sigma)
         event_end_ts = (entry_ts + np.minimum(t_res + 1, LABEL_HORIZON_MINUTES)
-                        * MILLISECONDS_PER_MINUTE)                     # exclusive
+                        * config.MILLISECONDS_PER_MINUTE)              # exclusive
 
-        entry_idx = ((entry_ts - config.RESEARCH_START_MS) // MILLISECONDS_PER_MINUTE).astype(np.int64)
+        entry_idx = ((entry_ts - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE).astype(np.int64)
         entry_observable = bars_1m["volume"][entry_idx] > 0
         label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid

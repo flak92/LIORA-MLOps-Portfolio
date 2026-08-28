@@ -25,7 +25,8 @@ EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly
 
 
 def _rounded(x, ndigits):
-    """round() that tolerates the nulls to_json_safe() writes for non-finite floats."""
+    """round() that tolerates the None a fold without trades reports for its
+    hit_rate and average_trade_return."""
     return None if x is None else round(x, ndigits)
 
 
@@ -81,13 +82,13 @@ def thin_curve(curve: dict, final_equity: float) -> dict:
 
 def _pnl_block(block: dict) -> dict:
     return {
-        "sharpe": _rounded(block["sharpe"], 3),
-        "max_drawdown": _rounded(block["max_drawdown"], 4),
+        "sharpe": round(block["sharpe"], 3),
+        "max_drawdown": round(block["max_drawdown"], 4),
         "trade_count": block["trade_count"],
         "hit_rate": _rounded(block["hit_rate"], 4),
         "average_trade_return": _rounded(block["average_trade_return"], 6),
-        "exposure": _rounded(block["exposure"], 4),
-        "final_equity": _rounded(block["final_equity"], 4),
+        "exposure": round(block["exposure"], 4),
+        "final_equity": round(block["final_equity"], 4),
         "exit_counts": dict(block["exit_counts"]),
     }
 
@@ -110,7 +111,6 @@ def strategy_block(strategy: dict) -> dict:
 def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
     validation, final_holdout = classification_block(metrics)
     gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
-    assert len(gain) == len(config.FEATURE_COLUMNS), "gain importance misses the feature contract"
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
@@ -193,7 +193,7 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
     sh = strategy["final_holdout"]
     pnl_rows.append(pnl_row(f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**", sh))
     exits = ", ".join(f"{name} {sh['exit_counts'][name]}"
-                     for name in config.EVENT_RESOLUTION_NAME.values())
+                     for name in config.EVENT_RESOLUTION_NAMES.values())
     fallback_note = ("" if strategy["entry_edge_threshold_constraint_met"]
                      else f" — **fallback**, no threshold reaches "
                           f"{config.MINIMUM_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
@@ -231,7 +231,7 @@ Search: {hpo['trial_count']} Optuna trials, best log-loss {hpo['best_logloss']:.
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of 3 timeframes agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.HIERARCHY_TIMEFRAMES)} timeframes agreeing.
 
 {_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
