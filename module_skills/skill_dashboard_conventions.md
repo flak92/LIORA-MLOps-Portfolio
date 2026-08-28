@@ -4,6 +4,11 @@ The dashboard is a static dial-up-minimal page; keep it one.
 
 - Plain HTML + CSS + JS only — no frameworks, no build step, no external
   resources (fonts, CDNs, trackers). Everything ships in `module_monitoring/`.
+- **The desktop viewport is the only target.** No mobile or tablet layout, no
+  width breakpoint, no touch-only gesture, no viewport meta. Pointer events stay
+  — they are the unified input API and serve the mouse — and so do
+  user-preference queries such as `prefers-reduced-motion`, which are not
+  layout. A device-pixel-ratio cap is a HiDPI desktop concern and stays too.
 - Reachable on **loopback only** (`127.0.0.1`): `make monitoring-dashboard` binds it
   directly, and the container binds `0.0.0.0` inside its own namespace while
   compose publishes it on `127.0.0.1` alone. Remote viewing goes through an
@@ -48,6 +53,9 @@ rules above bind it only where they still mean something.
 - The closed verb list for file-scope JavaScript binds the hand-written dashboard scripts. The
   page's inline renderer is a generated artifact reviewed as a whole; the `JavaScript verbs`
   check greps `module_monitoring/*.js` and deliberately does not reach it.
+- The desktop-only rule binds it as well, and the fix is made in
+  `module_visualisation/files_and_folders_visualisation_template.html`: everything above the
+  structure markers is hand-written template text the generator copies verbatim.
 - Verify it the same way as the rest: serve on loopback, `chromium --headless --dump-dom`, and
   assert the file tree rendered — an empty `#tree` means the layout threw before the first frame,
   which is the failure this page actually has. Ignore `undefined` inside the `<script>` block; the
