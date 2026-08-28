@@ -52,9 +52,9 @@ confirmation; the rest of the concept column states what the name means.
 | how the event ended | `event_resolution` | `event_resolution`, `exit_counts.*` | upper_barrier / lower_barrier / vertical / ambiguous | reason, exit_reason |
 | the four resolutions | `EVENT_RESOLUTION_{UPPER_BARRIER, LOWER_BARRIER, VERTICAL, AMBIGUOUS}` | `labels.event_resolution_codes` | — | bare 1 / −1 / 0 / 9 |
 | the entry minute traded at all — knowable at `entry_ts`, may gate an entry | `entry_observable` | `entry_observable`; its complement is counted as `unobservable_entry_count` | unobservable entry | tradable, valid entry |
-| the event can be classified — knowable only afterwards, never gates an entry | `label_valid` | `label_valid`; its complement is counted as `ambiguous_event_count` | ambiguous | masked, mask_ok |
+| the event can be classified — knowable only afterwards, never gates an entry | `label_valid` | `label_valid`; its complement is counted as `ambiguous_event_count` | ambiguous | masked |
 | the supervised population: both of the above | `sample_valid` | `trainable_row_count`, `trainable_row_pct` | trainable rows | valid rows |
-| how little an event overlaps its neighbours **within one population** — measured after the purge, never stored in Y | `average_uniqueness_weight()`, `train_weight` / `scoring_weight` | — | — | `weight` as a Y column, uniqueness_weight_mean, class weight |
+| how little an event overlaps its neighbours **within one population** — measured after the purge, never stored in Y | `average_uniqueness_weight()`, `train_weight` / `scoring_weight` | — | — | `weight` as a Y column, class weight |
 
 ## Signal and strategy
 
@@ -63,9 +63,9 @@ confirmation; the rest of the concept column states what the name means.
 | the model's directional lean, `p_long − p_short` | `directional_probability_edge` | — | edge | `edge` as a code name |
 | how much of that lean a signal must carry to be traded | `entry_edge_threshold` (τ) | `entry_edge_threshold` | τ (entry edge threshold) | `tau` as an identifier |
 | the grid searched for it | `ENTRY_EDGE_THRESHOLD_GRID` | `strategy.entry_edge_threshold_grid` | — | TAU_GRID |
-| whether any threshold on the grid cleared the trade floor | `entry_edge_threshold_constraint_met` | same | fallback | tau_constraint_met |
-| the trade floor — a selection guardrail, not an acceptance gate | `MINIMUM_TRADES_PER_VALIDATION_FOLD` = 30 | `strategy.minimum_trades_per_validation_fold` | — | TAU_MIN_TRADES, MIN_TRADES, acceptance gate |
-| how many timeframes must agree with the side | `MINIMUM_AGREEING_TREND_TIMEFRAMES`, `agreeing_trend_timeframe_count` | `minimum_agreeing_trend_timeframes` | at least 2 of 3 timeframes agree | AGREE_MIN, gate_min_agree, hierarchy_min_agree, n_agree, level |
+| whether any threshold on the grid cleared the trade floor | `entry_edge_threshold_constraint_met` | same | fallback | `tau_ok`, a name that says a constraint without saying which |
+| the trade floor — a selection guardrail, not an acceptance gate | `MINIMUM_TRADES_PER_VALIDATION_FOLD` = 30 | `strategy.minimum_trades_per_validation_fold` | — | MIN_TRADES, acceptance gate |
+| how many timeframes must agree with the side | `MINIMUM_AGREEING_TREND_TIMEFRAMES`, `agreeing_trend_timeframe_count` | `minimum_agreeing_trend_timeframes` | at least 2 of 3 timeframes agree | AGREE_MIN, n_agree, level |
 | replaying the strategy over the canonical price path | `backtest()` | `<TICKER>_strategy_evaluation.json` | STRATEGY | live execution, exchange execution |
 | the execution cost charged on entry and on exit | `EXECUTION_COST_RATE_PER_TRADE_SIDE` = 0.0006 | `execution_cost_rate_per_trade_side` | cost per side | costs_per_side, cost_per_side, fees |
 

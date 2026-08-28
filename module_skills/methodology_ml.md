@@ -62,10 +62,8 @@ X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 ```
 
 Features and target therefore describe the same canonical research object by
-construction —
-the division that made `X` observation and `Y` execution is gone, and with it the
-claim that this repository simulates trading on a named exchange. It does not:
-it simulates a strategy on a canonical market model, with the costs stated.
+construction, and nothing here simulates trading on a named exchange: it
+simulates a strategy on a canonical market model, with the costs stated.
 `methodology_data.md` §1 and §4 carry the construction rule and why verbatim candles
 beat an average.
 

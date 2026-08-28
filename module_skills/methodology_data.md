@@ -11,7 +11,7 @@ How `store_db/research_ohlcv.duckdb` is created:
 sources and endpoints, units and time, the canonical source-priority
 definition, the schema and the known limitations.
 
-## 1. Methodology — primary-failover consolidation (v2)
+## 1. Methodology — primary-failover consolidation
 
 Raw one-minute OHLCV observations from Binance USDS-M and Bybit Linear USDT
 perpetual markets are synchronised to a common UTC one-minute grid and
@@ -113,8 +113,8 @@ Properties:
   a valid no-trade candle still outranks fabrication.
 - Prices and volume are **copied verbatim** from the winning source — no
   weighting, no averaging, no rounding. Every canonical price existed on a
-  real market, so **no averaged synthetic price is introduced** and the
-  weight-shift artifact of the v1 index is gone. That is a statement about
+  real market, so **no averaged synthetic price is introduced** and no shift of
+  weights can move a printed price. That is a statement about
   blending *within* a minute: a return that *spans* a source switch may still
   carry the cross-source basis, which is exactly what `source_switch_count` and
   `max_abs_return_at_switch` measure.

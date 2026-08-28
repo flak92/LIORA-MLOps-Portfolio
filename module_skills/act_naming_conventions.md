@@ -33,9 +33,10 @@ next reader from reinventing it.
 
 Row 6 is the first instance of a rule that holds at every boundary: inside the
 call that speaks an external format or library, the external spelling wins, and
-the project's names begin at the return value. An unnamed boundary is the class
-of names a mechanical sweep once broke (`viewBox` → `renderBox`, repaired in
-`cc92945`), so every one is listed here with the file that owns it.
+the project's names begin at the return value. An unnamed boundary is the class of
+names a mechanical rename walks into by accident — to a regular expression an
+SVG attribute like `viewBox` is an identifier, to the browser it is a contract —
+so every one is listed here with the file that owns it.
 
 | boundary | owning file | words that stay external |
 |---|---|---|
@@ -140,11 +141,10 @@ tokens: those names are contracts with the files on disk, and a schema
 migration is not a naming cleanup. They adopt the standard only at the next
 schema-breaking change, recorded here when it happens.
 
-The same deferral covers three more names the schema already carries: the
+The same deferral covers two more names the schema already carries: the
 epoch-millisecond columns `decision_ts`, `entry_ts`, `event_end_ts` of the
 parquets (the key grammar says `_ms`; no new `_ts` is minted), the DuckDB column
-`rel_divergence` (published only as `relative_divergence_*`), and the key
-`folds.warmup_4h_bars` of `<TICKER>_parameters.json` (a rewrite of the
-parameters file is a search run). A compact timeframe token inside a Python
-identifier (`WARMUP_4H_BARS`, `equity_15m`) is the timeframe vocabulary of
-code, not a slot.
+`rel_divergence` (published only as `relative_divergence_*`). A compact timeframe
+token inside an identifier or a key (`WARMUP_4H_BARS`, `folds.warmup_4h_bars`,
+`equity_15m`) is not a deferral at all: it is the timeframe vocabulary of code
+and schema, and the slots are for the file family that sorts by granularity.
