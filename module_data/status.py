@@ -112,7 +112,7 @@ def _rounded(x, ndigits):
 
 def main() -> int:
     if not config.STORE_DB_PATH.exists():
-        raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make ingest` first")
+        raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make data-ingest` first")
     con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
 
     con.execute("SET memory_limit='4GB'")

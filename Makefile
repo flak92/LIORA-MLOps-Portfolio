@@ -22,10 +22,10 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 
 # every target is a command, not a file — .PHONY stops make from ever looking
 # for a file of the target's own name (and from searching implicit rules for it)
-.PHONY: help all setup download download-binance download-bybit ingest status \
+.PHONY: help all setup data-download data-download-binance data-download-bybit data-ingest data-status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
-        ml-strategy ml-status ml-all docker-build docker-download \
-        docker-ingest docker-status docker-ml-bars \
+        ml-strategy ml-status ml-all docker-build docker-data-download \
+        docker-data-ingest docker-data-status docker-ml-bars \
         docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train \
         docker-ml-strategy docker-ml-status docker-ml-all docker-up docker-down
 
@@ -33,25 +33,25 @@ help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*: *##' $(MAKEFILE_LIST) | sed 's/: *## / — /'
 
 all:             ## full pipeline from a fresh clone: venv, data, canonical, ML, snapshots
-	$(MAKE) setup download ingest status ml-all
+	$(MAKE) setup data-download data-ingest data-status ml-all
 
 setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
-download:        ## fetch Binance + Bybit 1m klines (UTC calendar-day files, idempotent)
+data-download:   ## fetch Binance + Bybit 1m klines (UTC calendar-day files, idempotent)
 	$(PY) -m module_data.download_binance
 	$(PY) -m module_data.download_bybit
 
-download-binance: ## Binance USDS-M only
+data-download-binance: ## Binance USDS-M only
 	$(PY) -m module_data.download_binance
 
-download-bybit:  ## Bybit Linear only
+data-download-bybit: ## Bybit Linear only
 	$(PY) -m module_data.download_bybit
 
-ingest:          ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
+data-ingest:     ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m module_data.ingest
 
-status:          ## data & DB monitoring -> stdout + module_monitoring/status.json
+data-status:     ## data & DB monitoring -> stdout + module_monitoring/status.json
 	$(PY) -m module_data.status
 
 dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
@@ -85,14 +85,14 @@ ml-all:          ## the whole ML chain in order
 docker-build:    ## build the pipeline image
 	$(COMPOSE) build
 
-docker-download: ## run both download stages inside the container
+docker-data-download: ## run both download stages inside the container
 	$(COMPOSE) run --rm pipeline python -m module_data.download_binance
 	$(COMPOSE) run --rm pipeline python -m module_data.download_bybit
 
-docker-ingest:   ## run the ingest stage inside the container
+docker-data-ingest: ## run the ingest stage inside the container
 	$(COMPOSE) run --rm pipeline python -m module_data.ingest
 
-docker-status:   ## run the status stage inside the container
+docker-data-status: ## run the status stage inside the container
 	$(COMPOSE) run --rm pipeline python -m module_data.status
 
 docker-ml-bars:      ## module_ml.bars inside the container

@@ -86,16 +86,16 @@ with `tree_method=hist` and `nthread=1`, so the GPU stack would be weight
 without function.
 
 ```bash
-make all              # venv -> download -> ingest -> status -> full ML chain
+make all              # venv -> data-download -> data-ingest -> data-status -> full ML chain
 make dashboard        # serve http://127.0.0.1:8900/  (loopback only)
 ```
 
-Every stage also runs on its own (`make setup download ingest status`
+Every stage also runs on its own (`make setup data-download data-ingest data-status`
 for the data half, `make ml-all` for the ML half) — the data stages are in the
 table below, the ML chain in *ML research layer*.
 
 The same stages run inside Docker: `make docker-build`, then
-`make docker-download / docker-ingest / docker-status` for the
+`make docker-data-download / docker-data-ingest / docker-data-status` for the
 data half and `make docker-ml-all` (or any single `docker-ml-<stage>`) for the
 ML half, and `make docker-up` / `make docker-down` for the dashboard container.
 Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
@@ -104,10 +104,10 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make download`        | both APIs → `store_raw_data_ss-01-hh-dd-MM/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
-|           | `make download-binance` / `make download-bybit` | one source at a time               | independently parallelisable      |
-| ingest    | `make ingest`          | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| status    | `make status`          | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
+| download  | `make data-download`   | both APIs → `store_raw_data_ss-01-hh-dd-MM/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
+|           | `make data-download-binance` / `make data-download-bybit` | one source at a time               | independently parallelisable      |
+| ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
+| status    | `make data-status`     | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 
 ## Data formats
@@ -132,7 +132,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
 ## Monitoring
 
-`make status` reports the full flow (`zips → raw rows → canonical rows`) and
+`make data-status` reports the full flow (`zips → raw rows → canonical rows`) and
 feeds the dashboard:
 
 - **Pipeline** — canonical rows, real-data share and forward-filled bars per

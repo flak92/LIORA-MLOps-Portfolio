@@ -408,7 +408,7 @@ stage, and most edits do not touch it:
 
 | what changed | what to rerun |
 |---|---|
-| the canonical series (`make ingest`) | everything, from `ml-bars` |
+| the canonical series (`make data-ingest`) | everything, from `ml-bars` |
 | a feature definition | `ml-features ml-hpo ml-train ml-strategy ml-status` |
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |

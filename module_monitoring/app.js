@@ -181,6 +181,6 @@ fetch("status.json", { cache: "no-store" })
   })
   .catch((error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load status.json (" + error.message + ") — run `make status`";
+    meta.textContent = "could not load status.json (" + error.message + ") — run `make data-status`";
     meta.className = "box err";
   });

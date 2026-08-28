@@ -24,7 +24,7 @@ both venues is a canonical gap, deterministically forward-filled with the
 previous canonical close and zero volume. Data-source shares, source
 switches, the largest move at a switch, cross-exchange divergence and every
 other integrity anomaly are recorded by the data-layer quality monitoring
-(`module_data/status.py`, run by `make status`) and exposed through the
+(`module_data/status.py`, run by `make data-status`) and exposed through the
 project dashboard. Consequently, downstream
 indicator calculation and ML pipelines operate exclusively on a continuous
 canonical t,O,H,L,C,V series whose every printed price existed on a real
@@ -136,7 +136,7 @@ Properties:
 | `volume` | DOUBLE | base-asset volume of that venue |
 
 `ohlcv_1m_canonical` — the primary-failover series, rebuilt deterministically
-per symbol on every `make ingest`; what the ML stages read:
+per symbol on every `make data-ingest`; what the ML stages read:
 
 | column | type | meaning |
 |---|---|---|
@@ -193,7 +193,7 @@ rebuilding from a clean `store_db/` reproduces it bit-identically.
 
 ## 7. Known data-quality observations (current window)
 
-Two per-symbol numbers stand out in `make status` and are documented rather
+Two per-symbol numbers stand out in `make data-status` and are documented rather
 than smoothed away. Bybit **LINKUSDT** has exactly **one** OHLC-violating
 minute out of 2 970 720; the row fails `bybit_valid`, so the canonical series
 takes the Binance candle for that minute and the violation never reaches the
