@@ -114,8 +114,11 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 ## Canonical vocabulary
 
 **Names must be self-explanatory before they are project-specific. Prefer
-standard domain terminology. A glossary confirms meaning; it must not be
-required to decode an obscure name.**
+established software-engineering terminology over project-specific synonyms: if
+a concept already has a widely recognised name, use that name — in code, in
+documentation, in the skills and in the interface alike — and do not invent
+local terminology for a standard concept. A glossary confirms meaning; it must
+not be required to decode an obscure name.**
 
 One concept, one name — in the code, in the artifacts and in the interface. The
 register is `module_skills/glossary.md`, and a new name enters it in

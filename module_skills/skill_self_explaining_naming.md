@@ -30,6 +30,8 @@ directory — must explain itself, so an agent never has to guess.
   charges for both, because the reader has to scan and then remember where
   things live. If renaming would place things of one kind next to each other,
   rename them — `module_*` beside `module_*`, `store_*` beside `store_*`.
+- **A standard term beats an invented one.** If a concept already has a widely
+  recognised name, that name wins; `AGENTS.md` holds the rule.
 - **One concept, one name.** A synonym forces the reader to decide whether two
   names are one thing or two — a thought the code should never demand. And its
   converse, **one name, one concept**: a name denoting two things in one scope

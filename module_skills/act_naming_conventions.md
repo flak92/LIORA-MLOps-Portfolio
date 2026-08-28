@@ -35,6 +35,7 @@ next reader from reinventing it.
 | 22 | make target `monitoring-dashboard`; the compose **service** stays `dashboard` | a bare `dashboard` target | it was the last non-lifecycle target without its module, and the reason row 13 gives for `data-status` applies unchanged: `make help` lists one module as one block. The compose service keeps the short name because a service name is a different namespace — `$(COMPOSE) up -d dashboard` addresses compose, not make, and renaming it would have been a rename of somebody else's vocabulary |
 | 23 | the generative-structure rule lives in `AGENTS.md` § Canonical vocabulary; `module_skills/skill_agent_first_development.md` points at it | a second copy of the rule in a skill | it was minted in a skill and moved here-ward the same day. Two of the eight minting conditions failed: a rule lives in `AGENTS.md` and every other document points at it, and a rule must be able to fail. The second cannot be fixed — it forbids no specific name — so the block below records it as a preference this repository states, not a grammar it checks |
 | 24 | no debt marker in a tracked file: `TODO`, `FIXME`, `XXX`, `HACK`, and no code left inside a comment | a marker standing in for a decision | `main` is clean working logic. A marker is a decision postponed in public, and a commented-out line is a version git already remembers — the comment only hides which one is live. Zero of both when this row was written, which is exactly when the rule costs nothing to enact |
+| 25 | established terminology over local coinages; the rule lives in `AGENTS.md` § Canonical vocabulary | a local synonym for a concept that has a recognised name | a coinage costs every reader a translation step. It forbids no specific name, so the block records it as a preference, not a grammar |
 
 ## External vocabularies
 
@@ -312,5 +313,6 @@ unenforceable  a bare plural, an adjective holding a number | 11 | the `count ke
 unenforceable  reading order, artifact-responsibility order | 12 | an ordering claim about four documents, not a name
 unenforceable  a second copy of the chain in README or a methodology | 17 | prose duplication is not a token
 unenforceable  a page generator folded into module_monitoring/ | 18 | a placement judgement, not a name
+unenforceable  established terminology over local coinages | 25 | no closed list of coinages exists, so no grep can settle it
 unenforceable  prefer generative structure over repeated project knowledge | 23 | the rule forbids no specific name, so no grep can settle it; it is a preference this repository states, not a grammar it checks
 ```
