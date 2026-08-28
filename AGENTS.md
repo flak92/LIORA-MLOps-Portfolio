@@ -64,6 +64,12 @@ input/output boundary; until then the owning module is extended.
 Regular, predictable, symmetrical, easy to scan — the structure should be
 recognisable by eye before it is parsed (neuro-optical consistency):
 
+- **names also define visual structure.** Before introducing a file or
+  directory, determine its semantic family and derive its name from that
+  family's established grammar, so analogous objects sort together and both the
+  object's role and its expected location are predictable from its name. The
+  detailed sorting grammar lives in
+  `module_skills/skill_sorting_files_naming_standard.md`;
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
   `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔

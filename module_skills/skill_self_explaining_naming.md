@@ -35,10 +35,14 @@ directory — must explain itself, so an agent never has to guess.
 - **The glossary confirms, it never decodes.** `glossary.md` registers what a
   name already says; if the register is needed to understand the name, the
   name is wrong.
-- **Rename only what impedes reading.** A working, honest name stays; churn is
-  its own cost — and a serialised name (an artifact key, a parquet or database
-  column, a feature) is not a name any more, it is a contract with the files on
-  disk. Those change only when the data does.
+- **A name gives way to a more derivable one.** The test is not whether the old
+  name still works, but whether the family's grammar yields a name that
+  classifies better, shows its family sooner or sorts with its siblings — when
+  it does, the rename is the cheap part and the reasoning step it removes is
+  paid back on every later reading. A serialised name (an artifact key, a
+  parquet or database column, a feature) is a contract with the files on disk,
+  so it moves only together with everything that writes, reads or stores it, in
+  one commit.
 
 ## Minting a new convention
 
