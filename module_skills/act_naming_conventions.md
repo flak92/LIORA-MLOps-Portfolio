@@ -11,7 +11,7 @@ next reader from reinventing it.
 
 | # | enacted | not | why |
 |---|---|---|---|
-| 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/` | `src`, `core`, `lib` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
+| 1 | `module_data/`, `module_ml/`, `module_monitoring/`, `module_skills/`, `module_visualisation/` | `src`, `core`, `lib` | kind first so siblings sort together; the shortest name whose kind-first files say the rest; "for the project" repeats the scope it lives in |
 | 2 | `store_assets_artifacts/` | `assets/`, `artifacts/` | kind first, then what the store holds, in the ordinary lowercase snake_case every other store uses — so `STORE_ASSETS_ARTIFACTS_DIR` mirrors the directory exactly and no rule has to explain a capital letter |
 | 3 | `store_db/` | `db`, `database` | kind first; `db` is unambiguous in this technical context |
 | 4 | `store_raw_1m/`, and every future raw store as `store_raw_<timeframe>/` | a store spelling its timeframe in sorting slots, `raw_data` | a store is one object: its name says what it holds, in the compact timeframe token the code and the schema already speak (`ohlcv_1m_canonical`, `SOURCE_CANDLE_INTERVAL`), so the next raw store names itself. Sorting slots are for the file family that has to sort by granularity (§ timeframe slots) |
@@ -26,8 +26,11 @@ next reader from reinventing it.
 | 13 | make targets `data-download`, `data-download-binance`, `data-download-bybit`, `data-ingest`, `data-status` and the container twins `docker-data-download`, `docker-data-ingest`, `docker-data-status`; `docker-build`, `docker-up`, `docker-down` are compose lifecycle, not twins, and the single-venue downloads have no twin | bare `download`, `ingest`, `status`; `docker-download` | `<module>-<stage>` beside `ml-<stage>`: `make help` lists one module as one block, and `status` stops being ambiguous next to `ml-status` |
 | 14 | `<TICKER>_README.md` with README in capitals | `<TICKER>_readme.md`, a bare `README.md` | README is a convention older than this act; it is the one manifest entry whose position depends on collation (first under `LC_COLLATE=C`, eighth under `en_US.UTF-8`) — the `<TICKER>_*` block stays contiguous under both, and GitHub renders neither spelling as the folder's README |
 | 15 | `EXAMPLE_TICKER_README.md` sorts inside the ticker block of `store_assets_artifacts/` | a store-root `README.md` | the guide is found where a reader looks for an asset folder; `ls -1d */` sees only the ten ticker directories |
-| 16 | ecosystem-fixed file names keep their spelling: `__init__.py`, `AGENTS.md`, `Dockerfile`, `Makefile`, `README.md`, `docker-compose.yml`, `requirements.txt` | project-cased variants | a boundary like Lean's casing (row 6); they are the only names whose sort position depends on collation, so the collation check binds every other directory |
+| 16 | ecosystem-fixed file names keep their spelling: `__init__.py`, `AGENTS.md`, `Dockerfile`, `Makefile`, `README.md`, `docker-compose.yml`, `requirements.txt`, `.github/workflows/*.yml` | project-cased variants | a boundary like Lean's casing (row 6); they are the only names whose sort position depends on collation, so the collation check binds every other directory |
 | 17 | the stage order lives in the Makefile (`all:`, `ml-all:`); every document points there | a second copy of the chain in README or a methodology | two copies drift; the per-asset reproduce line of `<TICKER>_README.md` is derived from the same order by `module_ml/status.py` |
+| 18 | `module_visualisation/` | `module_visualisation_helpers/`, `module_viz/`, a page generator folded into `module_monitoring/` | the module owns one responsibility with a stable boundary — git index in, one HTML page out — and it reads no measurement, so `module_monitoring` is not its owner. `helpers` is the `utils` family the skills forbid: it names the author's convenience, not the responsibility |
+| 19 | `visualisation-galaxy`, `visualisation-galaxy-check` | bare `galaxy`, `galaxy-check` | the grammar reserves bare targets for lifecycle; a stage of a module carries its module, exactly as `data-ingest` and `ml-hpo` do. The `make targets` check enumerates the legal prefixes, so a bare stage would have had to widen a list that is deliberately closed |
+| 20 | `Files_and_Folders_Visualisation.html` | `galaxy_template.html`, `files_and_folders_visualisation.html` | the template is named for what a reader opens it to see, not for the mechanism that fills it. It is the second name after `<TICKER>_README.md` whose sort position depends on collation, so it is exempted by decision here and filtered in the collation check — never by accident |
 
 ## External vocabularies
 
@@ -49,6 +52,8 @@ so every one is listed here with the file that owns it.
 | SVG / DOM | `module_monitoring/*.js` | `setAttribute`, `viewBox`, `preserveAspectRatio`, `x1`, `y1`, `points`, `insertRow`, `createTHead`, `textContent` |
 | DuckDB SQL | `module_data/ingest.py`, `module_data/status.py`, `module_ml/bars.py`, `module_ml/dataset.py`, `module_ml/features.py`, `module_ml/labels.py`, `module_ml/strategy.py` | `read_csv`, `read_parquet`, `arg_min`, `arg_max`, `FILTER`, `quantile_cont`, `last_value … IGNORE NULLS`, `fetchnumpy` |
 | docker compose | `Makefile` (`docker-up`, `docker-down`), `docker-compose.yml` | `up`, `down`, `run --rm`, `${PORT:-8900}` |
+| git plumbing | `module_visualisation/generate_galaxy.py` | `ls-files -z`, `rev-parse`, `rev-list --parents`, `show --first-parent --name-only`, `%h`, `%cI`, `:(exclude)` |
+| GitHub Actions | `.github/workflows/galaxy.yml` | `on`, `push`, `paths-ignore`, `concurrency`, `cancel-in-progress`, `permissions`, `runs-on`, `steps`, `uses`, `github.actor`, `github-actions[bot]`, `[skip ci]` |
 
 The browser is a boundary of its own: it has no config module, so `app.js` and
 `ml.js` fetch the two snapshots by literal name. Before any mechanical rename,

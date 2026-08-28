@@ -101,9 +101,11 @@ report.
 
 ```
 kind-first blocks     ls -1d */
-                      → module_data module_ml module_monitoring module_skills, then store_assets_artifacts store_db store_raw_1m
+                      → module_data module_ml module_monitoring module_skills module_visualisation, then store_assets_artifacts store_db store_raw_1m
 collation invariance  for d in module_monitoring module_skills store_assets_artifacts store_db store_raw_1m; do diff <(LC_COLLATE=C ls -1 $d) <(LC_COLLATE=en_US.UTF-8 ls -1 $d); done
-                      → empty (the root and the packages differ only by the ecosystem-fixed names of act row 17)
+                      → empty (the packages are absent from the loop for the same reason the root is:
+                        their listings differ only by names the act exempts — the ecosystem-fixed ones
+                        of row 16, plus the template of row 20 in module_visualisation)
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'
                       → empty
 constructors          git grep -nE '^def make_|_factory\(' -- '*.py'
@@ -114,7 +116,7 @@ paths at point of use git grep -n '_DIR /' -- '*.py' | grep -v config.py
                       → empty
 Lean names            git grep -n 'trade\.zip\|minute_trade_perp' -- '*.py' | grep -v module_data/lean.py
                       → only the tree diagrams in the two downloader docstrings
-statement constants   grep -nE '^[A-Z_]+ = ("""|re\.compile)' module_data/*.py module_ml/*.py | grep -vE '_(DDL|INSERT|SCAN|PREDICATE|PATTERN|COLUMNS) ='
+statement constants   grep -nE '^[A-Z_]+ = ("""|re\.compile)' module_data/*.py module_ml/*.py module_visualisation/*.py | grep -vE '_(DDL|INSERT|SCAN|PREDICATE|PATTERN|COLUMNS) ='
                       → empty
 SQL aliases           grep -nE ' AS (n_|div_|chg|prev|ts_|rows)\b' module_data/status.py
                       → empty
@@ -130,7 +132,7 @@ conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'modu
                       → empty
 JavaScript verbs      grep -hoE '^function [a-zA-Z]+' module_monitoring/*.js | grep -vE 'function (build|render|format|append|select|init)[A-Z]|^function (validationFolds|mean)$'
                       → empty
-make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|dashboard|docker-build|docker-up|docker-down|(data|ml)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
+make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|dashboard|docker-build|docker-up|docker-down|(data|ml|visualisation)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
                       → empty
 .PHONY completeness   comm -3 <(grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | sort -u) <(sed -n '/^\.PHONY:/,/^$/p' Makefile | tr ' \\' '\n' | grep -v PHONY | grep . | sort -u)
                       → empty

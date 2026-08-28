@@ -1,0 +1,52 @@
+name: galaxy
+
+# The repository's first workflow, and deliberately its only one. AGENTS.md still
+# forbids test frameworks and precautionary guards; what is repealed here is
+# narrower than that — one artifact that must equal the tree regenerates itself,
+# because a picture of the files that a human has to remember to refresh is a
+# picture that is quietly wrong. Nothing else belongs in this file.
+#
+# The loop guard is three-deep on purpose, and the first layer is not ours:
+# GitHub does not start a run for a push made with GITHUB_TOKEN. paths-ignore and
+# the actor condition are what keeps that true if the identity ever changes, and
+# [skip ci] is what keeps it true for anyone reading the log.
+#
+# fetch-depth: 0 because the provenance stamp walks back past the bot's own
+# commits to name the commit the tree was actually read from; a shallow clone has
+# nothing to walk.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - module_monitoring/repo_galaxy.html
+
+concurrency:
+  group: galaxy-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - run: make visualisation-galaxy
+
+      - name: commit the page when the tree has moved
+        run: |
+          if git diff --quiet -- module_monitoring/repo_galaxy.html; then
+            echo "the galaxy already matches the tree"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add module_monitoring/repo_galaxy.html
+          git commit -m 'chore(galaxy): regenerate [skip ci]'
+          git push

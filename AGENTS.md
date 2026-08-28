@@ -19,6 +19,10 @@ conflicts with this file, the change is wrong.
 - **UCAS — Useless Click Avoiding System.** Manual steps, clicks and context
   switches that can be automated, are: `make all` runs the whole pipeline
   from a fresh clone, every stage is idempotent, the dashboard opens itself.
+  One GitHub Actions workflow carries the rule past the clone: a push to `main`
+  regenerates `module_monitoring/repo_galaxy.html` and commits it, because a
+  picture of the files that a human has to remember to refresh is a picture
+  that is quietly wrong.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the guards
   the mathematics requires: causality invariants (`indicators.asof_index`) and
@@ -26,7 +30,11 @@ conflicts with this file, the change is wrong.
   the aligned decision grids of the arrays `dataset.load_xy` joins by position,
   the basket-wide ingest, the download that aborts on a short post-listing day).
   A check that could only fail on a stale artifact from another run is not one
-  of them. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
+  of them. The single workflow in `.github/` is not an exception to this rule
+  but a consequence of the one above it: it runs no tests, asserts nothing and
+  blocks no merge — it regenerates one artifact whose whole purpose is to equal
+  the tree. A workflow that lints, gates or proves anything does not belong here,
+  and a second workflow is the signal that this one has been misread. Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are
   part of correctness, not a setting.
 - **Research logic over tooling.** External sources, libraries and
   infrastructure are implementation details. The repository should expose the
@@ -47,17 +55,21 @@ conflicts with this file, the change is wrong.
 ## Architecture shape
 
 `module_*` is a top-level project responsibility; `store_*` is persisted or
-generated state. Four project modules — three runtime modules, in the order
-the data moves through them, and one non-runtime module:
+generated state. Five project modules — three runtime modules, in the order
+the data moves through them, and two non-runtime modules:
 
 ```
-module_data/         sources → normalised raw 1m → ONE canonical DuckDB
-module_ml/           canonical dataset → X, Y → search → model → research simulation
-module_monitoring/   presentation of what the two modules measured about themselves
-module_skills/       the contract's companions: the act, the register, the methodologies, the skills
+module_data/          sources → normalised raw 1m → ONE canonical DuckDB
+module_ml/            canonical dataset → X, Y → search → model → research simulation
+module_monitoring/    presentation of what the two modules measured about themselves
+module_skills/        the contract's companions: the act, the register, the methodologies, the skills
+module_visualisation/ the tracked tree → the repository's own picture, regenerated on every push
 ```
 
-`module_skills` never participates in runtime imports or dataflow. A new
+`module_skills` and `module_visualisation` never participate in runtime imports
+or dataflow. `module_visualisation` reads the git index, never the canonical
+dataset, which is what keeps it a separate responsibility rather than a second
+job for `module_monitoring`. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
 

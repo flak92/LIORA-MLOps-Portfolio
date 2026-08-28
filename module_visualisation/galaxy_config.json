@@ -1,0 +1,84 @@
+{
+  "default_story": null,
+
+  "exclude": [
+    ".gitignore",
+    ".dockerignore",
+    "**/__init__.py",
+    "module_monitoring/repo_galaxy.html"
+  ],
+
+  "story_map": {
+    "docker-compose.yml": "S1",
+    "Dockerfile": "S1",
+    "Makefile": "S1",
+    "requirements.txt": "S1",
+    ".github/": "S1",
+
+    "README.md": "S2",
+    "AGENTS.md": "S2",
+    "module_skills/": "S2",
+
+    "module_data/": "S3",
+
+    "module_ml/": "S4",
+    "store_assets_artifacts/": "S4",
+
+    "module_monitoring/": "S5",
+    "module_visualisation/": "S5"
+  },
+
+  "stories": {
+    "S1": { "name": "S1 · Infrastructure & env",    "color": "#5B8DEF", "hub": "docker-compose.yml" },
+    "S2": { "name": "S2 · Application & Skills",    "color": "#2BD4BD", "hub": "module_skills/" },
+    "S3": { "name": "S3 · Data Ingest",             "color": "#F2B24E", "hub": "module_data/" },
+    "S4": { "name": "S4 · Continuous Optimisation", "color": "#A98BFA", "hub": "module_ml/" },
+    "S5": { "name": "S5 · Monitoring",              "color": "#3FD68F", "hub": "module_monitoring/" }
+  },
+
+  "story_order": ["S1", "S3", "S4", "S5", "S2"],
+
+  "core": { "name": "Repository root", "color": "#EDF2FF" },
+
+  "aggregate": { "store_assets_artifacts/*/": "artifact" },
+
+  "place": {
+    "store_assets_artifacts/": { "r": 1.62, "da": 0.14,  "y": 6,   "jit": 10 },
+    "README.md":               { "r": 0.38, "da": -0.30, "y": -34 },
+    "AGENTS.md":               { "r": 0.38, "da": 0.30,  "y": -34 }
+  },
+
+  "roles": {
+    "module_data/config.py": "config",
+    "module_ml/config.py": "config",
+    "module_visualisation/config.py": "config",
+    "module_ml/validation.py": "gate",
+    "Makefile": "entrypoint",
+    "module_visualisation/galaxy_config.json": "config"
+  },
+
+  "descriptions": {
+    "root": "The repository itself. Working path: AGENTS.md → module names → module_skills → code.",
+    "Makefile": "Entrypoint of everything — per-asset fanout, JOBS measured from cores and RAM, OMP threads pinned to 1 for determinism.",
+    "docker-compose.yml": "Two services from one image: pipeline, and a loopback-only dashboard on :8900.",
+    "module_data/": "Ingest module — venue downloads, Lean ZIPs, one canonical DuckDB.",
+    "module_data/ingest.py": "Merges venue ZIPs into the one canonical DuckDB (primary-failover, full grid).",
+    "module_ml/": "ML module — bars, features, triple-barrier labels, purged walk-forward XGBoost.",
+    "module_ml/train.py": "Refits expanding folds with HPO-chosen parameters.",
+    "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout — the gate of the whole system.",
+    "module_monitoring/": "Static dashboard — reads two JSON snapshots, no backend.",
+    "module_skills/": "The contract's companions: the act, the register, the methodologies and the skills.",
+    "module_visualisation/": "This picture: the tracked tree rendered into module_monitoring/repo_galaxy.html on every push.",
+    "module_visualisation/galaxy_config.json": "The whole configuration surface — shape, colour, wording and placement, with no Python edit.",
+    "store_assets_artifacts/": "Versioned per-asset artifacts — the only objects the system produces.",
+    ".github/": "The one workflow: a push regenerates the galaxy and commits it back."
+  },
+
+  "camera": { "start_rot_y": 3.491, "start_rot_x": -0.40, "fit_width": 1400 },
+
+  "header": {
+    "eyebrow_from_git": true,
+    "title": "Repo Silk Galaxy",
+    "subtitle": "{files} tracked files · {modules} top-level folders · {assets} asset artifacts"
+  }
+}
