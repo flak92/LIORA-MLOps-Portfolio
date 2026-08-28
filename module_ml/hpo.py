@@ -4,7 +4,7 @@ Objective = mean uniqueness-weighted multiclass log-loss over the three OOS
 validation folds F2-F4 (expanding training, purged before every OOS block).
 The populations and their weights do not depend on the hyper-parameters, so
 they are built once instead of once per trial.
-The final holdout fold is never touched here. <TICKER>_OPTUNAs_XGB_HPOs_best_params.json keeps
+The final holdout fold is never touched here. <TICKER>_parameters.json keeps
 the winner and the trial count; the trajectory of 50 trials is a search diary,
 not a result.
 """

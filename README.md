@@ -160,7 +160,7 @@ available GiB))` assets in parallel, one process each, with the thread caps pinn
 results on the dashboard's **ML Research** tab (ten-asset
 cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
-describes itself: `<TICKER>_experiment_configuration.json` records the configuration
+describes itself: `<TICKER>_parameters.json` records the configuration and the winner
 the run used, and its `README.md` says what came out. Full methodology:
 [module_skills/methodology_ml.md](module_skills/methodology_ml.md).
 

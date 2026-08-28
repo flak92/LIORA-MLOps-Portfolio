@@ -19,27 +19,36 @@ next reader from reinventing it.
 | 6 | Lean raw tree spelling: `cryptofuture/<venue>/minute/<symbol lowercase>/`, `YYYYMMDD_trade.zip` | project-cased variants | external-format boundary — Lean's vocabulary wins inside the store it defines |
 | 7 | guidance files: `act_*`, `skill_*`, `methodology_*`, `glossary.md` | bare topic names | kind first inside the folder, same rule as the tree above it |
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `canonical_1m.parquet`, `features.parquet`, `hyperparameter_search.json`, a bare `README.md` | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
+| 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | `<TICKER>_canonical_ohlcv_*.parquet`, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
+| 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep a-priori configuration and the search's winner apart inside one file |
 
 ## The asset folder manifest
 
-`store_Assets_artifacts/<TICKER>/` holds exactly these nine files — every one
-prefixed with its ticker, every time series carrying its grid in timeframe
-slots, paths built only by the descriptors in the modules' `config.py`:
+`store_Assets_artifacts/<TICKER>/` holds exactly these nine files. No OHLCV:
+the canonical series and its aggregations live only in DuckDB — the asset
+folder carries the asset's features, parameters, evaluations and guide. Every
+file is prefixed with its ticker, every time series carries its grid in
+timeframe slots, and paths are built only by the descriptors in the modules'
+`config.py`:
 
 | file | holds | written by |
 |---|---|---|
-| `<TICKER>_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m OHLCV series (t, O, H, L, C, V) | `module_data/export.py` |
-| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | X — 15 causal feature columns on the 15m decision grid | `module_ml/features.py` |
-| `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier events on the 15m decision grid | `module_ml/labels.py` |
-| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full prediction windows | `module_ml/train.py` |
-| `<TICKER>_OPTUNAs_XGB_HPOs_best_params.json` | the winning point of the Optuna→XGB search, its log-loss and the trial count | `module_ml/hpo.py` |
-| `<TICKER>_model_evaluation.json` | classification metrics per fold, gain importance, populations | `module_ml/train.py` |
+| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | the five 15m family columns on the decision grid | `module_ml/features.py` |
+| `<TICKER>_features_ss-mm-01-dd-MM.parquet` | the five 1h family columns on the decision grid | `module_ml/features.py` |
+| `<TICKER>_features_ss-mm-04-dd-MM.parquet` | the five 4h family columns on the decision grid | `module_ml/features.py` |
+| `<TICKER>_parameters.json` | the one parameters file: sections `experiment_configuration` (a-priori) and `OPTUNAs_XGB_HPOs_best_params` (the winner, its log-loss, the trial count) | `module_ml/hpo.py` |
+| `<TICKER>_model_evaluation.json` | classification results per fold, gain importance, populations | `module_ml/train.py` |
 | `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
-| `<TICKER>_experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | `module_ml/status.py` |
+| `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier events (regenerable work product) | `module_ml/labels.py` |
+| `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample probabilities (regenerable work product) | `module_ml/train.py` |
 | `<TICKER>_README.md` | what the folder holds and what came out of it | `module_ml/status.py` |
 
-A file copied out of its folder still says which asset it belongs to and which
-grid it lives on — the name does the folder's work when the folder is gone.
+The columns inside a per-timeframe features file carry only their family
+names — the filename already says the timeframe, and a name repeats nothing
+its scope states. The strategy itself is one shared file for the whole
+project, `module_ml/strategy.py`: code is common, parameters are per asset.
+A file copied out of its folder still says which asset it belongs to and
+which grid it lives on.
 
 ## The timeframe slot standard
 
