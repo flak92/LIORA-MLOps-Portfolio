@@ -1,7 +1,7 @@
 # AGENTS — the contract of this repository
 
 The governing contract for every change, human or agent. Read the repo in
-this order: **AGENTS.md → module names → module_guidance → code.**
+this order: **AGENTS.md → module names → module_skills → code.**
 (README is general information, not part of the working path.) If a change
 conflicts with this file, the change is wrong.
 
@@ -50,10 +50,10 @@ the data moves through them, and one non-runtime module:
 module_data/         sources → normalised raw 1m → ONE canonical DuckDB → published parquet
 module_ml/           canonical dataset → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the two modules measured about themselves
-module_guidance/     the contract's companions: methodology, skills, the register
+module_skills/     the contract's companions: methodology, skills, the register
 ```
 
-`module_guidance` never participates in runtime imports or dataflow. A new
+`module_skills` never participates in runtime imports or dataflow. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
 
@@ -68,7 +68,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_monitoring` presents their snapshots;
 - **the kind comes first, so siblings sort together.** A listing is read by
   eye before it is parsed: `module_data`, `module_ml`, `module_monitoring`,
-  `module_guidance`, then `store_db`, `store_raw_1m`,
+  `module_skills`, then `store_db`, `store_raw_1m`,
   `store_research_artifacts` — two blocks, not seven scattered entries. If
   renaming would put things of one kind next to each other, rename them.
   Checked with `ls -1d */`: one kind, one contiguous block;
@@ -91,7 +91,7 @@ standard domain terminology. A glossary confirms meaning; it must not be
 required to decode an obscure name.**
 
 One concept, one name — in the code, in the artifacts and in the interface. The
-register is `module_guidance/glossary.md`, and a new name enters it in
+register is `module_skills/glossary.md`, and a new name enters it in
 the same commit that introduces it. The fold vocabulary it fixes: `fold` (one
 chronological segment), `WARMUP_END_MS` (before any decision is allowed),
 training rows (everything that finished before the evaluated block), `purge`
@@ -156,7 +156,7 @@ exception the conventions name rather than an inconsistency they tolerate.
 For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
-Project-specific agent instructions live in `module_guidance/` — the
+Project-specific agent instructions live in `module_skills/` — the
 only other place agent guidance may exist in this tree. Its files are
 kind-first: the naming register (`glossary.md`), the skills (`skill_*.md`) and
 the methodology documents — `methodology_data.md` (how the canonical dataset

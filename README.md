@@ -10,8 +10,8 @@ XGBoost → research strategy simulation → monitoring.
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); project-specific agent
 skills, the naming register and the two methodology documents in
-[module_guidance/](module_guidance/). The working path
-through the repo is `AGENTS.md → module names → module_guidance → code`;
+[module_skills/](module_skills/). The working path
+through the repo is `AGENTS.md → module names → module_skills → code`;
 this README is the general overview.
 
 ```
@@ -61,7 +61,7 @@ divergence and every other anomaly are recorded by the monitoring layer and
 shown on the dashboard. Downstream ML code reads a continuous `t,O,H,L,C,V`
 series whose every printed price existed on a real market, and needs no
 source-specific logic. Full methodology, endpoints and schema:
-[module_guidance/methodology_data.md](module_guidance/methodology_data.md).
+[module_skills/methodology_data.md](module_skills/methodology_data.md).
 
 ## The basket
 
@@ -132,7 +132,7 @@ Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
   per-asset representation for external consumers; the ML stages in this
   repository read the same canonical object from the DuckDB tables. For Lean
   backtests use the per-source raw ZIP trees. Step-by-step build
-  description: [module_guidance/methodology_data.md](module_guidance/methodology_data.md).
+  description: [module_skills/methodology_data.md](module_skills/methodology_data.md).
 
 ## Monitoring
 
@@ -166,5 +166,5 @@ cross-section) and **ML Assets** tab, where ticker pills open one asset at a
 time in four frames: LABEL, MODEL, STRATEGY, FEATURES. Every asset folder also
 describes itself: `experiment_configuration.json` records the configuration
 the run used, and its `README.md` says what came out. Full methodology:
-[module_guidance/methodology_ml.md](module_guidance/methodology_ml.md).
+[module_skills/methodology_ml.md](module_skills/methodology_ml.md).
 
