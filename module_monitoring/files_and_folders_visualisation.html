@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Repo Silk Galaxy</title>
+<title>Files and Folders</title>
 <style>
 :root{
 --bg-deep:#070C1C; --bg-glow:#101A3C;
@@ -113,7 +113,7 @@ ISLAND_RADIUS: 310,     // distance of story islands from the core
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
 CAM_DIST: 1100,         // camera distance
 FOV: 760,               // projection focal length
-FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the galaxy
+FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the picture
 ZOOM_MIN: 0.4,
 ZOOM_MAX: 2.4,
 AUTO_SPEED: 0.10,       // rad/s auto-rotation
@@ -123,17 +123,17 @@ DIM_ALPHA: 0.10,        // opacity of out-of-focus elements
 STAR_COUNT: 90,         // lighter background
 MAX_DPR: 1.5            // pixel-ratio cap
 };
-/* GALAXY:STRUCTURE:BEGIN - written by module_visualisation/generate_galaxy.py, do not edit by hand */
+/* VISUALISATION:STRUCTURE:BEGIN - written by module_visualisation/generate.py, do not edit by hand */
 const META = {
  "config": {
   "FIT_WIDTH": 1400,
   "START_ROT_X": -0.4,
   "START_ROT_Y": 3.491
  },
- "documentTitle": "Repo Silk Galaxy \u00b7 LIORA-MLOps-Portfolio",
+ "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio",
- "subtitle": "68 tracked files \u00b7 7 top-level folders \u00b7 10 asset artifacts \u00b7 tree as of b88d3fa \u00b7 2026-08-28T22:27:57+02:00",
- "title": "Repo Silk Galaxy"
+ "subtitle": "69 tracked files \u00b7 7 top-level folders \u00b7 10 asset artifacts \u00b7 tree as of 4a774b4 \u00b7 2026-08-28T20:44:54+00:00",
+ "title": "Files and Folders"
 };
 const ISLANDS = {
  "S1": {
@@ -196,7 +196,7 @@ const NODES = [
   "type": "core"
  },
  {
-  "desc": "The one workflow: a push regenerates the galaxy and commits it back.",
+  "desc": "The one workflow: a push regenerates the picture and commits it back.",
   "id": ".github/",
   "island": "S1",
   "path": ".github/",
@@ -213,9 +213,9 @@ const NODES = [
  },
  {
   "desc": "",
-  "id": ".github/workflows/galaxy.yml",
+  "id": ".github/workflows/visualisation.yml",
   "island": "S1",
-  "path": ".github/workflows/galaxy.yml",
+  "path": ".github/workflows/visualisation.yml",
   "role": "config",
   "type": "file"
  },
@@ -392,18 +392,26 @@ const NODES = [
  },
  {
   "desc": "",
-  "id": "module_monitoring/app.js",
+  "id": "module_monitoring/asset.js",
   "island": "S5",
-  "path": "module_monitoring/app.js",
+  "path": "module_monitoring/asset.js",
   "role": "code",
   "type": "file"
  },
  {
   "desc": "",
-  "id": "module_monitoring/asset.js",
+  "id": "module_monitoring/data.js",
   "island": "S5",
-  "path": "module_monitoring/asset.js",
+  "path": "module_monitoring/data.js",
   "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/data_status.json",
+  "island": "S5",
+  "path": "module_monitoring/data_status.json",
+  "role": "artifact",
   "type": "file"
  },
  {
@@ -432,14 +440,6 @@ const NODES = [
  },
  {
   "desc": "",
-  "id": "module_monitoring/status.json",
-  "island": "S5",
-  "path": "module_monitoring/status.json",
-  "role": "artifact",
-  "type": "file"
- },
- {
-  "desc": "",
   "id": "module_monitoring/style.css",
   "island": "S5",
   "path": "module_monitoring/style.css",
@@ -461,6 +461,14 @@ const NODES = [
   "island": "S2",
   "path": "module_skills/act_naming_conventions.md",
   "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_skills/check_conventions.py",
+  "island": "S2",
+  "path": "module_skills/check_conventions.py",
+  "role": "code",
   "type": "file"
  },
  {
@@ -536,20 +544,12 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "This picture: the tracked tree rendered into module_monitoring/repo_galaxy.html on every push.",
+  "desc": "This picture: the tracked tree rendered into module_monitoring/files_and_folders_visualisation.html on every push.",
   "id": "module_visualisation/",
   "island": "S5",
   "path": "module_visualisation/",
   "role": "module",
   "type": "folder"
- },
- {
-  "desc": "",
-  "id": "module_visualisation/Files_and_Folders_Visualisation.html",
-  "island": "S5",
-  "path": "module_visualisation/Files_and_Folders_Visualisation.html",
-  "role": "code",
-  "type": "file"
  },
  {
   "desc": "",
@@ -568,19 +568,27 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "The whole configuration surface \u2014 shape, colour, wording and placement, with no Python edit.",
-  "id": "module_visualisation/galaxy_config.json",
+  "desc": "",
+  "id": "module_visualisation/files_and_folders_visualisation_template.html",
   "island": "S5",
-  "path": "module_visualisation/galaxy_config.json",
-  "role": "config",
+  "path": "module_visualisation/files_and_folders_visualisation_template.html",
+  "role": "code",
   "type": "file"
  },
  {
   "desc": "",
-  "id": "module_visualisation/generate_galaxy.py",
+  "id": "module_visualisation/generate.py",
   "island": "S5",
-  "path": "module_visualisation/generate_galaxy.py",
+  "path": "module_visualisation/generate.py",
   "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "The whole configuration surface \u2014 shape, colour, wording and placement, with no Python edit.",
+  "id": "module_visualisation/visualisation_config.json",
+  "island": "S5",
+  "path": "module_visualisation/visualisation_config.json",
+  "role": "config",
   "type": "file"
  },
  {
@@ -818,7 +826,7 @@ const EDGES = [
   "from": ".github/workflows/",
   "kind": "tree",
   "thick": false,
-  "to": ".github/workflows/galaxy.yml"
+  "to": ".github/workflows/visualisation.yml"
  },
  {
   "from": "module_data/",
@@ -932,13 +940,19 @@ const EDGES = [
   "from": "module_monitoring/",
   "kind": "tree",
   "thick": false,
-  "to": "module_monitoring/app.js"
+  "to": "module_monitoring/asset.js"
  },
  {
   "from": "module_monitoring/",
   "kind": "tree",
   "thick": false,
-  "to": "module_monitoring/asset.js"
+  "to": "module_monitoring/data.js"
+ },
+ {
+  "from": "module_monitoring/",
+  "kind": "tree",
+  "thick": false,
+  "to": "module_monitoring/data_status.json"
  },
  {
   "from": "module_monitoring/",
@@ -962,12 +976,6 @@ const EDGES = [
   "from": "module_monitoring/",
   "kind": "tree",
   "thick": false,
-  "to": "module_monitoring/status.json"
- },
- {
-  "from": "module_monitoring/",
-  "kind": "tree",
-  "thick": false,
   "to": "module_monitoring/style.css"
  },
  {
@@ -975,6 +983,12 @@ const EDGES = [
   "kind": "tree",
   "thick": false,
   "to": "module_skills/act_naming_conventions.md"
+ },
+ {
+  "from": "module_skills/",
+  "kind": "tree",
+  "thick": false,
+  "to": "module_skills/check_conventions.py"
  },
  {
   "from": "module_skills/",
@@ -1034,12 +1048,6 @@ const EDGES = [
   "from": "module_visualisation/",
   "kind": "tree",
   "thick": false,
-  "to": "module_visualisation/Files_and_Folders_Visualisation.html"
- },
- {
-  "from": "module_visualisation/",
-  "kind": "tree",
-  "thick": false,
   "to": "module_visualisation/README.md"
  },
  {
@@ -1052,13 +1060,19 @@ const EDGES = [
   "from": "module_visualisation/",
   "kind": "tree",
   "thick": false,
-  "to": "module_visualisation/galaxy_config.json"
+  "to": "module_visualisation/files_and_folders_visualisation_template.html"
  },
  {
   "from": "module_visualisation/",
   "kind": "tree",
   "thick": false,
-  "to": "module_visualisation/generate_galaxy.py"
+  "to": "module_visualisation/generate.py"
+ },
+ {
+  "from": "module_visualisation/",
+  "kind": "tree",
+  "thick": false,
+  "to": "module_visualisation/visualisation_config.json"
  },
  {
   "from": "store_assets_artifacts/",
@@ -1127,7 +1141,7 @@ const EDGES = [
   "to": "store_assets_artifacts/ZEC/"
  }
 ];
-/* GALAXY:STRUCTURE:END */
+/* VISUALISATION:STRUCTURE:END */
 Object.assign(CONFIG, META.config);
 document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
@@ -1174,7 +1188,7 @@ n.p = { x: r*Math.cos(a), y: pl.y, z: r*Math.sin(a) };
 // a member whose tree parent lives on another island can never be reached by a folder ring,
 // so it takes its slot first. Folders are then walked shallowest first, which is what
 // guarantees a parent already holds a position before its children are ringed around it —
-// the ordering the hand-built galaxy got away with only because every non-hub folder
+// the ordering the hand-built picture got away with only because every non-hub folder
 // happened to carry an explicit placement.
 var loose = members.filter(function(n){
 var parent = nodeById[PARENT_OF[n.id]];
