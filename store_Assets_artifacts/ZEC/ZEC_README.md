@@ -1,22 +1,23 @@
 # ZEC — research artifacts
 
-Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `ZEC_experiment_configuration.json` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
+Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, one file per distinct artifact responsibility; `ZEC_parameters.json` next to this file is the one parameters file: the a-priori experiment configuration plus the winning point of the Optuna→XGB search, written when the search runs — it is not artifact provenance.
 
 ## Files
 
 | file | holds | size |
 | --- | --- | --- |
 | `ZEC_canonical_ohlcv_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 39,755 KB |
-| `ZEC_experiment_configuration.json` | the a-priori experiment configuration, recorded at report time | 3 KB |
-| `ZEC_features_ss-15-hh-dd-MM.parquet` | X — 15 causal columns on the decision grid | 9,678 KB |
+| `ZEC_parameters.json` | the one parameters file: a-priori configuration + the Optuna→XGB winner | 4 KB |
+| `ZEC_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,294 KB |
+| `ZEC_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,227 KB |
+| `ZEC_features_ss-mm-04-dd-MM.parquet` | X — the five 4h family columns on the decision grid | 1,240 KB |
 | `ZEC_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,304 KB |
 | `ZEC_model_evaluation.json` | classification metrics per fold | 2 KB |
 | `ZEC_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-fold class probabilities, full windows | 2,339 KB |
-| `ZEC_OPTUNAs_XGB_HPOs_best_params.json` | the winning point of the Optuna→XGB search | 323 B |
 | `ZEC_README.md` | this file | — |
 | `ZEC_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
 
-`ZEC_features_ss-15-hh-dd-MM.parquet` carries 16 rows more than `ZEC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `ZEC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the three feature parquets carries 16 rows more than `ZEC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `ZEC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 

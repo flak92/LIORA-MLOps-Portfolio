@@ -4,7 +4,7 @@ Observation only, and the single place the reports are assembled. Three
 outputs, none of which computes a result of its own:
 
     module_monitoring/ml_status.json        the dashboard payload, all assets
-    <TICKER>_experiment_configuration.json  a-priori settings, recorded at report time
+    <TICKER>_parameters.json                the one parameters file (written by hpo)
     <TICKER>_README.md                      what the folder holds and what came out
 
 The payload blocks follow the experiment flow (sample -> search -> validation
@@ -124,14 +124,13 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 # the asset folder manifest, in listing order: (path descriptor, what it holds)
 FILE_MANIFEST = (
     (config.canonical_ohlcv_parquet, "the published canonical 1m series"),
-    (config.experiment_configuration_json, "the a-priori experiment configuration, recorded at report time"),
+    (config.parameters_json, "the one parameters file: a-priori configuration + the Optuna→XGB winner"),
     (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "4h"), "X — the five 4h family columns on the decision grid"),
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
     (config.oos_predictions_parquet, "out-of-fold class probabilities, full windows"),
-    (config.hpo_best_params_json, "the winning point of the Optuna→XGB search"),
     (config.asset_readme_md, "this file"),
     (config.strategy_evaluation_json, "threshold, PnL and the equity curve"),
 )
@@ -206,7 +205,7 @@ def asset_readme(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> str:
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `{config.experiment_configuration_json(ticker).name}` next to this file records the a-priori experiment configuration, read from the current `module_ml/config.py` when the report is written — it is not artifact provenance.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One directory per ticker, one file per distinct artifact responsibility; `{config.parameters_json(ticker).name}` next to this file is the one parameters file: the a-priori experiment configuration plus the winning point of the Optuna→XGB search, written when the search runs — it is not artifact provenance.
 
 ## Files
 
@@ -248,98 +247,21 @@ F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-
 """
 
 
-def experiment_configuration(ticker: str) -> dict:
-    """The a-priori experiment configuration, recorded when the report is written.
-
-    Read from the current module_ml/config.py when the report is written, not
-    recovered from the artifacts — it describes the experiment's a-priori
-    settings and is not artifact provenance: it proves nothing about any
-    particular file. Everything the run *chose* — the winning
-    hyper-parameters, the entry edge threshold — lives in the result files,
-    never here.
-    """
-    return {
-        "ticker": ticker,
-        "research_window": {
-            "start_utc": config.RESEARCH_START_UTC,
-            "end_utc": config.RESEARCH_END_UTC,
-            "seed": config.SEED,
-        },
-        "folds": {
-            "bounds_utc": list(config.FOLD_BOUNDS_UTC),
-            "validation_fold_ids": list(config.VALIDATION_FOLD_IDS),
-            "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
-            "warmup_4h_bars": config.WARMUP_4H_BARS,
-            "first_decision_utc": datetime.fromtimestamp(
-                config.WARMUP_END_MS / 1000, tz=UTC).strftime("%Y-%m-%d %H:%M"),
-            "purge_rule": "event_end_ts <= oos_start",
-            "embargo": "none — forward chaining places no training row after the OOS block",
-        },
-        "features": {
-            "hierarchy_timeframes": list(config.HIERARCHY_TIMEFRAMES),
-            "decision_timeframe": config.DECISION_TIMEFRAME,
-            "families": list(config.FAMILIES),
-            "columns": list(config.FEATURE_COLUMNS),
-            "ema_fast_span_bars": config.EMA_FAST_SPAN_BARS,
-            "ema_slow_span_bars": config.EMA_SLOW_SPAN_BARS,
-            "atr_wilder_smoothing_period_bars": config.ATR_WILDER_SMOOTHING_PERIOD_BARS,
-            "rsi_wilder_smoothing_period_bars": config.RSI_WILDER_SMOOTHING_PERIOD_BARS,
-            "range_position_lookback_bars": config.RANGE_POSITION_LOOKBACK_BARS,
-            "log_volume_zscore_lookback_bars": config.LOG_VOLUME_ZSCORE_LOOKBACK_BARS,
-        },
-        "labels": {
-            "atr_barrier_multiplier": config.ATR_BARRIER_MULTIPLIER,
-            "label_horizon_minutes": config.LABEL_HORIZON_MINUTES,
-            "sigma": "ATR14 of the last closed canonical 1h bar",
-            "touch_requires": "volume > 0",
-            "event_resolution_codes": {
-                name: code for code, name in config.EVENT_RESOLUTION_NAME.items()},
-            "supervised_population": "sample_valid = entry_observable & label_valid",
-        },
-        "hyperparameter_search": {
-            "sampler": "optuna.samplers.TPESampler",
-            "sampler_seed": config.SEED,
-            "trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,
-            "parallelism": "sequential (n_jobs=1) — TPE is reproducible only in order",
-            "objective": "mean uniqueness-weighted multiclass log-loss over folds "
-                         + ", ".join(f"F{i}" for i in config.VALIDATION_FOLD_IDS),
-            "space": {k: list(v) for k, v in config.HYPERPARAMETER_SEARCH_SPACE.items()},
-            "xgboost_fixed_parameters": dict(config.XGBOOST_FIXED_PARAMETERS),
-        },
-        "strategy": {
-            "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
-            "entry_edge_threshold_grid": {
-                "minimum": config.ENTRY_EDGE_THRESHOLD_GRID[0],
-                "maximum": config.ENTRY_EDGE_THRESHOLD_GRID[-1],
-                "step": round(config.ENTRY_EDGE_THRESHOLD_GRID[1]
-                              - config.ENTRY_EDGE_THRESHOLD_GRID[0], 4),
-                "count": len(config.ENTRY_EDGE_THRESHOLD_GRID),
-            },
-            "minimum_trades_per_validation_fold": config.MINIMUM_TRADES_PER_VALIDATION_FOLD,
-            "trend_gate_timeframe": config.TREND_GATE_TIMEFRAME,
-            "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
-            "annualisation_period_15m_bars": config.ANNUALISATION_PERIOD_15M_BARS,
-        },
-    }
-
-
 def main() -> int:
     args = config.ticker_parser("aggregate ML artifacts -> module_monitoring/ml_status.json").parse_args()
 
     assets = []
     for t in config.parse_tickers(args.tickers):
-        paths = {"hyperparameter_search": config.hpo_best_params_json(t),
+        paths = {"parameters": config.parameters_json(t),
                  "model_evaluation": config.model_evaluation_json(t),
                  "strategy_evaluation": config.strategy_evaluation_json(t)}
         if not all(p.exists() for p in paths.values()):
             continue
         loaded = {k: dataset.read_json(p) for k, p in paths.items()}
-        hpo = loaded["hyperparameter_search"]
+        hpo = loaded["parameters"]["OPTUNAs_XGB_HPOs_best_params"]
         metrics = loaded["model_evaluation"]
         strategy = loaded["strategy_evaluation"]
         assets.append(asset_report(t, hpo, metrics, strategy))
-        dataset.write_json(config.experiment_configuration_json(t),
-                           experiment_configuration(t))
         config.asset_readme_md(t).write_text(asset_readme(t, hpo, metrics, strategy),
                                              encoding="utf-8")
     assert assets, "no complete artifact set found — run the ML chain first"
@@ -364,7 +286,7 @@ def main() -> int:
               f"sharpe={a['strategy']['final_holdout']['sharpe']} "
               f"trades={a['strategy']['final_holdout']['trade_count']}")
     print(f"wrote {out} ({out.stat().st_size / 1024:.1f} KB) "
-          f"+ <TICKER>_experiment_configuration.json and <TICKER>_README.md in {len(assets)} asset folders")
+          f"+ <TICKER>_README.md in {len(assets)} asset folders")
     return 0
 
 

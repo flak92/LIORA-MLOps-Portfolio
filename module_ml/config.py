@@ -33,8 +33,8 @@ def oos_predictions_parquet(ticker):
     return artifact_dir(ticker) / f"{ticker}_oos_predictions_ss-15-hh-dd-MM.parquet"
 
 
-def hpo_best_params_json(ticker):
-    return artifact_dir(ticker) / f"{ticker}_OPTUNAs_XGB_HPOs_best_params.json"
+def parameters_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_parameters.json"
 
 
 def model_evaluation_json(ticker):
@@ -43,10 +43,6 @@ def model_evaluation_json(ticker):
 
 def strategy_evaluation_json(ticker):
     return artifact_dir(ticker) / f"{ticker}_strategy_evaluation.json"
-
-
-def experiment_configuration_json(ticker):
-    return artifact_dir(ticker) / f"{ticker}_experiment_configuration.json"
 
 
 def asset_readme_md(ticker):
