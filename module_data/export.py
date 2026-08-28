@@ -41,7 +41,7 @@ def main() -> int:
     args = ap.parse_args()
     tickers = config.parse_tickers(args.tickers)
 
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
     grid_rows = con.execute(
         f"""SELECT (max(timestamp_ms) + {config.CANONICAL_GRID_INTERVAL_MS} - {config.DATA_WINDOW_START_MS})
                    // {config.CANONICAL_GRID_INTERVAL_MS} FROM ohlcv_1m_canonical"""

@@ -150,7 +150,7 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
 
 def main() -> int:
     args = config.ticker_parser("triple-barrier labels on the canonical 1m path").parse_args()
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
     for t in config.parse_tickers(args.tickers):
         symbol = config.symbol(t)
         bars_1h = con.execute(

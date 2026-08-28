@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from module_data.config import (  # noqa: F401  (re-exported)
-    DB_PATH, MONITORING_DIR, artifact_dir, parse_tickers, symbol, ticker_parser,
+    STORE_DB_PATH, MODULE_MONITORING_DIR, artifact_dir, parse_tickers, symbol, ticker_parser,
 )
 
 SEED = 42

@@ -90,9 +90,9 @@ def pct(part: int, whole: int) -> float:
 
 
 def main() -> int:
-    if not config.DB_PATH.exists():
-        raise SystemExit(f"{config.DB_PATH} not found — run `make ingest` first")
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    if not config.STORE_DB_PATH.exists():
+        raise SystemExit(f"{config.STORE_DB_PATH} not found — run `make ingest` first")
+    con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
 
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered
@@ -198,7 +198,7 @@ def main() -> int:
         "window_start": f"{config.DATA_WINDOW_START_UTC} 00:00",
         "window_end": iso(window_end_ms),
         "duckdb_version": duckdb.__version__,
-        "db_bytes": config.DB_PATH.stat().st_size,
+        "db_bytes": config.STORE_DB_PATH.stat().st_size,
         "flow": {
             "zips_binance": sum(zip_counts["binance"].values()),
             "zips_bybit": sum(zip_counts["bybit"].values()),
@@ -212,8 +212,8 @@ def main() -> int:
         "canonical_source": canonical,
     }
 
-    config.MONITORING_DIR.mkdir(parents=True, exist_ok=True)
-    out = config.MONITORING_DIR / "status.json"
+    config.MODULE_MONITORING_DIR.mkdir(parents=True, exist_ok=True)
+    out = config.MODULE_MONITORING_DIR / "status.json"
     out.write_text(json.dumps(status, indent=1) + "\n", encoding="utf-8")
 
     f = status["flow"]

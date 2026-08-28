@@ -201,8 +201,8 @@ def main() -> int:
     if set(tickers) != set(config.TICKERS):
         raise SystemExit("canonical ingest is basket-wide — run `make ingest`")
 
-    config.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = duckdb.connect(str(config.DB_PATH))
+    config.STORE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    con = duckdb.connect(str(config.STORE_DB_PATH))
     # small-host safety: spill early instead of hitting the allocator ceiling
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered

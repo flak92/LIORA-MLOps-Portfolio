@@ -44,10 +44,10 @@ USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
-RAW_DIR = REPO_ROOT / "store_raw_1m"
-DB_PATH = REPO_ROOT / "store_db" / "research_ohlcv.duckdb"
-RESEARCH_ARTIFACTS_DIR = REPO_ROOT / "store_research_artifacts"
-MONITORING_DIR = REPO_ROOT / "module_monitoring"
+STORE_RAW_1M_DIR = REPO_ROOT / "store_raw_1m"
+STORE_DB_PATH = REPO_ROOT / "store_db" / "research_ohlcv.duckdb"
+STORE_RESEARCH_ARTIFACTS_DIR = REPO_ROOT / "store_research_artifacts"
+MODULE_MONITORING_DIR = REPO_ROOT / "module_monitoring"
 
 
 def symbol(ticker: str) -> str:
@@ -56,12 +56,12 @@ def symbol(ticker: str) -> str:
 
 def raw_symbol_dir(ticker: str, venue: str = LEAN_MARKET_FOLDER) -> Path:
     """Lean-exact tree: store_raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
-    return RAW_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
+    return STORE_RAW_1M_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 
 def artifact_dir(ticker: str) -> Path:
     """One directory per ticker; inside it one file per artifact, named for it."""
-    return RESEARCH_ARTIFACTS_DIR / ticker
+    return STORE_RESEARCH_ARTIFACTS_DIR / ticker
 
 
 def canonical_parquet(ticker: str) -> Path:

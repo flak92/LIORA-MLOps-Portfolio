@@ -83,7 +83,7 @@ def write_x(ticker: str, decision_ts: np.ndarray, x: np.ndarray) -> Path:
 
 def main() -> int:
     args = config.ticker_parser("hierarchical feature matrix X per asset").parse_args()
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
     for t in config.parse_tickers(args.tickers):
         decision_ts, x = build_x(con, t)
         out = write_x(t, decision_ts, x)

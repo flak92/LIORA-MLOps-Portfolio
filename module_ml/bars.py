@@ -50,7 +50,7 @@ def main() -> int:
     args = config.ticker_parser("canonical 1m -> 15m/1h/4h bars").parse_args()
     tickers = config.parse_tickers(args.tickers)
 
-    con = duckdb.connect(str(config.DB_PATH))
+    con = duckdb.connect(str(config.STORE_DB_PATH))
     con.execute("SET memory_limit='4GB'")
     con.execute("SET threads=1")   # float summation must not be reordered
     for timeframe, timeframe_duration_ms in config.TIMEFRAME_DURATION_MS.items():

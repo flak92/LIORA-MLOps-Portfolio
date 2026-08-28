@@ -53,7 +53,7 @@ def load_inputs(ticker: str) -> dict:
     adir = config.artifact_dir(ticker)
     symbol = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
-    con = duckdb.connect(str(config.DB_PATH), read_only=True)
+    con = duckdb.connect(str(config.STORE_DB_PATH), read_only=True)
     close_1m = con.execute(
         f"""SELECT close FROM ohlcv_1m_canonical
             WHERE symbol = '{symbol}'
