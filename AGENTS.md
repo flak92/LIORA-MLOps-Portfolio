@@ -128,6 +128,34 @@ the barrier width, the horizon, the cost and the feature set are frozen a
 priori, not selected — and `FINAL_HOLDOUT_FOLD_ID` is F5, which only
 evaluates. The word "test" never names a fold.
 
+And one name, one concept. A name that could denote two things **in the same
+scope** is renamed until it denotes one. The scopes are enumerated, so the rule
+can be applied without argument: make targets, compose services, tracked paths,
+and Python symbols within a module. Two objects sharing a name in *different*
+scopes are not a collision — the compose service `dashboard` and the make target
+`monitoring-dashboard` are addressed by different tools and never appear in one
+listing. This is the rule the act already leaned on twice without writing it
+down: `db` is legal where nothing else could be meant (row 3), and `status`
+became `data-status` the moment `ml-status` existed (row 13).
+
+**Derived, never drafted.** Every derived artifact is generated from source and
+config, and never hand-edited; a hand edit to a generated file is a violation.
+`module_monitoring/files_and_folders_visualisation.html` is derived from the git
+index and `module_visualisation/visualisation_config.json`, and
+`make visualisation-check` is what makes this enforceable instead of hoped for.
+
+**Prefer generative structure over repeated project knowledge.** When a family —
+assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
+— is governed by one canonical definition, derive the repeated representations
+from that owner rather than copying the same list or naming decision into
+several files; adding the next member of an established family should need one
+local definition and predictable derivation. Keep it stupid simple: no
+generators, registries, metaprogramming or abstraction layers for a one-off
+value. Generation earns its place only when it removes duplicated knowledge and
+shortens the extension path, and it is a preference the repository states rather
+than a grammar it can check — `module_skills/act_naming_conventions.md` records
+it among the rules no grep can settle.
+
 Every layer has a closed grammar, the way CSS has BEM. A name is **derived**
 from its layer's grammar, never invented:
 

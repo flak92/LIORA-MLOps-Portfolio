@@ -31,7 +31,10 @@ directory — must explain itself, so an agent never has to guess.
   things live. If renaming would place things of one kind next to each other,
   rename them — `module_*` beside `module_*`, `store_*` beside `store_*`.
 - **One concept, one name.** A synonym forces the reader to decide whether two
-  names are one thing or two — a thought the code should never demand.
+  names are one thing or two — a thought the code should never demand. And its
+  converse, **one name, one concept**: a name denoting two things in one scope
+  demands the same thought from the other side. `AGENTS.md` holds the rule and
+  enumerates the scopes it binds.
 - **The glossary confirms, it never decodes.** `glossary.md` registers what a
   name already says; if the register is needed to understand the name, the
   name is wrong.

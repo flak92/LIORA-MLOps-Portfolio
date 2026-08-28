@@ -27,6 +27,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
+| the external minute-bar format the raw store is byte-compatible with | Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | — (DuckDB tables only; no OHLCV file is published) | canonical dataset | fused series, index, blended price |
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
@@ -111,6 +112,7 @@ Written by `module_data/status.py`; every SQL alias in its scans is the key it b
 | log-loss of the weighted training class prior | `prior_logloss` | `prior_logloss` | prior log-loss | baseline |
 | log-loss of the model on the evaluated block | `model_logloss` | `model_logloss` | model log-loss | loss |
 | information beyond the prior, `1 − model / prior` | `relative_logloss_skill` | `relative_logloss_skill` | skill | accuracy, edge |
+| the search for model hyper-parameters, and the stage that runs it | HPO — `module_ml/hpo.py`, `make ml-hpo` | `hyperparameter_search_result` | search | tuning, optimisation, autoML; `HPO` spelled out mid-document after its first use |
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe | return/risk |
