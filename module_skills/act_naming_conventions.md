@@ -56,7 +56,7 @@ so every one is listed here with the file that owns it.
 | git plumbing | `module_visualisation/generate.py` | `ls-files -z`, `rev-parse`, `rev-list --parents`, `show --first-parent --name-only`, `%h`, `%cI`, `:(exclude)` |
 | GitHub Actions | `.github/workflows/visualisation.yml` | `on`, `push`, `paths-ignore`, `concurrency`, `cancel-in-progress`, `permissions`, `runs-on`, `steps`, `uses`, `github.actor`, `github-actions[bot]`, `[skip ci]` |
 
-The browser is a boundary of its own: it has no config module, so `app.js` and
+The browser is a boundary of its own: it has no config module, so `data.js` and
 `ml.js` fetch the two snapshots by literal name. Before any mechanical rename,
 run the pre-sweep grep and confirm that every hit sits inside an owning file
 above: `git grep -n 'setAttribute("\|suggest_\|retCode\|startTime\|DMatrix\|read_csv\|read_parquet' -- '*.py' '*.js'`.

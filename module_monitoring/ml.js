@@ -2,7 +2,7 @@
    cross-section table, the four summary views and — through asset.js — the
    per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, formatCount and formatNumber from
-   app.js. */
+   data.js. */
 "use strict";
 
 const CLASS_NAMES = ["short", "neutral", "long"];

@@ -98,7 +98,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree) —
   and the browser, which has no config module and fetches its two snapshots by
-  literal name (`app.js`, `ml.js`); one asset is one folder,
+  literal name (`data.js`, `ml.js`); one asset is one folder,
   `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a

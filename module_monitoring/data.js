@@ -1,4 +1,4 @@
-/* Pipeline and Data Quality tabs, plus the helpers ml.js and asset.js share:
+/* Pipeline and Data Quality tabs, plus the code ml.js and asset.js share:
    formatCount, formatNumber, buildMeter, appendCell, appendHeaderRow,
    appendRows, renderTable, initPills, PILL_HOOKS. Vanilla JS, classic
    scripts sharing one global scope, no external resources. Every function
