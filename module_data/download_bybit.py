@@ -34,9 +34,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
-from .download_binance import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, write_lean_zip
+from .lean import (LEAN_DAY_ZIP_GLOB, MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day,
+                   lean_day_zip_name, write_lean_zip)
 
-KLINE_REQUEST_WINDOW_MS = 720 * 60_000  # half a day fits in one 1000-candle response
+KLINE_REQUEST_WINDOW_MS = 720 * config.MILLISECONDS_PER_MINUTE  # half a day fits in one 1000-candle response
 
 
 def fetch_klines(params: dict, retries: int = 6) -> list[list]:
@@ -60,7 +61,6 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
                 raise
             time.sleep(backoff)
             backoff *= 2
-    return []
 
 
 def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
@@ -98,7 +98,7 @@ def earliest_traded_day(out_dir: Path) -> str | None:
     or on any unbroken run of empty days beginning with it, is indistinguishable
     from pre-listing, because no local evidence precedes it.
     """
-    for p in sorted(out_dir.glob("*_trade.zip")):
+    for p in sorted(out_dir.glob(LEAN_DAY_ZIP_GLOB)):
         with zipfile.ZipFile(p) as z:
             entries = z.infolist()
             if entries and entries[0].file_size > 0:
@@ -126,7 +126,7 @@ def main() -> int:
         t0 = time.time()
         while day_ms < end_ms:
             day = datetime.fromtimestamp(day_ms / 1000, tz=UTC).strftime("%Y%m%d")
-            if (out_dir / f"{day}_trade.zip").exists():
+            if (out_dir / lean_day_zip_name(day)).exists():
                 skipped += 1
             else:
                 rows = fetch_day(symbol, day_ms)

@@ -276,7 +276,7 @@ def main() -> int:
         "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
         "assets": assets,
     }
-    out = config.MODULE_MONITORING_DIR / "ml_status.json"
+    out = config.MODULE_MONITORING_ML_STATUS_JSON_PATH
     dataset.write_json(out, payload)
 
     for a in assets:

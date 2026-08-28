@@ -1,6 +1,6 @@
 PY         := .venv/bin/python
 PORT       ?= 8900
-COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) docker compose
+COMPOSE    := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) docker compose
 TICKER_LIST = $(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))")
 
 # ML stages are one independent process per asset. The only speed-up allowed
@@ -20,8 +20,8 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 
 .DEFAULT_GOAL := help
 
-# every target is a command, not a file — without this `make dashboard` would
-# be "up to date" because the module_monitoring/ directory exists
+# every target is a command, not a file — .PHONY stops make from ever looking
+# for a file of the target's own name (and from searching implicit rules for it)
 .PHONY: help all setup download download-binance download-bybit ingest status \
         dashboard ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-download \
@@ -120,7 +120,7 @@ docker-ml-all:       ## the whole ML chain inside the container
 	$(MAKE) docker-ml-bars docker-ml-features docker-ml-labels docker-ml-hpo \
 	        docker-ml-train docker-ml-strategy docker-ml-status
 
-docker-up:       ## start the dashboard container at http://127.0.0.1:8900/
+docker-up:       ## start the dashboard container at http://127.0.0.1:$(PORT)/
 	$(COMPOSE) up -d dashboard
 
 docker-down:     ## stop and remove the containers

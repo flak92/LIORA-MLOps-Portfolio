@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 import duckdb
 
 from . import config
+from .lean import LEAN_DAY_ZIP_GLOB
 
 VENUE_SCAN = """
 SELECT symbol,
@@ -118,7 +119,7 @@ def main() -> int:
 
     tickers = [t for t in config.TICKERS if config.symbol(t) in canonical_rows]
     zip_counts = {
-        venue: {t: sum(1 for _ in config.raw_symbol_dir(t, venue).glob("*_trade.zip")) for t in tickers}
+        venue: {t: sum(1 for _ in config.raw_symbol_dir(t, venue).glob(LEAN_DAY_ZIP_GLOB)) for t in tickers}
         for venue in config.SOURCE_VENUES
     }
 
@@ -206,7 +207,7 @@ def main() -> int:
     }
 
     config.MODULE_MONITORING_DIR.mkdir(parents=True, exist_ok=True)
-    out = config.MODULE_MONITORING_DIR / "status.json"
+    out = config.MODULE_MONITORING_STATUS_JSON_PATH
     out.write_text(json.dumps(status, indent=1) + "\n", encoding="utf-8")
 
     f = status["flow"]

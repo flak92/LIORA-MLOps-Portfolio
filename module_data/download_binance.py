@@ -18,22 +18,15 @@ VOLUME UNITS: klines column 5 = BASE volume (e.g. BTC), not quote turnover.
 
 from __future__ import annotations
 
-import io
 import json
-import os
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import zipfile
 from datetime import UTC, datetime
-from pathlib import Path
 
 from . import config
-
-MILLISECONDS_PER_DAY = 86_400_000
-MILLISECONDS_PER_MINUTE = 60_000
-MINUTES_PER_DAY = MILLISECONDS_PER_DAY // MILLISECONDS_PER_MINUTE
+from .lean import MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, lean_day_zip_name, write_lean_zip
 
 
 def _iso_day(epoch_ms: int) -> str:
@@ -62,7 +55,6 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
                 raise
             time.sleep(backoff)
             backoff *= 2
-    return []
 
 
 def probe_oldest(symbol: str) -> int:
@@ -88,35 +80,6 @@ def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
     return [(int(row[0]) - day_ms, row[1], row[2], row[3], row[4], row[5]) for row in batch]
 
 
-def is_full_utc_day(rows: list[tuple]) -> bool:
-    """Exactly the 1440 minutes of one UTC day, in order, with no hole.
-
-    One expression covers completeness, ordering, uniqueness and the exact
-    60 000 ms grid from 00:00 to 23:59, because the offsets of a full day are
-    the sequence 0, 60000, ... by definition. A short answer is a truncated
-    response, and writing it would make the gap permanent: the ZIP exists, so
-    the day is skipped forever.
-    """
-    return len(rows) == MINUTES_PER_DAY and all(
-        row[0] == i * MILLISECONDS_PER_MINUTE for i, row in enumerate(rows)
-    )
-
-
-def write_lean_zip(out_dir: Path, symbol: str, day: str, rows: list[tuple]) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    csv_name = f"{day}_{symbol.lower()}_minute_trade_perp.csv"
-    body = "\n".join(f"{off},{o},{h},{lo},{c},{v}" for (off, o, h, lo, c, v) in rows)
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(csv_name, body)
-    # whole or not at all: a truncated ZIP would be skipped forever by the
-    # exists() check above and then rejected by ingest
-    out = out_dir / f"{day}_trade.zip"
-    tmp = out.with_suffix(".zip.tmp")
-    tmp.write_bytes(buf.getvalue())
-    os.replace(tmp, out)
-
-
 def main() -> int:
     ap = config.ticker_parser("Binance USDS-M 1m klines -> Lean minute-trade ZIPs")
     ap.add_argument("--days", type=int, default=0, help="only the last N full UTC days (0 = full window)")
@@ -138,13 +101,13 @@ def main() -> int:
     total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY
     for t in tickers:
         symbol = config.symbol(t)
-        out_dir = config.raw_symbol_dir(t)
+        out_dir = config.raw_symbol_dir(t, "binance")
         written = skipped = 0
         day_ms = start_ms
         t0 = time.time()
         while day_ms < end_ms:
             day = datetime.fromtimestamp(day_ms / 1000, tz=UTC).strftime("%Y%m%d")
-            if (out_dir / f"{day}_trade.zip").exists():
+            if (out_dir / lean_day_zip_name(day)).exists():
                 skipped += 1
             else:
                 rows = fetch_day(symbol, day_ms)

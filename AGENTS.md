@@ -74,7 +74,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   renaming would put things of one kind next to each other, rename them.
   Checked with `ls -1d */`: one kind, one contiguous block;
 - short, predictable paths, built only in a module's `config.py` — never
-  assembled at the point of use; one asset is one folder,
+  assembled at the point of use; the one exception is an external format's own
+  file names, built by its adapter (`module_data/lean.py` for the Lean tree);
+  one asset is one folder,
   `store_Assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a

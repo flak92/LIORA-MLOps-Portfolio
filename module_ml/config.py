@@ -9,9 +9,11 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from module_data.config import (  # noqa: F401  (re-exported)
-    STORE_DB_PATH, MODULE_MONITORING_DIR, artifact_dir, parse_tickers, symbol,
-    ticker_parser,
+    MILLISECONDS_PER_MINUTE, MODULE_MONITORING_DIR, STORE_DB_PATH, artifact_dir,
+    parse_tickers, symbol, ticker_parser,
 )
+
+MODULE_MONITORING_ML_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "ml_status.json"
 
 
 # ---- the asset folder manifest (module_skills/act_naming_conventions.md):
@@ -64,7 +66,6 @@ RESEARCH_END_MS = _utc_ms(RESEARCH_END_UTC)
 
 # ---- hierarchy
 HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
-MILLISECONDS_PER_MINUTE = 60_000
 TIMEFRAME_DURATION_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
 DECISION_TIMEFRAME = "15m"
 

@@ -379,7 +379,7 @@ JSON) · `module_ml/bars` (single DB writer) · `module_ml/features`,
 `module_ml/status` (CLI stages, `python -m module_ml.<stage> [--tickers …]`).
 Constant convention: **experiment-semantic constants live in
 `module_ml/config.py`; implementation
-constants** (chunk sizes, `MILLISECONDS_PER_MINUTE`, equity-curve stride) **may stay local
+constants** (chunk sizes, the equity-curve stride) **may stay local
 to their module**. The canonical series is gated where it is read:
 `labels.load_research_1m` asserts the full 1m grid inside the research window,
 and the ingest stage rebuilds the basket as a whole.

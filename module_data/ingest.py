@@ -21,9 +21,9 @@ data-quality signal only.
 
 from __future__ import annotations
 
+import argparse
 import csv
 import io
-import re
 import tempfile
 import zipfile
 from collections.abc import Iterator
@@ -33,8 +33,7 @@ from pathlib import Path
 import duckdb
 
 from . import config
-
-ZIP_NAME_RE = re.compile(r"^(\d{8})_trade\.zip$")
+from .lean import LEAN_DAY_ZIP_GLOB, LEAN_DAY_ZIP_NAME_PATTERN
 
 VENUE_DDL = """
 CREATE TABLE IF NOT EXISTS ohlcv_1m_{venue} (
@@ -160,12 +159,12 @@ def utc_midnight_ms(yyyymmdd: str) -> int:
 
 
 def iter_zip_paths(zip_dir: Path) -> list[Path]:
-    return [p for _, p in sorted((p.name[:8], p) for p in zip_dir.glob("*_trade.zip") if ZIP_NAME_RE.match(p.name))]
+    return [p for _, p in sorted((p.name[:8], p) for p in zip_dir.glob(LEAN_DAY_ZIP_GLOB) if LEAN_DAY_ZIP_NAME_PATTERN.match(p.name))]
 
 
 def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
     """Yield (epoch_ms, open, high, low, close, volume) from one Lean minute ZIP."""
-    midnight_ms = utc_midnight_ms(ZIP_NAME_RE.match(zip_path.name).group(1))
+    midnight_ms = utc_midnight_ms(LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1))
     with zipfile.ZipFile(zip_path) as zf:
         names = zf.namelist()
         if len(names) != 1:
@@ -191,15 +190,15 @@ def spool_symbol(ticker: str, venue: str, spool_csv: Path) -> int:
 
 
 def main() -> int:
-    ap = config.ticker_parser("Lean ZIPs (both venues) -> DuckDB + primary-failover canonical series")
-    args = ap.parse_args()
-    tickers = config.parse_tickers(args.tickers)
+    argparse.ArgumentParser(
+        description="Lean ZIPs (both venues) -> DuckDB + primary-failover canonical series"
+    ).parse_args()
     # The canonical grid ends at the global maximum of the raw tables, so
-    # rebuilding a subset leaves the other symbols on an older horizon — one
+    # rebuilding a subset would leave the other symbols on an older horizon — one
     # database with different observation windows per asset. Acquisition may be
-    # per ticker; the canonical dataset is defined for the basket as a whole.
-    if set(tickers) != set(config.TICKERS):
-        raise SystemExit("canonical ingest is basket-wide — run `make ingest`")
+    # per ticker; the canonical dataset is defined for the basket as a whole, so
+    # this stage takes no --tickers.
+    tickers = config.TICKERS
 
     config.STORE_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = duckdb.connect(str(config.STORE_DB_PATH))
