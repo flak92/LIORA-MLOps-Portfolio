@@ -4,7 +4,7 @@ The dashboard is a static dial-up-minimal page; keep it one.
 
 - Plain HTML + CSS + JS only — no frameworks, no build step, no external
   resources (fonts, CDNs, trackers). Everything ships in `module_monitoring/`.
-- Reachable on **loopback only** (`127.0.0.1`): `make dashboard` binds it
+- Reachable on **loopback only** (`127.0.0.1`): `make monitoring-dashboard` binds it
   directly, and the container binds `0.0.0.0` inside its own namespace while
   compose publishes it on `127.0.0.1` alone. Remote viewing goes through an
   SSH tunnel, never a bind to a public interface of the host.

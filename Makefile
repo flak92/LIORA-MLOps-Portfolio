@@ -23,7 +23,7 @@ fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} 
 # every target is a command, not a file — .PHONY stops make from ever looking
 # for a file of the target's own name (and from searching implicit rules for it)
 .PHONY: help all setup data-download data-download-binance data-download-bybit data-ingest data-status \
-        dashboard visualisation-generate visualisation-check \
+        monitoring-dashboard visualisation-generate visualisation-check \
         ml-bars ml-features ml-labels ml-hpo ml-train \
         ml-strategy ml-status ml-all docker-build docker-data-download \
         docker-data-ingest docker-data-status docker-ml-bars \
@@ -55,7 +55,7 @@ data-ingest:     ## load both ZIP trees into store_db/research_ohlcv.duckdb and 
 data-status:     ## data & DB monitoring -> stdout + module_monitoring/data_status.json
 	$(PY) -m module_data.status
 
-dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
+monitoring-dashboard: ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser
 	@(sleep 0.7 && $(PY) -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')") >/dev/null 2>&1 &
 	$(PY) -m http.server $(PORT) --bind 127.0.0.1 --directory module_monitoring
 

@@ -131,7 +131,7 @@ conversion factors    git grep -n '60_000\|86_400_000' -- '*.py' | grep -v 'modu
                       → empty
 JavaScript verbs      grep -hoE '^function [a-zA-Z]+' module_monitoring/*.js | grep -vE 'function (build|render|format|append|select|init)[A-Z]|^function (validationFolds|mean)$'
                       → empty
-make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|dashboard|docker-build|docker-up|docker-down|(data|ml|visualisation)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
+make targets          grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | grep -vE '^(help|setup|all|docker-build|docker-up|docker-down|(data|ml|monitoring|visualisation)-[a-z-]+|docker-(data|ml)-[a-z-]+)$'
                       → empty
 .PHONY completeness   comm -3 <(grep -oE '^[a-z][a-z0-9-]*:' Makefile | tr -d : | sort -u) <(sed -n '/^\.PHONY:/,/^$/p' Makefile | tr ' \\' '\n' | grep -v PHONY | grep . | sort -u)
                       → empty

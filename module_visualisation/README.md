@@ -15,7 +15,7 @@ Both run `python3 -m module_visualisation.generate` — standard library only, p
 binary. There is nothing to install, which is why the workflow can call the same target on a bare
 runner.
 
-The page is served by the dashboard that already exists: `make dashboard`, then
+The page is served by the dashboard that already exists: `make monitoring-dashboard`, then
 <http://127.0.0.1:8900/files_and_folders_visualisation.html>, or the link in the dashboard footer.
 
 ## The one rule
