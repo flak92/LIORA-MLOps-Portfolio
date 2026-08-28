@@ -34,7 +34,7 @@ The dashboard is a static dial-up-minimal page; keep it one.
 
 ## The generated page
 
-`module_monitoring/repo_galaxy.html` is written by `module_visualisation`, not by hand, and the
+`module_monitoring/files_and_folders_visualisation.html` is written by `module_visualisation`, not by hand, and the
 rules above bind it only where they still mean something.
 
 - It obeys the ones that matter: plain HTML, CSS and JS, no framework, no build step, and **no
@@ -46,7 +46,7 @@ rules above bind it only where they still mean something.
   stake. Edge weight carries the only ordinal distinction there is — folder to folder, or folder to
   file — and it is fixed in the renderer, not configurable.
 - The closed verb list for file-scope JavaScript binds the hand-written dashboard scripts. The
-  galaxy's inline renderer is a generated artifact reviewed as a whole; the `JavaScript verbs`
+  page's inline renderer is a generated artifact reviewed as a whole; the `JavaScript verbs`
   check greps `module_monitoring/*.js` and deliberately does not reach it.
 - Verify it the same way as the rest: serve on loopback, `chromium --headless --dump-dom`, and
   assert the file tree rendered — an empty `#tree` means the layout threw before the first frame,

@@ -20,7 +20,7 @@ conflicts with this file, the change is wrong.
   switches that can be automated, are: `make all` runs the whole pipeline
   from a fresh clone, every stage is idempotent, the dashboard opens itself.
   One GitHub Actions workflow carries the rule past the clone: a push to `main`
-  regenerates `module_monitoring/repo_galaxy.html` and commits it, because a
+  regenerates `module_monitoring/files_and_folders_visualisation.html` and commits it, because a
   picture of the files that a human has to remember to refresh is a picture
   that is quietly wrong.
 - **Main = clean working logic.** No test frameworks, security layers,

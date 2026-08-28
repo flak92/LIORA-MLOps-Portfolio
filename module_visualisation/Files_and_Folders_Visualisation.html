@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Repo Silk Galaxy</title>
+<title>Files and Folders</title>
 <style>
 :root{
 --bg-deep:#070C1C; --bg-glow:#101A3C;
@@ -113,7 +113,7 @@ ISLAND_RADIUS: 310,     // distance of story islands from the core
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
 CAM_DIST: 1100,         // camera distance
 FOV: 760,               // projection focal length
-FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the galaxy
+FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the picture
 ZOOM_MIN: 0.4,
 ZOOM_MAX: 2.4,
 AUTO_SPEED: 0.10,       // rad/s auto-rotation
@@ -123,9 +123,9 @@ DIM_ALPHA: 0.10,        // opacity of out-of-focus elements
 STAR_COUNT: 90,         // lighter background
 MAX_DPR: 1.5            // pixel-ratio cap
 };
-/* GALAXY:STRUCTURE:BEGIN - written by module_visualisation/generate_galaxy.py, do not edit by hand */
+/* VISUALISATION:STRUCTURE:BEGIN - written by module_visualisation/generate.py, do not edit by hand */
 const META = {
-title: 'Repo Silk Galaxy',
+title: 'Files and Folders',
 eyebrow: 'owner / repository',
 subtitle: 'tree as of 0000000 - never generated',
 config: {}
@@ -143,7 +143,7 @@ const NODES = [
 const EDGES = [
 { from:'root', to:'placeholder', kind:'tree', thick:false }
 ];
-/* GALAXY:STRUCTURE:END */
+/* VISUALISATION:STRUCTURE:END */
 Object.assign(CONFIG, META.config);
 document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
@@ -190,7 +190,7 @@ n.p = { x: r*Math.cos(a), y: pl.y, z: r*Math.sin(a) };
 // a member whose tree parent lives on another island can never be reached by a folder ring,
 // so it takes its slot first. Folders are then walked shallowest first, which is what
 // guarantees a parent already holds a position before its children are ringed around it —
-// the ordering the hand-built galaxy got away with only because every non-hub folder
+// the ordering the hand-built picture got away with only because every non-hub folder
 // happened to carry an explicit placement.
 var loose = members.filter(function(n){
 var parent = nodeById[PARENT_OF[n.id]];

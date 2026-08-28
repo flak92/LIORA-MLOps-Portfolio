@@ -181,7 +181,7 @@ research pipeline, and they never appear in a measurement payload.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the generated page: the tracked tree drawn as one self-contained file | `galaxy_html()` | `module_monitoring/repo_galaxy.html` | Repo Silk Galaxy | diagram, graph, chart |
+| the generated page: the tracked tree drawn as one self-contained file | `visualisation_html()` | `module_monitoring/files_and_folders_visualisation.html` | Files and Folders | diagram, graph, chart |
 | one file or folder drawn in the picture | `node`, `NODES` | `id`, `path`, `type` | — | vertex, item, entry |
 | a parent → child line, the only kind of line the picture has | tree edge, `EDGES` | `kind: "tree"` | folder – folder / folder – file | link, dependency, flow |
 | an edge whose two ends are both folders, drawn heavier | `thick` | `thick` | folder – folder | bold, primary edge |
@@ -189,6 +189,6 @@ research pipeline, and they never appear in a measurement payload.
 | the node drawn at the centre of a story | `hub` | `hub` | — | root of the story, anchor |
 | a folder collapsed to a single node, its contents left out of the picture | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the commit the tree was read from, and its committer date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date, timestamp |
-| the one region of the template the generator writes | structure block | `GALAXY:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
+| the one region of the template the generator writes | structure block | `VISUALISATION:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
 | regenerating and byte-comparing against the committed page | `--check` | — | — | test, validate, lint |
 

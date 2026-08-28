@@ -100,11 +100,11 @@ data half and `make docker-ml-all` (or any single `docker-ml-<stage>`) for the
 ML half, and `make docker-up` / `make docker-down` for the dashboard container.
 Remote machine? Tunnel with `ssh -L 8900:127.0.0.1:8900 <host>`.
 
-The repository also draws itself: `make visualisation-galaxy` renders the tracked
-tree into `module_monitoring/repo_galaxy.html`, linked from the dashboard footer
+The repository also draws itself: `make visualisation-generate` renders the tracked
+tree into `module_monitoring/files_and_folders_visualisation.html`, linked from the dashboard footer
 and served by the same page. It is regenerated and committed by the one workflow
 in `.github/` on every push to `main`, so the picture always equals the tree; the
-shape of it is configured entirely in `module_visualisation/galaxy_config.json`.
+shape of it is configured entirely in `module_visualisation/visualisation_config.json`.
 
 ## Stages
 
@@ -115,7 +115,7 @@ shape of it is configured entirely in `module_visualisation/galaxy_config.json`.
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
-| galaxy    | `make visualisation-galaxy` | `git ls-files` + `galaxy_config.json` → `module_monitoring/repo_galaxy.html` | deterministic; regenerated on every push to `main`; `visualisation-galaxy-check` fails on drift |
+| picture   | `make visualisation-generate` | `git ls-files` + `visualisation_config.json` → `module_monitoring/files_and_folders_visualisation.html` | deterministic; regenerated on every push to `main`; `visualisation-check` fails on drift |
 
 ## Data formats
 
