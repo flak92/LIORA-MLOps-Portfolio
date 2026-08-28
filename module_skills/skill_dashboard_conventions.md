@@ -22,7 +22,7 @@ The dashboard is a static dial-up-minimal page; keep it one.
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold
   marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
-- The page reads two committed snapshots (`status.json`, `ml_status.json`)
+- The page reads two committed snapshots (`data_status.json`, `ml_status.json`)
   and renders everything client-side; the payload carries only fields the
   page actually reads.
 - The page computes no domain or model results — only presentation arithmetic
@@ -39,7 +39,7 @@ rules above bind it only where they still mean something.
 
 - It obeys the ones that matter: plain HTML, CSS and JS, no framework, no build step, and **no
   external resource of any kind** — the whole page, including its data, is one file.
-- It carries its data inside itself instead of fetching `status.json` / `ml_status.json`, because
+- It carries its data inside itself instead of fetching `data_status.json` / `ml_status.json`, because
   its subject is the repository's own tree rather than anything a stage measured. That is the one
   page for which "reads the two committed snapshots" does not apply.
 - Colour on that page separates stories; it encodes no magnitude, so "bars, not colours" is not at

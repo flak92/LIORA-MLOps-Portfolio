@@ -126,7 +126,7 @@ function renderRawSource(tableId, venueRows) {
   }
 }
 
-fetch("status.json", { cache: "no-store" })
+fetch("data_status.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
   .then((status) => {
     document.getElementById("meta").textContent =
@@ -181,6 +181,6 @@ fetch("status.json", { cache: "no-store" })
   })
   .catch((error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load status.json (" + error.message + ") — run `make data-status`";
+    meta.textContent = "could not load data_status.json (" + error.message + ") — run `make data-status`";
     meta.className = "box err";
   });

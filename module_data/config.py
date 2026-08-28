@@ -51,7 +51,7 @@ STORE_DB_PATH = REPO_ROOT / "store_db" / "research_ohlcv.duckdb"
 DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = REPO_ROOT / "store_assets_artifacts"
 MODULE_MONITORING_DIR = REPO_ROOT / "module_monitoring"
-MODULE_MONITORING_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "status.json"
+MODULE_MONITORING_DATA_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "data_status.json"
 
 
 def symbol(ticker: str) -> str:

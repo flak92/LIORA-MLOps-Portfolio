@@ -139,6 +139,6 @@ port                  git grep -n 8900 -- Makefile docker-compose.yml
                       → Makefile's `PORT ?=` and the two `${PORT:-8900}` defaults of compose, nothing else
 boundaries            the pre-sweep grep of the act, § External vocabularies
                       → hits only inside the owning files listed there
-register              python3 -c "import json;g=open('module_skills/glossary.md').read();s=json.load(open('module_monitoring/status.json'));m=json.load(open('module_monitoring/ml_status.json'));a=m['assets'][0];k=set(s)|set(s['flow'])|{x for r in s['symbols']+s['canonical_source']+s['venues']['binance'] for x in r}|set(m)|set(m['research_window'])|set(a)|set(a['sample'])|set(a['strategy'])|set(a['strategy']['final_holdout'])|set(a['final_holdout'])|set(a['hyperparameter_search_result']);print(sorted(x for x in k if '\x60'+x+'\x60' not in g))"
+register              python3 -c "import json;g=open('module_skills/glossary.md').read();s=json.load(open('module_monitoring/data_status.json'));m=json.load(open('module_monitoring/ml_status.json'));a=m['assets'][0];k=set(s)|set(s['flow'])|{x for r in s['symbols']+s['canonical_source']+s['venues']['binance'] for x in r}|set(m)|set(m['research_window'])|set(a)|set(a['sample'])|set(a['strategy'])|set(a['strategy']['final_holdout'])|set(a['final_holdout'])|set(a['hyperparameter_search_result']);print(sorted(x for x in k if '\x60'+x+'\x60' not in g))"
                       → [] (every published key is in the register)
 ```

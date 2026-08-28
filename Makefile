@@ -52,7 +52,7 @@ data-download-bybit: ## Bybit Linear only
 data-ingest:     ## load both ZIP trees into store_db/research_ohlcv.duckdb and rebuild the canonical series (basket-wide)
 	$(PY) -m module_data.ingest
 
-data-status:     ## data & DB monitoring -> stdout + module_monitoring/status.json
+data-status:     ## data & DB monitoring -> stdout + module_monitoring/data_status.json
 	$(PY) -m module_data.status
 
 dashboard:       ## serve the dashboard at http://127.0.0.1:$(PORT)/ and open it in the browser

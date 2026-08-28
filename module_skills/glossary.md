@@ -86,7 +86,7 @@ adjective (`ambiguous`) names no number.
 | trades a fold produced | `trade_count` | `trade_count` | trades | n_trades |
 | trials the search ran | `trial_count` | `trial_count` | trials | n_trials |
 
-## Data quality (status.json)
+## Data quality (data_status.json)
 
 Written by `module_data/status.py`; every SQL alias in its scans is the key it becomes.
 
@@ -134,7 +134,7 @@ key is in this register.
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
-| the three tables of status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
+| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
 | the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count` |
 | the database envelope | `db_bytes`, `duckdb_version` | size on disk and the engine that wrote it |
 | day files a venue's tree holds | `zip_count` | one per UTC calendar day |

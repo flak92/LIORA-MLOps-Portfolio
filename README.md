@@ -113,7 +113,7 @@ shape of it is configured entirely in `module_visualisation/visualisation_config
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 |           | `make data-download-binance` / `make data-download-bybit` | one source at a time               | independently parallelisable      |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild |
-| status    | `make data-status`     | DuckDB → stdout + `module_monitoring/status.json`           | read-only; three basket-wide scans + three per-symbol passes |
+| status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; three basket-wide scans + three per-symbol passes |
 | dashboard | `make dashboard`       | snapshots → four-tab static page on `127.0.0.1:8900`       | no external resources             |
 | picture   | `make visualisation-generate` | `git ls-files` + `visualisation_config.json` → `module_monitoring/files_and_folders_visualisation.html` | deterministic; regenerated on every push to `main`; `visualisation-check` fails on drift |
 
