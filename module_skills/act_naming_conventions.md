@@ -5,7 +5,9 @@ decisions — which exact names the project enacted where a grammar left a
 choice. One normative source each: a rule lives in the contract, a decision lives
 here, and a new decision enters this act in the commit that enacts it. Every
 entry names the rejected form, because the rejected form is what stops the
-next reader from reinventing it.
+next reader from reinventing it. In the wider vocabulary this file is an
+architecture decision record: `enacted | not | why` is that shape, and the
+enacted names are the decisions.
 
 ## Enacted names
 
@@ -35,9 +37,10 @@ next reader from reinventing it.
 | 22 | make target `monitoring-dashboard`; the compose **service** stays `dashboard` | a bare `dashboard` target | the last non-lifecycle target without its module; row 13's reason applies unchanged. A compose service is a different namespace and keeps its own name |
 | 23 | the rule-derived-structure rule lives in `AGENTS.md` § Canonical vocabulary; `module_skills/skill_agent_first_development.md` points at it | a second copy of the rule in a skill | a rule lives in one place and every other document points at it. It forbids no specific name, so the block records it as a preference, not a grammar |
 | 24 | no debt marker in a tracked file: `TODO`, `FIXME`, `XXX`, `HACK`, and no code left inside a comment | a marker standing in for a decision | `main` is clean working logic. A marker is a postponed decision; a commented-out line is a version git already holds |
-| 25 | established terminology over local coinages; the rule lives in `AGENTS.md` § Canonical vocabulary | a local synonym for a concept that has a recognised name | a coinage costs every reader a translation step. It forbids no specific name, so the block records it as a preference, not a grammar |
+| 25 | established terminology over local coinages; the rule lives in `AGENTS.md` § Canonical vocabulary | a local synonym for a concept that has a recognised name | a coinage costs every reader a translation step. It forbids no specific name, so the block records it as a preference, not a grammar — and where it meets a rule that can be checked, the checkable rule wins: `category-prefixed naming` fell to a third sense of `prefix` (row 26), `single source of truth` to a referent already taken (row 27) |
 | 26 | `taxonomic ordering` for the rule that the category token leads a name | `kind-first` | `kind` is unqualified English and reads as a synonym for `type`; `prefix` already carries two other senses here (`<TICKER>_`, make-target stages), so a third would collide |
 | 27 | `normative source` for the one document that holds a rule | `One authority`, `one canonical owner`, `single source of truth` | `normative` against `informative` is the ISO/IETF distinction between binding and explanatory text. `single source of truth` is already taken in `module_data/config.py` with a different referent |
+| 28 | `closed list` for the enumerable set of allowed words; `closed grammar` stays, and names the formation rule that draws from it | `closed vocabulary` | two names for the set was the defect; the grammar is a different concept and keeps its own name |
 
 ## External vocabularies
 

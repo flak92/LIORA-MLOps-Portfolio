@@ -188,7 +188,7 @@ research pipeline, and they never appear in a measurement payload.
 | a parent → child line, the only line the picture draws | tree edge, `EDGES` | `type: "tree"` | folder – folder / folder – file | link, dependency, flow |
 | an edge whose two ends are both folders, drawn heavier | `thick` | `thick` | folder – folder | bold, primary edge |
 | one band of the repository a path is classified into | story, `island` | `island`, `story_map` | `S1` … `S5` | group, category, cluster, section |
-| the node drawn at the centre of a story | `hub` | `hub` | — | root of the story, anchor |
+| the node drawn at the centre of a story — `hub` in its ordinary graph sense, the high-degree node others attach to | `hub` | `hub` | — | root of the story, anchor |
 | a folder collapsed to a single node, its contents left out of the picture | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the commit the tree was read from, and its committer date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date, timestamp |
 | the one region of the template the generator writes | structure block | `VISUALISATION:STRUCTURE:BEGIN` / `:END` | — | placeholder, injection point |
