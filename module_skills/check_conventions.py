@@ -10,7 +10,7 @@ never a rule hidden in Python.
 It carries no list of its own. That is deliberate and load-bearing: the tokens it
 hunts live in the act, so its own checks can scan this file without an exemption,
 and the act is the one document the content scan skips — because its
-rejected-forms column is the authority for exactly those tokens.
+rejected-forms column is the normative source for exactly those tokens.
 
 Some rejected forms are prose rather than names, and some are already settled by
 a one-liner in `skill_self_explaining_naming.md`. Both sets stay in the block
@@ -166,7 +166,7 @@ def rejected_names_absent(data: dict, tree: dict) -> list[str]:
 
 
 def enacted_names_present(data: dict, tree: dict) -> list[str]:
-    """Act, enacted column: the names exist, families carry their prefix, top levels their kind."""
+    """Act, enacted column: the names exist, families carry their prefix, top levels their category."""
     known = set(tree["paths"]) | {d for d in tree["listings"] if d != "."}
     exempt = {row[0] for row in data.get("collation_exempt", [])}
     failures = []
@@ -179,11 +179,11 @@ def enacted_names_present(data: dict, tree: dict) -> list[str]:
             if path.startswith(prefix) and path.endswith(suffix) and \
                     not path.rsplit("/", 1)[-1].startswith(tuple(allowed.split())):
                 failures.append(_failure(f"{path} is outside its enacted family", act_row, fix))
-    kinds = tuple(row[0] for row in data.get("top_level_kind", []))
+    categories = tuple(row[0] for row in data.get("top_level_category", []))
     for name in sorted({p.split("/")[0] for p in tree["paths"] if "/" in p}):
-        if not name.startswith(kinds) and name not in exempt:
-            failures.append(_failure(f"top-level {name}/ carries no enacted kind", "1",
-                                     f"start it with one of {' '.join(kinds)}: one kind, one block"))
+        if not name.startswith(categories) and name not in exempt:
+            failures.append(_failure(f"top-level {name}/ carries no enacted category", "1",
+                                     f"start it with one of {' '.join(categories)}: one category, one block"))
     return failures
 
 

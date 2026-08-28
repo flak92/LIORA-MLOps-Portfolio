@@ -141,7 +141,7 @@ const NODES = [
 { id:'placeholder', path:'placeholder', island:'S1', type:'file', hub:true, role:'doc', desc:'' }
 ];
 const EDGES = [
-{ from:'root', to:'placeholder', kind:'tree', thick:false }
+{ from:'root', to:'placeholder', type:'tree', thick:false }
 ];
 /* VISUALISATION:STRUCTURE:END */
 Object.assign(CONFIG, META.config);
@@ -152,9 +152,9 @@ document.getElementById('hudSub').textContent = META.subtitle;
 const nodeById = {};
 NODES.forEach(function(n){ nodeById[n.id] = n; });
 const PARENT_OF = {};
-EDGES.forEach(function(e){ if (e.kind === 'tree') PARENT_OF[e.to] = e.from; });
+EDGES.forEach(function(e){ if (e.type === 'tree') PARENT_OF[e.to] = e.from; });
 function childrenOf(id){
-return EDGES.filter(function(e){ return e.kind === 'tree' && e.from === id; })
+return EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
 .map(function(e){ return nodeById[e.to]; });
 }
 function ringAround(c, members, radius, startAngle, yJitter){
@@ -667,7 +667,7 @@ var treeTab = document.getElementById('treeTab');
 var TREE_CHILDREN = {};
 var TREE_PARENT = {};
 EDGES.forEach(function(e){
-if (e.kind !== 'tree') return;
+if (e.type !== 'tree') return;
 if (!TREE_CHILDREN[e.from]) TREE_CHILDREN[e.from] = [];
 TREE_CHILDREN[e.from].push(e.to);
 TREE_PARENT[e.to] = e.from;

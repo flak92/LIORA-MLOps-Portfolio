@@ -357,7 +357,7 @@ def build_structure(settings: dict) -> tuple[list, list, dict, dict]:
             edges.append({
                 "from": node_id,
                 "to": child,
-                "kind": "tree",
+                "type": "tree",
                 "thick": nodes[node_id]["type"] != "file" and nodes[child]["type"] != "file",
             })
 
