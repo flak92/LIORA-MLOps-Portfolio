@@ -52,7 +52,7 @@ def hpo_block(hpo: dict) -> dict:
     }
 
 
-def _rounded_classification(v: dict) -> dict:
+def _classification_block(v: dict) -> dict:
     return {
         "prior_logloss": round(v["prior_logloss"], 6),
         "model_logloss": round(v["model_logloss"], 6),
@@ -63,8 +63,8 @@ def _rounded_classification(v: dict) -> dict:
 
 def classification_block(metrics: dict) -> tuple[dict, dict]:
     """(validation per fold, final holdout)."""
-    validation = {k: _rounded_classification(v) for k, v in sorted(metrics["validation"].items())}
-    return validation, _rounded_classification(metrics["final_holdout"])
+    validation = {k: _classification_block(v) for k, v in sorted(metrics["validation"].items())}
+    return validation, _classification_block(metrics["final_holdout"])
 
 
 def thin_curve(curve: dict, final_equity: float) -> dict:
@@ -81,7 +81,7 @@ def thin_curve(curve: dict, final_equity: float) -> dict:
     return {"equity": values, "final_equity": end}
 
 
-def _rounded_pnl(block: dict) -> dict:
+def _pnl_block(block: dict) -> dict:
     return {
         "sharpe": _rounded(block["sharpe"], 3),
         "max_drawdown": _rounded(block["max_drawdown"], 4),
@@ -102,8 +102,8 @@ def strategy_block(strategy: dict) -> dict:
             strategy["entry_edge_threshold_constraint_met"],
         "selection_score_mean_sharpe": _rounded(strategy["selection_score_mean_sharpe"], 3),
         "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
-        "validation": {k: _rounded_pnl(v) for k, v in sorted(strategy["validation"].items())},
-        "final_holdout": _rounded_pnl(final_holdout),
+        "validation": {k: _pnl_block(v) for k, v in sorted(strategy["validation"].items())},
+        "final_holdout": _pnl_block(final_holdout),
         "equity_curve": thin_curve(final_holdout["equity_curve"],
                                    final_holdout["final_equity"]),
     }
