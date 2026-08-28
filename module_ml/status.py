@@ -123,7 +123,7 @@ def asset_report(ticker: str, hpo: dict, metrics: dict, strategy: dict) -> dict:
 
 
 FILE_NOTES = {
-    "canonical_1m.parquet": "the published canonical 1m series",
+    "canonical_ss-01-hh-dd-MM.parquet": "the published canonical 1m series",
     "features.parquet": "X — 15 causal columns on the decision grid",
     "label_events.parquet": "Y — triple-barrier outcome and the event prices",
     "oos_predictions.parquet": "out-of-fold class probabilities, full windows",
@@ -240,7 +240,7 @@ Final-holdout exits: {exits}.
 
     {reproduce}
 
-`canonical_1m.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+`canonical_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
 F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """

@@ -27,7 +27,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | `canonical_1m.parquet` | canonical dataset | fused series, index, blended price |
+| the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | `canonical_ss-01-hh-dd-MM.parquet` | canonical dataset | fused series, index, blended price |
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | `features.hierarchy_timeframes` | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | `features.decision_timeframe` | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
@@ -102,12 +102,12 @@ Every count says what it counts; a bare `n` names nothing.
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations
-of the same result.** One directory per ticker under `store_research_artifacts/`,
+of the same result.** One directory per ticker under `store_Assets_artifacts/`,
 each file named after what it holds.
 
 | file | written by | holds |
 |---|---|---|
-| `canonical_1m.parquet` | `module_data/export.py` | the published canonical series |
+| `canonical_ss-01-hh-dd-MM.parquet` | `module_data/export.py` | the published canonical series |
 | `features.parquet` | `module_ml/features.py` | X — 15 causal columns |
 | `label_events.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
 | `hyperparameter_search.json` | `module_ml/hpo.py` | the winning point of the search and the trial count |

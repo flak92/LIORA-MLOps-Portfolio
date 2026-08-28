@@ -14,7 +14,7 @@ Bybit specifics handled here:
     minutes become Binance-only in the canonical series, never forward-fills).
 
 Output tree (Lean-exact, same format as the Binance tree):
-  store_raw_1m/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
+  store_raw_data_ss-01-hh-dd-MM/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
     -> YYYYMMDD_<symbol>_minute_trade_perp.csv
        rows: offset_ms_from_utc_midnight,open,high,low,close,volume  (ascending)
 

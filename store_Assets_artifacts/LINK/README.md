@@ -6,7 +6,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 
 | file | holds | size |
 | --- | --- | --- |
-| `canonical_1m.parquet` | the published canonical 1m series | 43,312 KB |
+| `canonical_ss-01-hh-dd-MM.parquet` | the published canonical 1m series | 43,312 KB |
 | `features.parquet` | X — 15 causal columns on the decision grid | 9,870 KB |
 | `label_events.parquet` | Y — triple-barrier outcome and the event prices | 5,420 KB |
 | `oos_predictions.parquet` | out-of-fold class probabilities, full windows | 2,359 KB |
@@ -61,6 +61,6 @@ Final-holdout exits: upper_barrier 48, lower_barrier 46, vertical 89, ambiguous 
 
     python -m module_ml.features --tickers LINK && python -m module_ml.labels --tickers LINK && python -m module_ml.hpo --tickers LINK && python -m module_ml.train --tickers LINK && python -m module_ml.strategy --tickers LINK && python -m module_ml.status --tickers LINK
 
-`canonical_1m.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
+`canonical_ss-01-hh-dd-MM.parquet` is not produced by that chain and not read by it: it is the published per-asset representation of the canonical series (`make export`); the ML stages read the same canonical market object from the DuckDB tables.
 
-F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_guidance/methodology_ml.md`, the field names in `module_guidance/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.

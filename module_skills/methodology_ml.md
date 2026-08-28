@@ -334,9 +334,9 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `store_research_artifacts/<TICKER>/` — **one file per distinct artifact
+Per asset in `store_Assets_artifacts/<TICKER>/` — **one file per distinct artifact
 responsibility, no duplicate representations of the same result**, each named
-for what it holds: `canonical_1m.parquet`, `features.parquet`, `label_events.parquet`,
+for what it holds: `canonical_ss-01-hh-dd-MM.parquet`, `features.parquet`, `label_events.parquet`,
 `hyperparameter_search.json`, `oos_predictions.parquet`,
 `model_evaluation.json`, `strategy_evaluation.json`. The data files are
 gitignored and reconstructable; two text files are not, because they are what

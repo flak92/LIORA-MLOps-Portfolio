@@ -75,7 +75,7 @@ from both providers, and every later day must be complete.
 Both downloaders write identical Lean-exact day ZIPs
 (`YYYYMMDD_trade.zip` → `YYYYMMDD_<symbol>_minute_trade_perp.csv`, headerless
 `offset_ms_from_utc_midnight,open,high,low,close,volume`) into
-`store_raw_1m/cryptofuture/<venue>/minute/<symbol>/` — verified
+`store_raw_data_ss-01-hh-dd-MM/cryptofuture/<venue>/minute/<symbol>/` — verified
 byte-identical against an independent production downloader, including a
 re-download of a historical day (exchanges do not restate klines).
 
@@ -162,7 +162,7 @@ native 1h klines gives **0 OHLC mismatches** and a maximum relative volume
 difference of **7.1e-16** — float64 epsilon. The minute grid this database is
 built on reproduces the exchange's own higher timeframes exactly.
 
-**Exports**: `store_research_artifacts/<TICKER>/canonical_1m.parquet` (zstd) carries
+**Exports**: `store_Assets_artifacts/<TICKER>/canonical_ss-01-hh-dd-MM.parquet` (zstd) carries
 only `timestamp_ms, open, high, low, close, volume` — identical row counts for
 every asset (full grid), continuous, no NULLs. Export is **fail-closed**: the
 Parquet is written to a temp file and replaced only after asserting the full

@@ -10,7 +10,7 @@ Every value at decision_ts comes from the last CLOSED bar of its timeframe
 (asof_index asserts causality); the 15m timeframe uses the bar closing exactly at
 decision_ts.
 
-Output: store_research_artifacts/<TICKER>/features.parquet with decision_ts + 15
+Output: store_Assets_artifacts/<TICKER>/features.parquet with decision_ts + 15
 feature columns, from the global research warm-up onward, no NaN (asserted).
 """
 
