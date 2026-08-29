@@ -217,6 +217,46 @@ dashboard, `GET /status` on an asset container.
 
 The Containers tab's columns and labels are the tab table of
 `skill_asset_containers.md`. The page's navigation: the tabs *Pipeline*, *Data
-Quality*, *ML Research*, *ML Assets*, *Containers*, and the ML Assets views
+Quality*, *ML Research*, *ML Assets*, *Containers*, *Lifecycle*, and the ML Assets views
 *Labels & data*, *Classification*, *Strategy*, *Search*.
+
+## Run record
+
+What one recorded run of the chain leaves in
+`store_assets_artifacts/<TICKER>/runtime/<run_id>/`, written by
+`module_monitoring/record.py` wrapping each stage command in the container that
+stage already runs in. `run_id` is `<YYYYMMDDTHHMMSS>Z_<git short commit>`: not a
+content hash, but git's own identity, the record `module_ml/config.py` already
+names — so it sorts chronologically and points at the code that ran.
+
+**A `process_` key is the stage; a `container_` key is not.** The stage's cost
+comes from `wait4` rusage of the process the recorder spawned and reaped — exact,
+never sampled. The cgroup counters carry the whole container over the same
+window: the resident server, the recorder and the stage together.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| one recorded execution of the chain | `run_id` | `run_id` | run | build, job, a content hash |
+| one command of a run, named for the Makefile target that runs it | `stage_of()` | `stage` | stage | step, task |
+| the compose service the stage ran in | `docker_service()` | `docker_service` | container | host; a bare `container`, which the Containers tab already uses for up/down |
+| CPU the stage process and its reaped descendants used | `rusage.ru_utime + ru_stime` | `process_cpu_seconds` | CPU | cpu, cpu_pct, cpu_time |
+| peak resident set of the stage process | `rusage.ru_maxrss` | `process_memory_peak_bytes` | peak RAM | RSS, RAM, mem, max_rss |
+| bytes the stage moved through `read()` / `write()`, independent of the page cache | `/proc/<pid>/io` | `process_read_chars`, `process_write_chars` | read / write | io, bytes_in |
+| physical blocks the stage caused, cache-dependent and writeback-delayed | `rusage.ru_inblock`, `ru_oublock` | `process_disk_read_bytes`, `process_disk_write_bytes` | — | a headline I/O number |
+| the whole container over the stage's window | the cgroup | `container_cpu_seconds_delta`, `container_memory_charged_peak_bytes`, `container_disk_*_bytes_delta`, `container_network_*_bytes_delta` | container | any of these as a stage cost |
+| how many 1 s samples the stage window held | `sample_count` | `sample_count` | samples | n_samples |
+| wall time between stages: docker exec setup and teardown | — | `orchestration_seconds` | orchestration | overhead, a hidden remainder |
+| the stage that took the longest | — | `bottleneck_stage` | bottleneck | slowest, hotspot |
+| the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` | dashboard | healthcheck, ping |
+
+The four files of a run: `manifest.json` (what ran, where, on what host, and how
+it ended), `events.jsonl` (one line per stage, appended by the stage itself),
+`resources.jsonl` (the 1 s container-wide samples), `summary.json` (the stage
+table and the run totals, plus `measurement_notes`, which states in the payload
+what each number is and is not). `logs/<stage>.log` holds that stage's output
+verbatim. None of it is committed; `.gitignore` already covers the tree.
+
+The routes: `GET /runs` lists the run ids newest first, `GET /runs/<run_id>`
+answers one run's manifest, summary and samples, the samples strided to
+`RUN_SAMPLE_POINT_LIMIT` so a long run is thinned and never truncated.
 

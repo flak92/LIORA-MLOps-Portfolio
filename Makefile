@@ -9,10 +9,13 @@ JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
                 if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
                 if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
+# a run wraps every stage command with the recorder; empty by default, so the recipes are unchanged
+RECORD ?=
+RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
 # $(1) = python command, $(2) = module
 fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} $(1) -m $(2) --tickers {}
 # $(1) = module, $(2) = width: each asset's stage runs inside its own resident container, which carries ASSET
-dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_SERVICE_LIST) | xargs -P $(2) -I{} env $(COMPOSE_ENV) docker compose exec -T {} sh -c 'python -m $(1) --tickers $$ASSET'
+dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_SERVICE_LIST) | xargs -P $(2) -I{} env $(COMPOSE_ENV) docker compose exec -T {} sh -c '$(RECORD) python -m $(1) --tickers $$ASSET'
 
 .DEFAULT_GOAL := help
 
@@ -58,12 +61,12 @@ docker-up: docker-build ## start the dashboard at http://127.0.0.1:$(PORT)/ and 
 docker-down:     ## stop and remove every container
 	$(COMPOSE) down
 docker-data-download: ## both download stages inside the container (basket-wide, sequential)
-	$(COMPOSE) run --rm -T pipeline python -m module_data.download_binance
-	$(COMPOSE) run --rm -T pipeline python -m module_data.download_bybit
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_binance
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit
 docker-data-ingest: ## the ingest stage, one asset at a time, each inside its own container
 	$(call dockerfanout,module_data.ingest,1)
 docker-data-status: ## the data status stage inside the container -> module_monitoring/data_status.json
-	$(COMPOSE) run --rm -T pipeline python -m module_data.status
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status
 
 docker-ml-bars:      ## module_ml.bars, inside each asset's container
 	$(call dockerfanout,module_ml.bars,$(JOBS))
@@ -78,9 +81,14 @@ docker-ml-train:     ## module_ml.train, inside each asset's container
 docker-ml-strategy:  ## module_ml.strategy, inside each asset's container
 	$(call dockerfanout,module_ml.strategy,$(JOBS))
 docker-ml-status:    ## module_ml.status inside the container
-	$(COMPOSE) run --rm -T pipeline python -m module_ml.status
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.status
 docker-ml-all:       ## the whole ML chain inside the containers
 	$(MAKE) docker-ml-bars docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> ML -> snapshots
 	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-ml-all
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows
+docker-all-record:   ## one recorded run of the whole chain -> store_assets_artifacts/<TICKER>/runtime/<run_id>/
+	@run_id=$(RUN_ID); \
+	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id"; \
+	 python3 -m module_monitoring.record --finalize $$run_id
+docker-btc-lifecycle: docker-all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows

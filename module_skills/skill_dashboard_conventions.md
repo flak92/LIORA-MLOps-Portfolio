@@ -28,7 +28,8 @@ linter, no build step, no framework.
   into `DATA_STATUS` and `ML_STATUS` and renders everything client-side; the
   payload carries only fields the page reads. The Containers tab reads the live
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
-  `CONTAINER_STATUS` — four state globals; the pill-hook registry `PILL_HOOKS`,
+  `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
+  `GET /runs` and `GET /runs/<run_id>` into `RUN_RECORD` — five state globals; the pill-hook registry `PILL_HOOKS`,
   the load promise `DATA_STATUS_LOADED` and the poll latch
   `CONTAINER_POLL_IN_FLIGHT` are not state. The tab's behaviour is `skill_asset_containers.md` § The tab.
 - The page computes no domain or model results — only presentation arithmetic

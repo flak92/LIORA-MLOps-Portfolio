@@ -82,6 +82,7 @@ Four direct dependencies and nothing else — `duckdb` (storage and query),
 make all          # venv -> data-download -> data-ingest -> data-status -> full ML chain
 make docker-up    # build the image, start the dashboard and the asset containers, open http://127.0.0.1:8900/
 make docker-all   # the whole chain inside the containers, download to snapshots
+make docker-btc-lifecycle  # the same chain, recorded stage by stage into a run directory
 ```
 
 The dashboard is docker-only: `make docker-up` / `make docker-down`. The stages
@@ -102,6 +103,7 @@ and `ml-all:`; every document points there. Remote machine? Tunnel with
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, three scans + three per-symbol passes |
+| lifecycle | `make docker-btc-lifecycle` | one recorded run of the whole chain → `store_assets_artifacts/<TICKER>/runtime/<run_id>/` | every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, served by `module_monitoring/serve.py` in the `dashboard` container with the container routes | no external resources; the asset containers are reached only through its proxy |
 
 ## Data formats
@@ -122,6 +124,11 @@ raw ZIP trees. Schema: [module_skills/methodology_data.md](module_skills/methodo
   switches, the largest 1m move at a switch, cross-source divergence;
 - **ML Research** — the cross-section of every asset's result;
 - **ML Assets** — one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURES;
+- **Lifecycle** — one recorded run end to end: what ran, in which container, as
+  which PID, for how long, at what CPU and peak resident set, what bytes it moved
+  and what it left on disk; then one shared timeline with a dashed rule at every
+  stage boundary. A `process_` column is the stage; a `container_` column is the
+  whole container over the same window, and the page says so;
 - **Containers** — one row per asset container, live through the dashboard's
   proxy: up or down, up since, memory against its ceiling, peak, CPU share over
   the last poll, the observation lag and the measurement age; then one

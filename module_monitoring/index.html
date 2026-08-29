@@ -15,6 +15,7 @@
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
     <button class="pill" data-key="containers">Containers</button>
+    <button class="pill" data-key="lifecycle">Lifecycle</button>
   </nav>
 
   <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
@@ -107,6 +108,17 @@
       container as it reports itself. A container that does not answer is down and shows no previous numbers.</p>
   </section>
 
+  <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
+    <div id="run-meta" class="box">loading /runs&hellip;</div>
+    <div id="run-detail"></div>
+    <p class="foot">one recorded run of the whole chain, as its stages left it. The stage columns come from
+      the kernel's accounting of the process that ran the stage &mdash; exact CPU and peak resident set from
+      <code>wait4</code>, byte counts from <code>/proc/&lt;pid&gt;/io</code> &mdash; so the page cache the
+      container is charged is never counted against a stage. The columns marked <em>container</em> describe the
+      whole container over the same window, the network among them: no per-process byte counter exists, so
+      network is reported container-wide and never attributed to a stage.</p>
+  </section>
+
   <p class="foot">static page &middot; data from <code>data_status.json</code> / <code>ml_status.json</code>
     (regenerate with <code>make data-status</code> / <code>make ml-status</code>) &middot; the Containers tab polls the
     asset containers through <code>/containers</code></p>
@@ -114,5 +126,6 @@
   <script src="asset.js"></script>
   <script src="ml.js"></script>
   <script src="containers.js"></script>
+  <script src="run.js"></script>
 </body>
 </html>

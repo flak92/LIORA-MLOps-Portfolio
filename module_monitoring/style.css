@@ -88,3 +88,12 @@ td:first-child, th:first-child { text-align: left; }
 }
 .badge--warn { background: #fff3b0; }
 .badge--down { background: #111; color: #fff; }
+
+/* Lifecycle tab: one shared time axis, one polyline per series, a dashed rule at every stage boundary */
+.timeline {
+  display: block; width: 100%; height: 6em;
+  border: 1px solid #111; background: #fff;
+}
+.timeline__series { fill: none; stroke: #0a7a0a; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.timeline__boundary { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.timeline__caption { color: #444; margin: 0 0 0.2em; }

@@ -64,7 +64,7 @@ the data moves through them, and one that carries no dataflow:
 ```
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
 module_ml/          canonical dataset → X, Y → search → model → research simulation
-module_monitoring/  presentation of what the two modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself
+module_monitoring/  presentation of what the two modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
 module_skills/      the contract's companions: the register, the methodologies, the skills
 ```
 
@@ -99,9 +99,10 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
-  `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary)
+  `module_monitoring/serve.py` and `module_monitoring/record.py` for the cgroup
+  and procfs paths of their boundary)
   — and the browser, which has no config module and fetches its two snapshots
-  (`data_status.json`, `ml_status.json`) and the container routes by literal
+  (`data_status.json`, `ml_status.json`) and the container and run routes by literal
   name; one asset is one folder,
   `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
@@ -209,8 +210,10 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`module_ml/model.py`, `module_ml/hpo.py`), argparse (`module_data/config.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (`module_monitoring/*.js`), docker compose (`Makefile`,
 `docker-compose.yml`), and `http.server`, `urllib`, cgroup v2 and procfs
-(`module_monitoring/serve.py`). A boundary is an exception the conventions
-name, not an inconsistency they tolerate.
+(`module_monitoring/serve.py`), and `posix_spawn`, `wait4` rusage and the
+per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
+boundary is an exception the conventions name, not an inconsistency they
+tolerate.
 
 ## Rejected vocabulary
 

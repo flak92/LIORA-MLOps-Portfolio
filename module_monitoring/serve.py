@@ -1,6 +1,7 @@
 """The one server of module_monitoring, its role chosen by ASSET.
 
-    dashboard role (ASSET unset)   the static page; GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied
+    dashboard role (ASSET unset)   the static page; GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
+                                   GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it
     asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its snapshot rows, its database size, its own cgroup
 """
 
@@ -21,6 +22,7 @@ from module_data import config as data_config
 from module_ml import config as ml_config
 
 CONTAINER_POLL_INTERVAL_SECONDS = 5      # published to the page, which never carries a cadence of its own
+RUN_SAMPLE_POINT_LIMIT = 900             # the timeline's stride: a long run is thinned, never truncated
 ASSET_STATUS_FETCH_TIMEOUT_SECONDS = 2   # bounds each socket operation of the proxy, not the exchange
 CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
@@ -130,6 +132,39 @@ def status_payload(server: StatusServer, data_status: dict, ml_status: dict) -> 
     }
 
 
+def load_run_ids() -> list[str]:
+    """Every recorded run, newest first — the run id sorts chronologically by design."""
+    records = data_config.run_records_dir(data_config.TICKERS[0])
+    return sorted((path.name for path in records.iterdir() if path.is_dir()), reverse=True) if records.exists() else []
+
+
+def load_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def run_payload(run_id: str) -> dict:
+    """One recorded run as the page reads it: what ran, what it cost, and the container-wide series."""
+    run_directory = data_config.run_dir(data_config.TICKERS[0], run_id)
+    manifest_path, summary_path = run_directory / "manifest.json", run_directory / "summary.json"
+    samples = load_jsonl(run_directory / "resources.jsonl")
+    stride = max(1, -(-len(samples) // RUN_SAMPLE_POINT_LIMIT))
+    return {
+        "run_id": run_id,
+        "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
+        "manifest": load_json(manifest_path) if manifest_path.exists() else None,
+        "summary": load_json(summary_path) if summary_path.exists() else None,
+        "sample_count": len(samples),
+        "sample_stride": stride,
+        "samples": samples[::stride],
+    }
+
+
+def runs_payload() -> dict:
+    return {"generated_at_utc": to_utc_text(datetime.now(tz=UTC)), "run_ids": load_run_ids()}
+
+
 def registry_payload() -> dict:
     return {
         "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
@@ -180,6 +215,13 @@ class DashboardHandler(SimpleHTTPRequestHandler):
         segments = self.path.split("/")
         if self.path == "/containers":
             write_response(self, HTTPStatus.OK, to_json_bytes(registry_payload()))
+        elif self.path == "/runs":
+            write_response(self, HTTPStatus.OK, to_json_bytes(runs_payload()))
+        elif len(segments) == 3 and segments[1] == "runs":
+            if segments[2] in load_run_ids():
+                write_response(self, HTTPStatus.OK, to_json_bytes(run_payload(segments[2])))
+            else:
+                write_response(self, HTTPStatus.NOT_FOUND)
         elif len(segments) == 4 and segments[1] == "containers" and segments[3] == "status":
             if segments[2] in data_config.TICKERS:
                 write_response(self, *fetch_asset_status(segments[2]))
