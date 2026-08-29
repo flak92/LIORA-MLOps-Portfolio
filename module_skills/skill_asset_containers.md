@@ -1,9 +1,9 @@
 # Skill: asset containers — the topology, the endpoint, the tab
 
 The asset and its container are the primary object; the engine is the support
-layer. One image, five resident containers differing only by `ASSET=<TICKER>`,
-seven services written out in `docker-compose.yml` — the build, and the
-dashboard and the five assets under one anchor: `image`, `init`, `user`, `command: python -m
+layer. One image, one resident container per ticker of the basket, differing only by
+`ASSET=<TICKER>`, every service written out in `docker-compose.yml` — the build, and the
+dashboard and the assets under one anchor: `image`, `init`, `user`, `command: python -m
 module_monitoring.serve`, the bind mount, the `5g` ceiling. The dashboard
 reaches them only through its own proxy: no asset container publishes a port,
 and no container mounts `/var/run/docker.sock` — root-equivalent access for a
@@ -15,7 +15,7 @@ badge. *The repository shows the destination, not the road*: no restart policy, 
 |---|---|---|---|
 | `pipeline` | `build: .`, `image: mlops-portfolio-1m-pipeline` — the one build | `run --rm -T` one-offs for the basket-wide stages: `data-download` (sequential — the venues' per-IP limits are budgeted per process), `ml-status` | one-off |
 | `dashboard` | the anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
-| `asset-<ticker>` × 5 | the anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` — no `build:`, so `docker images` shows one image | the same server in its asset role | resident |
+| `asset-<ticker>` × one per ticker of `TICKERS` | the anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` — no `build:`, so `docker images` shows one image | the same server in its asset role | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
@@ -32,8 +32,9 @@ dashboard's mapping, so a stage run with another `PORT` never recreates a
 resident. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
 fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
-`make docker-up` builds the image if needed, starts the dashboard and the five
-residents, and opens the page. Every per-asset stage runs inside its asset's container: the
+`make docker-up` builds the image if needed, starts the dashboard and the
+residents, and opens the page. `make docker-all` then runs the whole chain through them,
+download to snapshots. Every per-asset stage runs inside its asset's container: the
 fan-out does an idempotent `up -d`, then `docker compose exec -T asset-<ticker>
 sh -c 'python -m module_<x>.<stage> --tickers $ASSET'` — ingest one container at
 a time, the ML stages `JOBS` at a time — so the container the tab measures is

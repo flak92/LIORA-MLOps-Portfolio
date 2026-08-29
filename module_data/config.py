@@ -12,7 +12,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # USDT-margined perpetuals; Binance USDS-M primary, Bybit Linear failover; every asset has Binance 1m history
 # before the window start (probed before every download), Bybit joins whenever its listing starts
-TICKERS = ["BTC", "ETH", "BNB", "XRP", "SOL"]
+# single-asset runtime: this list is the one definition the paths, the fan-out, the compose
+# services and the /containers registry derive from — scaling is extending it and adding one
+# asset service per ticker under the compose anchor, no logic changes
+TICKERS = ["BTC"]
 QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"

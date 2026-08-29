@@ -28,15 +28,3 @@ services:
   asset-btc:
     <<: *asset
     environment: {ASSET: BTC, OMP_NUM_THREADS: "1"}
-  asset-eth:
-    <<: *asset
-    environment: {ASSET: ETH, OMP_NUM_THREADS: "1"}
-  asset-bnb:
-    <<: *asset
-    environment: {ASSET: BNB, OMP_NUM_THREADS: "1"}
-  asset-xrp:
-    <<: *asset
-    environment: {ASSET: XRP, OMP_NUM_THREADS: "1"}
-  asset-sol:
-    <<: *asset
-    environment: {ASSET: SOL, OMP_NUM_THREADS: "1"}

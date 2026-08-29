@@ -60,7 +60,10 @@ every printed price existed on a real market. Method, endpoints and schema:
 
 ## The basket
 
-One uniform market — USDT-margined perpetual futures: `BTC ETH BNB XRP SOL`.
+One uniform market — USDT-margined perpetual futures. The active basket is a
+single asset, `BTC`: one reference asset carries the whole path end to end, and the
+basket grows by extending `TICKERS` in `module_data/config.py` and adding one asset
+service per ticker under the compose anchor — the execution path itself does not change.
 
 The window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
 midnight. Every asset is listed on Binance USDS-M before the window start;
@@ -77,15 +80,17 @@ Four direct dependencies and nothing else — `duckdb` (storage and query),
 
 ```bash
 make all          # venv -> data-download -> data-ingest -> data-status -> full ML chain
-make docker-up    # build the image, start the dashboard and the five asset containers, open http://127.0.0.1:8900/
+make docker-up    # build the image, start the dashboard and the asset containers, open http://127.0.0.1:8900/
+make docker-all   # the whole chain inside the containers, download to snapshots
 ```
 
 The dashboard is docker-only: `make docker-up` / `make docker-down`. The stages
 run inside Docker too: `docker-data-download`, `docker-data-ingest` and
-`docker-ml-<stage>` (or `docker-ml-all`). Every per-asset stage runs inside that asset's own resident
-container, `asset-<ticker>` — five services of `docker-compose.yml` under one
-anchor with the dashboard, one image for all; `make docker-up` starts the
-dashboard and the five residents, each answering the dashboard's proxy with its
+`docker-data-status` and `docker-ml-<stage>` (or `docker-ml-all`), and `docker-all` runs
+the whole chain. Every per-asset stage runs inside that asset's own resident
+container, `asset-<ticker>` — one service of `docker-compose.yml` per ticker of the
+basket, under one anchor with the dashboard, one image for all; `make docker-up` starts
+the dashboard and the residents, each answering the dashboard's proxy with its
 data, its artifacts and its own memory and CPU. The stage order is the Makefile's `all:`
 and `ml-all:`; every document points there. Remote machine? Tunnel with
 `ssh -L 8900:127.0.0.1:8900 <host>`.
