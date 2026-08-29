@@ -14,7 +14,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `BTC_model_evaluation.json` | classification metrics per fold | 2 KB |
 | `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,387 KB |
 | `BTC_parameters.json` | the one parameters file: what the search chose | 371 B |
-| `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 21 KB |
+| `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 10 KB |
 
 Each of the three feature parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
