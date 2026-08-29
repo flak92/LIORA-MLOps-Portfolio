@@ -339,13 +339,15 @@ for what it holds, with the `<TICKER>_` prefix so every file identifies its
 asset on its own: the three per-timeframe feature parquets, the label-events and
 out-of-sample predictions parquets on the 15m decision grid, and the two
 evaluation JSONs. The data files are
-gitignored and reconstructable; two text files are not, because they are what
-makes the rest readable without a run: **`<TICKER>_parameters.json`**, whose
+gitignored and reconstructable; three text files are not, because they are what
+makes the rest readable without a run: **`<TICKER>_config.json`**, the asset's
+registration and the engine overrides it takes (hand-written, `{}` while it takes
+none); **`<TICKER>_parameters.json`**, whose
 `experiment_configuration` section is the configuration this run was executed
 under and whose `hyperparameter_search_result` section is what the search chose
 (written by `module_ml/hpo.py` when the search runs), and **`<TICKER>_README.md`**,
 what the folder holds and what came out of it (written by `module_ml/status.py`).
-Neither carries a timestamp, so an unchanged experiment reproduces them byte for
+None of the three carries a timestamp, so an unchanged experiment reproduces them byte for
 byte. Every JSON is canonical (sorted keys,
 numpy scalars converted, written atomically) and carries **only what it
 computed** — no provenance envelope, no hashes, no manifests. The experiment

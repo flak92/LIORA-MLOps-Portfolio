@@ -3,7 +3,7 @@
 `act_naming_conventions.md` records which names this project enacted and which it
 rejected, and until now those decisions were prose: a reader could honour them or
 not, and nothing said which. This file reads the act's `conventions-data` block
-and settles the eight of them a byte comparison can settle. Every failure names
+and settles the nine of them a byte comparison can settle. Every failure names
 the act row it came from, so what a reader gets is a decision to take in the act,
 never a rule hidden in Python.
 
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
 
 # module_skills is a documentation folder and has no config.py, so the one path
@@ -58,6 +59,15 @@ def load_tracked_paths() -> list[str]:
     done = subprocess.run(("git", "ls-files", "-z"), cwd=REPO_ROOT,
                           capture_output=True, text=True, check=True)
     return sorted(p for p in done.stdout.split("\0") if p)
+
+
+def load_basket() -> list[str]:
+    """The basket as module_data.config lists it, read the way the Makefile reads it —
+    a one-liner in a child interpreter, so this file imports no runtime module and
+    still carries no list of its own."""
+    done = subprocess.run((sys.executable, "-c", "from module_data.config import TICKERS; print(' '.join(TICKERS))"),
+                          cwd=REPO_ROOT, capture_output=True, text=True, check=True)
+    return done.stdout.split()
 
 
 def load_conventions_data() -> dict[str, list[list[str]]]:
@@ -222,6 +232,17 @@ def ticker_manifest(data: dict, tree: dict) -> list[str]:
     return failures
 
 
+def ticker_registry(data: dict, tree: dict) -> list[str]:
+    """Act row 30: the basket list and the folders holding a registration agree, both ways."""
+    root = data["ticker_store"][0][0]
+    token, act_row, fix = data["ticker_registry_file"][0]
+    registered = {t for t in tree["tickers"] if root + t + "/" + token.replace("<TICKER>", t) in tree["paths"]}
+    listed = set(load_basket())
+    return ([_failure(f"{t} is in the basket and holds no {token}", act_row, fix) for t in sorted(listed - registered)]
+            + [_failure(f"{root}{t}/ holds {token} and is not in the basket", act_row, fix)
+               for t in sorted(registered - listed)])
+
+
 def single_vocabulary(data: dict, tree: dict) -> list[str]:
     """One concept, one name: a banned stem is spelled nowhere at all."""
     failures = []
@@ -289,7 +310,7 @@ def file_reachability(data: dict, tree: dict) -> list[str]:
 
 
 CHECKS = (rejected_names_absent, enacted_names_present, collation_invariance, ticker_manifest,
-          single_vocabulary, target_prefixes, no_debt_markers, file_reachability)
+          ticker_registry, single_vocabulary, target_prefixes, no_debt_markers, file_reachability)
 
 
 def main() -> int:

@@ -22,11 +22,11 @@ enacted names are the decisions.
 | 7 | guidance files: `act_*`, `check_*`, `skill_*`, `methodology_*`, `glossary.md`; `module_skills/` holds **exactly one executable file**, the self-check | bare topic names, a second script in the law folder | category first inside the folder, same rule as the tree above it. The one `.py` is the act's own enforcement; counting it at one keeps the law folder from becoming a code folder |
 | 8 | the asset folder manifest (§ below): every per-asset file carries the `<TICKER>_` prefix, a time series carries its grid in timeframe slots | `features.parquet`, a bare `README.md` — any per-asset file that needs its folder to say which asset it belongs to | the file identifies its asset and its grid on its own, and the folder lists as one contiguous `<TICKER>_*` block |
 | 9 | OHLCV lives only in DuckDB; the asset folder publishes no price series | a per-asset OHLCV parquet, an `export` stage | the market object has one home and every stage reads it there; a published copy nothing reads is weight without function |
-| 10 | one parameters file per asset (`<TICKER>_parameters.json`), one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset | code is common, parameters are per asset; the two sections keep the a-priori configuration and the search result apart inside one file |
+| 10 | two files per asset, one drafted and one derived — `<TICKER>_config.json` (row 30) and `<TICKER>_parameters.json`, the one parameters file, written by `module_ml/hpo.py`; one shared strategy (`module_ml/strategy.py`) | a parameters file per stage, a strategy file per asset, a hand-edited section inside the derived parameters file | code is common, parameters are per asset; the two sections keep the a-priori configuration and the search result apart inside one file, and the drafted input keeps its own file because the derived one is never hand-edited |
 | 11 | every count key is `<what>_count`: `row_count`, `gap_count`, `duplicate_count`, `ohlc_violation_count`, `source_switch_count`, `decision_count`, `ambiguous_event_count`, `unobservable_entry_count`, `trainable_row_count`; a UTC string is `_utc` (`window_start_utc`, `first_observation_utc`); `return` is spelled out (`max_abs_return_1m`) | a bare plural (`rows`, `gaps`), an adjective holding a number (`ambiguous`), `_ts` on a string, `ret` for a return | one grammar for a number: the suffix says it is a count, the word says of what; a bare plural or an adjective made the reader guess, and `_ts` already means epoch milliseconds in the parquets |
-| 12 | the asset folder manifest is written in `LC_COLLATE=C` listing order wherever it is written (this act, the register, `FILE_MANIFEST`, the store guide) | reading order, artifact-responsibility order | one order that a byte-comparing `ls` reproduces; three orders made the same nine files look like three manifests |
+| 12 | the asset folder manifest is written in `LC_COLLATE=C` listing order wherever it is written (this act, the register, `FILE_MANIFEST`, the store guide) | reading order, artifact-responsibility order | one order that a byte-comparing `ls` reproduces; three orders made the same ten files look like three manifests |
 | 13 | make targets `data-download`, `data-download-binance`, `data-download-bybit`, `data-ingest`, `data-status` and the container twins `docker-data-download`, `docker-data-ingest`, `docker-data-status`; `docker-build`, `docker-up`, `docker-down` are compose lifecycle, not twins, and the single-venue downloads have no twin | bare `download`, `ingest`, `status`; `docker-download` | `<module>-<stage>` beside `ml-<stage>`: `make help` lists one module as one block, and `status` stops being ambiguous next to `ml-status` |
-| 14 | `<TICKER>_README.md` with README in capitals | `<TICKER>_readme.md`, a bare `README.md` | README is a convention older than this act; it is the one manifest entry whose position depends on collation (first under `LC_COLLATE=C`, eighth under `en_US.UTF-8`) — the `<TICKER>_*` block stays contiguous under both, and GitHub renders neither spelling as the folder's README |
+| 14 | `<TICKER>_README.md` with README in capitals | `<TICKER>_readme.md`, a bare `README.md` | README is a convention older than this act; it is the one manifest entry whose position depends on collation (first under `LC_COLLATE=C`, ninth under `en_US.UTF-8`) — the `<TICKER>_*` block stays contiguous under both, and GitHub renders neither spelling as the folder's README |
 | 15 | `EXAMPLE_TICKER_README.md` sorts inside the ticker block of `store_assets_artifacts/` | a store-root `README.md` | the guide is found where a reader looks for an asset folder; `ls -1d */` sees only the ten ticker directories |
 | 16 | ecosystem-fixed file names keep their spelling: `__init__.py`, `AGENTS.md`, `Dockerfile`, `Makefile`, `README.md`, `docker-compose.yml`, `requirements.txt`, `.github/workflows/*.yml` | project-cased variants | a boundary like Lean's casing (row 6); they are the only names whose sort position depends on collation, so the collation check binds every other directory |
 | 17 | the stage order lives in the Makefile (`all:`, `ml-all:`); every document points there | a second copy of the chain in README or a methodology | two copies drift; the per-asset reproduce line of `<TICKER>_README.md` is derived from the same order by `module_ml/status.py` |
@@ -42,6 +42,7 @@ enacted names are the decisions.
 | 27 | `normative source` for the one document that holds a rule | `One authority`, `one canonical owner`, `single source of truth` | `normative` against `informative` is the ISO/IETF distinction between binding and explanatory text. `single source of truth` is already taken in `module_data/config.py` with a different referent |
 | 28 | `closed list` for the enumerable set of allowed words; `closed grammar` stays, and names the formation rule that draws from it | `closed vocabulary` | two names for the set was the defect; the grammar is a different concept and keeps its own name |
 | 29 | the desktop viewport is the only target for the front end | a mobile or tablet layout, a width breakpoint, a touch-only gesture, a viewport meta | one viewport is one layout to reason about. Pointer events and `prefers-reduced-motion` are not mobile and stay |
+| 30 | `<TICKER>_config.json` — the asset's hand-written input: its registration in the folder, and the engine overrides it takes; the basket stays `TICKERS` in `module_data/config.py`, and `ticker_registry` settles that the list and the registered folders agree | `<TICKER>_indicators.json`, a basket read from the working tree, a schema with no reader, `ASSET` as the default of `ticker_parser` | the registration cannot live in `<TICKER>_parameters.json`, which `module_ml/hpo.py` writes and *derived, never drafted* forbids editing; a key enters on the day a stage reads it and an asset sets it, so every file is `{}` until then; the list stays the one local definition every path derives from, and the working tree is not the index — a folder git does not track must not move the basket |
 
 ## External vocabularies
 
@@ -73,7 +74,7 @@ above: `git grep -n 'setAttribute("\|suggest_\|retCode\|startTime\|DMatrix\|read
 
 ## The asset folder manifest
 
-`store_assets_artifacts/<TICKER>/` holds exactly these nine files. No OHLCV:
+`store_assets_artifacts/<TICKER>/` holds exactly these ten files. No OHLCV:
 the canonical series and its aggregations live only in DuckDB — the asset
 folder carries the asset's features, parameters, evaluations and guide. Every
 file is prefixed with its ticker, every time series carries its grid in
@@ -86,6 +87,7 @@ README use the same one, so the three can be checked against each other by eye:
 | file | holds | written by |
 |---|---|---|
 | `<TICKER>_README.md` | what the folder holds and what came out of it | `module_ml/status.py` |
+| `<TICKER>_config.json` | the asset's registration in its folder, and the engine overrides it takes — `{}` while it takes none | hand-written |
 | `<TICKER>_features_ss-15-hh-dd-MM.parquet` | the five 15m family columns on the decision grid | `module_ml/features.py` |
 | `<TICKER>_features_ss-mm-01-dd-MM.parquet` | the five 1h family columns on the decision grid | `module_ml/features.py` |
 | `<TICKER>_features_ss-mm-04-dd-MM.parquet` | the five 4h family columns on the decision grid | `module_ml/features.py` |
@@ -95,9 +97,9 @@ README use the same one, so the three can be checked against each other by eye:
 | `<TICKER>_parameters.json` | the one parameters file: sections `experiment_configuration` (a-priori) and `hyperparameter_search_result` (the chosen point, its log-loss, the trial count) | `module_ml/hpo.py` |
 | `<TICKER>_strategy_evaluation.json` | the entry edge threshold, PnL per fold, the equity curve | `module_ml/strategy.py` |
 
-The `.gitignore` whitelist is the manifest's fifth site: it names the two
-tracked files, `<TICKER>_parameters.json` and `<TICKER>_README.md`; the other
-seven are regenerable and stay out.
+The `.gitignore` whitelist is the manifest's fifth site: it names the three
+tracked files, `<TICKER>_README.md`, `<TICKER>_config.json` and
+`<TICKER>_parameters.json`; the other seven are regenerable and stay out.
 
 The columns inside a per-timeframe features file carry only their family
 names — the filename already says the timeframe, and a name repeats nothing
@@ -194,11 +196,13 @@ rejected_name  core | path_segment | 1 | a top-level responsibility is module_<d
 rejected_name  lib | path_segment | 1 | a top-level responsibility is module_<domain>
 rejected_name  assets | path_segment | 2 | the store is store_assets_artifacts/
 rejected_name  artifacts | path_segment | 2 | the store is store_assets_artifacts/
+rejected_name  store_assets | path_segment | 2 | the store is store_assets_artifacts/
 rejected_name  db | path_segment | 3 | the store is store_db/; db_bytes is a key, not a directory
 rejected_name  database | path_segment | 3 | the store is store_db/
 rejected_name  raw_data | path_segment | 4 | a raw store is store_raw_<timeframe>/
 rejected_name  btc | path_segment | 5 | an asset folder is the ticker in capitals
 rejected_name  BTCUSDT | path_segment | 5 | the venue symbol stays at the adapter boundary
+rejected_name  data | path_segment | 8 | a per-asset file carries the <TICKER>_ prefix; the folder is flat
 rejected_name  common | path_segment | 18 | the responsibility already has an owner
 rejected_name  store_assets_artifacts/README.md | path_exact | 15 | the store guide is EXAMPLE_TICKER_README.md
 rejected_name  features.parquet | owned | 8 | ticker_manifest requires the <TICKER>_ prefix
@@ -282,12 +286,15 @@ enacted_path  .github/workflows/visualisation.yml | 16 | the one workflow
 enacted_path  store_assets_artifacts/EXAMPLE_TICKER_README.md | 15 | the store guide sorts inside the ticker block
 enacted_path  <TICKER>_README.md | 14 | every asset folder describes itself
 enacted_path  <TICKER>_parameters.json | 10 | one parameters file per asset
+enacted_path  <TICKER>_config.json | 30 | the asset's registration in its folder
 
 enacted_family  module_skills/ | .md | act_ methodology_ skill_ glossary.md | 7 | guidance files carry their category first
 
 ticker_store  store_assets_artifacts/ | 8 | every per-asset file carries the <TICKER>_ prefix
 ticker_tracked_file  <TICKER>_README.md | 14 | whitelisted by .gitignore
 ticker_tracked_file  <TICKER>_parameters.json | 10 | whitelisted by .gitignore
+ticker_tracked_file  <TICKER>_config.json | 30 | whitelisted by .gitignore
+ticker_registry_file  <TICKER>_config.json | 30 | the basket list and the registered folders must agree, both ways
 
 make_lifecycle_target  all | 13 | lifecycle
 make_lifecycle_target  help | 13 | lifecycle
@@ -332,5 +339,6 @@ unenforceable  a second copy of the chain in README or a methodology | 17 | pros
 unenforceable  a page generator folded into module_monitoring/ | 18 | a placement judgement, not a name
 unenforceable  a width breakpoint or a touch-only gesture | 29 | the ban covers the vocabulary, not the CSS pattern: `@media (max-width:...)` contains none of the banned words
 unenforceable  established terminology over local coinages | 25 | no closed list of coinages exists, so no grep can settle it
+unenforceable  a schema with no reader | 30 | no grep can tell an unread key from a read one; a key enters with the stage that reads it
 unenforceable  rule-derived structure over repeated project knowledge | 23 | the rule forbids no specific name, so no grep can settle it; it is a preference this repository states, not a grammar it checks
 ```

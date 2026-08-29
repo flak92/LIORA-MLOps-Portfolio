@@ -108,7 +108,7 @@ report.
 
 ```
 act conventions       make conventions-check
-                      → eight checks pass. The act's conventions-data block is the rule set.
+                      → nine checks pass. The act's conventions-data block is the rule set.
                         Listings are rebuilt from the index, not read with ls, so a build artifact
                         or a gitignored store cannot move the answer
 I/O verbs             git grep -nE '^def (get|process|handle|read|probe|spool|iter|make|run)_' -- '*.py'

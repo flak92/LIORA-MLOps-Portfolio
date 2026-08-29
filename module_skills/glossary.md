@@ -154,6 +154,7 @@ generated README share:
 | file | written by | holds |
 |---|---|---|
 | `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it |
+| `<TICKER>_config.json` | hand-written | the asset's registration in its folder, and the engine overrides it takes — `{}` while it takes none |
 | `<TICKER>_features_<timeframe slots>.parquet` ×3 | `module_ml/features.py` | X — one file per timeframe: that timeframe's five family columns on the decision grid |
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — labels, the event flags and the event prices |
 | `<TICKER>_model_evaluation.json` | `module_ml/train.py` | classification metrics per fold |

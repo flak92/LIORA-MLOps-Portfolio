@@ -146,3 +146,7 @@ def strategy_evaluation_json(ticker):
 
 def asset_readme_md(ticker):
     return artifact_dir(ticker) / f"{ticker}_README.md"
+
+
+def asset_config_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_config.json"

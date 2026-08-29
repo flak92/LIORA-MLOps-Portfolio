@@ -126,6 +126,7 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 # (path descriptor, what it holds)
 FILE_MANIFEST = (
     (config.asset_readme_md, "this file"),
+    (config.asset_config_json, "the asset's registration, and the engine overrides it takes"),
     (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
     (lambda ticker: config.features_parquet(ticker, "4h"), "X — the five 4h family columns on the decision grid"),

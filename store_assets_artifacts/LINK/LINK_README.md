@@ -7,6 +7,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | file | holds | size |
 | --- | --- | --- |
 | `LINK_README.md` | this file | — |
+| `LINK_config.json` | the asset's registration, and the engine overrides it takes | 3 B |
 | `LINK_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,472 KB |
 | `LINK_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,240 KB |
 | `LINK_features_ss-mm-04-dd-MM.parquet` | X — the five 4h family columns on the decision grid | 1,241 KB |
