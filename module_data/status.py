@@ -1,0 +1,248 @@
+"""Data-layer quality report: stdout tables + module_monitoring/data_status.json, one sequential process over the
+asset databases; every alias a scan publishes is the key it becomes."""
+
+from __future__ import annotations
+
+import argparse
+import json
+from datetime import UTC, datetime
+
+import duckdb
+
+from . import config
+from .lean import LEAN_DAY_ZIP_GLOB, MINUTES_PER_DAY
+
+VENUE_SCAN = """
+SELECT symbol,
+       count(*)                     AS row_count,
+       count(DISTINCT timestamp_ms) AS distinct_timestamp_count,
+       min(timestamp_ms)            AS first_timestamp_ms,
+       max(timestamp_ms)            AS last_timestamp_ms,
+       count(*) FILTER (high < greatest(open, close, low)
+                     OR low  > least(open, close, high)) AS ohlc_violation_count,
+       count(*) FILTER (volume = 0) AS zero_volume_bars,
+       count(*) FILTER (volume = 0 AND open = high AND high = low
+                        AND low = close) AS flat_bars
+FROM ohlcv_1m_{venue}
+GROUP BY symbol
+"""
+
+CANONICAL_SCAN = """
+SELECT symbol,
+       count(*)                              AS row_count,
+       count(*) FILTER (source = 'binance')  AS binance_source_count,
+       count(*) FILTER (source = 'bybit')    AS bybit_source_count,
+       count(*) FILTER (source = 'ffill')    AS ffill_bars,
+       count(*) FILTER (zero_volume)         AS zero_volume_bars,
+       avg(rel_divergence)                   AS relative_divergence_mean,
+       quantile_cont(rel_divergence, 0.99)   AS relative_divergence_p99,
+       max(rel_divergence)                   AS relative_divergence_max,
+       max(timestamp_ms)                     AS last_timestamp_ms,
+       count(*) FILTER (high < greatest(open, close, low)
+                     OR low  > least(open, close, high)) AS ohlc_violation_count
+FROM ohlcv_1m_canonical
+GROUP BY symbol
+"""
+
+# per-symbol (bounded memory): largest 1m move on the canonical series
+CANONICAL_MAX_ABS_RETURN_1M_SCAN = """
+SELECT max(abs(close / previous_close - 1)) AS max_abs_return_1m FROM (
+  SELECT close, lag(close) OVER (ORDER BY timestamp_ms) AS previous_close
+  FROM ohlcv_1m_canonical WHERE symbol = ?)
+"""
+
+# a basis jump can enter the canonical series only on a minute whose source differs from the previous minute
+SOURCE_SWITCH_SCAN = """
+SELECT count(*) FILTER (source_changed) AS source_switch_count,
+       max(CASE WHEN source_changed THEN abs(close / previous_close - 1) END) AS max_abs_return_at_switch
+FROM (SELECT close,
+             lag(close)  OVER (ORDER BY timestamp_ms) AS previous_close,
+             source <> lag(source) OVER (ORDER BY timestamp_ms) AS source_changed
+      FROM ohlcv_1m_canonical WHERE symbol = ?)
+"""
+
+CANONICAL_LONGEST_FLAT_RUN_SCAN = """
+WITH flat_minutes AS (SELECT timestamp_ms, (volume = 0 AND open = high AND high = low
+                                            AND low = close) AS flat
+                      FROM ohlcv_1m_canonical WHERE symbol = ?),
+run_groups AS (SELECT *, sum(CASE WHEN flat THEN 0 ELSE 1 END)
+                        OVER (ORDER BY timestamp_ms) AS run_group FROM flat_minutes)
+SELECT coalesce(max(flat_run_minutes), 0) AS longest_flat_run_minutes FROM
+  (SELECT count(*) FILTER (flat) AS flat_run_minutes FROM run_groups GROUP BY run_group)
+"""
+
+
+def load_rows_by_symbol(con: duckdb.DuckDBPyConnection, statement: str) -> dict[str, dict]:
+    """One dict per symbol (the first column), keyed by the scan's column names."""
+    cursor = con.execute(statement)
+    names = [column[0] for column in cursor.description]
+    return {row[0]: dict(zip(names, row)) for row in cursor.fetchall()}
+
+
+def load_row(con: duckdb.DuckDBPyConnection, statement: str, params: list) -> dict:
+    cursor = con.execute(statement, params)
+    names = [column[0] for column in cursor.description]
+    return dict(zip(names, cursor.fetchone()))
+
+
+def to_utc_minute(ms: int | None) -> str | None:
+    if ms is None:
+        return None
+    return datetime.fromtimestamp(ms / config.MILLISECONDS_PER_SECOND, tz=UTC).strftime("%Y-%m-%d %H:%M")
+
+
+def share_pct(part: int, whole: int) -> float:
+    return round(100.0 * part / whole, 3) if whole else 0.0
+
+
+def main() -> int:
+    argparse.ArgumentParser(
+        description="data & DB monitoring -> stdout + module_monitoring/data_status.json"
+    ).parse_args()
+    venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
+    canonical_rows, db_bytes = {}, {}
+    for ticker in config.TICKERS:
+        path = config.research_ohlcv_duckdb(ticker)
+        if not path.exists():
+            continue
+        con = duckdb.connect(str(path), read_only=True)
+        con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+        con.execute("SET threads=1")   # float summation must not be reordered
+        for venue in config.SOURCE_VENUES:
+            venue_rows[venue].update(load_rows_by_symbol(con, VENUE_SCAN.format(venue=venue)))
+        for symbol, canonical_row in load_rows_by_symbol(con, CANONICAL_SCAN).items():
+            canonical_row.update(load_row(con, CANONICAL_MAX_ABS_RETURN_1M_SCAN, [symbol]))
+            canonical_row.update(load_row(con, CANONICAL_LONGEST_FLAT_RUN_SCAN, [symbol]))
+            canonical_row.update(load_row(con, SOURCE_SWITCH_SCAN, [symbol]))
+            canonical_rows[symbol] = canonical_row
+        con.close()
+        db_bytes[ticker] = path.stat().st_size
+    if not canonical_rows:
+        raise SystemExit("no asset database found — run `make data-ingest` first")
+
+    window_end_ms = max((row["last_timestamp_ms"] for row in canonical_rows.values()), default=None)
+    if window_end_ms is not None:
+        window_end_ms += config.CANONICAL_GRID_INTERVAL_MS
+    expected = ((window_end_ms - config.DATA_WINDOW_START_MS)
+                // config.CANONICAL_GRID_INTERVAL_MS) if window_end_ms else 0
+
+    tickers = [ticker for ticker in config.TICKERS if config.symbol(ticker) in canonical_rows]
+    zip_counts = {
+        venue: {ticker: sum(1 for _ in config.raw_symbol_dir(ticker, venue).glob(LEAN_DAY_ZIP_GLOB)) for ticker in tickers}
+        for venue in config.SOURCE_VENUES
+    }
+
+    venues = {}
+    for venue in config.SOURCE_VENUES:
+        venue_table = []
+        for ticker in tickers:
+            symbol = config.symbol(ticker)
+            venue_row = venue_rows[venue].get(symbol)
+            venue_row_count, distinct = ((venue_row["row_count"], venue_row["distinct_timestamp_count"])
+                                         if venue_row else (0, 0))
+            venue_table.append(
+                {
+                    "symbol": symbol,
+                    "zip_count": zip_counts[venue][ticker],
+                    "row_count": venue_row_count,
+                    "coverage_pct": share_pct(distinct, expected),
+                    "gap_count": expected - distinct,
+                    # measured from the first observation to the end of the window, so a stale feed reports its gap
+                    "gap_count_after_first_observation": (
+                        (window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
+                    ) if venue_row and window_end_ms else 0,
+                    "duplicate_count": venue_row_count - distinct,
+                    "ohlc_violation_count": int(venue_row["ohlc_violation_count"]) if venue_row else 0,
+                    "zero_volume_bars": int(venue_row["zero_volume_bars"]) if venue_row else 0,
+                    "flat_bars": int(venue_row["flat_bars"]) if venue_row else 0,
+                    "first_observation_utc": to_utc_minute(venue_row["first_timestamp_ms"]) if venue_row else None,
+                    "last_observation_utc": to_utc_minute(venue_row["last_timestamp_ms"]) if venue_row else None,
+                }
+            )
+        venues[venue] = venue_table
+
+    canonical, symbols = [], []
+    for ticker in tickers:
+        symbol = config.symbol(ticker)
+        canonical_row = canonical_rows[symbol]
+        canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
+        canonical.append(
+            {
+                "symbol": symbol,
+                "row_count": canonical_row_count,
+                "last_observation_utc": to_utc_minute(canonical_row["last_timestamp_ms"]),
+                "binance_pct": share_pct(int(canonical_row["binance_source_count"]), canonical_row_count),
+                "bybit_pct": share_pct(int(canonical_row["bybit_source_count"]), canonical_row_count),
+                "ffill_pct": share_pct(ffill_bars, canonical_row_count),
+                "ffill_bars": ffill_bars,
+                "zero_volume_bars": int(canonical_row["zero_volume_bars"]),
+                "source_switch_count": int(canonical_row["source_switch_count"]),
+                "max_abs_return_at_switch": config.rounded(canonical_row["max_abs_return_at_switch"], 6),
+                "relative_divergence_mean": config.rounded(canonical_row["relative_divergence_mean"], 8),
+                "relative_divergence_p99": config.rounded(canonical_row["relative_divergence_p99"], 8),
+                "relative_divergence_max": config.rounded(canonical_row["relative_divergence_max"], 8),
+                "ohlc_violation_count": int(canonical_row["ohlc_violation_count"]),
+                "max_abs_return_1m": config.rounded(canonical_row["max_abs_return_1m"], 6),
+                "longest_flat_run_minutes": int(canonical_row["longest_flat_run_minutes"]),
+            }
+        )
+        symbols.append(
+            {
+                "symbol": symbol,
+                "row_count": canonical_row_count,
+                "db_bytes": db_bytes[ticker],
+                "ffill_bars": ffill_bars,
+                "real_data_pct": share_pct(canonical_row_count - ffill_bars, canonical_row_count),
+            }
+        )
+
+    status = {
+        "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
+        "window_start_utc": f"{config.DATA_WINDOW_START_UTC} 00:00",
+        "window_end_utc": to_utc_minute(window_end_ms),
+        "download_cadence_minutes": MINUTES_PER_DAY,
+        "duckdb_version": duckdb.__version__,
+        "flow": {
+            **{f"{venue}_zip_count": sum(zip_counts[venue].values()) for venue in config.SOURCE_VENUES},
+            **{f"{venue}_row_count": sum(row["row_count"] for row in venue_rows[venue].values())
+               for venue in config.SOURCE_VENUES},
+            "canonical_row_count": sum(symbol_row["row_count"] for symbol_row in symbols),
+        },
+        "symbols": symbols,
+        "venues": venues,
+        "canonical_source": canonical,
+    }
+    status_path = config.MODULE_MONITORING_DATA_STATUS_JSON_PATH
+    status_path.write_text(json.dumps(status, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+
+    flow = status["flow"]
+    print(f"window [{status['window_start_utc']} .. {status['window_end_utc']})  "
+          f"databases {sum(db_bytes.values()) / config.BYTES_PER_KIBIBYTE ** 2:.1f} MiB  duckdb {status['duckdb_version']}")
+    print("flow: zips " + "+".join(str(flow[f"{venue}_zip_count"]) for venue in config.SOURCE_VENUES)
+          + " -> rows " + "+".join(str(flow[f"{venue}_row_count"]) for venue in config.SOURCE_VENUES)
+          + f" -> canonical {flow['canonical_row_count']}")
+    for venue in config.SOURCE_VENUES:
+        print(f"[venue {venue}]")
+        print(f"{'symbol':9} {'zips':>5} {'rows':>9} {'coverage':>8} {'gaps':>8} {'dups':>4} {'ohlc bad':>8} {'zero-vol':>8} {'flat':>6}")
+        for venue_row in venues[venue]:
+            print(f"{venue_row['symbol']:9} {venue_row['zip_count']:>5} {venue_row['row_count']:>9} {venue_row['coverage_pct']:>8.3f} "
+                  f"{venue_row['gap_count']:>8} {venue_row['duplicate_count']:>4} {venue_row['ohlc_violation_count']:>8} "
+                  f"{venue_row['zero_volume_bars']:>8} {venue_row['flat_bars']:>6}")
+    print("[canonical source]")
+    print(f"{'symbol':9} {'rows':>9} {'primary':>7} {'secondary':>9} {'ffill':>6} {'zero-vol':>8} {'switches':>8} "
+          f"{'max |ret| at switch':>19} {'ohlc bad':>8} {'flat run (min)':>14} {'max |ret| 1m':>12} "
+          f"{'rel. divergence p99':>19} {'rel. divergence max':>19}")
+    for canonical_row in canonical:
+        print(f"{canonical_row['symbol']:9} {canonical_row['row_count']:>9} {canonical_row['binance_pct']:>7.2f} {canonical_row['bybit_pct']:>9.2f} "
+              f"{canonical_row['ffill_bars']:>6} {canonical_row['zero_volume_bars']:>8} {canonical_row['source_switch_count']:>8} "
+              f"{canonical_row['max_abs_return_at_switch'] if canonical_row['max_abs_return_at_switch'] is not None else '-':>19} "
+              f"{canonical_row['ohlc_violation_count']:>8} {canonical_row['longest_flat_run_minutes']:>14} "
+              f"{canonical_row['max_abs_return_1m'] if canonical_row['max_abs_return_1m'] is not None else '-':>12} "
+              f"{canonical_row['relative_divergence_p99'] if canonical_row['relative_divergence_p99'] is not None else '-':>19} "
+              f"{canonical_row['relative_divergence_max'] if canonical_row['relative_divergence_max'] is not None else '-':>19}")
+    print(f"wrote {status_path.relative_to(config.REPO_ROOT)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

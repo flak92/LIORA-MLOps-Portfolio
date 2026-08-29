@@ -1,0 +1,90 @@
+/* dial-up simple design: monospace, plain borders, no images, no frameworks */
+body {
+  font-family: "Courier New", Courier, monospace;
+  background: #f4f1ea;
+  color: #111;
+  margin: 2em auto;
+  max-width: 72em;
+  padding: 0 1em;
+  font-size: 14px;
+}
+h1 { font-size: 18px; margin: 0 0 0.2em; }
+h2 { font-size: 15px; margin: 1em 0 0.3em; }
+.sub { margin: 0 0 1em; color: #444; }
+/* one pill component: top tabs, summary views and ticker selectors */
+.pills { margin: 0 0 0.8em; }
+.pill {
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid #111;
+  background: #fff;
+  padding: 0.25em 0.9em;
+  cursor: pointer;
+}
+.pill--active { background: #ddd; font-weight: bold; }
+
+/* framed group (BEM: frame__head / frame__title / frame__body) */
+.frame { border: 1px solid #111; background: #fff; margin-bottom: 0.8em; }
+.frame__head { border-bottom: 1px solid #111; padding: 0.3em 0.5em; font-weight: bold; }
+.frame__head .pills { display: inline; margin: 0; }
+.frame__title { margin-right: 0.8em; }
+.frame__body { padding: 0.5em; }
+.frame__body > .box, .frame__body > table { margin-bottom: 0.6em; }
+.frame__body > :last-child { margin-bottom: 0; }
+.box {
+  border: 1px solid #111;
+  background: #fff;
+  padding: 0.5em 0.8em;
+  margin-bottom: 0.8em;
+  white-space: pre-wrap;
+}
+table { border-collapse: collapse; background: #fff; width: 100%; }
+th, td { border: 1px solid #111; padding: 0.25em 0.5em; text-align: right; }
+th { background: #ddd; font-weight: bold; }
+td:first-child, th:first-child { text-align: left; }
+.meter {
+  display: inline-block;
+  width: 8em;
+  height: 0.8em;
+  border: 1px solid #111;
+  background: #eee;
+  vertical-align: middle;
+  margin-right: 0.4em;
+}
+.meter__fill { display: block; height: 100%; background: #0a7a0a; }
+.warn { background: #fff3b0; }
+.foot { color: #666; margin-top: 1em; }
+.err { color: #a00; }
+
+.ticker-link {
+  font-family: inherit;
+  font-size: 14px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: #111;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* per-asset detail: sparklines, the final-holdout row in bold, compact share bars */
+.spark {
+  display: block; width: 100%; height: 8em;
+  border: 1px solid #111; background: #fff;
+}
+.spark__line { fill: none; stroke: #0a7a0a; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spark__base { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+.final-holdout { font-weight: bold; }
+
+/* Containers tab: a badge is the compact element carrying one variable of an asset's state;
+   --warn marks an observation or a measurement older than the download cadence,
+   --down a container whose endpoint did not answer */
+.badge {
+  display: inline-block;
+  border: 1px solid #111;
+  background: #fff;
+  padding: 0.15em 0.6em;
+  margin: 0 0.4em 0.4em 0;
+}
+.badge--warn { background: #fff3b0; }
+.badge--down { background: #111; color: #fff; }

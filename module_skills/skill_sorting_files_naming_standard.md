@@ -1,0 +1,62 @@
+# Skill: sorting files naming standard
+
+A directory listing is read by eye before any parser reads it, and every
+machine sorts it lexicographically — so a name is designed for the order it
+will land in, on any server, under any locale. *The repository shows the destination, not the road*: the order is designed, not verified.
+
+- **Taxonomic ordering: the category token leads the name, so a lexicographic
+  listing groups siblings into one contiguous block.** `module_*` beside
+  `module_*`, `store_*` beside `store_*`, `skill_*` beside `skill_*`: the eye
+  takes the block for free, while a category scattered through the alphabet
+  charges a scan and a memory for every lookup.
+- **Digits sort before letters — build granularity order on that.** In ASCII
+  the digits precede every letter, so a slot filled with a number beats a
+  letter placeholder at the same position; the timeframe slot standard below
+  uses exactly this.
+- **Zero-pad every number.** `01 < 04 < 15` sorts numerically as text;
+  unpadded `1, 4, 15` sorts as `1, 15, 4`. Two digits per slot until a real
+  name needs three.
+- **Fixed width aligns columns.** Slots of constant width make sibling names
+  line up character for character, so a difference is visible at the exact
+  position where it lives — the listing becomes a table without a table.
+- **Design for every collation at once.** `LC_COLLATE=C` compares bytes;
+  UTF-8 locales fold case and punctuation; macOS and Windows filesystems
+  compare case-insensitively. A standard survives them all when its order
+  never depends on case or punctuation alone — digits-before-letters holds
+  everywhere. The ecosystem-fixed names (`AGENTS.md`, `Dockerfile`, `Makefile`,
+  `README.md`, `__init__.py`, `docker-compose.yml`, `requirements.txt`, the
+  dot-files) and `<TICKER>_README.md` keep their spelling, so they are the only
+  names whose sort position depends on the collation: `<TICKER>_README.md` is
+  first in its folder under `LC_COLLATE=C` and ninth under `en_US.UTF-8`, and
+  the `<TICKER>_*` block stays contiguous under both.
+- A new sortable pattern is minted like any other convention — the seven
+  conditions of `skill_self_explaining_naming.md` — and enters `AGENTS.md` in
+  the commit that makes the third name follow it.
+
+## The timeframe slot standard
+
+A file that belongs to a timeframe family writes its granularity as five fixed
+slots, finest to coarsest: `ss-mm-hh-dd-MM` (seconds, minutes, hours, days,
+months). The active granularity is a zero-padded number in its slot; every
+inactive slot keeps its unit letters as a placeholder.
+
+| timeframe | slots |
+|---|---|
+| 1 second | `01-mm-hh-dd-MM` |
+| 1 minute | `ss-01-hh-dd-MM` |
+| 15 minutes | `ss-15-hh-dd-MM` |
+| 1 hour | `ss-mm-01-dd-MM` |
+| 4 hours | `ss-mm-04-dd-MM` |
+| 1 day | `ss-mm-hh-01-MM` |
+| 1 month | `ss-mm-hh-dd-01` |
+
+A filled slot beats a placeholder at the same position, so finer granularity
+always lists first; zero-padding keeps numeric order inside a slot; the fixed
+slot count keeps listings column-aligned. Two patterns, two jobs: a store has
+no siblings to order, so it takes the compact token the code and the schema
+already speak (`store_raw_1m/`, `ohlcv_1m_canonical`, `WARMUP_4H_BARS`); the
+feature files of one asset are read as one block, so they take the slots
+(`BTC_features_ss-15-hh-dd-MM.parquet`, `…ss-mm-01-dd-MM…`, `…ss-mm-04-dd-MM…`).
+The slots govern filesystem names only: serialised schema — table names,
+parquet columns, feature names, artifact keys — keeps the compact token,
+because those names are contracts with the files on disk.

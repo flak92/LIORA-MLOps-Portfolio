@@ -1,0 +1,16 @@
+{
+ "hyperparameter_search_result": {
+  "best_logloss": 0.7917575596823777,
+  "best_params": {
+   "alpha": 0.4544383960336014,
+   "colsample_bytree": 0.6943386448447411,
+   "eta": 0.01947558230629543,
+   "lambda": 0.34889766548903667,
+   "max_depth": 2,
+   "min_child_weight": 3,
+   "num_boost_round": 350,
+   "subsample": 0.6626651653816322
+  },
+  "trial_count": 50
+ }
+}
