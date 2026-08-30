@@ -120,11 +120,9 @@ def main() -> int:
     if not canonical_rows:
         raise SystemExit("no asset database found — run `make data-ingest` first")
 
-    window_end_ms = max((row["last_timestamp_ms"] for row in canonical_rows.values()), default=None)
-    if window_end_ms is not None:
-        window_end_ms += config.CANONICAL_GRID_INTERVAL_MS
-    expected = ((window_end_ms - config.DATA_WINDOW_START_MS)
-                // config.CANONICAL_GRID_INTERVAL_MS) if window_end_ms else 0
+    # the report's own window: it ends at the newest observation anywhere in the basket
+    window_end_ms = (max(row["last_timestamp_ms"] for row in canonical_rows.values())
+                     + config.CANONICAL_GRID_INTERVAL_MS)
 
     tickers = [ticker for ticker in config.TICKERS if config.symbol(ticker) in canonical_rows]
     zip_counts = {
@@ -137,6 +135,10 @@ def main() -> int:
         venue_table = []
         for ticker in tickers:
             symbol = config.symbol(ticker)
+            # every asset is judged against its OWN canonical end, so a young asset is never charged
+            # an older one's history and a stale feed is the only thing a gap can mean
+            asset_window_end_ms = canonical_rows[symbol]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
+            expected = (asset_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
             venue_row = venue_rows[venue].get(symbol)
             venue_row_count, distinct = ((venue_row["row_count"], venue_row["distinct_timestamp_count"])
                                          if venue_row else (0, 0))
@@ -149,8 +151,8 @@ def main() -> int:
                     "gap_count": expected - distinct,
                     # measured from the first observation to the end of the window, so a stale feed reports its gap
                     "gap_count_after_first_observation": (
-                        (window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
-                    ) if venue_row and window_end_ms else 0,
+                        (asset_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
+                    ) if venue_row else 0,
                     "duplicate_count": venue_row_count - distinct,
                     "ohlc_violation_count": int(venue_row["ohlc_violation_count"]) if venue_row else 0,
                     "zero_volume_bars": int(venue_row["zero_volume_bars"]) if venue_row else 0,
