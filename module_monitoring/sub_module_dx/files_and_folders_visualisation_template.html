@@ -7,7 +7,6 @@
 :root{
 --bg-deep:#070C1C; --bg-glow:#101A3C;
 --text:#D9E2F6; --dim:#7E90B8; --line:#22304F;
---s1:#5B8DEF; --s2:#2BD4BD; --s3:#F2B24E; --s4:#A98BFA; --s5:#3FD68F; --core:#EDF2FF;
 --mono:ui-monospace,'SF Mono','Cascadia Code',Consolas,Menlo,monospace;
 --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
@@ -87,7 +86,7 @@ aside#panel button.close:hover{color:var(--text);}
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
 </div>
-<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; 1&ndash;5 isolate story &middot; 0 all &middot; space pause</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause</div>
 <div class="controls">
 <button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
 <button id="btnReset" title="Reset view (0)">&#10226;</button>
@@ -115,7 +114,7 @@ DIM_ALPHA: 0.10,        // opacity of out-of-focus elements
 STAR_COUNT: 90,         // lighter background
 MAX_DPR: 1.5            // pixel-ratio cap
 };
-/* VISUALISATION:STRUCTURE:BEGIN - written by module_visualisation/generate.py, do not edit by hand */
+/* VISUALISATION:STRUCTURE:BEGIN - written by module_monitoring/sub_module_dx/visualise.py, do not edit by hand */
 const META = {
 title: 'Files and Folders',
 eyebrow: 'owner / repository',
@@ -778,10 +777,15 @@ activeIsland = null;
 clearSubtree();
 select(null);
 }
+/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
+   isolates nothing is never offered and never dims the whole drawing */
+var STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
+document.getElementById('hintStories').textContent = STORY_DIGITS.join('') === ''
+  ? 'no story key' : STORY_DIGITS[0] + '\u2013' + STORY_DIGITS[STORY_DIGITS.length - 1];
 document.getElementById('btnReset').addEventListener('click', resetView);
 window.addEventListener('keydown', function(ev){
 if (ev.key === ' '){ ev.preventDefault(); setPlaying(!playing); }
-else if (ev.key >= '1' && ev.key <= '9'){ setIsland('S' + ev.key); }
+else if (STORY_DIGITS.indexOf(ev.key) >= 0){ setIsland('S' + ev.key); }
 else if (ev.key === '0' || ev.key === 'Escape'){ resetView(); }
 });
 </script>

@@ -258,3 +258,12 @@ the methodology documents — `methodology_data.md` (how the canonical dataset i
 built) and `methodology_ml.md` (the research layer, equation by equation, with
 the citations) — and the skills (`skill_*.md`). A module-specific guidance
 subfolder is created at the third module-specific document, not before.
+
+A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
+the module that owns it, with its own `config.py`, its own `main()` and no
+dataflow of its own. It exists once, for the developer-experience drawing in
+`module_monitoring/sub_module_dx/`, and it is nested rather than promoted because
+the dashboard serves its own directory — a top-level module would have to be
+given a route, and the drawing's whole claim is that the server does not know
+about it. `sub_module_*` does not enter the directory grammar above: one
+occurrence is not a convention, and the third one mints it or nothing does.

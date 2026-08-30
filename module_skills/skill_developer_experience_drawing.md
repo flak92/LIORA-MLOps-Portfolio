@@ -1,14 +1,14 @@
-# sub_module_dx
+# Skill: the developer-experience drawing
 
-Developer experience (DX): the repository's own tracked tree, drawn as one self-contained page.
+The repository's own tracked tree, drawn as one self-contained page. *The repository shows the
+destination, not the road*: the page is redrawn by hand and by nothing else, and what tells a reader
+how old it is, is the provenance stamp in its subtitle.
 
 ```
 make monitoring-dx-update      redraw the page from the tree as it is now
 ```
 
-That is the whole idea. The page is refreshed **by hand**, and nothing refreshes it for you — no
-automation of any kind. What tells a reader how old the drawing is, is the provenance stamp in its
-subtitle, which names the commit the tree was read from.
+That is the whole idea. There is no automation of any kind behind it.
 
 Open it from the dashboard: the **DX** control in the top right corner of the status page, or
 directly at `/sub_module_dx/files_and_folders_visualisation.html`. The dashboard already serves this
@@ -30,8 +30,8 @@ error naming the key, so a typo cannot pass unnoticed.
 | `default_story` | Group for paths no `story_map` entry covers. It is **set**, so a newly added file simply joins that group and the drawing still builds. Setting it to `null` would instead make an unmapped path a hard error — deliberate friction this repository does not ask for. |
 | `exclude` | Glob patterns removed before anything else. `*` and `?` never cross `/`; `**/` stands for zero or more leading segments; a trailing `/` means the directory and everything beneath it. The drawn page excludes itself here. |
 | `story_map` | Path → group id. **Longest prefix wins.** A key ending in `/` covers that directory and its subtree; any other key is an exact path. |
-| `stories` | The four groups, each with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the number keys isolate a group, and the key is read as `S` plus the digit. |
-| `stories.<id>.hub` | The path drawn at the centre of that group's island. Optional — by default the shallowest folder in the group wins. A `hub` naming a path that is not in the drawing is an error. |
+| `stories` | The four groups, each with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the page reads a digit key as `S` plus that digit, and offers only the digits its stories answer to. |
+| `stories.<id>.hub` | The path drawn at the centre of that group's island. Optional — by default the shallowest folder in the group wins. A `hub` naming a path that is not in the drawing is an error, and so is one that `story_map` puts on another story: that island would be drawn with no centre and the other with two. |
 | `story_order` | The order the islands are laid out in, clockwise. The island count comes from this list. |
 | `core` | `name` and `color` of the repository-root node. |
 | `aggregate` | Directory glob → role. Each matching folder collapses into **one** node carrying the folder's name, and its contents leave the drawing. Used for the per-asset artifact folder. |

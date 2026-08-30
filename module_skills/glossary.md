@@ -283,6 +283,7 @@ sub-module and the control that opens its page.
 |---|---|---|---|---|
 | the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
 | one coloured band the drawing sorts a path into | story, `island` | `island`, `story_map` | `S1` … `S4` | group, cluster, section |
+| the key that isolates one band | the digit of the story id — the page reads `S` plus the digit, and offers only the digits its stories answer to | — | `1` … `4` | a story id that is not `S` plus a digit; a key offered for a band that does not exist |
 | the node at the centre of a band | `hub` | `hub` | — | anchor, root of the band |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the commit the tree was read from, and its date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date |
@@ -290,5 +291,6 @@ sub-module and the control that opens its page.
 
 The drawing is redrawn by hand with `make monitoring-dx-update` and by nothing else. It is a derived
 artifact under *Derived, never drafted*: a hand edit to it is a violation, and the provenance stamp
-is what says how old it is.
+is what says how old it is — a committer date, written in UTC like every other time this repository
+prints. `skill_developer_experience_drawing.md` holds the configuration surface key by key.
 

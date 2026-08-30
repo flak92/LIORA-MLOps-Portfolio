@@ -42,4 +42,6 @@ linter, no build step, no framework.
   only by `make monitoring-dx-update`; the dashboard already serves the directory, so the server's
   routes do not know about it. Its inline renderer is reviewed as a whole and is not bound by the
   closed verb list above, which governs the hand-written dashboard scripts.
+  `skill_developer_experience_drawing.md` holds the rest: the configuration surface, the provenance
+  stamp and the determinism the page owes.
 

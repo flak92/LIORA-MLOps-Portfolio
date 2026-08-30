@@ -36,6 +36,7 @@ import functools
 import json
 import re
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
@@ -97,8 +98,9 @@ def load_provenance_stamp(output_relative: str) -> tuple[str, str]:
         if len(parents) < 2:
             break
         commit = parents[1]
+    committed_at = int(_git("show", "-s", "--format=%ct", commit).strip())
     return (_git("rev-parse", "--short", commit).strip(),
-            _git("show", "-s", "--format=%cI", commit).strip())
+            datetime.fromtimestamp(committed_at, tz=UTC).strftime("%Y-%m-%d %H:%M:%S"))
 
 
 def load_repository_name() -> tuple[str, str]:
@@ -283,7 +285,16 @@ def annotations_for(raw: dict, nodes: dict) -> dict:
 
 def hub_of(story_id: str, story: dict, members: list, nodes: dict) -> str:
     if story.get("hub"):
-        return resolve_key(story["hub"], nodes, f'"stories"."{story_id}"."hub"')
+        hub = resolve_key(story["hub"], nodes, f'"stories"."{story_id}"."hub"')
+        if hub not in members:
+            raise VisualisationError(
+                f'visualisation_config.json: story "{story_id}" names {hub!r} as its hub, but '
+                f'"story_map" puts that path on story {nodes[hub]["island"]!r} — so "{story_id}" '
+                f'would be drawn with no centre and {nodes[hub]["island"]!r} with two, and the page '
+                f"would fail before its first frame.\n"
+                f'  fix: map the path to "{story_id}" in "story_map", or name a hub that belongs to it.'
+            )
+        return hub
     if not members:
         raise VisualisationError(
             f'visualisation_config.json: story "{story_id}" has no files, so it cannot be drawn.\n'
