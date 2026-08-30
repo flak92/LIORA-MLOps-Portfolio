@@ -1,26 +1,7 @@
-/* ML Assets tab: the per-asset panel. Classic script — uses buildMeter,
-   formatCount, formatNumber and formatPercent from data.js, and buildTable, buildShareCell,
-   validationFolds, CLASS_NAMES and ML_STATUS from ml.js. */
+/* ML Assets tab: the per-asset panel. Classic script — uses buildMeter, buildFrame,
+   buildKeyValueBox, buildFootnote, formatCount, formatNumber and formatPercent from page.js,
+   and buildTable, buildShareCell, validationFolds, CLASS_NAMES and ML_STATUS from ml.js. */
 "use strict";
-
-function buildFrame(title) {
-  const frame = document.createElement("div");
-  frame.className = "frame";
-  const head = document.createElement("div");
-  head.className = "frame__head";
-  head.textContent = title;
-  const body = document.createElement("div");
-  body.className = "frame__body";
-  frame.append(head, body);
-  return { frame: frame, body: body };
-}
-
-function buildKeyValueBox(pairs) {
-  const box = document.createElement("div");
-  box.className = "box";
-  box.textContent = pairs.map((kv) => (kv[0] + ":").padEnd(26) + kv[1]).join("\n");
-  return box;
-}
 
 /* single-series line with a dashed reference level; no legend needed, the
    frame title names the series. Native <title> carries the hover summary. */
@@ -51,13 +32,6 @@ function buildSparkline(values, baseline, caption) {
   line.setAttribute("points", values.map((v, i) => x(i).toFixed(1) + "," + y(v).toFixed(1)).join(" "));
   svg.append(tip, base, line);
   return svg;
-}
-
-function buildFootnote(text) {
-  const paragraph = document.createElement("p");
-  paragraph.className = "foot";
-  paragraph.textContent = text;
-  return paragraph;
 }
 
 function buildHeaderLine(asset, mlStatus) {

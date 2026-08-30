@@ -29,3 +29,14 @@ services:
   asset-btc:
     <<: *server
     environment: {ASSET: BTC, OMP_NUM_THREADS: "1"}
+
+  # the one service that holds the docker socket, and the only one: its whole responsibility is
+  # docker management and monitoring. It publishes no port — the dashboard proxies /devops/* to it.
+  # volumes: replaces the anchor's key rather than extending it, so the code mount is repeated here.
+  portraefik:
+    <<: *service
+    command: python -m module_monitoring.sub_module_portraefik.serve
+    group_add: ["${DOCKER_GID:-999}"]
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock

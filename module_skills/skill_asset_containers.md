@@ -1,4 +1,4 @@
-# Skill: asset containers — the topology, the endpoint, the tab
+# Skill: asset containers — the topology, the endpoint, the socket
 
 The asset and its container are the primary object; the engine is the support
 layer. One image, one resident container per ticker of the basket, differing only by
@@ -6,9 +6,22 @@ layer. One image, one resident container per ticker of the basket, differing onl
 every service is — `build`, `image`, `init`, `user`, the bind mount, the `5g` ceiling — and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
 assets share, which is why the one-off build service stays outside it. The dashboard
-reaches them only through its own proxy: no asset container publishes a port,
-and no container mounts `/var/run/docker.sock` — root-equivalent access for a
-badge. *The repository shows the destination, not the road*: no restart policy, no healthcheck, no socket.
+reaches them only through its own proxy: no asset container publishes a port.
+*The repository shows the destination, not the road*: no restart policy, no healthcheck.
+
+**The socket rule, and its one scope.** Managing containers, networks and
+volumes needs the Docker Engine API, and the honest way to it is the socket, so
+the rule that forbade it is not bent but scoped: `/var/run/docker.sock` is
+mounted in **exactly one container, `portraefik`**, whose single responsibility
+is docker management and monitoring. It is never mounted in the dashboard, never
+in an asset container, and never for a badge. No third-party socket proxy — that
+is a dependency — and no TCP daemon endpoint, which is weaker than the socket.
+What that contains is the **mount**: root-equivalent access lives in one service
+that publishes no port. What it does not contain is **reach** — the dashboard
+proxies `/devops/*` to it, so anything that can reach the dashboard's loopback
+origin can reach the Engine through it, a browser tab on another site included.
+Stated, not mitigated. The panel's own contract is
+`../module_monitoring/skills/skill_devops_panel.md`.
 
 ## The topology
 
@@ -17,6 +30,7 @@ badge. *The repository shows the destination, not the road*: no restart policy, 
 | `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the basket-wide stages: `data-download` (sequential — the venues' per-IP limits are budgeted per process), `ml-status` | one-off |
 | `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
 | `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` | the same server in its asset role | resident |
+| `portraefik` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
@@ -31,7 +45,10 @@ clone builds instead of reaching for a registry; the tag is one, so
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Every container keeps the `.:/app`
-bind mount; the raw store stays central and Lean-exact. Every process binds
+bind mount — `portraefik` respells `.:/app` beside the socket because a service's
+`volumes:` replaces the anchor's key rather than extending it, and takes the host's
+docker group through `group_add` so it reads the socket without being root; the raw
+store stays central and Lean-exact. Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `serve.py`, with no
 argument: the server is docker-only; `PORT` is only the host side of the
 dashboard's mapping, so a stage run with another `PORT` never recreates a
@@ -86,32 +103,10 @@ numbers. `Cache-Control: no-store` from the proxy. A stopped container renders
 `down` after Docker's resolver gives up on the vanished alias, not after the
 socket timeout — stated, not mitigated.
 
-## The tab
+## The panel
 
-The tab reads the registry and one endpoint per container through the proxy,
-every `poll_interval_seconds` while it is visible and one poll at a time, and
-shows an overview table — one row per asset container, magnitudes as bars —
-then the selected container's badge row and its answer verbatim. The selector
-is the page's pill group (`data-pills="container"`), its buttons following the
-registry's `tickers`; the overview's ticker cells are links into it. `badge` is
-the tab's element carrying one variable of an asset's state: `badge--warn` marks an
-observation or a measurement older than `download_cadence_minutes` from the
-data snapshot — never a literal in the page; `badge--down` a container whose
-endpoint did not answer 200.
-
-| column / badge | label | source |
-|---|---|---|
-| asset | the ticker | a link into the selector |
-| container | `up` / `down` | the proxy's status code |
-| up since | `up since` | `started_at_utc` |
-| memory | `memory` | `footprint.memory_bytes` against `memory_limit_bytes`, as a bar |
-| peak | `peak` | `footprint.memory_peak_bytes` |
-| CPU | `CPU` | two `cpu_usage_seconds` of one container run over the wall time between polls, over `cpu_count`; a dash until the second poll |
-| data | `data` | the overview: `observation_lag_minutes`; the badge: `data.last_observation_utc` and the lag |
-| rows | `rows` | `data.row_count`, `data.db_bytes` |
-| window | `covered` / `not covered` | `data.research_window_covered` |
-| trained | `trained <date>` | `artifacts.model_evaluation_modified_utc`; `artifacts no run yet` while the ML snapshot has no block, or the folder no longer holds the set |
-| threshold | `met` / `fallback` | `artifacts.entry_edge_threshold_constraint_met` |
-| measured | `measured` | `data.measurement_age_minutes` |
-| cpu (badge) | `cpu <seconds>s on <n> cpus` | `footprint.cpu_usage_seconds`, `cpu_count` — the container's total so far |
-| a symbol with no row, or an asset with no database | `no data yet` | `data: null` — never `down` |
+The asset containers are presented by the DevOps panel, not by a tab of the
+status page: its columns, its badges and its poll are
+`../module_monitoring/skills/skill_devops_panel.md`. What belongs here is what
+the containers themselves owe it — the endpoint contract and the down semantics
+above.

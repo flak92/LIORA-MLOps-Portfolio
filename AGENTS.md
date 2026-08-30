@@ -223,7 +223,8 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`module_ml/model.py`, `module_ml/hpo.py`), argparse (`module_data/config.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (`module_monitoring/*.js`), docker compose (`Makefile`,
 `docker-compose.yml`), and `http.server`, `urllib`, cgroup v2 and procfs
-(`module_monitoring/serve.py`), and `posix_spawn`, `wait4` rusage and the
+(`module_monitoring/serve.py`), the Docker Engine API over its unix socket
+(`module_monitoring/sub_module_portraefik/`), and `posix_spawn`, `wait4` rusage and the
 per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
 boundary is an exception the conventions name, not an inconsistency they
 tolerate.
@@ -254,7 +255,9 @@ list holds the words bound to neither.
   `pill`, `chip`, `tile`, `stat` for a badge; `badge--off`, `status--red`, a
   coloured row; `mobile`, `tablet`, `phone`, `responsive`, `breakpoint`
 - **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a
-  second compose file, `/var/run/docker.sock` in a container; `TODO`, `FIXME`,
+  second compose file, `/var/run/docker.sock` in any container other than
+  `portraefik` — the one service whose responsibility is docker management, and
+  which publishes no port (`module_skills/skill_asset_containers.md`); `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
   generator, framework; `authority`, `single source of truth`
 
@@ -279,9 +282,12 @@ them and stays in `module_skills/`.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
 the module that owns it, with its own `config.py`, its own `main()` and no
-dataflow of its own. It exists once, for the developer-experience drawing in
-`module_monitoring/sub_module_dx/`, and it is nested rather than promoted because
-the dashboard serves its own directory — a top-level module would have to be
-given a route, and the drawing's whole claim is that the server does not know
-about it. `sub_module_*` does not enter the directory grammar above: one
-occurrence is not a convention, and the third one mints it or nothing does.
+dataflow of its own. It exists twice, both inside `module_monitoring`: the
+developer-experience drawing in `sub_module_dx/`, and the DevOps panel in
+`sub_module_portraefik/`. Both are nested rather than promoted because the
+dashboard serves its own directory — a top-level module would have to be given a
+route, and each page reaches the browser as a static file instead. The panel adds
+one route for its API alone, because an API is not a file; the socket it holds is
+the reason it is a service of its own rather than a role of `serve.py`.
+`sub_module_*` does not enter the directory grammar above: two occurrences are a
+coincidence, and the third one mints it or nothing does.

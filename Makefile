@@ -1,6 +1,8 @@
 PY          := .venv/bin/python
 PORT        ?= 8900
-COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT)
+# the docker group of this host, so the one container that holds the socket can read it without being root
+DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
+COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
 COMPOSE     := $(COMPOSE_ENV) docker compose
 TICKER_LIST := $(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))")
 ASSET_SERVICE_LIST := $(addprefix asset-,$(shell echo $(TICKER_LIST) | tr A-Z a-z))
@@ -60,8 +62,8 @@ monitoring-dx-update: ## redraw the developer-experience picture of the tracked 
 
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
-docker-up: docker-build ## start the dashboard at http://127.0.0.1:$(PORT)/ and the asset containers, then open the page
-	$(COMPOSE) up -d dashboard $(ASSET_SERVICE_LIST)
+docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers at http://127.0.0.1:$(PORT)/, then open the page
+	$(COMPOSE) up -d dashboard portraefik $(ASSET_SERVICE_LIST)
 	@python3 -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')"
 docker-down:     ## stop and remove every container
 	$(COMPOSE) down

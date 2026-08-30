@@ -1,7 +1,8 @@
 """The one server of module_monitoring, its role chosen by ASSET.
 
     dashboard role (ASSET unset)   the static page; GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
-                                   GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it
+                                   GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
+                                   GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket
     asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its snapshot rows, its database size, its own cgroup
 """
 
@@ -173,6 +174,20 @@ def fetch_asset_status(ticker: str) -> tuple[int, bytes]:
         return HTTPStatus.SERVICE_UNAVAILABLE, b""
 
 
+def fetch_panel(method: str, route: str) -> tuple[int, bytes]:
+    """The DevOps panel's API as (status code, body), forwarded as it came — the same shape and the same
+    failure as an asset's endpoint. The socket the panel holds stays in the panel: this process never opens it."""
+    request = urllib.request.Request(config.portraefik_api_url(route), method=method,
+                                     data=b"" if method == "POST" else None)
+    try:
+        with urllib.request.urlopen(request, timeout=config.PANEL_FETCH_TIMEOUT_SECONDS) as answer:
+            return answer.status, answer.read()
+    except urllib.error.HTTPError as error:
+        return error.code, error.read()
+    except (OSError, http.client.HTTPException):
+        return HTTPStatus.SERVICE_UNAVAILABLE, b""
+
+
 def write_response(handler: BaseHTTPRequestHandler, status: int, body: bytes = b"") -> None:
     """One reply shape for every route: own headers only, and never cached."""
     handler.send_response(status)
@@ -197,11 +212,14 @@ class AssetStatusHandler(BaseHTTPRequestHandler):
 
 
 class DashboardHandler(SimpleHTTPRequestHandler):
-    """The dashboard role: the static page, the registry, and the proxy to one asset's endpoint."""
+    """The dashboard role: the static page, the registry, and the proxies — one asset's endpoint, and the
+    DevOps panel's API. It holds no docker socket and makes no Engine call; the panel does both, alone."""
 
     def do_GET(self):
-        segments = self.path.split("/")
-        if self.path == "/containers":
+        segments = self.path.split("?")[0].split("/")
+        if self.path.startswith(config.DEVOPS_ROUTE_PREFIX + "/"):
+            write_response(self, *fetch_panel("GET", self.path.removeprefix(config.DEVOPS_ROUTE_PREFIX)))
+        elif self.path == "/containers":
             write_response(self, HTTPStatus.OK, to_json_bytes(registry_payload()))
         elif self.path == "/runs":
             write_response(self, HTTPStatus.OK, to_json_bytes(runs_payload()))
@@ -217,6 +235,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 write_response(self, HTTPStatus.NOT_FOUND)
         else:
             super().do_GET()
+
+    def do_POST(self):
+        if self.path.startswith(config.DEVOPS_ROUTE_PREFIX + "/"):
+            write_response(self, *fetch_panel("POST", self.path.removeprefix(config.DEVOPS_ROUTE_PREFIX)))
+        else:
+            write_response(self, HTTPStatus.NOT_FOUND)
 
 
 class StatusServer(ThreadingHTTPServer):

@@ -111,7 +111,7 @@ and `ml-all:`; every document points there. Remote machine? Tunnel with
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, none of them parameterised |
 | lifecycle | `make docker-btc-lifecycle` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
-| dashboard | `make docker-up`       | snapshots → six-tab page on `127.0.0.1:8900`, served by `module_monitoring/serve.py` in the `dashboard` container with the container routes | no external resources; the asset containers are reached only through its proxy |
+| dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page |
 
 ## Data formats
@@ -139,10 +139,16 @@ raw ZIP trees. Schema:
   and what it left on disk; then one shared timeline with a dashed rule at every
   stage boundary. A `process_` column is the stage; a `container_` column is the
   whole container over the same window, and the page says so;
-- **Containers** — one row per asset container, live through the dashboard's
-  proxy: up or down, up since, memory against its ceiling, peak, CPU share over
-  the last poll, the observation lag and the measurement age; then one
-  container as it reports itself.
+Two controls in the top right leave the page, one per persona beyond the
+business reader:
+
+- **DX** — the developer-experience drawing of the tracked tree;
+- **DevOps** — the panel: one row per asset container, live through the
+  dashboard's proxy (up or down, up since, memory against its ceiling, peak, CPU
+  share over the last poll, the observation lag and the measurement age, then one
+  container as it reports itself), and beside it every container, network and
+  volume the daemon reports, with `start` / `stop` / `restart` offered for this
+  project's own containers alone.
 
 ## ML research layer
 

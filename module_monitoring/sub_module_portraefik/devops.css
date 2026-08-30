@@ -1,0 +1,14 @@
+/* only what style.css does not carry: the panel's tables are wider than the status page's frame */
+body { max-width: 96em; }
+
+/* an action is a ticker-link that can be refused; a disabled one states the refusal by being unusable */
+.ticker-link[disabled] {
+  color: #666;
+  border-color: #666;
+  cursor: not-allowed;
+}
+
+#machines td:first-child,
+#networks td:first-child,
+#volumes td:first-child,
+#bind-mounts td:first-child { font-weight: normal; }

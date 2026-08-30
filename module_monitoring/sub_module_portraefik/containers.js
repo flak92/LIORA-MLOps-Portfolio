@@ -1,9 +1,9 @@
-/* Containers tab: the registry (GET /containers), then one GET /containers/<TICKER>/status per asset every
-   poll_interval_seconds while the tab is visible — each asset container as it reports itself. */
+/* The panel's asset-container view: the registry (GET /containers), then one GET /containers/<TICKER>/status
+   per asset every poll_interval_seconds while the panel is open — each asset container as it reports itself.
+   The routes are root-relative because this page is served from a subdirectory. */
 "use strict";
 
 const MILLISECONDS_PER_MINUTE = 60000;
-const MILLISECONDS_PER_SECOND = 1000;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
@@ -146,14 +146,14 @@ function buildContainerPills() {
 }
 
 function fetchContainerRegistry() {
-  return fetch("containers", { cache: "no-store" })
+  return fetch("/containers", { cache: "no-store" })
     .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); });
 }
 
 /* one asset's endpoint through the proxy: any status but 200 is down, a failed exchange too */
 function fetchContainerStatus(ticker) {
   const askedAt = Date.now();
-  return fetch("containers/" + ticker + "/status", { cache: "no-store" })
+  return fetch("/containers/" + ticker + "/status", { cache: "no-store" })
     .then((response) => (response.ok
       ? response.json().then((payload) => ({ status: response.status, payload: payload }))
       : { status: response.status, payload: null }))
@@ -196,11 +196,10 @@ function initContainers() {
     .then(([registry]) => {
       CONTAINER_REGISTRY = registry;
       meta.textContent = registry.tickers.length + " asset containers · polled every " + registry.poll_interval_seconds
-        + "s while this tab is visible · registry " + registry.generated_at_utc + " UTC";
+        + "s while this panel is open · registry " + registry.generated_at_utc + " UTC";
       buildContainerPills();
-      PILL_HOOKS.tab = (key) => { if (key === "containers") renderContainers(); };
       setInterval(() => {
-        if (document.visibilityState === "visible" && !document.getElementById("tab-containers").hidden) renderContainers();
+        if (document.visibilityState === "visible") renderContainers();
       }, registry.poll_interval_seconds * MILLISECONDS_PER_SECOND);
       renderContainers();
     })

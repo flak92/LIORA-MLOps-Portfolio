@@ -144,7 +144,7 @@ key is in this register.
 | the engine of the databases | `duckdb_version` | the engine that wrote every asset's database |
 | an asset's database on disk | `db_bytes` (a `symbols` row) | the size of `<TICKER>_research_ohlcv.duckdb` |
 | the last canonical minute of an asset | `last_observation_utc` (a `canonical_source` row) | the asset's grid end; in a venue row the same key names that venue's last printed minute |
-| the unit of download work, and the cadence a measurement's age is judged against | `download_cadence_minutes` | one UTC day; the Containers tab warns above it |
+| the unit of download work, and the cadence a measurement's age is judged against | `download_cadence_minutes` | one UTC day; the DevOps panel warns above it |
 | when the model evaluation was last written | `artifacts` with `model_evaluation_modified_utc` | a fact of the folder, published in ml_status.json only, never in the timestamp-free README |
 | day files a venue's tree holds | `zip_count` | one per UTC calendar day — `zips` on the page |
 | the longest run of flat no-trade minutes | `longest_flat_run_minutes` | a duration, in minutes — `flat run (min)` on the page |
@@ -197,6 +197,7 @@ how a stage is run, never what it computes.
 |---|---|---|---|---|
 | the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, and by `serve.py` choosing its role — never by the engine, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
+| the one service that holds the docker socket, and the only one | `portraefik` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
@@ -216,10 +217,11 @@ dashboard, `GET /status` on an asset container.
 | the asset's folder, as last measured | `artifacts` with `model_evaluation_modified_utc`, `entry_edge_threshold_constraint_met` | `null` when the ML snapshot has no block for the asset, or the folder no longer holds the artifact set that block describes |
 | what only the container can see about itself | `footprint` with `memory_bytes`, `memory_peak_bytes`, `memory_limit_bytes`, `cpu_usage_seconds`, `cpu_count` | the cgroup's accounting: `memory_bytes` is what the kernel charges, page cache included; the limit is the cgroup ceiling or `MemTotal` when it sets none; the CPU count is the host's, the basket sets no quota. A CPU rate is the page's arithmetic over two polls, never a key |
 
-The Containers tab's columns and labels are the tab table of
-`skill_asset_containers.md`. The page's navigation: the tabs *Pipeline*, *Data
-Quality*, *ML Research*, *ML Assets*, *Containers*, *Lifecycle*, and the ML Assets views
-*Labels & data*, *Classification*, *Strategy*, *Search*.
+The asset-container columns and labels are the table of
+`../module_monitoring/skills/skill_devops_panel.md`. The page's navigation: the
+tabs *Pipeline*, *Data Quality*, *ML Research*, *ML Assets*, *Lifecycle*, the two
+jumps *DX* and *DevOps*, and the ML Assets views *Labels & data*,
+*Classification*, *Strategy*, *Search*.
 
 ## Run record
 
@@ -241,7 +243,7 @@ window: the resident server, the recorder and the stage together.
 |---|---|---|---|---|
 | one recorded execution of the chain | `run_id` | `run_id` | run | build, job, a content hash |
 | one command of a run, named for the Makefile target that runs it | `stage_of()` | `stage` | stage | step, task |
-| the compose service the stage ran in | `docker_service()` | `docker_service` | container | host; a bare `container`, which the Containers tab already uses for up/down |
+| the compose service the stage ran in | `docker_service()` | `docker_service` | container | host; a bare `container`, which the DevOps panel already uses for up/down |
 | CPU the stage process and its reaped descendants used | `rusage.ru_utime + ru_stime` | `process_cpu_seconds` | CPU | cpu, cpu_pct, cpu_time |
 | peak resident set of the stage process | `rusage.ru_maxrss` | `process_memory_peak_bytes` | peak RAM | RSS, RAM, mem, max_rss |
 | bytes the stage moved through `read()` / `write()`, independent of the page cache | `/proc/<pid>/io` | `process_read_chars`, `process_write_chars` | read / write | io, bytes_in |
@@ -309,3 +311,19 @@ choice holds the rule; these are the names it uses.
 
 A skill exists exactly once, in the directory its ownership names — the index
 links to it and never repeats it.
+
+## DevOps panel
+
+The names of `module_monitoring/sub_module_portraefik` — the machines the
+project runs on, and the three verbs offered for them. The contract is
+`../module_monitoring/skills/skill_devops_panel.md`.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| the panel and its sub-module — the owner's coinage, and nothing of the two tools it blends | `sub_module_portraefik` | — | DevOps | `sub_module_devops`, `sub_module_docker`, Portainer, Traefik, any routing this name might suggest |
+| one container the daemon reports, whether or not this project owns it | `machine` — `machines` in the payload, `machine_row()` | `machines` | container | `node`, `host`, `instance`; a foreign container hidden rather than listed |
+| whether a container belongs to the project the panel itself runs in | `own_project`, compared on `com.docker.compose.project` read from the panel's own labels | `own_project`, `compose_project` | `own` | a match on service name or image; the project written as a literal |
+| the whole set of state changes the panel offers | `CONTAINER_ACTIONS` = `("start", "stop", "restart")` | `actions` | start / stop / restart | `rm`, `exec`, `prune`, compose up/down from the browser, an action outside the tuple |
+| the refusal of an action on another project's container | HTTP 403 with `refused` and `reason` | `refused`, `reason` | the reason, shown | a silent no-op, a disabled button as the only guard, a 404 that hides the reason |
+| a control that leaves a page for another persona's page | `.jump` | — | DX / DevOps | `dx-link` as the class of a second control, a tab for a machine view |
+| the toolkit every page loads before its own sections | `page.js` | — | — | `utils.js`, `common.js`, `shared.js`, `lib.js`; a page-specific element written from it |

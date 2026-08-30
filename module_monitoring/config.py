@@ -19,9 +19,12 @@ from module_data.config import REPO_ROOT
 CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
 PIPELINE_SERVICE = "pipeline"            # the compose service a basket-wide stage runs in
+PORTRAEFIK_SERVICE = "portraefik"        # the one compose service that holds the docker socket
+DEVOPS_ROUTE_PREFIX = "/devops"          # the dashboard route the panel's API is proxied under
 CONTAINER_POLL_INTERVAL_SECONDS = 5      # published to the page, which never carries a cadence of its own
 RUN_SAMPLE_POINT_LIMIT = 900             # the timeline's stride: a long run is thinned, never truncated
 ASSET_STATUS_FETCH_TIMEOUT_SECONDS = 2   # bounds each socket operation of the proxy, not the exchange
+PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine exchanges, so its bound is its own
 DASHBOARD_READY_FETCH_TIMEOUT_SECONDS = 5   # the same bound for the readiness check that closes a run
 
 # ---- the recorder's loop around a wrapped stage
@@ -76,6 +79,11 @@ def asset_service(ticker: str) -> str:
 def asset_status_url(ticker: str) -> str:
     """One asset's endpoint as the dashboard's proxy reaches it: service name, internal port."""
     return f"http://{asset_service(ticker)}:{CONTAINER_PORT}/status"
+
+
+def portraefik_api_url(route: str) -> str:
+    """The DevOps panel's API as the dashboard's proxy reaches it: service name, internal port."""
+    return f"http://{PORTRAEFIK_SERVICE}:{CONTAINER_PORT}{route}"
 
 
 def dashboard_registry_url(port: str) -> str:

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>1m Crypto Research Pipeline — DevOps</title>
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="devops.css">
+</head>
+<body>
+  <a class="jump" href="../index.html">Status</a>
+  <h1>devops — the machines this project runs on</h1>
+  <p class="sub">this project's containers, networks and volumes &rarr; start, stop, restart &middot; everything else on the host is visible and read-only</p>
+
+  <div id="panel-meta" class="box">loading /devops/api/machines&hellip;</div>
+
+  <h2>asset containers</h2>
+  <div id="container-meta" class="box">loading /containers&hellip;</div>
+  <table id="container-overview" hidden>
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  <div class="frame">
+    <div class="frame__head">
+      <span class="frame__title">asset container</span>
+      <span class="pills" id="container-pills" data-pills="container"></span>
+    </div>
+  </div>
+  <div id="container-detail"></div>
+  <p class="foot">one row per asset container, live through the dashboard's proxy: up or down, up since when, the
+    memory the kernel charges it (page cache included) against its ceiling, its peak, the share of the host's
+    CPUs it used over the last poll, how far its data is behind and how old the measurement is; below, one
+    container as it reports itself. A container that does not answer is down and shows no previous numbers.</p>
+
+  <h2>containers on this host</h2>
+  <table id="machines">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  <p class="foot">every container the daemon reports, this project's first. Memory and CPU here are the engine's own
+    accounting; for an asset container the cgroup figures above are the truer ones, measured from inside it.
+    <code>start</code>, <code>stop</code> and <code>restart</code> are the whole allowlist and are offered for this
+    project's containers alone — a container of another project is listed, never actioned.</p>
+
+  <h2>networks</h2>
+  <table id="networks">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>volumes</h2>
+  <table id="volumes">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>bind mounts</h2>
+  <table id="bind-mounts">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  <p class="foot">the repository is bind-mounted into every service at <code>/app</code>; the docker socket is mounted
+    into <code>portraefik</code> and into no other container.</p>
+
+  <h2>image</h2>
+  <div id="image" class="box">&hellip;</div>
+
+  <h2>events</h2>
+  <table id="events">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+  <p class="foot">the daemon's own events over the window the panel asks for, newest first. The page holds them; nothing
+    persists them.</p>
+
+  <script src="../page.js"></script>
+  <script src="containers.js"></script>
+  <script src="devops.js"></script>
+</body>
+</html>

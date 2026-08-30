@@ -6,7 +6,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a class="dx-link" href="sub_module_dx/files_and_folders_visualisation.html">DX</a>
+  <a class="jump" href="sub_module_dx/files_and_folders_visualisation.html">DX</a>
+  <a class="jump" href="sub_module_portraefik/index.html">DevOps</a>
   <h1>1m crypto research pipeline — status</h1>
   <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB per asset &rarr; features &amp; labels &rarr; research</p>
 
@@ -15,7 +16,6 @@
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
-    <button class="pill" data-key="containers">Containers</button>
     <button class="pill" data-key="lifecycle">Lifecycle</button>
   </nav>
 
@@ -90,24 +90,6 @@
       hyper-parameter, entry edge threshold or strategy rule was chosen by looking at it.</p>
   </section>
 
-  <section id="tab-containers" data-panel="tab" data-key="containers" hidden>
-    <div id="container-meta" class="box">loading /containers&hellip;</div>
-    <table id="container-overview" hidden>
-      <thead></thead>
-      <tbody></tbody>
-    </table>
-    <div class="frame">
-      <div class="frame__head">
-        <span class="frame__title">asset container</span>
-        <span class="pills" id="container-pills" data-pills="container"></span>
-      </div>
-    </div>
-    <div id="container-detail"></div>
-    <p class="foot">one row per asset container, live through the dashboard's proxy: up or down, up since when, the
-      memory the kernel charges it (page cache included) against its ceiling, its peak, the share of the host's
-      CPUs it used over the last poll, how far its data is behind and how old the measurement is; below, one
-      container as it reports itself. A container that does not answer is down and shows no previous numbers.</p>
-  </section>
 
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
     <div id="run-meta" class="box">loading /runs&hellip;</div>
@@ -121,12 +103,12 @@
   </section>
 
   <p class="foot">static page &middot; data from <code>data_status.json</code> / <code>ml_status.json</code>
-    (regenerate with <code>make data-status</code> / <code>make ml-status</code>) &middot; the Containers tab polls the
-    asset containers through <code>/containers</code></p>
+    (regenerate with <code>make data-status</code> / <code>make ml-status</code>) &middot; the containers, the networks
+    and the volumes are the <strong>DevOps</strong> panel</p>
+  <script src="page.js"></script>
   <script src="data.js"></script>
   <script src="asset.js"></script>
   <script src="ml.js"></script>
-  <script src="containers.js"></script>
   <script src="run.js"></script>
 </body>
 </html>

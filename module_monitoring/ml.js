@@ -1,8 +1,8 @@
 /* ML Research and ML Assets tabs: one fetch of ml_status.json feeds the
    cross-section table, the four summary views and — through asset.js — the
    per-asset panel. Classic script using appendCell, appendHeaderRow,
-   appendRows, renderTable, buildMeter, formatCount, formatNumber and
-   formatPercent from data.js. */
+   appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
+   formatNumber and formatPercent from page.js. */
 "use strict";
 
 const CLASS_NAMES = ["short", "neutral", "long"];
@@ -147,15 +147,6 @@ function renderSearch(mlStatus) {
         bestParameters.num_boost_round,
       ];
     }));
-}
-
-/* a ticker as a link into a selector: selectAsset on this tab, selectContainer on the Containers tab */
-function buildTickerLink(ticker, select) {
-  const button = document.createElement("button");
-  button.className = "ticker-link";
-  button.textContent = ticker;
-  button.addEventListener("click", () => select(ticker));
-  return button;
 }
 
 function selectAsset(ticker) {

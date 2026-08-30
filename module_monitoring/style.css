@@ -56,8 +56,9 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
-/* the one jump out of the status page: the developer-experience drawing of the tree */
-.dx-link {
+/* a jump out of a page: the developer-experience drawing, and the DevOps panel.
+   Floated, so the first in source order sits furthest right */
+.jump {
   float: right;
   font-family: inherit;
   font-size: 14px;
@@ -66,6 +67,7 @@ td:first-child, th:first-child { text-align: left; }
   padding: 0.25em 0.9em;
   color: #111;
   text-decoration: none;
+  margin-left: 0.5em;
 }
 
 .ticker-link {
@@ -88,7 +90,7 @@ td:first-child, th:first-child { text-align: left; }
 .spark__base { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .final-holdout { font-weight: bold; }
 
-/* Containers tab: a badge is the compact element carrying one variable of an asset's state;
+/* DevOps panel: a badge is the compact element carrying one variable of an asset's state;
    --warn marks an observation or a measurement older than the download cadence,
    --down a container whose endpoint did not answer */
 .badge {

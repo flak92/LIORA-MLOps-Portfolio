@@ -21,7 +21,7 @@ second copy anywhere in this tree.
 |---|---|
 | [glossary.md](glossary.md) | the name register: one concept, one name, in code, artifacts and interface |
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this repository — subtract, don't add |
-| [skill_asset_containers.md](skill_asset_containers.md) | the compose topology, the container endpoint and the Containers tab — the runtime contract every module runs inside |
+| [skill_asset_containers.md](skill_asset_containers.md) | the compose topology, the container endpoint and the scoped socket rule — the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
@@ -58,3 +58,4 @@ Orientation: [../module_monitoring/README_module_monitoring.md](../module_monito
 |---|---|
 | [../module_monitoring/skills/skill_dashboard_conventions.md](../module_monitoring/skills/skill_dashboard_conventions.md) | the static page, its BEM classes and its state |
 | [../module_monitoring/skills/skill_developer_experience_drawing.md](../module_monitoring/skills/skill_developer_experience_drawing.md) | the developer-experience drawing and its configuration surface |
+| [../module_monitoring/skills/skill_devops_panel.md](../module_monitoring/skills/skill_devops_panel.md) | the DevOps panel: its views, the action allowlist and its guard, and the one docker socket |
