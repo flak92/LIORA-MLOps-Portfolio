@@ -1,7 +1,9 @@
 # AGENTS — the contract of this repository
 
 The governing contract for every change, human or agent. Read the repo in
-this order: **AGENTS.md → module names → module_skills → code.**
+this order: **AGENTS.md → module names → `README_module_<name>.md` → the
+module's own `skills/` → code**, with `module_skills/` beside them for the
+rules that cross modules, indexed by `module_skills/README.md`.
 (README is general information, not part of the working path.) If a change
 conflicts with this file, the change is wrong.
 
@@ -65,7 +67,7 @@ the data moves through them, and one that carries no dataflow:
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
 module_ml/          canonical dataset → X, Y → search → model → research simulation
 module_monitoring/  presentation of what the two modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
-module_skills/      the contract's companions: the register, the methodologies, the skills
+module_skills/      the contract's companions: the register, the repository-wide skills, and the index of every module's own
 ```
 
 `module_skills` never participates in runtime imports or dataflow. The asset
@@ -75,6 +77,14 @@ the servers add — so the topology is visible in the file
 that runs it; `module_monitoring/serve.py` reaches them by service name. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
+
+Each `module_*` is an **extractable bounded context**: its domain rules, its
+orientation and its code sit together, so it could later be lifted into its own
+repository without reconstructing its meaning from documentation that stayed
+behind. That is a property of how the tree is written, not a claim that any
+module is already an independent service — they share one image, one bind mount
+and one `config.py` for the basket, and nothing between them speaks over a
+network.
 
 Regular, predictable, symmetrical, easy to scan — the structure should be
 recognisable by eye before it is parsed (neuro-optical consistency):
@@ -175,6 +185,8 @@ from its layer's grammar, never invented:
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
+| a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
+| a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
 | JavaScript functions | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
@@ -251,13 +263,19 @@ list holds the words bound to neither.
 For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
-Project-specific agent instructions live in `module_skills/` — the
-only other place agent guidance may exist in this tree. Its files are
-ordered by category and read in listing order: the register (`glossary.md`),
-the methodology documents — `methodology_data.md` (how the canonical dataset is
-built) and `methodology_ml.md` (the research layer, equation by equation, with
-the citations) — and the skills (`skill_*.md`). A module-specific guidance
-subfolder is created at the third module-specific document, not before.
+**A skill belongs to the module whose responsibility it describes.** A rule
+about one module lives in `module_<name>/skills/`; a rule that crosses modules
+or governs the repository lives in `module_skills/`; a module's orientation is
+its `README_module_<name>.md`. Each exists exactly once, the location follows
+ownership, and there is no second copy to drift.
+`module_skills/README.md` is the index — it links to every skill, cross-cutting
+and module-owned alike, and restates none of them.
+
+`module_skills/skill_asset_containers.md` is the worked example of the cross-cutting
+boundary: one image, the `pipeline` and `asset-<ticker>` services, the Makefile
+fan-out, the ceilings and the bind mount are a contract between the
+infrastructure and all three runtime modules at once, so it belongs to none of
+them and stays in `module_skills/`.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
 the module that owns it, with its own `config.py`, its own `main()` and no

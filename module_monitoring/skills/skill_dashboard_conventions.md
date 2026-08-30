@@ -31,7 +31,7 @@ linter, no build step, no framework.
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
   `GET /runs` and `GET /runs/<run_id>` into `RUN_RECORD` — five state globals; the pill-hook registry `PILL_HOOKS`,
   the load promise `DATA_STATUS_LOADED` and the poll latch
-  `CONTAINER_POLL_IN_FLIGHT` are not state. The tab's behaviour is `skill_asset_containers.md` § The tab.
+  `CONTAINER_POLL_IN_FLIGHT` are not state. The tab's behaviour is `../../module_skills/skill_asset_containers.md` § The tab.
 - The page computes no domain or model results — only presentation arithmetic
   over already measured values (shares, a cross-fold mean, a difference of two
   reported metrics, a CPU rate from two polls of `cpu_usage_seconds`). Moving

@@ -65,7 +65,7 @@ X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 Features and target therefore describe the same canonical research object by
 construction, and nothing here simulates trading on a named exchange: it
 simulates a strategy on a canonical market model, with the costs stated.
-`methodology_data.md` §1 and §4 carry the construction rule and why verbatim candles
+`../../module_data/skills/skill_candle_canonicalisation.md` § 5 and § 6 carry the construction rule and why verbatim candles
 beat an average.
 
 ## 3. Time semantics
@@ -141,7 +141,8 @@ gives `y = +1`, whose low touches `lower_barrier` gives `y = −1`, neither give
 **A touch requires a trade.** `volume = 0` means no observed trade in that
 minute, so both hit conditions are gated on `volume > 0`. Whether such a minute
 is a provider candle that printed nothing or a synthesised continuity row is a
-provenance question, answered in the canonical table and in `methodology_data.md`,
+provenance question, answered in the canonical table and in
+`../../module_data/skills/skill_candle_canonicalisation.md`,
 not here:
 
 ```
@@ -332,7 +333,7 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 ## 10. Artifacts and modules
 
 Per asset in `store_assets_artifacts/<TICKER>/`, nine files, registered file by
-file in `glossary.md` § Artifacts: three per-timeframe feature parquets, the
+file in `../../module_skills/glossary.md` § Artifacts: three per-timeframe feature parquets, the
 label-events and out-of-sample predictions parquets on the 15m decision grid,
 two evaluation JSONs, the one parameters file and the README. Beside the
 manifest, outside it, lies the asset's own database,
@@ -383,7 +384,7 @@ them — one file per process;
 and the sum of the concurrent ceilings is what has to fit the host.
 
 Thread caps stay at one — `nthread = 1`, `OMP_NUM_THREADS = 1` — for the
-reason `skill_determinism.md` states. The search is CPU-bound and one asset's
+reason `../../module_skills/skill_determinism.md` states. The search is CPU-bound and one asset's
 study is sequential by construction, so the wall-clock floor of `ml-hpo` is the
 slowest single asset.
 

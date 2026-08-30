@@ -32,5 +32,11 @@ How to work on this repository as an agent. *The repository shows the destinatio
   with `Derived, never drafted` beside it. This file does not restate them: two
   copies of a rule drift, and the drift is found by the reader who trusted the
   wrong one.
+- **Ownership decides where a rule is written.** Knowledge about one module
+  lives in `module_<name>/skills/`; knowledge that crosses modules or governs
+  the repository lives in `module_skills/`; a module's orientation is its
+  `README_module_<name>.md`. Each exists once. `module_skills/README.md` indexes
+  both kinds and copies neither — an index can point at a rule without becoming
+  a second version of it.
 - Prove a change by running the affected stages, not by adding a framework
   that promises to.

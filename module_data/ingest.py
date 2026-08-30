@@ -1,14 +1,10 @@
 """Load both venue ZIP trees into the asset's DuckDB and rebuild its canonical series, one asset at a time.
 
-The canonical table ohlcv_1m_canonical is a PRIMARY-FAILOVER series (methodology_data.md): every canonical bar is
-ONE venue's candle copied verbatim — no weighting, no rounding. Per minute, the first existing tier wins:
-  1. Binance candle, OHLC intact, volume > 0
-  2. Bybit candle,   OHLC intact, volume > 0
-  3. Binance candle, OHLC intact, volume = 0   (zero_volume flag)
-  4. Bybit candle,   OHLC intact, volume = 0   (zero_volume flag)
-  5. none            -> ffill: O=H=L=C = previous canonical close, V = 0
-OHLC intact means finite values, positive prices, non-negative volume and
-low <= min(open, close) <= max(open, close) <= high.
+The canonical table ohlcv_1m_canonical is a PRIMARY-FAILOVER series: every canonical bar is ONE venue's
+candle copied verbatim — no weighting, no rounding — or an explicitly flagged forward fill. The validity
+predicate, the decision table the SQL below encodes, the volume rule that chooses the venue and the
+provenance columns are this module's own contract, skills/skill_candle_canonicalisation.md. It is the
+normative source; this file is its one implementation and keeps no second copy of it.
 """
 
 from __future__ import annotations
@@ -46,7 +42,7 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
   close  DOUBLE,
   volume DOUBLE,                   -- verbatim venue volume (0 on ffill rows)
   source         VARCHAR,          -- 'binance' / 'bybit' / 'ffill'
-  zero_volume    BOOLEAN,          -- tier 3/4: valid candle without trades
+  zero_volume    BOOLEAN,          -- the winning candle was valid and traded nothing
   binance_valid  BOOLEAN,          -- Binance row present with intact OHLC
   bybit_valid    BOOLEAN,          -- Bybit row present with intact OHLC
   rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid (QC only)
@@ -58,7 +54,7 @@ OHLC_INTACT_PREDICATE = """(isfinite(open) AND isfinite(high) AND isfinite(low)
           AND open > 0 AND high > 0 AND low > 0 AND close > 0 AND volume >= 0
           AND low <= least(open, close) AND high >= greatest(open, close))"""
 
-# use_binance collapses tiers 1 and 3: Binance wins whenever it is valid and either traded or Bybit did not trade
+# use_binance: the primary venue wins whenever it is valid and either traded, or Bybit did not trade
 # either; end_ms is the asset's own grid end, the last minute either venue printed for it
 CANONICAL_INSERT = """
 INSERT INTO ohlcv_1m_canonical

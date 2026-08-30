@@ -54,9 +54,13 @@ convention when it misses any:
   `fetch_`, `parse_`, `to_`, `build_` is a list; "use a sensible verb" is not.
 - **Derivable.** A reader can construct the correct name without asking anyone
   and without reading a second document.
-- **Normative source.** The rule lives in exactly one place, `AGENTS.md`, and
-  every other document points at it. Two copies of a rule drift, and the drift
-  is discovered by the reader who trusted the wrong copy.
+- **Normative source.** The rule lives in exactly one place and every other
+  document points at it. Two copies of a rule drift, and the drift is
+  discovered by the reader who trusted the wrong copy. Which place is decided
+  by ownership: a naming grammar governs the whole tree, so it lives in
+  `AGENTS.md`; a rule about one module lives in that module's `skills/`; a rule
+  across modules lives in `module_skills/`. The index at
+  `module_skills/README.md` links to all of them and restates none.
 - **It must be able to fail.** There is a name the rule forbids. A rule that
   excludes nothing describes taste, not structure.
 - **Scope.** A convention states which language, layer and object kind it

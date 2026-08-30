@@ -123,7 +123,7 @@ const META = {
  },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "52 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 831391e \u00b7 2026-08-30 16:31:25",
+ "subtitle": "57 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 831391e \u00b7 2026-08-30 16:31:25",
  "title": "Files and Folders"
 };
 const ISLANDS = {
@@ -174,7 +174,7 @@ const PLACE = {
 };
 const NODES = [
  {
-  "desc": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 module_skills \u2192 code.",
+  "desc": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
   "id": "root",
   "island": "core",
   "path": "repo/",
@@ -189,6 +189,38 @@ const NODES = [
   "path": "module_data/",
   "role": "module",
   "type": "folder"
+ },
+ {
+  "desc": "The module's own contract: candle canonicalisation, and the acquisition methodology beside it.",
+  "id": "module_data/skills/",
+  "island": "S3",
+  "path": "module_data/skills/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "desc": "",
+  "id": "module_data/skills/methodology_data.md",
+  "island": "S3",
+  "path": "module_data/skills/methodology_data.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_data/skills/skill_candle_canonicalisation.md",
+  "island": "S3",
+  "path": "module_data/skills/skill_candle_canonicalisation.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_data/README_module_data.md",
+  "island": "S3",
+  "path": "module_data/README_module_data.md",
+  "role": "doc",
+  "type": "file"
  },
  {
   "desc": "",
@@ -215,7 +247,7 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "Merges venue ZIPs into the asset's canonical series (primary-failover, full grid).",
+  "desc": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",
   "id": "module_data/ingest.py",
   "island": "S3",
   "path": "module_data/ingest.py",
@@ -246,6 +278,30 @@ const NODES = [
   "path": "module_ml/",
   "role": "module",
   "type": "folder"
+ },
+ {
+  "desc": "The module's own contract: the research methodology, equation by equation.",
+  "id": "module_ml/skills/",
+  "island": "S4",
+  "path": "module_ml/skills/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "desc": "",
+  "id": "module_ml/skills/methodology_ml.md",
+  "island": "S4",
+  "path": "module_ml/skills/methodology_ml.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_ml/README_module_ml.md",
+  "island": "S4",
+  "path": "module_ml/README_module_ml.md",
+  "role": "doc",
+  "type": "file"
  },
  {
   "desc": "",
@@ -352,6 +408,30 @@ const NODES = [
   "type": "folder"
  },
  {
+  "desc": "The module's own contract: the dashboard conventions and the drawing.",
+  "id": "module_monitoring/skills/",
+  "island": "S4",
+  "path": "module_monitoring/skills/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/skills/skill_dashboard_conventions.md",
+  "island": "S4",
+  "path": "module_monitoring/skills/skill_dashboard_conventions.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/skills/skill_developer_experience_drawing.md",
+  "island": "S4",
+  "path": "module_monitoring/skills/skill_developer_experience_drawing.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
   "desc": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
   "id": "module_monitoring/sub_module_dx/",
   "island": "S4",
@@ -389,6 +469,14 @@ const NODES = [
   "island": "S4",
   "path": "module_monitoring/sub_module_dx/visualise.py",
   "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/README_module_monitoring.md",
+  "island": "S4",
+  "path": "module_monitoring/README_module_monitoring.md",
+  "role": "doc",
   "type": "file"
  },
  {
@@ -488,7 +576,7 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "The contract's companions: the register, the methodologies and the skills.",
+  "desc": "Repository-wide skills, and the index of the skills each module owns.",
   "hub": true,
   "id": "module_skills/",
   "island": "S2",
@@ -498,25 +586,17 @@ const NODES = [
  },
  {
   "desc": "",
+  "id": "module_skills/README.md",
+  "island": "S2",
+  "path": "module_skills/README.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
   "id": "module_skills/glossary.md",
   "island": "S2",
   "path": "module_skills/glossary.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_skills/methodology_data.md",
-  "island": "S2",
-  "path": "module_skills/methodology_data.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_skills/methodology_ml.md",
-  "island": "S2",
-  "path": "module_skills/methodology_ml.md",
   "role": "doc",
   "type": "file"
  },
@@ -538,25 +618,9 @@ const NODES = [
  },
  {
   "desc": "",
-  "id": "module_skills/skill_dashboard_conventions.md",
-  "island": "S2",
-  "path": "module_skills/skill_dashboard_conventions.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "desc": "",
   "id": "module_skills/skill_determinism.md",
   "island": "S2",
   "path": "module_skills/skill_determinism.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_skills/skill_developer_experience_drawing.md",
-  "island": "S2",
-  "path": "module_skills/skill_developer_experience_drawing.md",
   "role": "doc",
   "type": "file"
  },
@@ -711,6 +775,18 @@ const EDGES = [
  },
  {
   "from": "module_data/",
+  "thick": true,
+  "to": "module_data/skills/",
+  "type": "tree"
+ },
+ {
+  "from": "module_data/",
+  "thick": false,
+  "to": "module_data/README_module_data.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_data/",
   "thick": false,
   "to": "module_data/config.py",
   "type": "tree"
@@ -743,6 +819,30 @@ const EDGES = [
   "from": "module_data/",
   "thick": false,
   "to": "module_data/status.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_data/skills/",
+  "thick": false,
+  "to": "module_data/skills/methodology_data.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_data/skills/",
+  "thick": false,
+  "to": "module_data/skills/skill_candle_canonicalisation.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_ml/",
+  "thick": true,
+  "to": "module_ml/skills/",
+  "type": "tree"
+ },
+ {
+  "from": "module_ml/",
+  "thick": false,
+  "to": "module_ml/README_module_ml.md",
   "type": "tree"
  },
  {
@@ -818,9 +918,27 @@ const EDGES = [
   "type": "tree"
  },
  {
+  "from": "module_ml/skills/",
+  "thick": false,
+  "to": "module_ml/skills/methodology_ml.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/",
+  "thick": true,
+  "to": "module_monitoring/skills/",
+  "type": "tree"
+ },
+ {
   "from": "module_monitoring/",
   "thick": true,
   "to": "module_monitoring/sub_module_dx/",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/",
+  "thick": false,
+  "to": "module_monitoring/README_module_monitoring.md",
   "type": "tree"
  },
  {
@@ -896,6 +1014,18 @@ const EDGES = [
   "type": "tree"
  },
  {
+  "from": "module_monitoring/skills/",
+  "thick": false,
+  "to": "module_monitoring/skills/skill_dashboard_conventions.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/skills/",
+  "thick": false,
+  "to": "module_monitoring/skills/skill_developer_experience_drawing.md",
+  "type": "tree"
+ },
+ {
   "from": "module_monitoring/sub_module_dx/",
   "thick": false,
   "to": "module_monitoring/sub_module_dx/config.py",
@@ -922,19 +1052,13 @@ const EDGES = [
  {
   "from": "module_skills/",
   "thick": false,
+  "to": "module_skills/README.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_skills/",
+  "thick": false,
   "to": "module_skills/glossary.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/methodology_data.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/methodology_ml.md",
   "type": "tree"
  },
  {
@@ -952,19 +1076,7 @@ const EDGES = [
  {
   "from": "module_skills/",
   "thick": false,
-  "to": "module_skills/skill_dashboard_conventions.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
   "to": "module_skills/skill_determinism.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_developer_experience_drawing.md",
   "type": "tree"
  },
  {

@@ -63,4 +63,4 @@ Final-holdout exits: upper_barrier 66, lower_barrier 56, vertical 115, ambiguous
 
 The OHLCV lives in `BTC_research_ohlcv.duckdb` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 
-F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.

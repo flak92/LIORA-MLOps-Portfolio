@@ -10,10 +10,14 @@ deterministic canonical DuckDB per asset → features and labels → purged walk
 XGBoost → research strategy simulation → monitoring.
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
-UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md); the naming register, the
-two methodology documents and the skills in [module_skills/](module_skills/).
-The working path through the repo is `AGENTS.md → module names → module_skills →
-code`; this README is the general overview.
+UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md). Each module carries its
+own rules in its `skills/` and its front door in `README_module_<name>.md`; the
+naming register and the rules that cross modules are in
+[module_skills/](module_skills/), indexed by
+[module_skills/README.md](module_skills/README.md).
+The working path through the repo is `AGENTS.md → module names →
+README_module_<name>.md → the module's own skills → code`; this README is the
+general overview.
 
 ```
                  ┌── market source A ──┐
@@ -55,8 +59,11 @@ candle is copied verbatim — traded Binance, traded Bybit, a valid no-trade
 candle from either in the same order — and only a minute with no valid candle
 on both venues is a canonical gap, forward-filled with the previous close and
 zero volume. Downstream code reads one continuous `t,O,H,L,C,V` series whose
-every printed price existed on a real market. Method, endpoints and schema:
-[module_skills/methodology_data.md](module_skills/methodology_data.md).
+every printed price existed on a real market. The rule, the provenance and the
+schema:
+[module_data/skills/skill_candle_canonicalisation.md](module_data/skills/skill_candle_canonicalisation.md);
+the endpoints:
+[module_data/skills/methodology_data.md](module_data/skills/methodology_data.md).
 
 ## The basket
 
@@ -115,7 +122,9 @@ are bar-open UTC epoch milliseconds on a strict 60 000 ms grid, volume is
 base-asset volume. The canonical series and its 15m/1h/4h aggregations live only
 in `store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
 folder's parquets are feature columns, not prices. For Lean backtests use the
-raw ZIP trees. Schema: [module_skills/methodology_data.md](module_skills/methodology_data.md) § 5.
+raw ZIP trees. Schema:
+[module_data/skills/skill_candle_canonicalisation.md](module_data/skills/skill_candle_canonicalisation.md)
+§ 11 and § 13.
 
 ## Dashboard
 
@@ -146,4 +155,4 @@ strategy with explicit costs. The decision is taken at a 15m close and filled
 one minute later. Every per-asset stage runs `JOBS` assets in parallel, one
 process each, thread caps at one. Every asset folder describes itself in
 `<TICKER>_README.md`. Full methodology:
-[module_skills/methodology_ml.md](module_skills/methodology_ml.md).
+[module_ml/skills/methodology_ml.md](module_ml/skills/methodology_ml.md).

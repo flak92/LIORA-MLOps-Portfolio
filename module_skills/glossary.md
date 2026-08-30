@@ -182,7 +182,7 @@ top-up, and the README is byte-reproducible for an unchanged experiment.
 
 The five feature families — `ema20_minus_ema50_over_atr14`, `centered_rsi14`,
 `atr14_over_close`, `range_position_20`, `log_volume_zscore_50` — each on
-`_15m`, `_1h`, `_4h`; the definitions are in `methodology_ml.md` § 4. Never
+`_15m`, `_1h`, `_4h`; the definitions are in `../module_ml/skills/methodology_ml.md` § 4. Never
 `trend`, `momentum`, `volatility`, `structure` or `activity` as a column name —
 those name a category, not a computation. The strategy hierarchy reads the
 first family through `config.TREND_FAMILY`, so the name appears once in the
@@ -292,5 +292,20 @@ sub-module and the control that opens its page.
 The drawing is redrawn by hand with `make monitoring-dx-update` and by nothing else. It is a derived
 artifact under *Derived, never drafted*: a hand edit to it is a violation, and the provenance stamp
 is what says how old it is — a committer date, written in UTC like every other time this repository
-prints. `skill_developer_experience_drawing.md` holds the configuration surface key by key.
+prints. `../module_monitoring/skills/skill_developer_experience_drawing.md` holds the configuration surface key by key.
 
+## Documentation ownership
+
+Where a rule is written is itself a named decision. `AGENTS.md` § The default
+choice holds the rule; these are the names it uses.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| a normative document describing one module's own responsibility | `module_<name>/skills/<document>.md` | — | — | module-specific rules kept in `module_skills/`; a per-module `docs/` or `doc/` folder |
+| a normative document that crosses modules or governs the repository | `module_skills/<document>.md` | — | — | a cross-cutting rule filed under one module |
+| the directory holding one module's own skills | `module_<name>/skills/` | — | — | `module_<name>/skill/`, `module_<name>/documentation/` |
+| the link surface that finds every skill without holding one | `module_skills/README.md` | — | — | a collection of copies; an index that restates a rule it links to |
+| one module's reader-facing front door | `module_<name>/README_module_<name>.md` | — | — | `module_<name>/README.md`; a front door that restates a skill or a decision table |
+
+A skill exists exactly once, in the directory its ownership names — the index
+links to it and never repeats it.

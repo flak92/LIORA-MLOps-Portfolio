@@ -24,7 +24,7 @@ deterministic correctness:
   side, one asset per process, all under the same fixed `SEED` — never from
   raising thread caps inside a worker.
 - Width is measured at invocation, never hardcoded — `JOBS` in the Makefile,
-  `methodology_ml.md` § 11; `JOBS=n` overrides. A literal written for one
+  `../module_ml/skills/methodology_ml.md` § 11; `JOBS=n` overrides. A literal written for one
   machine is silently wrong on every other.
 - Before optimising, measure the time distribution; after optimising, compare
   against the run-to-run spread — an improvement within the spread is noise

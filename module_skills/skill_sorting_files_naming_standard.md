@@ -25,10 +25,20 @@ will land in, on any server, under any locale. *The repository shows the destina
   never depends on case or punctuation alone — digits-before-letters holds
   everywhere. The ecosystem-fixed names (`AGENTS.md`, `Dockerfile`, `Makefile`,
   `README.md`, `__init__.py`, `docker-compose.yml`, `requirements.txt`, the
-  dot-files) and `<TICKER>_README.md` keep their spelling, so they are the only
+  dot-files), `<TICKER>_README.md` and `README_module_<name>.md` keep their
+  spelling, so they are the only
   names whose sort position depends on the collation: `<TICKER>_README.md` is
   first in its folder under `LC_COLLATE=C` and ninth under `en_US.UTF-8`, and
   the `<TICKER>_*` block stays contiguous under both.
+- **A module's orientation file is derived from its directory:
+  `module_<name>/README_module_<name>.md`.** The name is not chosen — it is
+  read off the folder it sits in, so `module_data → README_module_data.md`,
+  `module_ml → README_module_ml.md`, `module_monitoring →
+  README_module_monitoring.md`. Carrying the module in the file name is what a
+  bare `README.md` cannot do: detached from its folder — in a search result, a
+  diff, or a module lifted into its own repository — the name still says which
+  module it opens. It sorts above that module's code and below nothing, and it
+  never names a directory that is not `module_*`.
 - A new sortable pattern is minted like any other convention — the seven
   conditions of `skill_self_explaining_naming.md` — and enters `AGENTS.md` in
   the commit that makes the third name follow it.
