@@ -7,7 +7,6 @@
 :root{
 --bg-deep:#070C1C; --bg-glow:#101A3C;
 --text:#D9E2F6; --dim:#7E90B8; --line:#22304F;
---s1:#5B8DEF; --s2:#2BD4BD; --s3:#F2B24E; --s4:#A98BFA; --s5:#3FD68F; --core:#EDF2FF;
 --mono:ui-monospace,'SF Mono','Cascadia Code',Consolas,Menlo,monospace;
 --body:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
 }
@@ -87,7 +86,7 @@ aside#panel button.close:hover{color:var(--text);}
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
 </div>
-<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; 1&ndash;5 isolate story &middot; 0 all &middot; space pause</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause</div>
 <div class="controls">
 <button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
 <button id="btnReset" title="Reset view (0)">&#10226;</button>
@@ -124,7 +123,7 @@ const META = {
  },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "51 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 1fb70e4 \u00b7 2026-08-30T14:14:04+02:00",
+ "subtitle": "52 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 831391e \u00b7 2026-08-30 16:31:25",
  "title": "Files and Folders"
 };
 const ISLANDS = {
@@ -362,14 +361,6 @@ const NODES = [
  },
  {
   "desc": "",
-  "id": "module_monitoring/sub_module_dx/README.md",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_dx/README.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "desc": "",
   "id": "module_monitoring/sub_module_dx/config.py",
   "island": "S4",
   "path": "module_monitoring/sub_module_dx/config.py",
@@ -405,6 +396,14 @@ const NODES = [
   "id": "module_monitoring/asset.js",
   "island": "S4",
   "path": "module_monitoring/asset.js",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/config.py",
+  "island": "S4",
+  "path": "module_monitoring/config.py",
   "role": "code",
   "type": "file"
  },
@@ -555,6 +554,14 @@ const NODES = [
  },
  {
   "desc": "",
+  "id": "module_skills/skill_developer_experience_drawing.md",
+  "island": "S2",
+  "path": "module_skills/skill_developer_experience_drawing.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
   "id": "module_skills/skill_self_explaining_naming.md",
   "island": "S2",
   "path": "module_skills/skill_self_explaining_naming.md",
@@ -618,7 +625,7 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "One image, one server, one anchor: the dashboard publishes it on the host, each asset container runs it in its asset role.",
+  "desc": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
   "hub": true,
   "id": "docker-compose.yml",
   "island": "S1",
@@ -825,6 +832,12 @@ const EDGES = [
  {
   "from": "module_monitoring/",
   "thick": false,
+  "to": "module_monitoring/config.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/",
+  "thick": false,
   "to": "module_monitoring/containers.js",
   "type": "tree"
  },
@@ -880,12 +893,6 @@ const EDGES = [
   "from": "module_monitoring/",
   "thick": false,
   "to": "module_monitoring/style.css",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_dx/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_dx/README.md",
   "type": "tree"
  },
  {
@@ -952,6 +959,12 @@ const EDGES = [
   "from": "module_skills/",
   "thick": false,
   "to": "module_skills/skill_determinism.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_skills/",
+  "thick": false,
+  "to": "module_skills/skill_developer_experience_drawing.md",
   "type": "tree"
  },
  {
@@ -1616,10 +1629,15 @@ activeIsland = null;
 clearSubtree();
 select(null);
 }
+/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
+   isolates nothing is never offered and never dims the whole drawing */
+var STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
+document.getElementById('hintStories').textContent = STORY_DIGITS.join('') === ''
+  ? 'no story key' : STORY_DIGITS[0] + '\u2013' + STORY_DIGITS[STORY_DIGITS.length - 1];
 document.getElementById('btnReset').addEventListener('click', resetView);
 window.addEventListener('keydown', function(ev){
 if (ev.key === ' '){ ev.preventDefault(); setPlaying(!playing); }
-else if (ev.key >= '1' && ev.key <= '9'){ setIsland('S' + ev.key); }
+else if (STORY_DIGITS.indexOf(ev.key) >= 0){ setIsland('S' + ev.key); }
 else if (ev.key === '0' || ev.key === 'Escape'){ resetView(); }
 });
 </script>
