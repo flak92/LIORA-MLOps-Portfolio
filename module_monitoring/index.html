@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>1m Crypto Research Pipeline — Status</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>1m crypto research pipeline — status</h1>
+  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB per asset &rarr; features &amp; labels &rarr; research</p>
+
+  <nav id="tabs" class="pills" data-pills="tab">
+    <button class="pill pill--active" data-key="pipeline">Pipeline</button>
+    <button class="pill" data-key="quality">Data Quality</button>
+    <button class="pill" data-key="ml">ML Research</button>
+    <button class="pill" data-key="asset">ML Assets</button>
+    <button class="pill" data-key="containers">Containers</button>
+    <button class="pill" data-key="lifecycle">Lifecycle</button>
+  </nav>
+
+  <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
+    <div id="meta" class="box">loading data_status.json&hellip;</div>
+    <div id="flow" class="box"></div>
+    <table id="symbols" hidden>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
+    <h2>Raw source: Binance USDS-M</h2>
+    <table id="raw-binance">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Raw source: Bybit Linear</h2>
+    <table id="raw-bybit">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <h2>Canonical dataset construction</h2>
+    <table id="canonical-source">
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">the two sources above are the only place a provider is named: from the
+      canonical table onwards the dataset is one market object. Tier order, the verbatim-candle
+      rule and the reason it beats averaging are in methodology_data.md.</p>
+  </section>
+
+  <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
+    <div id="ml-meta" class="box">loading ml_status.json&hellip;</div>
+    <table id="ml-assets" hidden>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <p class="foot">final-holdout numbers are computed with parameters frozen on F2–F4: fold F5
+      never participates in feature, hyper-parameter, entry-edge-threshold or strategy-rule selection.</p>
+  </section>
+
+  <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
+    <div id="asset-meta" class="box">loading ml_status.json&hellip;</div>
+
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">cross-section</span>
+        <span class="pills" data-pills="mlview">
+          <button class="pill pill--active" data-key="labels">Labels &amp; data</button>
+          <button class="pill" data-key="classification">Classification</button>
+          <button class="pill" data-key="strategy">Strategy</button>
+          <button class="pill" data-key="search">Search</button>
+        </span>
+      </div>
+      <div class="frame__body">
+        <div data-panel="mlview" data-key="labels"><table id="cs-labels"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="classification" hidden><table id="cs-classification"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="strategy" hidden><table id="cs-strategy"><thead></thead><tbody></tbody></table></div>
+        <div data-panel="mlview" data-key="search" hidden><table id="cs-search"><thead></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">asset</span>
+        <span class="pills" id="asset-pills" data-pills="asset"></span>
+      </div>
+    </div>
+    <div id="asset-detail"></div>
+    <p class="foot">the final holdout fold (F5) is shown in bold: it selects nothing — no feature,
+      hyper-parameter, entry edge threshold or strategy rule was chosen by looking at it.</p>
+  </section>
+
+  <section id="tab-containers" data-panel="tab" data-key="containers" hidden>
+    <div id="container-meta" class="box">loading /containers&hellip;</div>
+    <table id="container-overview" hidden>
+      <thead></thead>
+      <tbody></tbody>
+    </table>
+    <div class="frame">
+      <div class="frame__head">
+        <span class="frame__title">asset container</span>
+        <span class="pills" id="container-pills" data-pills="container"></span>
+      </div>
+    </div>
+    <div id="container-detail"></div>
+    <p class="foot">one row per asset container, live through the dashboard's proxy: up or down, up since when, the
+      memory the kernel charges it (page cache included) against its ceiling, its peak, the share of the host's
+      CPUs it used over the last poll, how far its data is behind and how old the measurement is; below, one
+      container as it reports itself. A container that does not answer is down and shows no previous numbers.</p>
+  </section>
+
+  <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
+    <div id="run-meta" class="box">loading /runs&hellip;</div>
+    <div id="run-detail"></div>
+    <p class="foot">one recorded run of the whole chain, as its stages left it. The stage columns come from
+      the kernel's accounting of the process that ran the stage &mdash; exact CPU and peak resident set from
+      <code>wait4</code>, byte counts from <code>/proc/&lt;pid&gt;/io</code> &mdash; so the page cache the
+      container is charged is never counted against a stage. The columns marked <em>container</em> describe the
+      whole container over the same window, the network among them: no per-process byte counter exists, so
+      network is reported container-wide and never attributed to a stage.</p>
+  </section>
+
+  <p class="foot">static page &middot; data from <code>data_status.json</code> / <code>ml_status.json</code>
+    (regenerate with <code>make data-status</code> / <code>make ml-status</code>) &middot; the Containers tab polls the
+    asset containers through <code>/containers</code></p>
+  <script src="data.js"></script>
+  <script src="asset.js"></script>
+  <script src="ml.js"></script>
+  <script src="containers.js"></script>
+  <script src="run.js"></script>
+</body>
+</html>

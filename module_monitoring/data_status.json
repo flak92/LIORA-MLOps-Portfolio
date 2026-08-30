@@ -1,0 +1,77 @@
+{
+ "canonical_source": [
+  {
+   "binance_pct": 99.994,
+   "bybit_pct": 0.006,
+   "ffill_bars": 0,
+   "ffill_pct": 0.0,
+   "last_observation_utc": "2026-08-28 23:59",
+   "longest_flat_run_minutes": 0,
+   "max_abs_return_1m": 0.063069,
+   "max_abs_return_at_switch": 0.004821,
+   "ohlc_violation_count": 0,
+   "relative_divergence_max": 0.08059981,
+   "relative_divergence_mean": 0.0002083,
+   "relative_divergence_p99": 0.00124855,
+   "row_count": 2975040,
+   "source_switch_count": 18,
+   "symbol": "BTCUSDT",
+   "zero_volume_bars": 0
+  }
+ ],
+ "download_cadence_minutes": 1440,
+ "duckdb_version": "1.5.4",
+ "flow": {
+  "binance_row_count": 2975040,
+  "binance_zip_count": 2066,
+  "bybit_row_count": 2975040,
+  "bybit_zip_count": 2066,
+  "canonical_row_count": 2975040
+ },
+ "generated_at_utc": "2026-08-29 21:50:03",
+ "symbols": [
+  {
+   "db_bytes": 135016448,
+   "ffill_bars": 0,
+   "real_data_pct": 100.0,
+   "row_count": 2975040,
+   "symbol": "BTCUSDT"
+  }
+ ],
+ "venues": {
+  "binance": [
+   {
+    "coverage_pct": 100.0,
+    "duplicate_count": 0,
+    "first_observation_utc": "2021-01-01 00:00",
+    "flat_bars": 181,
+    "gap_count": 0,
+    "gap_count_after_first_observation": 0,
+    "last_observation_utc": "2026-08-28 23:59",
+    "ohlc_violation_count": 0,
+    "row_count": 2975040,
+    "symbol": "BTCUSDT",
+    "zero_volume_bars": 181,
+    "zip_count": 2066
+   }
+  ],
+  "bybit": [
+   {
+    "coverage_pct": 100.0,
+    "duplicate_count": 0,
+    "first_observation_utc": "2021-01-01 00:00",
+    "flat_bars": 92,
+    "gap_count": 0,
+    "gap_count_after_first_observation": 0,
+    "last_observation_utc": "2026-08-28 23:59",
+    "ohlc_violation_count": 0,
+    "row_count": 2975040,
+    "symbol": "BTCUSDT",
+    "zero_volume_bars": 92,
+    "zip_count": 2066
+   }
+  ]
+ },
+ "window_end_utc": "2026-08-29 00:00",
+ "window_start_utc": "2021-01-01 00:00"
+}

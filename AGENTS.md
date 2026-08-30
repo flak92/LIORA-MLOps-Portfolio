@@ -1,0 +1,259 @@
+# AGENTS — the contract of this repository
+
+The governing contract for every change, human or agent. Read the repo in
+this order: **AGENTS.md → module names → module_skills → code.**
+(README is general information, not part of the working path.) If a change
+conflicts with this file, the change is wrong.
+
+## Values
+
+- **Destination, not road.** *The repository shows the destination, not the road*. No tests, no security
+  layers, no CI, no precautionary guardrails; the only guards are the ones the
+  mathematics requires, and a stage proves itself by running.
+- **Minimalism.** Every line, file, module and dependency has a concrete
+  purpose. If its purpose cannot be named, it goes.
+- **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
+  is `python:3.12-slim`. A library is added only when the standard library and
+  the current stack — `duckdb`, `numpy`, `optuna`, `xgboost-cpu` — cannot do
+  the job. `requirements.txt` declares direct dependencies only.
+- **KISS / YAGNI / DRY / SOLID.** The simplest correct implementation, built
+  for the need that exists, never for a hypothetical one. One responsibility
+  per module; repeated logic becomes one function, not three copies.
+- **UCAS — Useless Click Avoiding System.** Manual steps, clicks and context
+  switches that can be automated, are: `make all` runs the whole pipeline
+  from a fresh clone, every stage is idempotent, the dashboard opens itself.
+- **Main = clean working logic.** No test frameworks, security layers,
+  validation frameworks or precautionary guards. What stays are the seven
+  guards the mathematics requires: causality invariants (`indicators.asof_index`) and
+  arithmetic preconditions (the full canonical grid inside the frozen research
+  window, asserted per asset by `labels.load_research_1m`, and a finite,
+  positive ATR at every decision, asserted beside it; the aligned decision
+  grids of the arrays `dataset.load_xy` joins by position; a finite feature
+  matrix after the warm-up, asserted by `features.build_x`; the download that
+  aborts on a short post-listing day, and the listing probe that aborts when a
+  symbol's history starts after the window) — and beside them, not guards:
+  the one-line message of a status stage with nothing to report, naming the
+  stage to run first, and a venue's own error code surfaced as it came. A test suite, a linter,
+  a coverage gate, a workflow or a merge block does not belong here. No debt
+  marker in a tracked file and no code left inside a comment: a marker is a
+  postponed decision, a commented-out line is a version git already holds.
+  Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are part of correctness, not
+  a setting.
+- **Research logic over tooling.** External sources, libraries and
+  infrastructure are implementation details. The repository should expose the
+  mathematical and causal research pipeline as directly as possible.
+- **Source-neutral downstream.** Venue-specific logic ends at ingestion and
+  data-quality provenance. Features, labels, validation, modelling and research
+  simulation operate on the canonical research dataset.
+- **Academic, not production.** Prefer explicit equations, causal invariants and
+  reproducible transformations over production security, orchestration and
+  validation frameworks.
+- **Pipeline-first.** The repository exists to close one full chain:
+
+  ```
+  market sources → ingest → validation necessary for correctness → canonical dataset
+  → features / labels → training / retraining → strategy / results → monitoring
+  ```
+
+## Architecture shape
+
+`module_*` is a top-level project responsibility; `store_*` is persisted or
+generated state. Four project modules — three runtime modules, in the order
+the data moves through them, and one that carries no dataflow:
+
+```
+module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
+module_ml/          canonical dataset → X, Y → search → model → research simulation
+module_monitoring/  presentation of what the two modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
+module_skills/      the contract's companions: the register, the methodologies, the skills
+```
+
+`module_skills` never participates in runtime imports or dataflow. The asset
+containers are services of `docker-compose.yml`, one per ticker of the basket,
+written out under one anchor so the topology is visible in the file
+that runs it; `module_monitoring/serve.py` reaches them by service name. A new
+`module_<domain>` is justified only by a distinct responsibility with a stable
+input/output boundary; until then the owning module is extended.
+
+Regular, predictable, symmetrical, easy to scan — the structure should be
+recognisable by eye before it is parsed (neuro-optical consistency):
+
+- **names also define visual structure.** Before introducing a file or
+  directory, determine its semantic family and derive its name from that
+  family's established grammar, so analogous objects sort together and both the
+  object's role and its expected location are predictable from its name. The
+  detailed sorting grammar lives in
+  `module_skills/skill_sorting_files_naming_standard.md`;
+- one obvious responsibility per module; no wrappers without logic of their own;
+- analogous names for analogous objects (`download_binance.py` ↔
+  `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
+  `docker-ml-<stage>` targets); each computational module (`module_data`,
+  `module_ml`) measures its own domain state in `status.py`, and
+  `module_monitoring` presents their snapshots;
+- **taxonomic ordering — the category token comes first, so siblings sort
+  together.** A listing is read by eye before it is parsed: `module_data`,
+  `module_ml`, `module_monitoring`, `module_skills`, then
+  `store_assets_artifacts`, `store_raw_1m` — two blocks, not six scattered
+  entries. If renaming would put things of one category next to each other,
+  rename them;
+- short, predictable paths, built only in a module's `config.py` — never
+  assembled at the point of use; the one exception is an external format's own
+  file names, built by its adapter (`module_data/lean.py` for the Lean tree,
+  `module_monitoring/serve.py` and `module_monitoring/record.py` for the cgroup
+  and procfs paths of their boundary)
+  — and the browser, which has no config module and fetches its two snapshots
+  (`data_status.json`, `ml_status.json`) and the container and run routes by literal
+  name; one asset is one folder,
+  `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
+  responsibility. The artifact folder is the ticker in capitals, the raw tree
+  is the symbol in lower case because Lean demands it — that difference is a
+  boundary, not an inconsistency to tidy away. A top-level path constant
+  begins with the exact canonical root token, so the name predicts the
+  directory: `STORE_RAW_1M_DIR` → `store_raw_1m/`, `MODULE_MONITORING_DIR` →
+  `module_monitoring/`;
+- one convention per language: BEM in CSS, snake_case in Python and JSON,
+  the same hierarchy everywhere, no accidental exceptions.
+
+## Canonical vocabulary
+
+**Names must be self-explanatory before they are project-specific. Prefer
+established software-engineering terminology over project-specific synonyms: if
+a concept already has a widely recognised name, use that name — in code, in
+documentation, in the skills and in the interface alike — and do not invent
+local terminology for a standard concept. A glossary confirms meaning; it must
+not be required to decode an obscure name.**
+
+One concept, one name — in the code, in the artifacts and in the interface. The
+register is `module_skills/glossary.md`, and a new name enters it in the same
+commit that introduces it. The word "test" never names a fold.
+
+And one name, one concept. A name that could denote two things **in the same
+scope** is renamed until it denotes one. The scopes are enumerated so the rule
+applies without argument: make targets, compose services, container environment
+variables, tracked paths, and Python symbols within a module. A name shared across *different* scopes is not a
+collision — the module `module_ml/status.py` and the route `GET /status` are
+addressed by different tools and never appear in one listing.
+
+**Derived, never drafted.** A derived artifact is generated from source and
+config and never hand-edited: `<TICKER>_parameters.json`, `<TICKER>_README.md`,
+the two snapshots. A hand edit to one is a violation.
+
+**Rule-derived structure over repeated project knowledge.** When a family —
+assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
+— is governed by one definition, derive the repeated representations from it
+rather than copying the same list into several files: `TICKERS` in
+`module_data/config.py` is the one definition the paths, the fan-out and the
+`/containers` registry derive from. The limit is equally binding: no generator,
+no metaprogramming, no abstraction layer for a one-off value — and none for a
+file whose whole value is being read. `docker-compose.yml` spells its asset
+services out under one anchor, one per ticker, because a topology a reader can see beats one a
+reader has to run a generator to see.
+
+Every layer has a closed grammar, the way CSS has BEM. A name is **derived**
+from its layer's grammar, never invented:
+
+| layer | grammar | in this repo | what it forbids |
+|---|---|---|---|
+| constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `RSI_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
+| external I/O functions | `<verb>_<object>`, verb from the closed list `fetch_` (network), `load_` (storage → memory), `write_` (persist), `parse_` (bytes → values) | `fetch_klines`, `load_xy`, `write_parquet`, `parse_zip` | `get_`, `process_`, `handle_` |
+| conversions | `to_<representation>` | `to_class`, `to_json_safe` | ambiguous `convert` |
+| composite constructors | `build_<object>` | `build_x` | `make_stuff` |
+| functions that *are* a quantity | no verb — the name is what it returns | `rsi`, `atr`, `sharpe_annualised`, `triple_barrier` | `calculate_rsi` |
+| pure descriptors | a noun phrase naming the returned object; a descriptor does no I/O — the moment it fetches, loads or writes it takes that verb, the moment it assembles it takes `build_` | `symbol`, `artifact_dir`, `fold_bounds` | `get_fold_bounds`, `fetch_symbol` |
+| populations of rows | `<population>_set` / `_window` | `training_set`, `scoring_set`, `prediction_window` | `get_train_indices` |
+| report fragments | `<section>_block` | `sample_block`, `strategy_block`, `hyperparameter_search_result_block` | `make_sample_dict` |
+| statement constants (SQL text) | `<OBJECT>_<KIND>`, kind from the closed list `DDL`, `INSERT`, `SCAN`, `PREDICATE`, `COLUMNS` | `CANONICAL_DDL`, `BAR_INSERT`, `VENUE_SCAN`, `OHLC_INTACT_PREDICATE`, `Y_COLUMNS` | `SOURCE_SWITCHES`, `QUERY_1` |
+| conversion factors | `<UNIT>_PER_<UNIT>` | `MILLISECONDS_PER_MINUTE`, `MINUTES_PER_DAY` | `MS_MIN`, `60_000` inline |
+| module-private helpers | a leading `_` on the name its layer's grammar gives, for a helper no other module may import | `_pnl_block`, `_classification_block`, `_utc_ms` | an `_` name imported by another module |
+| CLI entry | `main()` — one per stage module, returning the exit code | `main` | `run`, `cli`, `entrypoint` |
+| quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `returns_15m` | `n_min`, `off` |
+| index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
+| booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_` | `entry_observable`, `label_valid`, `is_full_utc_day()` | `flag`, `ok`, `check` |
+| artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
+| features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
+| stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
+| directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
+| artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
+| CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
+| JavaScript functions | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
+
+Constants that carry a numeric quantity — a count, a rate, a duration, a
+size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the
+unit is explicit — `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_ROWS`,
+`_FOLD_ID`, `_RATE`, `_COUNT` — unless the name already says what is counted
+(`MINIMUM_TRADES_PER_VALIDATION_FOLD`). Enumerations, paths and names carry no
+unit; a collection whose values are quantities keeps theirs
+(`TIMEFRAME_DURATION_MS`, `FOLD_BOUNDS_MS`, `VALIDATION_FOLD_IDS`). No name is
+invented just to satisfy the schema. The parameter word follows the mechanics
+— `SPAN` for an EMA,
+`SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
+window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
+A compact timeframe token inside an identifier (`WARMUP_4H_BARS`, `equity_15m`,
+`ohlcv_15m_canonical`) is the timeframe vocabulary of code and schema; the slot
+standard governs filesystem names only.
+Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
+and are spelled out on first use in the documentation; local ones (`N`, `W`,
+`TF`, `MIN`, `MAX`, `K`, `XGB`) never cross a function boundary. A one-letter
+name is legal because of its semantic role, never merely because it is local:
+loop indices, the symbols of a published equation inside its tight kernel, and
+SVG geometry may stay short — a domain object (a ticker, an asset, a status
+payload, a strategy, a metrics block) carries its semantic name even inside a
+function. Write
+"QuantConnect Lean" on first use, "Lean" afterwards. British spelling
+throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling. At an
+external-format or external-library boundary the external vocabulary wins
+inside the call that speaks it, and project names begin at the return value.
+The boundaries, each with the file that owns it: the QuantConnect Lean tree
+(`module_data/lean.py`), the Binance and Bybit REST parameters
+(`download_binance.py`, `download_bybit.py`), xgboost and optuna
+(`module_ml/model.py`, `module_ml/hpo.py`), argparse (`module_data/config.py`), DuckDB SQL (every module that queries), the SVG
+and DOM attributes (`module_monitoring/*.js`), docker compose (`Makefile`,
+`docker-compose.yml`), and `http.server`, `urllib`, cgroup v2 and procfs
+(`module_monitoring/serve.py`), and `posix_spawn`, `wait4` rusage and the
+per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
+boundary is an exception the conventions name, not an inconsistency they
+tolerate.
+
+## Rejected vocabulary
+
+The rejected vocabulary stays as a list of words that steers the repository
+toward a lower level of vectors, guiding AI agents toward useful embeddings for
+solving problems in a concrete and minimally correct way. No check stands
+behind it. The last column of the grammar table holds the forms bound to one
+rule and the register's `never` columns the synonyms bound to one concept; this
+list holds the words bound to neither.
+
+- **directories and path segments:** `src`, `core`, `lib`, `common`, `utils`,
+  `helpers`, `manager`, `service`, `assets`, `artifacts`, `data`, `db`,
+  `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder
+- **module and file stems:** `module_compose`, `module_docker`,
+  `module_capsule`, `module_asset`, `module_viz`; `dashboard.py`, `proxy.py`,
+  `server.py` beside `serve.py`; a strategy file per asset, a parameters file
+  per stage, an `export` stage, a per-asset OHLCV parquet
+- **function verbs:** `read_`, `probe_`, `spool_`, `iter_`, `run_`, `compute_`,
+  `_factory`; in JavaScript `load`, `poll`
+- **key names:** bare `lag`, `age`, `usage` — without the subject and the unit —
+  `mem`, `cpu_pct`, a bare duration for how long a container has been up, a
+  hash, `weight` as a Y column, `_ts` on a UTC string
+- **interface words:** `online` / `offline`, `alive`, `healthy`, `running` for
+  an endpoint, `RAM`, `RSS`, `load`, `utilisation`, `freshness`, `boot`;
+  `pill`, `chip`, `tile`, `stat` for a badge; `badge--off`, `status--red`, a
+  coloured row; `mobile`, `tablet`, `phone`, `responsive`, `breakpoint`
+- **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a
+  second compose file, `/var/run/docker.sock` in a container; `TODO`, `FIXME`,
+  `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
+  generator, framework; `authority`, `single source of truth`
+
+## The default choice
+
+For every new change, prefer **the smallest, most modular and most obvious
+implementation that correctly closes the full pipeline.**
+
+Project-specific agent instructions live in `module_skills/` — the
+only other place agent guidance may exist in this tree. Its files are
+ordered by category and read in listing order: the register (`glossary.md`),
+the methodology documents — `methodology_data.md` (how the canonical dataset is
+built) and `methodology_ml.md` (the research layer, equation by equation, with
+the citations) — and the skills (`skill_*.md`). A module-specific guidance
+subfolder is created at the third module-specific document, not before.

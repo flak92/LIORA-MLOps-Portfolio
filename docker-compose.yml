@@ -1,0 +1,30 @@
+# one image, one server, one anchor: the dashboard publishes it on the host, each asset container runs it in its asset role
+x-asset: &asset
+  image: mlops-portfolio-1m-pipeline
+  init: true
+  user: "${UID:-1000}:${GID:-1000}"
+  command: python -m module_monitoring.serve
+  volumes:
+    - .:/app
+  deploy:
+    resources:
+      limits:
+        memory: 5g
+
+services:
+  pipeline:
+    build: .
+    image: mlops-portfolio-1m-pipeline
+    init: true
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+
+  dashboard:
+    <<: *asset
+    ports:
+      - "127.0.0.1:${PORT:-8900}:8900"
+
+  asset-btc:
+    <<: *asset
+    environment: {ASSET: BTC, OMP_NUM_THREADS: "1"}

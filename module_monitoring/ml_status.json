@@ -1,0 +1,247 @@
+{
+ "assets": [
+  {
+   "artifacts": {
+    "model_evaluation_modified_utc": "2026-08-29 22:02:04"
+   },
+   "final_holdout": {
+    "model_logloss": 0.797182,
+    "prior_logloss": 0.86652,
+    "relative_logloss_skill": 0.080019,
+    "scored_row_count": 57776
+   },
+   "gain_importance": {
+    "atr14_over_close_15m": 1605.1,
+    "atr14_over_close_1h": 4408.4,
+    "atr14_over_close_4h": 2973.5,
+    "centered_rsi14_15m": 6910.0,
+    "centered_rsi14_1h": 1277.0,
+    "centered_rsi14_4h": 1330.1,
+    "ema20_minus_ema50_over_atr14_15m": 1551.8,
+    "ema20_minus_ema50_over_atr14_1h": 1231.2,
+    "ema20_minus_ema50_over_atr14_4h": 2085.9,
+    "log_volume_zscore_50_15m": 17794.7,
+    "log_volume_zscore_50_1h": 5248.2,
+    "log_volume_zscore_50_4h": 1441.1,
+    "range_position_20_15m": 2526.4,
+    "range_position_20_1h": 1857.2,
+    "range_position_20_4h": 1077.7
+   },
+   "hyperparameter_search_result": {
+    "best_logloss": 0.810968,
+    "best_params": {
+     "alpha": 0.7831030940448331,
+     "colsample_bytree": 0.648624347600626,
+     "eta": 0.012363203444231837,
+     "lambda": 2.8078997092265223,
+     "max_depth": 5,
+     "min_child_weight": 32,
+     "num_boost_round": 550,
+     "subsample": 0.5246198598687903
+    },
+    "trial_count": 50
+   },
+   "sample": {
+    "ambiguous_event_count": 7,
+    "class_counts": {
+     "long": 24193,
+     "neutral": 144031,
+     "short": 26601
+    },
+    "decision_count": 194832,
+    "trainable_row_count": 194825,
+    "trainable_row_pct": 99.9964,
+    "unobservable_entry_count": 0,
+    "warmup_excluded_decision_count": 3200
+   },
+   "strategy": {
+    "entry_edge_threshold": 0.27,
+    "entry_edge_threshold_constraint_met": true,
+    "equity_curve": {
+     "equity": [
+      1.0,
+      1.0093,
+      0.9999,
+      0.9999,
+      0.9999,
+      1.0292,
+      1.0365,
+      1.0397,
+      1.0382,
+      1.0196,
+      1.0196,
+      1.0265,
+      1.0358,
+      1.0358,
+      1.034,
+      1.0292,
+      1.0299,
+      0.9947,
+      1.0111,
+      1.0101,
+      1.0162,
+      1.0291,
+      1.0291,
+      1.0234,
+      1.0149,
+      1.0119,
+      0.9931,
+      0.9956,
+      0.9979,
+      0.9846,
+      0.9752,
+      0.9722,
+      0.974,
+      0.9952,
+      0.9952,
+      0.9765,
+      0.9532,
+      0.9351,
+      0.9266,
+      0.9284,
+      0.9265,
+      0.9265,
+      0.931,
+      0.925,
+      0.9161,
+      0.9161,
+      0.927,
+      0.9373,
+      0.9246,
+      0.9316,
+      0.9358,
+      0.9358,
+      0.9146,
+      0.8898,
+      0.9069,
+      0.9068,
+      0.8843,
+      0.8661,
+      0.8661,
+      0.8434,
+      0.8538,
+      0.8755,
+      0.8743,
+      0.8743,
+      0.8785,
+      0.8824,
+      0.8972,
+      0.8771,
+      0.8936,
+      0.8936,
+      0.8855,
+      0.8863,
+      0.8872,
+      0.8894,
+      0.872,
+      0.872,
+      0.8703,
+      0.8723,
+      0.8796,
+      0.881,
+      0.8779,
+      0.8778,
+      0.8688,
+      0.8721,
+      0.8586,
+      0.8515,
+      0.8743
+     ]
+    },
+    "execution_cost_rate_per_trade_side": 0.0006,
+    "final_holdout": {
+     "average_trade_return": -0.000535,
+     "exit_counts": {
+      "ambiguous": 0,
+      "lower_barrier": 56,
+      "upper_barrier": 66,
+      "vertical": 115
+     },
+     "exposure": 0.0449,
+     "final_equity": 0.8743,
+     "hit_rate": 0.4599,
+     "max_drawdown": 0.2197,
+     "sharpe": -0.775,
+     "trade_count": 237
+    },
+    "selection_score_mean_sharpe": -0.296,
+    "validation": {
+     "fold_2": {
+      "average_trade_return": 0.000957,
+      "exit_counts": {
+       "ambiguous": 0,
+       "lower_barrier": 21,
+       "upper_barrier": 11,
+       "vertical": 34
+      },
+      "exposure": 0.0212,
+      "final_equity": 1.0579,
+      "hit_rate": 0.5455,
+      "max_drawdown": 0.0747,
+      "sharpe": 0.557,
+      "trade_count": 66
+     },
+     "fold_3": {
+      "average_trade_return": -0.000158,
+      "exit_counts": {
+       "ambiguous": 0,
+       "lower_barrier": 18,
+       "upper_barrier": 21,
+       "vertical": 44
+      },
+      "exposure": 0.0269,
+      "final_equity": 0.9838,
+      "hit_rate": 0.4458,
+      "max_drawdown": 0.1015,
+      "sharpe": -0.179,
+      "trade_count": 83
+     },
+     "fold_4": {
+      "average_trade_return": -0.001061,
+      "exit_counts": {
+       "ambiguous": 0,
+       "lower_barrier": 29,
+       "upper_barrier": 33,
+       "vertical": 74
+      },
+      "exposure": 0.0451,
+      "final_equity": 0.8607,
+      "hit_rate": 0.4485,
+      "max_drawdown": 0.2183,
+      "sharpe": -1.265,
+      "trade_count": 136
+     }
+    }
+   },
+   "ticker": "BTC",
+   "validation": {
+    "fold_2": {
+     "model_logloss": 0.820472,
+     "prior_logloss": 0.873507,
+     "relative_logloss_skill": 0.060715,
+     "scored_row_count": 35023
+    },
+    "fold_3": {
+     "model_logloss": 0.817168,
+     "prior_logloss": 0.918886,
+     "relative_logloss_skill": 0.110697,
+     "scored_row_count": 35018
+    },
+    "fold_4": {
+     "model_logloss": 0.795263,
+     "prior_logloss": 0.877705,
+     "relative_logloss_skill": 0.093929,
+     "scored_row_count": 35120
+    }
+   }
+  }
+ ],
+ "final_holdout_fold_id": 5,
+ "generated_at_utc": "2026-08-29 22:02:07",
+ "minimum_agreeing_trend_timeframes": 2,
+ "research_window": {
+  "end_utc": "2026-08-26",
+  "seed": 42,
+  "start_utc": "2021-01-01"
+ }
+}
