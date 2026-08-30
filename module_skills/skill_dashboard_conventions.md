@@ -36,3 +36,10 @@ linter, no build step, no framework.
   over already measured values (shares, a cross-fold mean, a difference of two
   reported metrics, a CPU rate from two polls of `cpu_usage_seconds`). Moving
   those into the payload would grow it without adding a fact.
+- The status page carries exactly one jump out of itself: the **DX** control in the top right,
+  which opens the developer-experience drawing of the tracked tree at
+  `sub_module_dx/files_and_folders_visualisation.html`. That page is a derived artifact, redrawn
+  only by `make monitoring-dx-update`; the dashboard already serves the directory, so the server's
+  routes do not know about it. Its inline renderer is reviewed as a whole and is not bound by the
+  closed verb list above, which governs the hand-written dashboard scripts.
+

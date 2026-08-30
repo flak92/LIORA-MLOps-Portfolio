@@ -1,0 +1,78 @@
+{
+  "default_story": "S1",
+
+  "exclude": [
+    ".gitignore",
+    ".dockerignore",
+    "**/__init__.py",
+    "module_monitoring/sub_module_dx/files_and_folders_visualisation.html"
+  ],
+
+  "story_map": {
+    "Dockerfile": "S1",
+    "docker-compose.yml": "S1",
+    "Makefile": "S1",
+    "requirements.txt": "S1",
+
+    "AGENTS.md": "S2",
+    "README.md": "S2",
+    "module_skills/": "S2",
+
+    "module_data/": "S3",
+
+    "module_ml/": "S4",
+    "module_monitoring/": "S4",
+    "store_assets_artifacts/": "S4"
+  },
+
+  "stories": {
+    "S1": { "name": "S1 · Infrastructure",        "color": "#5B8DEF", "hub": "docker-compose.yml" },
+    "S2": { "name": "S2 · Contract & skills",     "color": "#2BD4BD", "hub": "module_skills/" },
+    "S3": { "name": "S3 · Data",                  "color": "#F2B24E", "hub": "module_data/" },
+    "S4": { "name": "S4 · Research & monitoring", "color": "#A98BFA", "hub": "module_ml/" }
+  },
+
+  "story_order": ["S1", "S3", "S4", "S2"],
+
+  "core": { "name": "Repository root", "color": "#EDF2FF" },
+
+  "aggregate": { "store_assets_artifacts/*/": "artifact" },
+
+  "place": {
+    "store_assets_artifacts/": { "r": 1.62, "da": 0.14,  "y": 6,   "jit": 10 },
+    "README.md":               { "r": 0.38, "da": -0.30, "y": -34 },
+    "AGENTS.md":               { "r": 0.38, "da": 0.30,  "y": -34 }
+  },
+
+  "roles": {
+    "Makefile": "entrypoint",
+    "module_data/config.py": "config",
+    "module_ml/config.py": "config",
+    "module_ml/validation.py": "gate",
+    "module_monitoring/sub_module_dx/config.py": "config",
+    "module_monitoring/sub_module_dx/visualisation_config.json": "config"
+  },
+
+  "descriptions": {
+    "root": "The single-asset runtime as its own repository. Working path: AGENTS.md → module names → module_skills → code.",
+    "Makefile": "Entrypoint of everything — per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
+    "docker-compose.yml": "One image, one server, one anchor: the dashboard publishes it on the host, each asset container runs it in its asset role.",
+    "module_data/": "Ingest — venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
+    "module_data/ingest.py": "Merges venue ZIPs into the asset's canonical series (primary-failover, full grid).",
+    "module_ml/": "Research — bars, features, triple-barrier labels, purged walk-forward XGBoost.",
+    "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout — the gate of the whole system.",
+    "module_monitoring/": "Presentation of what the runtime modules measured, and the one server that serves it.",
+    "module_monitoring/serve.py": "The one server, two roles: the dashboard, and a container reporting itself.",
+    "module_monitoring/sub_module_dx/": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
+    "module_skills/": "The contract's companions: the register, the methodologies and the skills.",
+    "store_assets_artifacts/": "Per-asset artifacts — the only objects the system produces."
+  },
+
+  "camera": { "start_rot_y": 3.491, "start_rot_x": -0.40, "fit_width": 1400 },
+
+  "header": {
+    "eyebrow_from_git": true,
+    "title": "Files and Folders",
+    "subtitle": "{files} tracked files · {modules} top-level folders · {assets} asset artifacts"
+  }
+}
