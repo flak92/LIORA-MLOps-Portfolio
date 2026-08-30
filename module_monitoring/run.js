@@ -9,6 +9,7 @@ const TIMELINE_WIDTH = 700;
 const TIMELINE_HEIGHT = 100;
 const SECONDS_PER_MINUTE = 60;
 const BYTES_PER_SECOND_LABEL = "/s";
+const HTTP_OK = 200;
 
 let RUN_RECORD = null;
 
@@ -26,13 +27,22 @@ function formatSeconds(seconds) {
   return Math.floor(seconds / SECONDS_PER_MINUTE) + "m " + Math.round(seconds % SECONDS_PER_MINUTE) + "s";
 }
 
-/* a counter series becomes a rate; a delta across a container change is not a rate, so it is dropped */
+/* every container of a run appends to one file, so a series is only a series inside one of them */
+function samplesByService(samples) {
+  const byService = {};
+  samples.forEach((sample) => {
+    byService[sample.docker_service] = byService[sample.docker_service] || [];
+    byService[sample.docker_service].push(sample);
+  });
+  return byService;
+}
+
+/* a counter series becomes a rate; a counter that fell is a container restarted, not a rate */
 function buildRateSeries(samples, key) {
   const points = [];
   for (let i = 1; i < samples.length; i++) {
     const previous = samples[i - 1];
     const sample = samples[i];
-    if (sample.docker_service !== previous.docker_service) continue;
     const span = secondsSinceEpoch(sample.timestamp_utc) - secondsSinceEpoch(previous.timestamp_utc);
     if (span <= 0) continue;
     const rise = key(sample) - key(previous);
@@ -46,11 +56,11 @@ function buildLevelSeries(samples, key) {
   return samples.map((sample) => ({ at: secondsSinceEpoch(sample.timestamp_utc), value: key(sample) || 0 }));
 }
 
-/* one series on the run's shared time axis, with a dashed rule at every stage start */
-function buildTimeline(points, boundaries, startAt, endAt) {
+/* one polyline per container on the run's shared time axis, with a dashed rule at every stage start */
+function buildTimeline(seriesByService, boundaries, startAt, endAt) {
   const NS = "http://www.w3.org/2000/svg";
   const span = Math.max(1, endAt - startAt);
-  const peak = Math.max(1e-9, ...points.map((point) => point.value));
+  const peak = Math.max(1e-9, ...Object.values(seriesByService).flat().map((point) => point.value));
   const x = (at) => (TIMELINE_WIDTH * (at - startAt)) / span;
   const y = (value) => TIMELINE_HEIGHT - (value / peak) * TIMELINE_HEIGHT;
 
@@ -70,20 +80,27 @@ function buildTimeline(points, boundaries, startAt, endAt) {
     rule.appendChild(tip);
     svg.appendChild(rule);
   });
-  const line = document.createElementNS(NS, "polyline");
-  line.setAttribute("class", "timeline__series");
-  line.setAttribute("points", points.map((point) => x(point.at).toFixed(1) + "," + y(point.value).toFixed(1)).join(" "));
-  svg.appendChild(line);
+  Object.keys(seriesByService).sort().forEach((service) => {
+    const line = document.createElementNS(NS, "polyline");
+    line.setAttribute("class", "timeline__series");
+    line.setAttribute("points", seriesByService[service]
+      .map((point) => x(point.at).toFixed(1) + "," + y(point.value).toFixed(1)).join(" "));
+    const tip = document.createElementNS(NS, "title");
+    tip.textContent = service;
+    line.appendChild(tip);
+    svg.appendChild(line);
+  });
   return svg;
 }
 
-function appendTimeline(body, caption, points, boundaries, startAt, endAt) {
+function appendTimeline(body, caption, seriesByService, boundaries, startAt, endAt) {
   const label = document.createElement("p");
   label.className = "timeline__caption";
+  const points = Object.values(seriesByService).flat();
   const peak = points.length ? Math.max(...points.map((point) => point.value)) : 0;
   label.textContent = caption + "  ·  peak " + (points.length ? peak : "-");
   body.appendChild(label);
-  body.appendChild(buildTimeline(points, boundaries, startAt, endAt));
+  body.appendChild(buildTimeline(seriesByService, boundaries, startAt, endAt));
 }
 
 function buildRunHeader(record) {
@@ -100,7 +117,9 @@ function buildRunHeader(record) {
     ["bottleneck", summary.bottleneck_stage],
     ["exit code", manifest.exit_code + "  (" + summary.status + ")"
       + (summary.failed_stage ? "  failed at " + summary.failed_stage : "")],
-    ["dashboard", "HTTP " + summary.dashboard_ready.status_code + "  " + summary.dashboard_ready.url],
+    ["dashboard", "HTTP " + summary.dashboard_ready.status_code + "  " + summary.dashboard_ready.url
+      + "  ·  assets " + summary.dashboard_ready.assets.filter((asset) => asset.status_code === HTTP_OK).length
+      + "/" + summary.dashboard_ready.assets.length],
     ["host", manifest.kernel + "  ·  " + manifest.cpu_count + " cpus  ·  sampled every "
       + manifest.sample_interval_seconds + "s"],
   ]);
@@ -138,6 +157,7 @@ function renderRunOutputs(body, summary) {
   body.appendChild(buildTable(["stage", "input", "output", "size"], rows));
 }
 
+/* one axis per metric, one polyline per container, so two containers running in parallel are two lines */
 function renderRunTimelines(body, record) {
   const samples = record.samples;
   if (!samples.length) {
@@ -147,14 +167,17 @@ function renderRunTimelines(body, record) {
   const startAt = secondsSinceEpoch(record.summary.first_stage_start_utc);
   const endAt = secondsSinceEpoch(record.summary.last_stage_end_utc);
   const boundaries = record.summary.stages.map((stage) => ({ stage: stage.stage, at: secondsSinceEpoch(stage.start_utc) }));
+  const byService = samplesByService(samples);
+  const rates = (key) => Object.fromEntries(Object.entries(byService).map(([s, own]) => [s, buildRateSeries(own, key)]));
+  const levels = (key) => Object.fromEntries(Object.entries(byService).map(([s, own]) => [s, buildLevelSeries(own, key)]));
   appendTimeline(body, "CPU — container seconds per second",
-    buildRateSeries(samples, (s) => s.container_cpu_usage_seconds), boundaries, startAt, endAt);
+    rates((s) => s.container_cpu_usage_seconds), boundaries, startAt, endAt);
   appendTimeline(body, "RAM — resident set of the stage process (bytes)",
-    buildLevelSeries(samples, (s) => s.process_memory_resident_bytes), boundaries, startAt, endAt);
+    levels((s) => s.process_memory_resident_bytes), boundaries, startAt, endAt);
   appendTimeline(body, "disk — container block bytes" + BYTES_PER_SECOND_LABEL,
-    buildRateSeries(samples, (s) => s.container_disk_read_bytes + s.container_disk_write_bytes), boundaries, startAt, endAt);
+    rates((s) => s.container_disk_read_bytes + s.container_disk_write_bytes), boundaries, startAt, endAt);
   appendTimeline(body, "network — container bytes" + BYTES_PER_SECOND_LABEL,
-    buildRateSeries(samples, (s) => s.container_network_received_bytes + s.container_network_transmitted_bytes),
+    rates((s) => s.container_network_received_bytes + s.container_network_transmitted_bytes),
     boundaries, startAt, endAt);
 }
 

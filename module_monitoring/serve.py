@@ -21,28 +21,11 @@ from pathlib import Path
 from module_data import config as data_config
 from module_ml import config as ml_config
 
-CONTAINER_POLL_INTERVAL_SECONDS = 5      # published to the page, which never carries a cadence of its own
-RUN_SAMPLE_POINT_LIMIT = 900             # the timeline's stride: a long run is thinned, never truncated
-ASSET_STATUS_FETCH_TIMEOUT_SECONDS = 2   # bounds each socket operation of the proxy, not the exchange
-CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping
-BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
-MICROSECONDS_PER_SECOND = 1_000_000
+from . import config
+
 CGROUP_MOUNT_PATH = Path("/sys/fs/cgroup")
 OWN_CGROUP_PROC_PATH = Path("/proc/self/cgroup")
 HOST_MEMORY_PROC_PATH = Path("/proc/meminfo")
-
-
-def to_utc_text(moment: datetime) -> str:
-    return moment.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def to_utc_datetime(text: str) -> datetime:
-    """The snapshots write minutes as `YYYY-MM-DD HH:MM` and seconds as `… HH:MM:SS`, both UTC."""
-    return datetime.fromisoformat(text).replace(tzinfo=UTC)
-
-
-def to_int(text: str | None) -> int | None:
-    return None if text is None else int(text)
 
 
 def to_json_bytes(payload: dict) -> bytes:
@@ -84,14 +67,14 @@ def data_block(ticker: str, data_status: dict) -> dict | None:
     database = data_config.research_ohlcv_duckdb(ticker)
     if symbol_row is None or canonical_row is None or not database.exists():
         return None
-    last_observation = to_utc_datetime(canonical_row["last_observation_utc"])
-    research_end = to_utc_datetime(ml_config.RESEARCH_END_UTC)
+    last_observation = config.to_utc_datetime(canonical_row["last_observation_utc"])
+    research_end = config.to_utc_datetime(ml_config.RESEARCH_END_UTC)
     return {
         "generated_at_utc": data_status["generated_at_utc"],
         "row_count": symbol_row["row_count"],
         "last_observation_utc": canonical_row["last_observation_utc"],
         "observation_lag_minutes": minutes_since(last_observation),
-        "measurement_age_minutes": minutes_since(to_utc_datetime(data_status["generated_at_utc"])),
+        "measurement_age_minutes": minutes_since(config.to_utc_datetime(data_status["generated_at_utc"])),
         "db_bytes": database.stat().st_size,
         # the grid has no holes, so its two ends decide coverage of the half-open research window
         "research_window_covered": (data_config.DATA_WINDOW_START_UTC <= ml_config.RESEARCH_START_UTC
@@ -117,10 +100,10 @@ def footprint_block() -> dict:
     memory_max = load_text(own / "memory.max")
     cpu_stat = dict(line.split() for line in load_text(own / "cpu.stat").splitlines())
     return {
-        "memory_bytes": to_int(load_text(own / "memory.current")),
-        "memory_peak_bytes": to_int(load_text(own / "memory.peak")),
-        "memory_limit_bytes": load_host_memory_bytes() if memory_max == "max" else to_int(memory_max),
-        "cpu_usage_seconds": round(int(cpu_stat["usage_usec"]) / MICROSECONDS_PER_SECOND, 3),
+        "memory_bytes": config.to_int(load_text(own / "memory.current")),
+        "memory_peak_bytes": config.to_int(load_text(own / "memory.peak")),
+        "memory_limit_bytes": load_host_memory_bytes() if memory_max == "max" else config.to_int(memory_max),
+        "cpu_usage_seconds": round(int(cpu_stat["usage_usec"]) / config.MICROSECONDS_PER_SECOND, 3),
         "cpu_count": os.cpu_count(),
     }
 
@@ -128,7 +111,7 @@ def footprint_block() -> dict:
 def status_payload(server: StatusServer, data_status: dict, ml_status: dict) -> dict:
     return {
         "ticker": server.ticker,
-        "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
+        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "started_at_utc": server.started_at_utc,
         "data": data_block(server.ticker, data_status),
         "artifacts": artifacts_block(server.ticker, ml_status),
@@ -138,7 +121,7 @@ def status_payload(server: StatusServer, data_status: dict, ml_status: dict) -> 
 
 def load_run_ids() -> list[str]:
     """Every recorded run, newest first — the run id sorts chronologically by design."""
-    records = data_config.run_records_dir(data_config.TICKERS[0])
+    records = config.STORE_RUN_RECORDS_DIR
     return sorted((path.name for path in records.iterdir() if path.is_dir()), reverse=True) if records.exists() else []
 
 
@@ -149,14 +132,15 @@ def load_jsonl(path: Path) -> list[dict]:
 
 
 def run_payload(run_id: str) -> dict:
-    """One recorded run as the page reads it: what ran, what it cost, and the container-wide series."""
-    run_directory = data_config.run_dir(data_config.TICKERS[0], run_id)
-    manifest_path, summary_path = run_directory / "manifest.json", run_directory / "summary.json"
-    samples = load_jsonl(run_directory / "resources.jsonl")
-    stride = max(1, -(-len(samples) // RUN_SAMPLE_POINT_LIMIT))
+    """One recorded run as the page reads it: what ran, what it cost, and the container-wide series.
+    The samples are ordered by their own timestamp because every container of the run appended to one
+    file, and the file holds arrival order."""
+    manifest_path, summary_path = config.manifest_json(run_id), config.summary_json(run_id)
+    samples = sorted(load_jsonl(config.resources_jsonl(run_id)), key=lambda sample: sample["timestamp_utc"])
+    stride = max(1, -(-len(samples) // config.RUN_SAMPLE_POINT_LIMIT))
     return {
         "run_id": run_id,
-        "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
+        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "manifest": load_json(manifest_path) if manifest_path.exists() else None,
         "summary": load_json(summary_path) if summary_path.exists() else None,
         "sample_count": len(samples),
@@ -166,13 +150,13 @@ def run_payload(run_id: str) -> dict:
 
 
 def runs_payload() -> dict:
-    return {"generated_at_utc": to_utc_text(datetime.now(tz=UTC)), "run_ids": load_run_ids()}
+    return {"generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)), "run_ids": load_run_ids()}
 
 
 def registry_payload() -> dict:
     return {
-        "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
-        "poll_interval_seconds": CONTAINER_POLL_INTERVAL_SECONDS,
+        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
+        "poll_interval_seconds": config.CONTAINER_POLL_INTERVAL_SECONDS,
         "tickers": data_config.TICKERS,
     }
 
@@ -180,8 +164,8 @@ def registry_payload() -> dict:
 def fetch_asset_status(ticker: str) -> tuple[int, bytes]:
     """One asset's endpoint as (status code, body): an HTTP answer forwarded as it came, 503 with no body when the container does not answer."""
     try:
-        with urllib.request.urlopen(f"http://asset-{ticker.lower()}:{CONTAINER_PORT}/status",
-                                    timeout=ASSET_STATUS_FETCH_TIMEOUT_SECONDS) as answer:
+        with urllib.request.urlopen(config.asset_status_url(ticker),
+                                    timeout=config.ASSET_STATUS_FETCH_TIMEOUT_SECONDS) as answer:
             return answer.status, answer.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read()
@@ -241,15 +225,15 @@ class StatusServer(ThreadingHTTPServer):
     def __init__(self, ticker: str | None):
         handler = (AssetStatusHandler if ticker
                    else functools.partial(DashboardHandler, directory=str(data_config.MODULE_MONITORING_DIR)))
-        super().__init__((BIND_ADDRESS, CONTAINER_PORT), handler)
+        super().__init__((config.BIND_ADDRESS, config.CONTAINER_PORT), handler)
         self.ticker = ticker
-        self.started_at_utc = to_utc_text(datetime.now(tz=UTC))
+        self.started_at_utc = config.to_utc_text(datetime.now(tz=UTC))
 
 
 def main() -> int:
     ticker = os.environ.get("ASSET")
     server = StatusServer(ticker)
-    print(f"{'asset ' + ticker if ticker else 'dashboard'} role at http://{BIND_ADDRESS}:{CONTAINER_PORT}/", flush=True)
+    print(f"{'asset ' + ticker if ticker else 'dashboard'} role at http://{config.BIND_ADDRESS}:{config.CONTAINER_PORT}/", flush=True)
     server.serve_forever()
     return 0
 

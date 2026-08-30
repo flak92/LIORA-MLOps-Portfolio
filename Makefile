@@ -92,7 +92,7 @@ docker-ml-all:       ## the whole ML chain inside the containers
 docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> ML -> snapshots
 	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-ml-all
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows
-docker-all-record: docker-build ## one recorded run of the whole chain -> store_assets_artifacts/<TICKER>/runtime/<run_id>/
+docker-all-record: docker-build ## one recorded run of the whole chain, the whole basket in one record -> store_run_records/<run_id>/
 	$(COMPOSE) up -d dashboard
 	@run_id=$(RUN_ID); \
 	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id"; \

@@ -196,8 +196,8 @@ how a stage is run, never what it computes.
 |---|---|---|---|---|
 | the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, and by `serve.py` choosing its role — never by the engine, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
-| the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `serve.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
-| where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built in `serve.py` | — | — | an IP, a published port |
+| the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
+| where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
 | the memory ceiling every service runs under | the `x-service` anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation, a service written outside the anchor and so without a ceiling |
 
@@ -222,10 +222,12 @@ Quality*, *ML Research*, *ML Assets*, *Containers*, *Lifecycle*, and the ML Asse
 
 ## Run record
 
-What one recorded run of the chain leaves in
-`store_assets_artifacts/<TICKER>/runtime/<run_id>/`, written by
+What one recorded run of the chain leaves in `store_run_records/<run_id>/` — one
+record for the whole basket and never one per asset, because a run of the chain
+is one event and every asset's stages belong to it — written by
 `module_monitoring/record.py` wrapping each stage command in the container that
-stage already runs in. `run_id` is `<YYYYMMDDTHHMMSS>Z_<git short commit>`: not a
+stage already runs in. Its paths come from the descriptors of
+`module_monitoring/config.py` and from nowhere else. `run_id` is `<YYYYMMDDTHHMMSS>Z_<git short commit>`: not a
 content hash, but git's own identity, the record `module_ml/config.py` already
 names — so it sorts chronologically and points at the code that ran.
 
@@ -247,14 +249,23 @@ window: the resident server, the recorder and the stage together.
 | how many 1 s samples the stage window held | `sample_count` | `sample_count` | samples | n_samples |
 | wall time between stages: docker exec setup and teardown | — | `orchestration_seconds` | orchestration | overhead, a hidden remainder |
 | the stage that took the longest | — | `bottleneck_stage` | bottleneck | slowest, hotspot |
-| the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` | dashboard | healthcheck, ping |
+| the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` — the registry at the top level, one answer per ticker in `assets` | dashboard | healthcheck, ping; one asset's answer standing for the basket |
+| the basket one run covered | `TICKERS` | `tickers` | — | `ticker`, the first of the basket standing for it |
+| the asset containers of a run, one row per ticker | `container_identity()` | `asset_containers` | — | `asset_container`, one container standing for the basket |
+| where a run's record lives | `STORE_RUN_RECORDS_DIR`, `run_dir()` | — | — | a `runtime/` folder under an asset, one run record per asset |
 
 The four files of a run: `manifest.json` (what ran, where, on what host, and how
-it ended), `events.jsonl` (one line per stage, appended by the stage itself),
-`resources.jsonl` (the 1 s container-wide samples), `summary.json` (the stage
-table and the run totals, plus `measurement_notes`, which states in the payload
-what each number is and is not). `logs/<stage>.log` holds that stage's output
-verbatim. None of it is committed; `.gitignore` already covers the tree.
+it ended), `events.jsonl` (one line per stage, appended by the stage itself from
+whichever container ran it), `resources.jsonl` (the 1 s container-wide samples,
+likewise from every container of the run), `summary.json` (the stage table and
+the run totals, plus `measurement_notes`, which states in the payload what each
+number is and is not). One appended line is one `write()` to a file opened
+`O_APPEND`, so two containers never interleave a record; the readers put the
+lines back in order by their own timestamps, because the file holds arrival
+order. `logs/<stage>_<docker_service>.log` holds that stage's output verbatim,
+one file per container that ran it, because one stage name runs once per asset
+and two containers must never open one log. None of it is committed;
+`.gitignore` covers `store_run_records/`.
 
 The routes: `GET /runs` lists the run ids newest first, `GET /runs/<run_id>`
 answers one run's manifest, summary and samples, the samples strided to

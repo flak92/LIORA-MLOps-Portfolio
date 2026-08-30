@@ -103,7 +103,7 @@ and `ml-all:`; every document points there. Remote machine? Tunnel with
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, three scans + three per-symbol passes |
-| lifecycle | `make docker-btc-lifecycle` | one recorded run of the whole chain → `store_assets_artifacts/<TICKER>/runtime/<run_id>/` | every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
+| lifecycle | `make docker-btc-lifecycle` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, served by `module_monitoring/serve.py` in the `dashboard` container with the container routes | no external resources; the asset containers are reached only through its proxy |
 
 ## Data formats

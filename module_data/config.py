@@ -69,19 +69,6 @@ def research_ohlcv_duckdb(ticker: str) -> Path:
     return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
 
 
-RUN_RECORD_DIR_NAME = "runtime"
-
-
-def run_records_dir(ticker: str) -> Path:
-    """Where the asset's recorded runs live, one directory each."""
-    return artifact_dir(ticker) / RUN_RECORD_DIR_NAME
-
-
-def run_dir(ticker: str, run_id: str) -> Path:
-    """One directory per recorded run, beside the artifacts the run produced."""
-    return run_records_dir(ticker) / run_id
-
-
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers with the full basket default."""
     ap = argparse.ArgumentParser(description=description)

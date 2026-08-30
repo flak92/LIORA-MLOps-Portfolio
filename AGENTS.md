@@ -94,8 +94,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - **taxonomic ordering — the category token comes first, so siblings sort
   together.** A listing is read by eye before it is parsed: `module_data`,
   `module_ml`, `module_monitoring`, `module_skills`, then
-  `store_assets_artifacts`, `store_raw_1m` — two blocks, not six scattered
-  entries. If renaming would put things of one category next to each other,
+  `store_assets_artifacts`, `store_raw_1m`, `store_run_records` — two blocks,
+  not seven scattered entries. If renaming would put things of one category next to each other,
   rename them;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
@@ -110,8 +110,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   is the symbol in lower case because Lean demands it — that difference is a
   boundary, not an inconsistency to tidy away. A top-level path constant
   begins with the exact canonical root token, so the name predicts the
-  directory: `STORE_RAW_1M_DIR` → `store_raw_1m/`, `MODULE_MONITORING_DIR` →
-  `module_monitoring/`;
+  directory: `STORE_RAW_1M_DIR` → `store_raw_1m/`, `STORE_RUN_RECORDS_DIR` →
+  `store_run_records/`, `MODULE_MONITORING_DIR` → `module_monitoring/`;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 

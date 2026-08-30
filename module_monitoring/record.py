@@ -28,22 +28,16 @@ import time
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime
+from http import HTTPStatus
 from pathlib import Path
 
 from module_data import config as data_config
 from module_ml import config as ml_config
 
-from .serve import (CONTAINER_PORT, MICROSECONDS_PER_SECOND, load_cgroup_dir, load_host_memory_bytes,
-                    load_text, to_int, to_utc_text)
+from . import config
+from .serve import load_cgroup_dir, load_host_memory_bytes, load_jsonl, load_text
 
-SAMPLE_INTERVAL_SECONDS = 1.0
-# /proc/<pid>/io is unreadable once the child is a zombie, so it is polled far faster than the
-# samples are written: a stage shorter than one sample interval still leaves its byte counts
-PROCESS_POLL_INTERVAL_SECONDS = 0.05
 BYTES_PER_KIBIBYTE = data_config.BYTES_PER_KIBIBYTE
-PIPE_READ_SIZE_BYTES = 65536
-READINESS_TIMEOUT_SECONDS = 5
-LOOPBACK_DASHBOARD_URL = f"http://127.0.0.1:{CONTAINER_PORT}/containers"
 NETWORK_PROC_PATH = Path("/proc/net/dev")
 LOOPBACK_INTERFACE_NAME = "lo"
 
@@ -89,15 +83,17 @@ def stage_of(module: str) -> str:
     return f"{package.removeprefix('module_')}-{name.replace('_', '-')}"
 
 
-def recorded_ticker() -> str:
-    """The asset this container is, or the first of the basket for a basket-wide stage."""
-    return os.environ.get("ASSET") or data_config.TICKERS[0]
+def recorded_tickers() -> list[str]:
+    """The assets this stage covered: the one its container is, or the whole basket for a
+    basket-wide stage in the one-off container."""
+    asset = os.environ.get("ASSET")
+    return [asset] if asset else list(data_config.TICKERS)
 
 
 def docker_service() -> str:
-    """The compose service by its one distinguishing environment variable, as serve.py names it."""
+    """The compose service by its one distinguishing environment variable, as the config names it."""
     asset = os.environ.get("ASSET")
-    return f"asset-{asset.lower()}" if asset else "pipeline"
+    return config.asset_service(asset) if asset else config.PIPELINE_SERVICE
 
 
 def load_network_bytes() -> tuple[int, int]:
@@ -127,15 +123,15 @@ def container_counters() -> dict:
         disk_write_bytes += int(fields.get("wbytes", 0))
     received, transmitted = load_network_bytes()
     return {
-        "container_cpu_usage_seconds": int(cpu_stat["usage_usec"]) / MICROSECONDS_PER_SECOND,
-        "container_cpu_user_seconds": int(cpu_stat["user_usec"]) / MICROSECONDS_PER_SECOND,
-        "container_cpu_system_seconds": int(cpu_stat["system_usec"]) / MICROSECONDS_PER_SECOND,
+        "container_cpu_usage_seconds": int(cpu_stat["usage_usec"]) / config.MICROSECONDS_PER_SECOND,
+        "container_cpu_user_seconds": int(cpu_stat["user_usec"]) / config.MICROSECONDS_PER_SECOND,
+        "container_cpu_system_seconds": int(cpu_stat["system_usec"]) / config.MICROSECONDS_PER_SECOND,
         # memory.current is anon + page cache + slab; the anonymous part is the only one a stage owns
-        "container_memory_charged_bytes": to_int(load_text(own / "memory.current")),
+        "container_memory_charged_bytes": config.to_int(load_text(own / "memory.current")),
         "container_memory_anonymous_bytes": int(memory_stat["anon"]),
         "container_memory_cache_bytes": int(memory_stat["file"]),
-        "container_memory_limit_bytes": (load_host_memory_bytes() if memory_max == "max" else to_int(memory_max)),
-        "container_pids_current": to_int(load_text(own / "pids.current")),
+        "container_memory_limit_bytes": (load_host_memory_bytes() if memory_max == "max" else config.to_int(memory_max)),
+        "container_pids_current": config.to_int(load_text(own / "pids.current")),
         "container_disk_read_bytes": disk_read_bytes,
         "container_disk_write_bytes": disk_write_bytes,
         "container_network_received_bytes": received,
@@ -162,13 +158,14 @@ def process_counters(pid: int) -> dict | None:
     }
 
 
-def output_block(module: str, ticker: str) -> list[dict]:
-    """What the stage left on disk: the path, its size and its mtime — never a hash of a database."""
+def output_block(module: str, tickers: list[str]) -> list[dict]:
+    """What the stage left on disk for every asset it covered: the path, its size and its mtime —
+    never a hash of a database."""
     descriptor = STAGE_OUTPUT_DESCRIPTORS.get(module)
     if descriptor is None:
         return []
     written = []
-    for path in descriptor(ticker):
+    for path in [path for ticker in tickers for path in descriptor(ticker)]:
         if path.is_dir():
             files = sorted(path.glob("*"))
             written.append({"path": str(path.relative_to(data_config.REPO_ROOT)),
@@ -195,10 +192,9 @@ def record_stage(run_id: str, command: list[str]) -> int:
     """Run the stage, sample the container beside it, and leave one record. Returns its exit code."""
     module = module_of(command)
     stage = stage_of(module)
-    ticker = recorded_ticker()
-    run_directory = data_config.run_dir(ticker, run_id)
-    (run_directory / "logs").mkdir(parents=True, exist_ok=True)
-    log_path = run_directory / "logs" / f"{stage}.log"
+    tickers = recorded_tickers()
+    log_path = config.stage_log(run_id, stage, docker_service())
+    log_path.parent.mkdir(parents=True, exist_ok=True)
 
     started_at = datetime.now(tz=UTC)
     started_monotonic = time.monotonic()
@@ -214,17 +210,17 @@ def record_stage(run_id: str, command: list[str]) -> int:
     sample_count = 0
     last_process = None
     memory_charged_peak_bytes = counters_at_start["container_memory_charged_bytes"]
-    deadline = started_monotonic + SAMPLE_INTERVAL_SECONDS
+    deadline = started_monotonic + config.SAMPLE_INTERVAL_SECONDS
     with log_path.open("wb") as log, os.fdopen(read_fd, "rb", buffering=0) as pipe:
         open_pipe = True
         while open_pipe:
-            timeout = max(0.0, min(deadline - time.monotonic(), PROCESS_POLL_INTERVAL_SECONDS))
+            timeout = max(0.0, min(deadline - time.monotonic(), config.PROCESS_POLL_INTERVAL_SECONDS))
             readable = select.select([pipe], [], [], timeout)[0]
             process = process_counters(pid)
             if process is not None:
                 last_process = process
             if readable:
-                chunk = pipe.read(PIPE_READ_SIZE_BYTES)
+                chunk = pipe.read(config.PIPE_READ_SIZE_BYTES)
                 if chunk:
                     log.write(chunk)
                     log.flush()
@@ -236,15 +232,15 @@ def record_stage(run_id: str, command: list[str]) -> int:
                 sample = container_counters()
                 memory_charged_peak_bytes = max(memory_charged_peak_bytes,
                                                 sample["container_memory_charged_bytes"])
-                append_json_line(run_directory / "resources.jsonl", {
-                    "timestamp_utc": to_utc_text(datetime.now(tz=UTC)),
+                append_json_line(config.resources_jsonl(run_id), {
+                    "timestamp_utc": config.to_utc_text(datetime.now(tz=UTC)),
                     "monotonic_seconds": round(time.monotonic() - started_monotonic, 3),
-                    "run_id": run_id, "ticker": ticker, "stage": stage,
+                    "run_id": run_id, "stage": stage,
                     "docker_service": docker_service(), "pid": pid,
                     **sample, **(last_process or {}),
                 })
                 sample_count += 1
-                deadline += SAMPLE_INTERVAL_SECONDS
+                deadline += config.SAMPLE_INTERVAL_SECONDS
 
     # EOF on the pipe means every write end is closed, so the child is exiting: one blocking reap,
     # and its rusage is the kernel's own accounting of the process that call took
@@ -253,10 +249,10 @@ def record_stage(run_id: str, command: list[str]) -> int:
     counters_at_end = container_counters()
     ended_at = datetime.now(tz=UTC)
     record = {
-        "run_id": run_id, "ticker": ticker, "stage": stage, "module": module,
+        "run_id": run_id, "tickers": tickers, "stage": stage, "module": module,
         "docker_service": docker_service(), "container_id": platform.node(),
         "pid": pid, "command": " ".join(command), "exit_code": exit_code,
-        "started_at_utc": to_utc_text(started_at), "ended_at_utc": to_utc_text(ended_at),
+        "started_at_utc": config.to_utc_text(started_at), "ended_at_utc": config.to_utc_text(ended_at),
         "duration_seconds": round(time.monotonic() - started_monotonic, 3),
         # the stage itself, from the kernel's own accounting of the process it reaped
         "process_cpu_seconds": round(rusage.ru_utime + rusage.ru_stime, 3),
@@ -281,17 +277,16 @@ def record_stage(run_id: str, command: list[str]) -> int:
                                                       - counters_at_start["container_network_transmitted_bytes"]),
         "sample_count": sample_count,
         "input": STAGE_INPUT_NOTES.get(module),
-        "output": output_block(module, ticker),
+        "output": output_block(module, tickers),
     }
-    append_json_line(run_directory / "events.jsonl", record)
+    append_json_line(config.events_jsonl(run_id), record)
     return exit_code
 
 
-def load_stage_records(run_directory: Path) -> list[dict]:
-    events = run_directory / "events.jsonl"
-    if not events.exists():
-        return []
-    return [json.loads(line) for line in events.read_text(encoding="utf-8").splitlines() if line.strip()]
+def load_stage_records(run_id: str) -> list[dict]:
+    """Every stage of the run in start order. The file holds arrival order, and with one container
+    per asset appending to it, arrival order is not the order the stages started."""
+    return sorted(load_jsonl(config.events_jsonl(run_id)), key=lambda record: record["started_at_utc"])
 
 
 def shell_output(command: list[str]) -> str | None:
@@ -316,24 +311,34 @@ def container_identity(service: str) -> dict:
     }
 
 
-def fetch_dashboard_ready(ticker: str) -> dict:
-    """The readiness check that closes a run: the dashboard answering for the asset."""
-    port = os.environ.get("PORT", str(CONTAINER_PORT))
-    url = f"http://127.0.0.1:{port}/containers/{ticker}/status"
+def fetch_dashboard_route(url: str) -> dict:
+    """One route of the dashboard as url, status code and body size; status 0 when nothing answered."""
+    try:
+        with urllib.request.urlopen(url, timeout=config.DASHBOARD_READY_FETCH_TIMEOUT_SECONDS) as answer:
+            return {"url": url, "status_code": answer.status, "body_bytes": len(answer.read())}
+    except urllib.error.HTTPError as error:
+        return {"url": url, "status_code": error.code, "body_bytes": len(error.read())}
+    except OSError:
+        return {"url": url, "status_code": 0, "body_bytes": 0}
+
+
+def fetch_dashboard_ready() -> dict:
+    """The readiness check that closes a run: the dashboard's own registry, then one question per
+    asset through its proxy. The run is ready only when the registry and every asset answered 200;
+    url and status_code stay at this level because they are what the Lifecycle tab prints."""
+    port = os.environ.get("PORT", str(config.CONTAINER_PORT))
     started_at = datetime.now(tz=UTC)
     started_monotonic = time.monotonic()
-    try:
-        with urllib.request.urlopen(url, timeout=READINESS_TIMEOUT_SECONDS) as answer:
-            status_code, body_bytes = answer.status, len(answer.read())
-    except urllib.error.HTTPError as error:
-        status_code, body_bytes = error.code, len(error.read())
-    except OSError:
-        status_code, body_bytes = 0, 0
+    registry = fetch_dashboard_route(config.dashboard_registry_url(port))
+    assets = [fetch_dashboard_route(config.dashboard_asset_status_url(port, ticker))
+              for ticker in data_config.TICKERS]
     return {
-        "stage": "dashboard-ready", "url": url, "status_code": status_code,
-        "body_bytes": body_bytes, "exit_code": 0 if status_code == 200 else 1,
-        "started_at_utc": to_utc_text(started_at),
-        "ended_at_utc": to_utc_text(datetime.now(tz=UTC)),
+        "stage": "dashboard-ready",
+        "url": registry["url"], "status_code": registry["status_code"], "body_bytes": registry["body_bytes"],
+        "assets": assets,
+        "exit_code": 0 if all(answer["status_code"] == HTTPStatus.OK for answer in (registry, *assets)) else 1,
+        "started_at_utc": config.to_utc_text(started_at),
+        "ended_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "duration_seconds": round(time.monotonic() - started_monotonic, 3),
     }
 
@@ -385,27 +390,32 @@ MEASUREMENT_NOTES = {
 }
 
 
-def sample_coverage_block(run_directory: Path, rows: list[dict]) -> dict:
+def sample_coverage_block(run_id: str, rows: list[dict]) -> dict:
     """What the 1 s series does and does not cover, stated rather than assumed: a stage shorter than
     one interval cannot hold a sample, and its numbers come from rusage, which never sampled."""
-    samples = [json.loads(line) for line in
-               (run_directory / "resources.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()] \
-        if (run_directory / "resources.jsonl").exists() else []
-    moments = sorted(datetime.fromisoformat(sample["timestamp_utc"]).replace(tzinfo=UTC) for sample in samples)
-    gaps = [(later - earlier).total_seconds() for earlier, later in zip(moments, moments[1:])]
+    samples = load_jsonl(config.resources_jsonl(run_id))
+    moments = sorted(config.to_utc_datetime(sample["timestamp_utc"]) for sample in samples)
+    # the gap is measured inside one container's own series: two containers sampling in parallel
+    # would otherwise fill each other's gaps and the number would stop meaning anything
+    by_service = {}
+    for sample in samples:
+        by_service.setdefault(sample["docker_service"], []).append(config.to_utc_datetime(sample["timestamp_utc"]))
+    gaps = [(later - earlier).total_seconds()
+            for moments_of_service in by_service.values()
+            for earlier, later in zip(sorted(moments_of_service), sorted(moments_of_service)[1:])]
     return {
-        "sample_interval_seconds": SAMPLE_INTERVAL_SECONDS,
+        "sample_interval_seconds": config.SAMPLE_INTERVAL_SECONDS,
         "sample_count": len(samples),
-        "first_sample_utc": to_utc_text(moments[0]) if moments else None,
-        "last_sample_utc": to_utc_text(moments[-1]) if moments else None,
+        "first_sample_utc": config.to_utc_text(moments[0]) if moments else None,
+        "last_sample_utc": config.to_utc_text(moments[-1]) if moments else None,
         "max_sample_gap_seconds": round(max(gaps), 3) if gaps else None,
         # a stage the series cannot reach; its cost is still exact, because rusage does not sample
         "stages_without_samples": [row["stage"] for row in rows if row["sample_count"] == 0],
     }
 
 
-def write_summary(run_directory: Path, run_id: str, ticker: str, readiness: dict, status: str) -> dict:
-    records = load_stage_records(run_directory)
+def write_summary(run_id: str, readiness: dict, status: str) -> dict:
+    records = load_stage_records(run_id)
     rows = [summary_row(record) for record in records]
     total_cpu_seconds = round(sum(row["cpu_seconds"] for row in rows), 3)
     total_stage_seconds = round(sum(row["wall_seconds"] for row in rows), 3)
@@ -418,8 +428,8 @@ def write_summary(run_directory: Path, run_id: str, ticker: str, readiness: dict
              - datetime.fromisoformat(first_start).replace(tzinfo=UTC)).total_seconds(), 3)
     bottleneck = max(rows, key=lambda row: row["wall_seconds"], default=None)
     summary = {
-        "run_id": run_id, "ticker": ticker, "status": status,
-        "generated_at_utc": to_utc_text(datetime.now(tz=UTC)),
+        "run_id": run_id, "status": status,
+        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "stage_count": len(rows),
         "first_stage_start_utc": first_start, "last_stage_end_utc": last_end,
         "total_wall_seconds": total_wall_seconds,
@@ -432,18 +442,18 @@ def write_summary(run_directory: Path, run_id: str, ticker: str, readiness: dict
         "bottleneck_stage": bottleneck["stage"] if bottleneck else None,
         "failed_stage": next((row["stage"] for row in rows if row["exit_code"] != 0), None),
         "dashboard_ready": readiness,
-        "sample_coverage": sample_coverage_block(run_directory, rows),
+        "sample_coverage": sample_coverage_block(run_id, rows),
         "measurement_notes": MEASUREMENT_NOTES,
         "stages": rows,
     }
-    (run_directory / "summary.json").write_text(json.dumps(summary, indent=1, sort_keys=True) + "\n",
-                                                encoding="utf-8")
+    config.summary_json(run_id).write_text(json.dumps(summary, indent=1, sort_keys=True) + "\n",
+                                           encoding="utf-8")
     return summary
 
 
-def write_manifest(run_directory: Path, run_id: str, ticker: str, summary: dict) -> None:
+def write_manifest(run_id: str, summary: dict) -> None:
     manifest = {
-        "run_id": run_id, "ticker": ticker,
+        "run_id": run_id, "tickers": list(data_config.TICKERS),
         "git_commit": shell_output(["git", "rev-parse", "HEAD"]),
         "git_commit_short": shell_output(["git", "rev-parse", "--short", "HEAD"]),
         "working_tree_clean": shell_output(["git", "status", "--porcelain"]) == "",
@@ -456,31 +466,30 @@ def write_manifest(run_directory: Path, run_id: str, ticker: str, summary: dict)
         "kernel": platform.release(),
         "cpu_count": os.cpu_count(),
         "host_load_average": os.getloadavg(),
-        "asset_container": container_identity(f"asset-{ticker.lower()}"),
-        "pipeline_container": container_identity("pipeline"),
+        "asset_containers": [container_identity(config.asset_service(ticker))
+                             for ticker in data_config.TICKERS],
+        "pipeline_container": container_identity(config.PIPELINE_SERVICE),
         "research_start_utc": ml_config.RESEARCH_START_UTC,
         "research_end_utc": ml_config.RESEARCH_END_UTC,
         "data_window_start_utc": data_config.DATA_WINDOW_START_UTC,
-        "sample_interval_seconds": SAMPLE_INTERVAL_SECONDS,
+        "sample_interval_seconds": config.SAMPLE_INTERVAL_SECONDS,
     }
-    (run_directory / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n",
-                                                 encoding="utf-8")
+    config.manifest_json(run_id).write_text(json.dumps(manifest, indent=1, sort_keys=True) + "\n",
+                                            encoding="utf-8")
 
 
 def finalize(run_id: str) -> int:
-    ticker = data_config.TICKERS[0]
-    run_directory = data_config.run_dir(ticker, run_id)
-    records = load_stage_records(run_directory)
-    readiness = fetch_dashboard_ready(ticker)
+    records = load_stage_records(run_id)
+    readiness = fetch_dashboard_ready()
     failed = (not records or any(record["exit_code"] != 0 for record in records)
               or readiness["exit_code"] != 0)
-    summary = write_summary(run_directory, run_id, ticker, readiness, "failed" if failed else "completed")
-    write_manifest(run_directory, run_id, ticker, summary)
+    summary = write_summary(run_id, readiness, "failed" if failed else "completed")
+    write_manifest(run_id, summary)
     print(f"run {run_id}: {summary['stage_count']} stages, "
           f"{summary['total_wall_seconds']}s wall, {summary['total_cpu_seconds']}s cpu "
           f"({summary['total_cpu_core_hours']} core-hours), bottleneck {summary['bottleneck_stage']}, "
           f"dashboard HTTP {readiness['status_code']} -> {summary['status']}", flush=True)
-    print(f"wrote {(run_directory / 'summary.json').relative_to(data_config.REPO_ROOT)}", flush=True)
+    print(f"wrote {config.summary_json(run_id).relative_to(data_config.REPO_ROOT)}", flush=True)
     return 0 if not failed else 1
 
 
