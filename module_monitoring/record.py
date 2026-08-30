@@ -217,9 +217,9 @@ def record_stage(run_id: str, command: list[str]) -> int:
     deadline = started_monotonic + SAMPLE_INTERVAL_SECONDS
     with log_path.open("wb") as log, os.fdopen(read_fd, "rb", buffering=0) as pipe:
         open_pipe = True
-        while True:
+        while open_pipe:
             timeout = max(0.0, min(deadline - time.monotonic(), PROCESS_POLL_INTERVAL_SECONDS))
-            readable = select.select([pipe], [], [], timeout)[0] if open_pipe else []
+            readable = select.select([pipe], [], [], timeout)[0]
             process = process_counters(pid)
             if process is not None:
                 last_process = process
@@ -245,10 +245,10 @@ def record_stage(run_id: str, command: list[str]) -> int:
                 })
                 sample_count += 1
                 deadline += SAMPLE_INTERVAL_SECONDS
-            waited_pid, status, rusage = os.wait4(pid, os.WNOHANG)
-            if waited_pid and not open_pipe:
-                break
 
+    # EOF on the pipe means every write end is closed, so the child is exiting: one blocking reap,
+    # and its rusage is the kernel's own accounting of the process that call took
+    _, status, rusage = os.wait4(pid, 0)
     exit_code = os.waitstatus_to_exitcode(status)
     counters_at_end = container_counters()
     ended_at = datetime.now(tz=UTC)
