@@ -144,3 +144,8 @@ def strategy_evaluation_json(ticker):
 def asset_readme_md(ticker):
     return artifact_dir(ticker) / f"{ticker}_README.md"
 
+
+# the three files an asset must hold before its research can be read: the search result, the model
+# report and the strategy report — what status.py folds over and what the endpoint gates its block on
+ARTIFACT_SET_DESCRIPTORS = (parameters_json, model_evaluation_json, strategy_evaluation_json)
+

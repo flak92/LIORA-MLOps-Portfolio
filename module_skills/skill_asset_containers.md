@@ -70,8 +70,11 @@ when unlimited, `cpu.stat usage_usec`).
 The envelope carries `ticker`, `generated_at_utc` and `started_at_utc`; the
 blocks `data`, `artifacts` and `footprint` carry the keys registered in
 `glossary.md` § Container status endpoint. `data` and `artifacts` are `null`
-when the snapshots hold nothing for the asset; `db_bytes` is `null` while the
-database is absent. The CPU rate the tab shows is the delta of two polls over
+when the snapshots hold nothing for the asset, and equally when the asset folder
+no longer holds the object the snapshot describes — the database for `data`, the
+artifact set for `artifacts`. Both snapshots are tracked, so a fresh clone
+carries them and neither object: it answers `no data yet` and `no run yet`
+instead of someone else's numbers. The CPU rate the tab shows is the delta of two polls over
 `cpu_count` — presentation arithmetic, never published. No hash: git holds the
 identity.
 
@@ -107,8 +110,8 @@ endpoint did not answer 200.
 | data | `data` | the overview: `observation_lag_minutes`; the badge: `data.last_observation_utc` and the lag |
 | rows | `rows` | `data.row_count`, `data.db_bytes` |
 | window | `covered` / `not covered` | `data.research_window_covered` |
-| trained | `trained <date>` | `artifacts.model_evaluation_modified_utc`; `artifacts no run yet` while the ML snapshot has no block |
+| trained | `trained <date>` | `artifacts.model_evaluation_modified_utc`; `artifacts no run yet` while the ML snapshot has no block, or the folder no longer holds the set |
 | threshold | `met` / `fallback` | `artifacts.entry_edge_threshold_constraint_met` |
 | measured | `measured` | `data.measurement_age_minutes` |
 | cpu (badge) | `cpu <seconds>s on <n> cpus` | `footprint.cpu_usage_seconds`, `cpu_count` — the container's total so far |
-| a symbol with no row | `no data yet` | `data: null` — never `down` |
+| a symbol with no row, or an asset with no database | `no data yet` | `data: null` — never `down` |

@@ -235,15 +235,11 @@ def main() -> int:
 
     assets = []
     for ticker in config.TICKERS:
-        paths = {"parameters": config.parameters_json(ticker),
-                 "model_evaluation": config.model_evaluation_json(ticker),
-                 "strategy_evaluation": config.strategy_evaluation_json(ticker)}
-        if not all(p.exists() for p in paths.values()):
+        if not all(descriptor(ticker).exists() for descriptor in config.ARTIFACT_SET_DESCRIPTORS):
             continue
-        loaded = {k: dataset.load_json(p) for k, p in paths.items()}
-        hyperparameter_search_result = loaded["parameters"]["hyperparameter_search_result"]
-        metrics = loaded["model_evaluation"]
-        strategy = loaded["strategy_evaluation"]
+        hyperparameter_search_result = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]
+        metrics = dataset.load_json(config.model_evaluation_json(ticker))
+        strategy = dataset.load_json(config.strategy_evaluation_json(ticker))
         assets.append(asset_report(ticker, hyperparameter_search_result, metrics, strategy))
         if ticker in readme_tickers:
             config.asset_readme_md(ticker).write_text(asset_readme(ticker, hyperparameter_search_result, metrics, strategy),

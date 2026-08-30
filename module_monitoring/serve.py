@@ -76,13 +76,14 @@ def snapshot_row(rows: list[dict], symbol: str) -> dict | None:
 
 
 def data_block(ticker: str, data_status: dict) -> dict | None:
-    """The asset's rows of the data snapshot with the two ages the tab judges them by; None while the snapshot has no row for it."""
+    """The asset's rows of the data snapshot with the two ages the tab judges them by; None while the snapshot
+    has no row for it, or the folder no longer holds the database those rows describe."""
     symbol = data_config.symbol(ticker)
     symbol_row = snapshot_row(data_status["symbols"], symbol)
     canonical_row = snapshot_row(data_status["canonical_source"], symbol)
-    if symbol_row is None or canonical_row is None:
-        return None
     database = data_config.research_ohlcv_duckdb(ticker)
+    if symbol_row is None or canonical_row is None or not database.exists():
+        return None
     last_observation = to_utc_datetime(canonical_row["last_observation_utc"])
     research_end = to_utc_datetime(ml_config.RESEARCH_END_UTC)
     return {
@@ -91,7 +92,7 @@ def data_block(ticker: str, data_status: dict) -> dict | None:
         "last_observation_utc": canonical_row["last_observation_utc"],
         "observation_lag_minutes": minutes_since(last_observation),
         "measurement_age_minutes": minutes_since(to_utc_datetime(data_status["generated_at_utc"])),
-        "db_bytes": database.stat().st_size if database.exists() else None,
+        "db_bytes": database.stat().st_size,
         # the grid has no holes, so its two ends decide coverage of the half-open research window
         "research_window_covered": (data_config.DATA_WINDOW_START_UTC <= ml_config.RESEARCH_START_UTC
                                     and last_observation >= research_end - timedelta(minutes=1)),
@@ -99,7 +100,10 @@ def data_block(ticker: str, data_status: dict) -> dict | None:
 
 
 def artifacts_block(ticker: str, ml_status: dict) -> dict | None:
-    """The folder's facts the tab shows; None while the ML snapshot has no block for the asset."""
+    """The folder's facts the tab shows; None while the ML snapshot has no block for the asset, or the
+    folder no longer holds the artifact set that block describes."""
+    if not all(descriptor(ticker).exists() for descriptor in ml_config.ARTIFACT_SET_DESCRIPTORS):
+        return None
     for asset in ml_status["assets"]:
         if asset["ticker"] == ticker:
             return {**asset["artifacts"],
