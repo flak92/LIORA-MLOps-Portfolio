@@ -90,7 +90,7 @@ run inside Docker too: `docker-data-download`, `docker-data-ingest` and
 `docker-data-status` and `docker-ml-<stage>` (or `docker-ml-all`), and `docker-all` runs
 the whole chain. Every per-asset stage runs inside that asset's own resident
 container, `asset-<ticker>` — one service of `docker-compose.yml` per ticker of the
-basket, under one anchor with the dashboard, one image for all; `make docker-up` starts
+basket, under the anchor it shares with the dashboard, one image for all; `make docker-up` starts
 the dashboard and the residents, each answering the dashboard's proxy with its
 data, its artifacts and its own memory and CPU. The stage order is the Makefile's `all:`
 and `ml-all:`; every document points there. Remote machine? Tunnel with

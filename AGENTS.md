@@ -70,7 +70,8 @@ module_skills/      the contract's companions: the register, the methodologies, 
 
 `module_skills` never participates in runtime imports or dataflow. The asset
 containers are services of `docker-compose.yml`, one per ticker of the basket,
-written out under one anchor so the topology is visible in the file
+written out under the two anchors — what every service is, and the one command
+the servers add — so the topology is visible in the file
 that runs it; `module_monitoring/serve.py` reaches them by service name. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
@@ -146,7 +147,7 @@ rather than copying the same list into several files: `TICKERS` in
 `/containers` registry derive from. The limit is equally binding: no generator,
 no metaprogramming, no abstraction layer for a one-off value — and none for a
 file whose whole value is being read. `docker-compose.yml` spells its asset
-services out under one anchor, one per ticker, because a topology a reader can see beats one a
+services out under its anchors, one per ticker, because a topology a reader can see beats one a
 reader has to run a generator to see.
 
 Every layer has a closed grammar, the way CSS has BEM. A name is **derived**

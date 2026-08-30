@@ -195,11 +195,11 @@ how a stage is run, never what it computes.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, and by `serve.py` choosing its role — never by the engine, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
-| a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's one anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
-| the command every service of the anchor runs — the server, its role by `ASSET`, on the internal port | the anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `serve.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
+| a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
+| the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `serve.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built in `serve.py` | — | — | an IP, a published port |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
-| the memory ceiling of an asset container | the anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation |
+| the memory ceiling every service runs under | the `x-service` anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation, a service written outside the anchor and so without a ceiling |
 
 ## Container status endpoint
 

@@ -56,7 +56,7 @@
   "descriptions": {
     "root": "The single-asset runtime as its own repository. Working path: AGENTS.md → module names → module_skills → code.",
     "Makefile": "Entrypoint of everything — per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
-    "docker-compose.yml": "One image, one server, one anchor: the dashboard publishes it on the host, each asset container runs it in its asset role.",
+    "docker-compose.yml": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
     "module_data/": "Ingest — venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
     "module_data/ingest.py": "Merges venue ZIPs into the asset's canonical series (primary-failover, full grid).",
     "module_ml/": "Research — bars, features, triple-barrier labels, purged walk-forward XGBoost.",

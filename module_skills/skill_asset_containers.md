@@ -2,9 +2,10 @@
 
 The asset and its container are the primary object; the engine is the support
 layer. One image, one resident container per ticker of the basket, differing only by
-`ASSET=<TICKER>`, every service written out in `docker-compose.yml` — the build, and the
-dashboard and the assets under one anchor: `image`, `init`, `user`, `command: python -m
-module_monitoring.serve`, the bind mount, the `5g` ceiling. The dashboard
+`ASSET=<TICKER>`, every service written out in `docker-compose.yml` under two anchors: `x-service` is what
+every service is — `build`, `image`, `init`, `user`, the bind mount, the `5g` ceiling — and
+`x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
+assets share, which is why the one-off build service stays outside it. The dashboard
 reaches them only through its own proxy: no asset container publishes a port,
 and no container mounts `/var/run/docker.sock` — root-equivalent access for a
 badge. *The repository shows the destination, not the road*: no restart policy, no healthcheck, no socket.
@@ -13,16 +14,21 @@ badge. *The repository shows the destination, not the road*: no restart policy, 
 
 | service | image | role | lifetime |
 |---|---|---|---|
-| `pipeline` | `build: .`, `image: mlops-portfolio-1m-pipeline` — the one build | `run --rm -T` one-offs for the basket-wide stages: `data-download` (sequential — the venues' per-IP limits are budgeted per process), `ml-status` | one-off |
-| `dashboard` | the anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
-| `asset-<ticker>` × one per ticker of `TICKERS` | the anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` — no `build:`, so `docker images` shows one image | the same server in its asset role | resident |
+| `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the basket-wide stages: `data-download` (sequential — the venues' per-IP limits are budgeted per process), `ml-status` | one-off |
+| `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
+| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` | the same server in its asset role | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
 stage mid-write; under a resident it also reaps the stages `exec` leaves
 behind. `5g` sits above DuckDB's `4GB` ceiling and bounds a runaway allocation
-outside DuckDB — the dashboard inherits it, harmlessly, opening no database;
-concurrency is bounded by `JOBS`. One mechanism only — no
+outside DuckDB. Every service carries it, because every service can open a
+database: `data-status` and `ml-status` do it inside the one-off, and only the
+dashboard carries the ceiling without ever opening one. `build: .` sits on the
+same anchor, so every service knows how to make the image it runs and a bare
+clone builds instead of reaching for a registry; the tag is one, so
+`docker images` still shows one image.
+Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Every container keeps the `.:/app`
 bind mount; the raw store stays central and Lean-exact. Every process binds
@@ -42,7 +48,7 @@ the one doing the work. `ASSET` is read by that command line and by `serve.py`
 choosing its role; it is never the default of `build_ticker_parser`, and the
 engine never sees it. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
-`TICKERS` and three lines under the anchor.
+`TICKERS` and three lines under `x-server`.
 
 ## The server
 
