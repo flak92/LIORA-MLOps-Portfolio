@@ -11,10 +11,10 @@ import numpy as np
 from . import config, dataset, indicators
 
 
-def load_timeframe(con: duckdb.DuckDBPyConnection, symbol: str, timeframe: str) -> dict[str, np.ndarray]:
+def load_timeframe(con: duckdb.DuckDBPyConnection, timeframe: str) -> dict[str, np.ndarray]:
     return con.execute(
         f"""SELECT timestamp_ms, open, high, low, close, volume
-            FROM ohlcv_{timeframe}_canonical WHERE symbol = '{symbol}' ORDER BY timestamp_ms"""
+            FROM ohlcv_{timeframe}_canonical ORDER BY timestamp_ms"""
     ).fetchnumpy()
 
 
@@ -35,11 +35,10 @@ def timeframe_features(bars: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     }
 
 
-def build_x(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+def build_x(con: duckdb.DuckDBPyConnection) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Return (decision_ts, the named feature columns of config.FEATURE_COLUMNS);
     the stacked matrix is built only to assert finiteness across all of them."""
-    symbol = config.symbol(ticker)
-    timeframes = {timeframe: load_timeframe(con, symbol, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
+    timeframes = {timeframe: load_timeframe(con, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
     feats = {timeframe: timeframe_features(timeframes[timeframe])
              for timeframe in config.HIERARCHY_TIMEFRAMES}
 
@@ -79,7 +78,7 @@ def main() -> int:
     args = config.build_ticker_parser("hierarchical feature matrix X per asset").parse_args()
     for ticker in config.parse_tickers(args.tickers):
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
-        decision_ts, cols = build_x(con, ticker)
+        decision_ts, cols = build_x(con)
         con.close()
         written = write_x(ticker, decision_ts, cols)
         print(f"{ticker} {', '.join(w.name for w in written)}: "

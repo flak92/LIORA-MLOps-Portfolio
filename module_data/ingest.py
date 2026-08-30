@@ -28,7 +28,6 @@ from .lean import LEAN_DAY_ZIP_GLOB, LEAN_DAY_ZIP_NAME_PATTERN
 
 VENUE_DDL = """
 CREATE TABLE IF NOT EXISTS ohlcv_1m_{venue} (
-  symbol       VARCHAR NOT NULL,
   timestamp_ms BIGINT  NOT NULL,   -- bar OPEN, UTC epoch ms
   open   DOUBLE,
   high   DOUBLE,
@@ -40,7 +39,6 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_{venue} (
 
 CANONICAL_DDL = """
 CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
-  symbol       VARCHAR NOT NULL,
   timestamp_ms BIGINT  NOT NULL,   -- full grid: every minute of the window
   open   DOUBLE,
   high   DOUBLE,
@@ -68,12 +66,12 @@ WITH
 raw_1m_binance_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
          {ohlc_intact_predicate} AS valid
-  FROM ohlcv_1m_binance WHERE symbol = '{symbol}'
+  FROM ohlcv_1m_binance
 ),
 raw_1m_bybit_rows AS (
   SELECT timestamp_ms, open, high, low, close, volume,
          {ohlc_intact_predicate} AS valid
-  FROM ohlcv_1m_bybit WHERE symbol = '{symbol}'
+  FROM ohlcv_1m_bybit
 ),
 grid AS (
   SELECT t AS timestamp_ms FROM range({start_ms}, {end_ms}, {step_ms}) r(t)
@@ -120,8 +118,7 @@ filled AS (
          ) AS last_known_close
   FROM chosen
 )
-SELECT '{symbol}' AS symbol,
-       timestamp_ms,
+SELECT timestamp_ms,
        coalesce(chosen_open, last_known_close) AS open,
        coalesce(chosen_high, last_known_close) AS high,
        coalesce(chosen_low, last_known_close) AS low,
@@ -136,10 +133,7 @@ FROM filled
 ORDER BY timestamp_ms;
 """
 
-CSV_COLUMNS = (
-    "{'symbol':'VARCHAR','timestamp_ms':'BIGINT','open':'DOUBLE',"
-    "'high':'DOUBLE','low':'DOUBLE','close':'DOUBLE','volume':'DOUBLE'}"
-)
+CSV_COLUMNS = "{'timestamp_ms':'BIGINT','open':'DOUBLE','high':'DOUBLE','low':'DOUBLE','close':'DOUBLE','volume':'DOUBLE'}"
 
 
 def utc_midnight_ms(yyyymmdd: str) -> int:
@@ -159,15 +153,14 @@ def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
                 yield (midnight_ms + int(row[0]), row[1], row[2], row[3], row[4], row[5])
 
 
-def write_symbol_spool(ticker: str, venue: str, spool_csv: Path) -> int:
-    """Write all of one symbol's bars from one venue into a temp CSV; return the row count."""
-    symbol = config.symbol(ticker)
+def write_venue_spool(ticker: str, venue: str, spool_csv: Path) -> int:
+    """Write all of one asset's bars from one venue into a temp CSV; return the row count."""
     row_count = 0
     with spool_csv.open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         for zip_path in load_zip_paths(config.raw_symbol_dir(ticker, venue)):
             for ts, o, h, lo, c, v in parse_zip(zip_path):
-                w.writerow((symbol, ts, o, h, lo, c, v))
+                w.writerow((ts, o, h, lo, c, v))
                 row_count += 1
     return row_count
 
@@ -188,8 +181,8 @@ def main() -> int:
             with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as ntf:
                 spool_csv = Path(ntf.name)
             try:
-                venue_row_count = write_symbol_spool(ticker, venue, spool_csv)
-                con.execute(f"DELETE FROM ohlcv_1m_{venue} WHERE symbol = ?", [symbol])
+                venue_row_count = write_venue_spool(ticker, venue, spool_csv)
+                con.execute(f"DELETE FROM ohlcv_1m_{venue}")
                 con.execute(
                     f"INSERT INTO ohlcv_1m_{venue} SELECT * FROM read_csv('{spool_csv}', header=false, columns={CSV_COLUMNS})"
                 )
@@ -202,10 +195,10 @@ def main() -> int:
                                               SELECT timestamp_ms FROM ohlcv_1m_bybit)"""
         ).fetchone()[0] + config.CANONICAL_GRID_INTERVAL_MS
         con.execute(CANONICAL_DDL)
-        con.execute("DELETE FROM ohlcv_1m_canonical WHERE symbol = ?", [symbol])
+        con.execute("DELETE FROM ohlcv_1m_canonical")
         con.execute(
             CANONICAL_INSERT.format(
-                symbol=symbol, start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms,
+                start_ms=config.DATA_WINDOW_START_MS, end_ms=end_ms,
                 step_ms=config.CANONICAL_GRID_INTERVAL_MS, ohlc_intact_predicate=OHLC_INTACT_PREDICATE
             )
         )

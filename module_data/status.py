@@ -13,8 +13,7 @@ from . import config
 from .lean import LEAN_DAY_ZIP_GLOB, MINUTES_PER_DAY
 
 VENUE_SCAN = """
-SELECT symbol,
-       count(*)                     AS row_count,
+SELECT count(*)                     AS row_count,
        count(DISTINCT timestamp_ms) AS distinct_timestamp_count,
        min(timestamp_ms)            AS first_timestamp_ms,
        max(timestamp_ms)            AS last_timestamp_ms,
@@ -24,12 +23,10 @@ SELECT symbol,
        count(*) FILTER (volume = 0 AND open = high AND high = low
                         AND low = close) AS flat_bars
 FROM ohlcv_1m_{venue}
-GROUP BY symbol
 """
 
 CANONICAL_SCAN = """
-SELECT symbol,
-       count(*)                              AS row_count,
+SELECT count(*)                              AS row_count,
        count(*) FILTER (source = 'binance')  AS binance_source_count,
        count(*) FILTER (source = 'bybit')    AS bybit_source_count,
        count(*) FILTER (source = 'ffill')    AS ffill_bars,
@@ -41,14 +38,13 @@ SELECT symbol,
        count(*) FILTER (high < greatest(open, close, low)
                      OR low  > least(open, close, high)) AS ohlc_violation_count
 FROM ohlcv_1m_canonical
-GROUP BY symbol
 """
 
-# per-symbol (bounded memory): largest 1m move on the canonical series
+# bounded memory: the largest 1m move on the canonical series
 CANONICAL_MAX_ABS_RETURN_1M_SCAN = """
 SELECT max(abs(close / previous_close - 1)) AS max_abs_return_1m FROM (
   SELECT close, lag(close) OVER (ORDER BY timestamp_ms) AS previous_close
-  FROM ohlcv_1m_canonical WHERE symbol = ?)
+  FROM ohlcv_1m_canonical)
 """
 
 # a basis jump can enter the canonical series only on a minute whose source differs from the previous minute
@@ -58,13 +54,13 @@ SELECT count(*) FILTER (source_changed) AS source_switch_count,
 FROM (SELECT close,
              lag(close)  OVER (ORDER BY timestamp_ms) AS previous_close,
              source <> lag(source) OVER (ORDER BY timestamp_ms) AS source_changed
-      FROM ohlcv_1m_canonical WHERE symbol = ?)
+      FROM ohlcv_1m_canonical)
 """
 
 CANONICAL_LONGEST_FLAT_RUN_SCAN = """
 WITH flat_minutes AS (SELECT timestamp_ms, (volume = 0 AND open = high AND high = low
                                             AND low = close) AS flat
-                      FROM ohlcv_1m_canonical WHERE symbol = ?),
+                      FROM ohlcv_1m_canonical),
 run_groups AS (SELECT *, sum(CASE WHEN flat THEN 0 ELSE 1 END)
                         OVER (ORDER BY timestamp_ms) AS run_group FROM flat_minutes)
 SELECT coalesce(max(flat_run_minutes), 0) AS longest_flat_run_minutes FROM
@@ -72,15 +68,9 @@ SELECT coalesce(max(flat_run_minutes), 0) AS longest_flat_run_minutes FROM
 """
 
 
-def load_rows_by_symbol(con: duckdb.DuckDBPyConnection, statement: str) -> dict[str, dict]:
-    """One dict per symbol (the first column), keyed by the scan's column names."""
+def load_row(con: duckdb.DuckDBPyConnection, statement: str) -> dict:
+    """The one row a scalar scan returns, keyed by the scan's column names."""
     cursor = con.execute(statement)
-    names = [column[0] for column in cursor.description]
-    return {row[0]: dict(zip(names, row)) for row in cursor.fetchall()}
-
-
-def load_row(con: duckdb.DuckDBPyConnection, statement: str, params: list) -> dict:
-    cursor = con.execute(statement, params)
     names = [column[0] for column in cursor.description]
     return dict(zip(names, cursor.fetchone()))
 
@@ -109,12 +99,13 @@ def main() -> int:
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
         for venue in config.SOURCE_VENUES:
-            venue_rows[venue].update(load_rows_by_symbol(con, VENUE_SCAN.format(venue=venue)))
-        for symbol, canonical_row in load_rows_by_symbol(con, CANONICAL_SCAN).items():
-            canonical_row.update(load_row(con, CANONICAL_MAX_ABS_RETURN_1M_SCAN, [symbol]))
-            canonical_row.update(load_row(con, CANONICAL_LONGEST_FLAT_RUN_SCAN, [symbol]))
-            canonical_row.update(load_row(con, SOURCE_SWITCH_SCAN, [symbol]))
-            canonical_rows[symbol] = canonical_row
+            venue_rows[venue][ticker] = load_row(con, VENUE_SCAN.format(venue=venue))
+        canonical_rows[ticker] = {
+            **load_row(con, CANONICAL_SCAN),
+            **load_row(con, CANONICAL_MAX_ABS_RETURN_1M_SCAN),
+            **load_row(con, CANONICAL_LONGEST_FLAT_RUN_SCAN),
+            **load_row(con, SOURCE_SWITCH_SCAN),
+        }
         con.close()
         db_bytes[ticker] = path.stat().st_size
     if not canonical_rows:
@@ -124,7 +115,7 @@ def main() -> int:
     window_end_ms = (max(row["last_timestamp_ms"] for row in canonical_rows.values())
                      + config.CANONICAL_GRID_INTERVAL_MS)
 
-    tickers = [ticker for ticker in config.TICKERS if config.symbol(ticker) in canonical_rows]
+    tickers = [ticker for ticker in config.TICKERS if ticker in canonical_rows]
     zip_counts = {
         venue: {ticker: sum(1 for _ in config.raw_symbol_dir(ticker, venue).glob(LEAN_DAY_ZIP_GLOB)) for ticker in tickers}
         for venue in config.SOURCE_VENUES
@@ -137,11 +128,11 @@ def main() -> int:
             symbol = config.symbol(ticker)
             # every asset is judged against its OWN canonical end, so a young asset is never charged
             # an older one's history and a stale feed is the only thing a gap can mean
-            asset_window_end_ms = canonical_rows[symbol]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
+            asset_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
             expected = (asset_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
-            venue_row = venue_rows[venue].get(symbol)
-            venue_row_count, distinct = ((venue_row["row_count"], venue_row["distinct_timestamp_count"])
-                                         if venue_row else (0, 0))
+            # a scalar scan of an empty venue table returns one row of zero and NULLs, never no row
+            venue_row = venue_rows[venue][ticker]
+            venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
             venue_table.append(
                 {
                     "symbol": symbol,
@@ -152,13 +143,13 @@ def main() -> int:
                     # measured from the first observation to the end of the window, so a stale feed reports its gap
                     "gap_count_after_first_observation": (
                         (asset_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
-                    ) if venue_row else 0,
+                    ) if venue_row["first_timestamp_ms"] is not None else 0,
                     "duplicate_count": venue_row_count - distinct,
-                    "ohlc_violation_count": int(venue_row["ohlc_violation_count"]) if venue_row else 0,
-                    "zero_volume_bars": int(venue_row["zero_volume_bars"]) if venue_row else 0,
-                    "flat_bars": int(venue_row["flat_bars"]) if venue_row else 0,
-                    "first_observation_utc": to_utc_minute(venue_row["first_timestamp_ms"]) if venue_row else None,
-                    "last_observation_utc": to_utc_minute(venue_row["last_timestamp_ms"]) if venue_row else None,
+                    "ohlc_violation_count": int(venue_row["ohlc_violation_count"]),
+                    "zero_volume_bars": int(venue_row["zero_volume_bars"]),
+                    "flat_bars": int(venue_row["flat_bars"]),
+                    "first_observation_utc": to_utc_minute(venue_row["first_timestamp_ms"]),
+                    "last_observation_utc": to_utc_minute(venue_row["last_timestamp_ms"]),
                 }
             )
         venues[venue] = venue_table
@@ -166,7 +157,7 @@ def main() -> int:
     canonical, symbols = [], []
     for ticker in tickers:
         symbol = config.symbol(ticker)
-        canonical_row = canonical_rows[symbol]
+        canonical_row = canonical_rows[ticker]
         canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
         canonical.append(
             {

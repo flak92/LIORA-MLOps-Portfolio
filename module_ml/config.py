@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 
 from module_data.config import (  # re-exported
     BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, MODULE_MONITORING_DIR,
-    TICKERS, artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded, symbol,
+    TICKERS, artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded,
 )
 
 SEED = 42

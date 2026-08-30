@@ -25,6 +25,7 @@ confirmation; the rest of the concept column states what the name means.
 |---|---|---|---|---|
 | the external minute-bar format the raw store is byte-compatible with | Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | — (tables of the asset's own DuckDB; no copy of the series is published) | canonical dataset | fused series, index, blended price |
+| which asset a database holds | the file name, `<TICKER>_research_ohlcv.duckdb`, and nothing inside it | `symbol` — a key of data_status.json only | — | a `symbol` column in any table, a `WHERE symbol = …` predicate, a `GROUP BY symbol` |
 | the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | — | 15m / 1h / 4h | levels, LEVELS |
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | — | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
@@ -138,7 +139,7 @@ key is in this register.
 | the two structural numbers the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes` | which fold is the final holdout; how many timeframes the gate needs |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
-| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol` | the pipeline, raw-source and canonical-construction tables |
+| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol`, derived at the report boundary from `config.symbol(ticker)`; no database column carries it | the pipeline, raw-source and canonical-construction tables |
 | the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count` |
 | the engine of the databases | `duckdb_version` | the engine that wrote every asset's database |
 | an asset's database on disk | `db_bytes` (a `symbols` row) | the size of `<TICKER>_research_ohlcv.duckdb` |

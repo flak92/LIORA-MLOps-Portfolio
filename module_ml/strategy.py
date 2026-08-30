@@ -31,13 +31,11 @@ BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on
 
 
 def load_inputs(ticker: str) -> dict:
-    symbol = config.symbol(ticker)
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
     close_1m = con.execute(
         f"""SELECT close FROM ohlcv_1m_canonical
-            WHERE symbol = '{symbol}'
-              AND timestamp_ms >= {config.RESEARCH_START_MS}
+            WHERE timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()["close"]

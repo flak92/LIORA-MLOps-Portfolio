@@ -31,12 +31,11 @@ Y_COLUMNS = {
 }
 
 
-def load_research_1m(con: duckdb.DuckDBPyConnection, symbol: str) -> dict[str, np.ndarray]:
+def load_research_1m(con: duckdb.DuckDBPyConnection) -> dict[str, np.ndarray]:
     """The canonical 1m series over the research window — the market object."""
     bars_1m = con.execute(
         f"""SELECT open, high, low, close, volume FROM ohlcv_1m_canonical
-            WHERE symbol = '{symbol}'
-              AND timestamp_ms >= {config.RESEARCH_START_MS}
+            WHERE timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
@@ -104,15 +103,14 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
 def main() -> int:
     args = config.build_ticker_parser("triple-barrier labels on the canonical 1m path").parse_args()
     for ticker in config.parse_tickers(args.tickers):
-        symbol = config.symbol(ticker)
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
         bars_1h = con.execute(
-            f"""SELECT timestamp_ms, high, low, close FROM ohlcv_1h_canonical
-                WHERE symbol = '{symbol}' ORDER BY timestamp_ms"""
+            """SELECT timestamp_ms, high, low, close FROM ohlcv_1h_canonical
+               ORDER BY timestamp_ms"""
         ).fetchnumpy()
         ts_15m = con.execute(
-            f"""SELECT timestamp_ms FROM ohlcv_15m_canonical
-                WHERE symbol = '{symbol}' ORDER BY timestamp_ms"""
+            """SELECT timestamp_ms FROM ohlcv_15m_canonical
+               ORDER BY timestamp_ms"""
         ).fetchnumpy()["timestamp_ms"].astype(np.int64)
 
         decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
@@ -127,7 +125,7 @@ def main() -> int:
                                              config.TIMEFRAME_DURATION_MS["1h"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all(), "ATR14 of the last closed 1h bar is not finite and positive at every decision"
 
-        bars_1m = load_research_1m(con, symbol)
+        bars_1m = load_research_1m(con)
         con.close()
         (y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier,
          exit_reference_price) = triple_barrier(bars_1m, entry_ts, sigma)

@@ -120,21 +120,21 @@ Properties:
 
 ## 5. Database schema
 
-`ohlcv_1m_binance` and `ohlcv_1m_bybit` — raw, verbatim from the ZIP trees:
+`ohlcv_1m_binance` and `ohlcv_1m_bybit` — raw, verbatim from the ZIP trees. The
+database is the asset, so no table inside it names one: the ticker is the file
+name and the venue is the table name.
 
 | column | type | meaning |
 |---|---|---|
-| `symbol` | VARCHAR | e.g. `BTCUSDT` |
 | `timestamp_ms` | BIGINT | bar OPEN, UTC epoch ms, 60 000 ms grid |
 | `open, high, low, close` | DOUBLE | venue trade prices |
 | `volume` | DOUBLE | base-asset volume of that venue |
 
-`ohlcv_1m_canonical` — the primary-failover series, rebuilt deterministically
-per symbol on every `make data-ingest`; what the ML stages read:
+`ohlcv_1m_canonical` — the primary-failover series, rebuilt deterministically on
+every `make data-ingest`; what the ML stages read:
 
 | column | type | meaning |
 |---|---|---|
-| `symbol` | VARCHAR | asset symbol |
 | `timestamp_ms` | BIGINT | bar OPEN, UTC epoch ms; full grid, no missing minutes |
 | `open, high, low, close` | DOUBLE | verbatim venue prices (ffill rows: previous close) |
 | `volume` | DOUBLE | verbatim venue volume (0 on ffill rows) |
@@ -157,6 +157,13 @@ not prices. For Lean backtests use the per-venue raw ZIP trees. Each database
 is a pure function of the asset's two raw leaves — rebuilding it from scratch
 reproduces it bit-identically — and its grid ends at that asset's own last raw
 minute over both venues.
+
+**No table carries the asset.** The file names it once,
+`<TICKER>_research_ohlcv.duckdb`, and the six tables inside name only time,
+prices and provenance; no query filters by it, and no aggregate groups by it.
+The `symbol` key of `data_status.json` survives as a key of the report alone,
+derived at the report boundary from `config.symbol(ticker)` — the one place the
+asset is spelled the way the venues spell it.
 
 ## 6. Known limitations
 
