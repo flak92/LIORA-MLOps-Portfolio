@@ -260,3 +260,23 @@ The routes: `GET /runs` lists the run ids newest first, `GET /runs/<run_id>`
 answers one run's manifest, summary and samples, the samples strided to
 `RUN_SAMPLE_POINT_LIMIT` so a long run is thinned and never truncated.
 
+## Developer experience
+
+**Developer experience (DX)** is the repository read as something a person works in rather than as
+something that runs: how quickly its shape can be seen, and how little has to be held in the head to
+change it. `DX` is used as an abbreviation only after that first spelling, and only for the
+sub-module and the control that opens its page.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
+| one coloured band the drawing sorts a path into | story, `island` | `island`, `story_map` | `S1` … `S4` | group, cluster, section |
+| the node at the centre of a band | `hub` | `hub` | — | anchor, root of the band |
+| a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
+| the commit the tree was read from, and its date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date |
+| the control that opens the drawing from the status page | — | — | DX | help, docs, about |
+
+The drawing is redrawn by hand with `make monitoring-dx-update` and by nothing else. It is a derived
+artifact under *Derived, never drafted*: a hand edit to it is a violation, and the provenance stamp
+is what says how old it is.
+

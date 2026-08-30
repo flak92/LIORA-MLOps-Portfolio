@@ -53,6 +53,11 @@ ml-status:       ## aggregate ML artifacts -> module_monitoring/ml_status.json +
 ml-all:          ## the whole ML chain in order
 	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status
 
+# python3, not $(PY): standard library only, so it runs on a fresh clone that has
+# never seen `make setup`. Refreshed by hand — nothing refreshes it for you.
+monitoring-dx-update: ## redraw the developer-experience picture of the tracked tree
+	python3 -m module_monitoring.sub_module_dx.visualise
+
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
 docker-up: docker-build ## start the dashboard at http://127.0.0.1:$(PORT)/ and the asset containers, then open the page

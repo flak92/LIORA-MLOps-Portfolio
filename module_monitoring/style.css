@@ -56,6 +56,18 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
+/* the one jump out of the status page: the developer-experience drawing of the tree */
+.dx-link {
+  float: right;
+  font-family: inherit;
+  font-size: 14px;
+  border: 1px solid #111;
+  background: #fff;
+  padding: 0.25em 0.9em;
+  color: #111;
+  text-decoration: none;
+}
+
 .ticker-link {
   font-family: inherit;
   font-size: 14px;
