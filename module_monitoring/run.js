@@ -1,8 +1,7 @@
 /* Lifecycle tab: one recorded run read from /runs and /runs/<run_id> — the run header, the stage
-   table and one shared timeline. Classic script; uses buildFrame, buildKeyValueBox and buildFootnote
-   from asset.js, buildTable from ml.js, and buildMeter, formatBytes, formatCount, formatNumber,
-   formatPercent and PILL_HOOKS from data.js. The page collects nothing: every number below was
-   measured by the stage that produced it. */
+   table and one shared timeline. Classic script; uses the shared toolkit from page.js and buildTable
+   from ml.js. The page collects nothing: every number below was measured by the stage that produced
+   it. */
 "use strict";
 
 const TIMELINE_WIDTH = 700;
