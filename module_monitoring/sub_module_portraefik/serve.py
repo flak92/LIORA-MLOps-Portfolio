@@ -63,7 +63,8 @@ def fetch_engine(method: str, path: str) -> tuple[int, bytes]:
 
 
 def engine_object(path: str):
-    """One Engine GET decoded, or None when it did not answer 200 — a view renders what answered and dashes the rest."""
+    """One Engine GET decoded: None when the daemon answered something other than 200, so a view renders
+    what answered and dashes the rest — and EngineUnavailable when it did not answer at all."""
     status, body = fetch_engine("GET", path)
     if status == HTTPStatus.SERVICE_UNAVAILABLE:
         raise EngineUnavailable(path)
@@ -132,11 +133,6 @@ def machine_row(container: dict, project: str | None) -> dict:
         "cpu_usage_seconds": None if total_usage is None else round(total_usage / config.NANOSECONDS_PER_SECOND, 3),
         "cpu_count": (sample.get("cpu_stats") or {}).get("online_cpus"),
     }
-
-
-def unavailable_reason() -> dict:
-    """What a view says when the daemon did not answer: a reason, never an empty inventory."""
-    return {"reason": "the docker daemon did not answer on its socket"}
 
 
 def machines_payload(project: str | None) -> dict:
@@ -275,7 +271,7 @@ class PanelHandler(BaseHTTPRequestHandler):
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)
         except EngineUnavailable:
-            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE, to_json_bytes(unavailable_reason()))
+            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE)
 
     def do_POST(self):
         segments = self.path.split("?")[0].split("/")
@@ -285,7 +281,7 @@ class PanelHandler(BaseHTTPRequestHandler):
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)
         except EngineUnavailable:
-            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE, to_json_bytes(unavailable_reason()))
+            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE)
 
 
 class PanelServer(ThreadingHTTPServer):
