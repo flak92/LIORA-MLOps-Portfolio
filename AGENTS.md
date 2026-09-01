@@ -30,7 +30,7 @@ conflicts with this file, the change is wrong.
   arithmetic preconditions (the full canonical grid inside the frozen research
   window, asserted per asset by `labels.load_research_1m`, and a finite,
   positive ATR at every decision, asserted beside it; the aligned decision
-  grids of the arrays `dataset.load_xy` joins by position; a finite feature
+  grids of the arrays `dataset.load_xy` joins by position — one guard, asserted twice, because the feature parquets agreeing with each other and X agreeing with Y are two checks; a finite feature
   matrix after the warm-up, asserted by `features.build_x`; the download that
   aborts on a short post-listing day, and the listing probe that aborts when a
   symbol's history starts after the window) — and beside them, not guards:
@@ -113,7 +113,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_monitoring/serve.py` and `module_monitoring/record.py` for the cgroup
   and procfs paths of their boundary)
   — and the browser, which has no config module and fetches its two snapshots
-  (`data_status.json`, `ml_status.json`) and the container and run routes by literal
+  (`data_status.json`, `ml_status.json`) and the container, run and `/devops/api/*`
+  routes by literal
   name; one asset is one folder,
   `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
@@ -183,13 +184,13 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`) | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`, `docker-all`, `docker-all-record`), and a ticker alias of one of them carries its own sunset note | `data-ingest`, `ml-hpo`, `docker-ml-train` | a bare stage (`ingest`), a twin named after the tool (`docker-run`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
 | a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
-| JavaScript functions | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
+| JavaScript functions at file scope | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
 
 Constants that carry a numeric quantity — a count, a rate, a duration, a
 size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the
@@ -220,10 +221,14 @@ inside the call that speaks it, and project names begin at the return value.
 The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`module_data/lean.py`), the Binance and Bybit REST parameters
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
-(`module_ml/model.py`, `module_ml/hpo.py`), argparse (`module_data/config.py`), DuckDB SQL (every module that queries), the SVG
-and DOM attributes (`module_monitoring/*.js`), docker compose (`Makefile`,
-`docker-compose.yml`), and `http.server`, `urllib`, cgroup v2 and procfs
-(`module_monitoring/serve.py`), the Docker Engine API over its unix socket
+(`module_ml/model.py`, `module_ml/hpo.py`), numpy (every module that computes),
+argparse (`module_data/config.py`, `module_data/status.py`,
+`module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
+and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
+the drawing's template), docker compose (`Makefile`,
+`docker-compose.yml`), `urllib` (`module_monitoring/serve.py` and both downloaders),
+`http.server` (`module_monitoring/serve.py` and the panel's own), cgroup v2 and procfs
+(`module_monitoring/serve.py`), `socket` and the Docker Engine API over its unix socket
 (`module_monitoring/sub_module_portraefik/`), and `posix_spawn`, `wait4` rusage and the
 per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
 boundary is an exception the conventions name, not an inconsistency they
