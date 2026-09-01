@@ -463,6 +463,13 @@ def visualisation_html() -> str:
             f'visualisation_config.json: "story_order" names {unknown[0]!r}, which "stories" does not define.\n'
             f"  fix: list only defined story ids, or drop the key to use the order of \"stories\"."
         )
+    unlisted = [s for s in settings["stories"] if s not in order]
+    if unlisted:
+        raise VisualisationError(
+            f'visualisation_config.json: "stories" defines {unlisted[0]!r}, which "story_order" does not list.\n'
+            f"  fix: add it to the order, or drop \"story_order\" — an island the order forgets is drawn "
+            f"but never placed, which is the silent half of the same mistake."
+        )
     block = build_structure_block(meta, islands, order, place, nodes, edges)
     template_text = config.VISUALISATION_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
     return render_html(template_text, block), counts
