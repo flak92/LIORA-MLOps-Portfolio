@@ -44,17 +44,17 @@ LOOPBACK_INTERFACE_NAME = "lo"
 # what each stage leaves behind, by the module that runs it; the paths are the descriptors the
 # owning config already publishes, never assembled here
 STAGE_OUTPUT_DESCRIPTORS = {
-    "module_data.download_binance": lambda t: [data_config.raw_symbol_dir(t, "binance")],
-    "module_data.download_bybit": lambda t: [data_config.raw_symbol_dir(t, "bybit")],
-    "module_data.ingest": lambda t: [data_config.research_ohlcv_duckdb(t)],
-    "module_data.status": lambda t: [data_config.MODULE_MONITORING_DATA_STATUS_JSON_PATH],
-    "module_ml.bars": lambda t: [data_config.research_ohlcv_duckdb(t)],
-    "module_ml.features": lambda t: [ml_config.features_parquet(t, tf) for tf in ml_config.HIERARCHY_TIMEFRAMES],
-    "module_ml.labels": lambda t: [ml_config.label_events_parquet(t)],
-    "module_ml.hpo": lambda t: [ml_config.parameters_json(t)],
-    "module_ml.train": lambda t: [ml_config.oos_predictions_parquet(t), ml_config.model_evaluation_json(t)],
-    "module_ml.strategy": lambda t: [ml_config.strategy_evaluation_json(t)],
-    "module_ml.status": lambda t: [ml_config.MODULE_MONITORING_ML_STATUS_JSON_PATH, ml_config.asset_readme_md(t)],
+    "module_data.download_binance": lambda ticker: [data_config.raw_symbol_dir(ticker, "binance")],
+    "module_data.download_bybit": lambda ticker: [data_config.raw_symbol_dir(ticker, "bybit")],
+    "module_data.ingest": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
+    "module_data.status": lambda ticker: [data_config.MODULE_MONITORING_DATA_STATUS_JSON_PATH],
+    "module_ml.bars": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
+    "module_ml.features": lambda ticker: [ml_config.features_parquet(ticker, tf) for tf in ml_config.HIERARCHY_TIMEFRAMES],
+    "module_ml.labels": lambda ticker: [ml_config.label_events_parquet(ticker)],
+    "module_ml.hpo": lambda ticker: [ml_config.parameters_json(ticker)],
+    "module_ml.train": lambda ticker: [ml_config.oos_predictions_parquet(ticker), ml_config.model_evaluation_json(ticker)],
+    "module_ml.strategy": lambda ticker: [ml_config.strategy_evaluation_json(ticker)],
+    "module_ml.status": lambda ticker: [ml_config.MODULE_MONITORING_ML_STATUS_JSON_PATH, ml_config.asset_readme_md(ticker)],
 }
 
 STAGE_INPUT_NOTES = {

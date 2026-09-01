@@ -167,16 +167,19 @@ function renderRunTimelines(body, record) {
   const endAt = secondsSinceEpoch(record.summary.last_stage_end_utc);
   const boundaries = record.summary.stages.map((stage) => ({ stage: stage.stage, at: secondsSinceEpoch(stage.start_utc) }));
   const byService = samplesByService(samples);
-  const rates = (key) => Object.fromEntries(Object.entries(byService).map(([s, own]) => [s, buildRateSeries(own, key)]));
-  const levels = (key) => Object.fromEntries(Object.entries(byService).map(([s, own]) => [s, buildLevelSeries(own, key)]));
+  const rates = (key) => Object.fromEntries(Object.entries(byService)
+    .map(([service, own]) => [service, buildRateSeries(own, key)]));
+  const levels = (key) => Object.fromEntries(Object.entries(byService)
+    .map(([service, own]) => [service, buildLevelSeries(own, key)]));
   appendTimeline(body, "CPU — container seconds per second",
-    rates((s) => s.container_cpu_usage_seconds), boundaries, startAt, endAt);
+    rates((sample) => sample.container_cpu_usage_seconds), boundaries, startAt, endAt);
   appendTimeline(body, "RAM — resident set of the stage process (bytes)",
-    levels((s) => s.process_memory_resident_bytes), boundaries, startAt, endAt);
+    levels((sample) => sample.process_memory_resident_bytes), boundaries, startAt, endAt);
   appendTimeline(body, "disk — container block bytes" + BYTES_PER_SECOND_LABEL,
-    rates((s) => s.container_disk_read_bytes + s.container_disk_write_bytes), boundaries, startAt, endAt);
+    rates((sample) => sample.container_disk_read_bytes + sample.container_disk_write_bytes),
+    boundaries, startAt, endAt);
   appendTimeline(body, "network — container bytes" + BYTES_PER_SECOND_LABEL,
-    rates((s) => s.container_network_received_bytes + s.container_network_transmitted_bytes),
+    rates((sample) => sample.container_network_received_bytes + sample.container_network_transmitted_bytes),
     boundaries, startAt, endAt);
 }
 

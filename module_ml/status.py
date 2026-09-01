@@ -30,12 +30,12 @@ def hyperparameter_search_result_block(hyperparameter_search_result: dict) -> di
     }
 
 
-def _classification_block(v: dict) -> dict:
+def _classification_block(metrics_block: dict) -> dict:
     return {
-        "prior_logloss": round(v["prior_logloss"], 6),
-        "model_logloss": round(v["model_logloss"], 6),
-        "relative_logloss_skill": round(v["relative_logloss_skill"], 6),
-        "scored_row_count": v["scored_row_count"],
+        "prior_logloss": round(metrics_block["prior_logloss"], 6),
+        "model_logloss": round(metrics_block["model_logloss"], 6),
+        "relative_logloss_skill": round(metrics_block["relative_logloss_skill"], 6),
+        "scored_row_count": metrics_block["scored_row_count"],
     }
 
 

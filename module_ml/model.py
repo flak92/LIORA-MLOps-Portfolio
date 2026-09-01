@@ -35,12 +35,12 @@ def suggest_params(trial) -> dict:
 
 
 def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray) -> xgb.Booster:
-    p = dict(params)
-    num_boost_round = int(p.pop("num_boost_round"))
-    p.update(config.XGBOOST_FIXED_PARAMETERS)
+    xgboost_params = dict(params)
+    num_boost_round = int(xgboost_params.pop("num_boost_round"))
+    xgboost_params.update(config.XGBOOST_FIXED_PARAMETERS)
     dtrain = xgb.DMatrix(x, label=to_class(y), weight=weight,
                          feature_names=list(config.FEATURE_COLUMNS))
-    return xgb.train(p, dtrain, num_boost_round=num_boost_round)
+    return xgb.train(xgboost_params, dtrain, num_boost_round=num_boost_round)
 
 
 def predict_proba(booster: xgb.Booster, x: np.ndarray) -> np.ndarray:
