@@ -97,6 +97,6 @@ docker-btc-all: docker-all ## the single-asset chain by its ticker name; the ali
 docker-all-record: docker-build ## one recorded run of the whole chain, the whole basket in one record -> store_run_records/<run_id>/
 	$(COMPOSE) up -d dashboard
 	@run_id=$(RUN_ID); \
-	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id"; \
+	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id" && \
 	 python3 -m module_monitoring.record --finalize $$run_id
 docker-btc-lifecycle: docker-all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows
