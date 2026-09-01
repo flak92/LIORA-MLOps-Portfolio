@@ -16,7 +16,7 @@ RECORD ?=
 RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
 # $(1) = python command, $(2) = module
 fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} $(1) -m $(2) --tickers {}
-# $(1) = module, $(2) = width: each asset's stage runs inside its own resident container, which carries ASSET
+# $(1) = module, $(2) = width: each asset's stage runs inside its own resident container, which carries ASSET — the one line that assumes a resident; the quoted command is the whole one-off form
 dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_SERVICE_LIST) | xargs -P $(2) -I{} env $(COMPOSE_ENV) docker compose exec -T {} sh -c '$(RECORD) python -m $(1) --tickers $$ASSET'
 
 .DEFAULT_GOAL := help

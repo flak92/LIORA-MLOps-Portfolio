@@ -7,7 +7,7 @@ How to work on this repository as an agent. *The repository shows the destinatio
   reasoning, not the fewest characters — but mathematical and logical
   correctness never pays for it. When economy and correctness conflict,
   correctness wins.
-- This repository is **educational, not production**. Subtract, don't add:
+- This repository is **academic, not production**. Subtract, don't add:
   no test suites, no security layers, no precautionary guardrails, no
   workflow. The guards that stay are the ones the computation itself requires.
 - The goal of every change is one thing: **the full pipeline runs end to end**
@@ -40,3 +40,8 @@ How to work on this repository as an agent. *The repository shows the destinatio
   a second version of it.
 - Prove a change by running the affected stages, not by adding a framework
   that promises to.
+- **Place a change by responsibility and lifetime, never by convenience.**
+  Which class a function belongs to, which store it writes and whether it runs
+  as a one-off are decided before it is written; `skill_pre_aws_solution.md`
+  holds the classes, the one antipattern and the mapping, and
+  `skill_self_explaining_naming.md` § The naming review the eight questions.

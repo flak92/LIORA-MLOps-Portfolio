@@ -112,9 +112,11 @@ make docker-all-record     # the same chain, recorded stage by stage into a run 
 The dashboard is docker-only: `make docker-up` / `make docker-down`. The stages
 run inside Docker too: `docker-data-download`, `docker-data-ingest` and
 `docker-data-status` and `docker-ml-<stage>` (or `docker-ml-all`), and `docker-all` runs
-the whole chain. Every per-asset stage runs inside that asset's own resident
+the whole chain. Locally, every per-asset stage runs inside that asset's own resident
 container, `asset-<ticker>` — one service of `docker-compose.yml` per ticker of the
-basket, under the anchor it shares with the dashboard, one image for all; `make docker-up` starts
+basket, under the anchor it shares with the dashboard, one image for all — though no
+stage depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
+the container merely hosts. `make docker-up` starts
 the dashboard and the residents, each answering the dashboard's proxy with its
 data, its artifacts and its own memory and CPU. The stage order is the Makefile's `all:`
 and `ml-all:`; every document points there. Remote machine? Tunnel with

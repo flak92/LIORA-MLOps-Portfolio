@@ -28,6 +28,14 @@ downstream of this module's contract.
 Downstream code is source-neutral. No stage below the canonical object knows
 which venue printed a given minute, and none needs venue-specific gap handling.
 
+That boundary is also the storage seam the repository is prepared for: the raw
+tree is written once and never restated, the asset's database is a pure function
+of its two raw leaves, and `module_ml` reads the finished canonical object —
+never a venue. Raw storage, canonical storage and the research compute could
+later become three separate places without a rule of this module moving. The
+direction:
+[../module_skills/skill_pre_aws_solution.md](../module_skills/skill_pre_aws_solution.md).
+
 ## Stages
 
 Three stages, in order. Each is idempotent and each has a container twin.
@@ -144,6 +152,6 @@ Those are the module's own, and they hold identically outside a container.
 | `skills/skill_candle_canonicalisation.md` | what a canonical candle is, which venue's candle becomes it, where it is stored |
 | `skills/methodology_data.md` | where raw venue candles come from and how they are fetched |
 
-Repository-wide rules — the name register, determinism, the container topology
-— are in `../module_skills/`, indexed by
+Repository-wide rules — the name register, determinism, the container topology,
+the Pre-AWS direction — are in `../module_skills/`, indexed by
 [../module_skills/README.md](../module_skills/README.md).

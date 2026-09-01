@@ -400,6 +400,12 @@ stage, and most edits do not touch it:
 | a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
 | the monitoring payload | `ml-status` |
 
+This table is the layer's rebuild condition, held in a document a reader applies
+rather than in a stage: what decides that an asset's artifacts are stale stays
+separate from the stages that rebuild them —
+`../../module_skills/skill_pre_aws_solution.md` § The rebuild condition stays
+separable.
+
 ## 12. What this is, and what it is not
 
 This is a **bar-based research strategy simulation on the canonical market

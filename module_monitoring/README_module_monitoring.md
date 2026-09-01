@@ -16,6 +16,12 @@ number. Every value on the page was produced by the module that owns it —
 `module_data/status.py` and `module_ml/status.py`. A metric that does not exist
 in a snapshot does not appear on the page.
 
+The same line is a storage seam: the two snapshots and the run record are status
+objects this module reads and never produces; the page and its scripts are
+static files; only the registry, run and proxy routes are a running process. The
+direction:
+[../module_skills/skill_pre_aws_solution.md](../module_skills/skill_pre_aws_solution.md).
+
 ## What it runs
 
 | piece | entry | does |

@@ -1,7 +1,7 @@
 # Skill: asset containers — the topology, the endpoint, the socket
 
-The asset and its container are the primary object; the engine is the support
-layer. One image, one resident container per ticker of the basket, differing only by
+The asset is the primary object; its container is how a stage is run for it
+locally, and the engine is the support layer. One image, one resident container per ticker of the basket, differing only by
 `ASSET=<TICKER>`, every service written out in `docker-compose.yml` under two anchors: `x-service` is what
 every service is — `build`, `image`, `init`, `user`, the bind mount, the `5g` ceiling — and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
@@ -48,7 +48,10 @@ because a failure is reported, not hidden. Every container keeps the `.:/app`
 bind mount — `devops` respells `.:/app` beside the socket because a service's
 `volumes:` replaces the anchor's key rather than extending it, and takes the host's
 docker group through `group_add` so it reads the socket without being root; the raw
-store stays central and Lean-exact. Every process binds
+store stays central and Lean-exact. The one mount carries the code and the
+`store_*` roots together — the local simplification; the `store_*` grammar, not
+the runtime, keeps them apart (`skill_pre_aws_solution.md` § Docker is compute,
+not storage). Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
 argument: the server is docker-only; `PORT` is only the host side of the
 dashboard's mapping, so a stage run with another `PORT` never recreates a
@@ -57,13 +60,19 @@ fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
 `make docker-up` builds the image if needed, starts the dashboard and the
 residents, and opens the page. `make docker-all` then runs the whole chain through them,
-download to snapshots. Every per-asset stage runs inside its asset's container: the
+download to snapshots. Locally, every per-asset stage runs inside its asset's container: the
 fan-out does an idempotent `up -d`, then `docker compose exec -T asset-<ticker>
 sh -c 'python -m module_<x>.<stage> --tickers $ASSET'` — ingest one container at
 a time, the ML stages `JOBS` at a time — so the container the tab measures is
-the one doing the work. `ASSET` is read by that command line and by `serve.py`
-choosing its role; it is never the default of `build_ticker_parser`, and the
-engine never sees it. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
+the one doing the work. The residency is the fan-out's, not the stage's: the
+command inside the quotes is the whole one-off form and runs the same outside any
+container, and that one macro line is the only place a resident is assumed for
+compute; `record.py` already tolerates a container that is gone. Replacing
+exec-into-resident with a one-off launch is one line and touches no stage; the
+panel would then measure a one-off instead of the resident. The direction is
+`skill_pre_aws_solution.md`. `ASSET` is read by that command line and by `serve.py`
+choosing its role; it is never the default of `build_ticker_parser`, and no
+stage module reads it. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
 `TICKERS` and three lines under `x-server`.
 

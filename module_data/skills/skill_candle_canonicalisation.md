@@ -429,6 +429,11 @@ primary-failover order, OHLC semantics, volume semantics or `ffill` semantics.
 Those belong to this document, and they hold identically when the same stage is
 run outside a container.
 
+The rule this section instantiates for the database — a container is compute
+and never the owner of an asset's state — is repository-wide and lives in
+`../../module_skills/skill_pre_aws_solution.md`; this section stays its one
+statement for the market object.
+
 ## 16. Data-quality invariants
 
 `module_data/status.py` scans each database read-only and publishes what it
