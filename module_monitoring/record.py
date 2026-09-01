@@ -83,9 +83,11 @@ def stage_of(module: str) -> str:
     return f"{package.removeprefix('module_')}-{name.replace('_', '-')}"
 
 
-def recorded_tickers() -> list[str]:
-    """The assets this stage covered: the one its container is, or the whole basket for a
-    basket-wide stage in the one-off container."""
+def recorded_tickers(command: list[str]) -> list[str]:
+    """The assets this stage covered: what its command was told, else the one its container is,
+    else the whole basket for a basket-wide stage in the one-off container."""
+    if "--tickers" in command:
+        return data_config.parse_tickers(command[command.index("--tickers") + 1])
     asset = os.environ.get("ASSET")
     return [asset] if asset else list(data_config.TICKERS)
 
@@ -192,7 +194,7 @@ def record_stage(run_id: str, command: list[str]) -> int:
     """Run the stage, sample the container beside it, and leave one record. Returns its exit code."""
     module = module_of(command)
     stage = stage_of(module)
-    tickers = recorded_tickers()
+    tickers = recorded_tickers(command)
     log_path = config.stage_log(run_id, stage, docker_service())
     log_path.parent.mkdir(parents=True, exist_ok=True)
 

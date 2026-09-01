@@ -198,7 +198,7 @@ how a stage is run, never what it computes.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, and by `serve.py` choosing its role — never by the engine, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
+| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, by `serve.py` choosing its role, and by `record.py` for the service a stage ran in and, failing a `--tickers`, the assets it covered — never by a stage module, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
 | the one service that holds the docker socket, and the only one | `portraefik` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
@@ -259,6 +259,7 @@ window: the resident server, the recorder and the stage together.
 | the stage that took the longest | — | `bottleneck_stage` | bottleneck | slowest, hotspot |
 | the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` — the registry at the top level, one answer per ticker in `assets` | dashboard | healthcheck, ping; one asset's answer standing for the basket |
 | the basket one run covered | `TICKERS` | `tickers` | — | `ticker`, the first of the basket standing for it |
+| the assets one stage covered — its command's `--tickers`, else its container's `ASSET`, else the basket | `recorded_tickers()` | `tickers` — a key of `events.jsonl` | — | `ticker`; the container standing for the command's scope |
 | the asset containers of a run, one row per ticker | `container_identity()` | `asset_containers` | — | `asset_container`, one container standing for the basket |
 | where a run's record lives | `STORE_RUN_RECORDS_DIR`, `run_dir()` | — | — | a `runtime/` folder under an asset, one run record per asset |
 
