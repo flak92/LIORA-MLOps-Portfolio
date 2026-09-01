@@ -59,7 +59,7 @@ Final-holdout exits: upper_barrier 66, lower_barrier 56, vertical 115, ambiguous
 
 ## Reproducing the ML artifacts in this folder
 
-    python -m module_ml.features --tickers BTC && python -m module_ml.labels --tickers BTC && python -m module_ml.hpo --tickers BTC && python -m module_ml.train --tickers BTC && python -m module_ml.strategy --tickers BTC && python -m module_ml.status --tickers BTC
+    python -m module_ml.bars --tickers BTC && python -m module_ml.features --tickers BTC && python -m module_ml.labels --tickers BTC && python -m module_ml.hpo --tickers BTC && python -m module_ml.train --tickers BTC && python -m module_ml.strategy --tickers BTC && python -m module_ml.status --tickers BTC
 
 The OHLCV lives in `BTC_research_ohlcv.duckdb` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 

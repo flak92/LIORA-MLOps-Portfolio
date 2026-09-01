@@ -181,7 +181,7 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 
     reproduce = " ".join(
         f"python -m module_ml.{stage} --tickers {ticker} &&"
-        for stage in ("features", "labels", "hpo", "train", "strategy")
+        for stage in ("bars", "features", "labels", "hpo", "train", "strategy")
     ) + f" python -m module_ml.status --tickers {ticker}"
 
     return f"""# {ticker} — research artifacts
