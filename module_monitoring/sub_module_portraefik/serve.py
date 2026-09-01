@@ -243,8 +243,8 @@ def act_on_machine(container_id: str, action: str, project: str | None) -> tuple
             "reason": f"{action} is offered for this project's own containers; "
                       f"this one belongs to {target or 'no compose project'}",
         })
-    status, body = fetch_engine("POST", config.container_action_path(container_id, action))
-    return status, body or to_json_bytes({"action": action, "refused": False, "engine_status": status})
+    # the engine's answer as it came: a 304 cannot carry a body, and the page reads the status
+    return fetch_engine("POST", config.container_action_path(container_id, action))
 
 
 class PanelHandler(BaseHTTPRequestHandler):
