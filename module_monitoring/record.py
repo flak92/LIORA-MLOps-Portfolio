@@ -12,7 +12,7 @@ zombie's io file is unreadable. The cgroup counters sampled beside it describe t
 over the same window and never the stage — every one of those keys carries the `container_`
 prefix, and the summary repeats why.
 
-    --finalize <run_id>   the run's own role, on the host: the readiness check, the manifest
+    --finalise <run_id>   the run's own role, on the host: the readiness check, the manifest
                           and the summary, from the stage records the stages left behind
 """
 
@@ -480,7 +480,7 @@ def write_manifest(run_id: str, summary: dict) -> None:
                                             encoding="utf-8")
 
 
-def finalize(run_id: str) -> int:
+def finalise(run_id: str) -> int:
     records = load_stage_records(run_id)
     readiness = fetch_dashboard_ready()
     failed = (not records or any(record["exit_code"] != 0 for record in records)
@@ -497,8 +497,8 @@ def finalize(run_id: str) -> int:
 
 def main() -> int:
     argv = sys.argv[1:]
-    if argv[0] == "--finalize":
-        return finalize(argv[1])
+    if argv[0] == "--finalise":
+        return finalise(argv[1])
     return record_stage(argv[0], argv[1:])
 
 

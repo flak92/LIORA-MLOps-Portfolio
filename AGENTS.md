@@ -229,7 +229,7 @@ the drawing's template), docker compose (`Makefile`,
 `docker-compose.yml`), `urllib` (`module_monitoring/serve.py` and both downloaders),
 `http.server` (`module_monitoring/serve.py` and the panel's own), cgroup v2 and procfs
 (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its unix socket
-(`module_monitoring/sub_module_portraefik/`), and `posix_spawn`, `wait4` rusage and the
+(`module_monitoring/sub_module_devops/`), and `posix_spawn`, `wait4` rusage and the
 per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
 boundary is an exception the conventions name, not an inconsistency they
 tolerate.
@@ -261,7 +261,7 @@ list holds the words bound to neither.
   coloured row; `mobile`, `tablet`, `phone`, `responsive`, `breakpoint`
 - **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a
   second compose file, `/var/run/docker.sock` in any container other than
-  `portraefik` — the one service whose responsibility is docker management, and
+  `devops` — the one service whose responsibility is docker management, and
   which publishes no port (`module_skills/skill_asset_containers.md`); `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
   generator, framework; `authority`, `single source of truth`
@@ -289,7 +289,7 @@ A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` insid
 the module that owns it, with its own `config.py`, its own `main()` and no
 dataflow of its own. It exists twice, both inside `module_monitoring`: the
 developer-experience drawing in `sub_module_dx/`, and the DevOps panel in
-`sub_module_portraefik/`. Both are nested rather than promoted because the
+`sub_module_devops/`. Both are nested rather than promoted because the
 dashboard serves its own directory — a top-level module would have to be given a
 route, and each page reaches the browser as a static file instead. The panel adds
 one route for its API alone, because an API is not a file; the socket it holds is

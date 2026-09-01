@@ -12,7 +12,7 @@ reaches them only through its own proxy: no asset container publishes a port.
 **The socket rule, and its one scope.** Managing containers, networks and
 volumes needs the Docker Engine API, and the honest way to it is the socket, so
 the rule that forbade it is not bent but scoped: `/var/run/docker.sock` is
-mounted in **exactly one container, `portraefik`**, whose single responsibility
+mounted in **exactly one container, `devops`**, whose single responsibility
 is docker management and monitoring. It is never mounted in the dashboard, never
 in an asset container, and never for a badge. No third-party socket proxy — that
 is a dependency — and no TCP daemon endpoint, which is weaker than the socket.
@@ -30,7 +30,7 @@ Stated, not mitigated. The panel's own contract is
 | `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the basket-wide targets, the ones the Makefile does not fan out; a download stays sequential there because a venue's per-IP limit is budgeted per process | one-off |
 | `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
 | `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` | the same server in its asset role | resident |
-| `portraefik` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
+| `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
@@ -45,7 +45,7 @@ clone builds instead of reaching for a registry; the tag is one, so
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Every container keeps the `.:/app`
-bind mount — `portraefik` respells `.:/app` beside the socket because a service's
+bind mount — `devops` respells `.:/app` beside the socket because a service's
 `volumes:` replaces the anchor's key rather than extending it, and takes the host's
 docker group through `group_add` so it reads the socket without being root; the raw
 store stays central and Lean-exact. Every process binds

@@ -6,16 +6,21 @@ reader wants; the **DX** control opens the drawing a developer wants; the
 project actually runs on. *The repository shows the destination, not the road*:
 the panel shows what the daemon reports and offers three verbs, and nothing else.
 
-The panel is `module_monitoring/sub_module_portraefik/`. Its page is a static
+The panel is `module_monitoring/sub_module_devops/`. Its page is a static
 file the dashboard already serves, like the drawing; only its API is a route.
 
 ## Why a sub-module, and why that name
 
-`portraefik` is the owner's coinage — a blend of two brand names of tools this
-repository deliberately does not use. Nothing of Portainer or Traefik is inside:
-no routing, no reverse proxy, no third-party management UI. Rejected forms:
-`sub_module_devops`, `sub_module_docker` (the register bans `module_docker` as a
-stem, and `service` as a path segment).
+The panel is named for the persona whose page it is, as the drawing is: the
+**DevOps** control opens `sub_module_devops/` the way the **DX** control opens
+`sub_module_dx/`, and the route the dashboard proxies for it is `/devops/*` —
+one word for the control, the route, the compose service `devops` and the
+directory. Retired: `portraefik`, the owner's coinage of two tool brands this
+repository does not use — a name that needed a lookup before it said anything.
+Rejected beside it: `sub_module_docker` (the register bans `module_docker` as a
+stem), a tool's brand as a name, and any routing the old name suggested —
+nothing of Portainer or Traefik is inside: no reverse proxy, no third-party
+management UI.
 
 It is nested rather than promoted for the reason the drawing is: the dashboard
 serves its own directory, so the panel's page needs no route. It is the second
@@ -24,9 +29,9 @@ the convention or nothing does.
 
 ## The one socket, and what containment means
 
-`/var/run/docker.sock` is mounted in `portraefik` and in no other container.
+`/var/run/docker.sock` is mounted in `devops` and in no other container.
 The dashboard holds no socket and makes no Engine call: it proxies `/devops/*`
-to `portraefik` by service name over the compose network, the same mechanism
+to `devops` by service name over the compose network, the same mechanism
 and the same `(status, body)` shape as `/containers/<TICKER>/status`. The scoped
 repeal of the socket rule lives with the topology it changes,
 `../../module_skills/skill_asset_containers.md`.
@@ -37,7 +42,7 @@ including a page on another site, because a simple cross-origin `POST` needs no
 preflight. There is no auth, no token and no origin check in v1. Stated, not
 mitigated.
 
-`portraefik` runs as the host user like every other service and takes the host's
+`devops` runs as the host user like every other service and takes the host's
 docker group through `group_add`, so it reads the socket without being root; the
 Makefile measures that group the way it measures `UID` and `GID`.
 

@@ -23,7 +23,7 @@ in a snapshot does not appear on the page.
 | the server | `make docker-up` | one server, two roles by `ASSET`: the dashboard, or one asset container reporting itself |
 | the run recorder | `make docker-all-record` | wraps every stage of a run, samples resources, writes `store_run_records/<run_id>/` |
 | the drawing | `make monitoring-dx-update` | redraws the tracked git tree as one self-contained page |
-| the DevOps panel | `make docker-up` | `sub_module_portraefik`: the containers, networks and volumes, and the one container that holds the docker socket |
+| the DevOps panel | `make docker-up` | `sub_module_devops`: the containers, networks and volumes, and the one container that holds the docker socket |
 
 The dashboard is published on the host at `127.0.0.1:8900` and reaches the
 asset containers by compose service name. The two snapshots it reads,

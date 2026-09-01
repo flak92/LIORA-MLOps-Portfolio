@@ -63,7 +63,7 @@ monitoring-dx-update: ## redraw the developer-experience picture of the tracked 
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
 docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers at http://127.0.0.1:$(PORT)/, then open the page
-	$(COMPOSE) up -d dashboard portraefik $(ASSET_SERVICE_LIST)
+	$(COMPOSE) up -d dashboard devops $(ASSET_SERVICE_LIST)
 	@python3 -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')"
 docker-down:     ## stop and remove every container
 	$(COMPOSE) down
@@ -98,5 +98,5 @@ docker-all-record: docker-build ## one recorded run of the whole chain, the whol
 	$(COMPOSE) up -d dashboard
 	@run_id=$(RUN_ID); \
 	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id" && \
-	 python3 -m module_monitoring.record --finalize $$run_id
+	 python3 -m module_monitoring.record --finalise $$run_id
 docker-btc-lifecycle: docker-all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows

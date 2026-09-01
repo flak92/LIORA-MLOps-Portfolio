@@ -48,7 +48,7 @@ linter, no build step, no framework.
 - The status page carries exactly two jumps out of itself, both `.jump` controls in the top right,
   one per persona beyond the business reader: **DX** opens the developer-experience drawing of the
   tracked tree at `sub_module_dx/files_and_folders_visualisation.html`, and **DevOps** opens the
-  panel at `sub_module_portraefik/index.html`. Both are pages of a sub-module the dashboard already
+  panel at `sub_module_devops/index.html`. Both are pages of a sub-module the dashboard already
   serves as a directory, so the server's routes know about neither — the panel's API is a route, its
   page is not. The drawing is a derived artifact, redrawn only by `make monitoring-dx-update`, and
   its inline renderer is reviewed as a whole and is not bound by the closed verb list above, which

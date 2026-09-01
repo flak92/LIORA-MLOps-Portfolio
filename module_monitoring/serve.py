@@ -177,7 +177,7 @@ def fetch_asset_status(ticker: str) -> tuple[int, bytes]:
 def fetch_panel(method: str, route: str) -> tuple[int, bytes]:
     """The DevOps panel's API as (status code, body), forwarded as it came — the same shape and the same
     failure as an asset's endpoint. The socket the panel holds stays in the panel: this process never opens it."""
-    request = urllib.request.Request(config.portraefik_api_url(route), method=method,
+    request = urllib.request.Request(config.devops_api_url(route), method=method,
                                      data=b"" if method == "POST" else None)
     try:
         with urllib.request.urlopen(request, timeout=config.PANEL_FETCH_TIMEOUT_SECONDS) as answer:

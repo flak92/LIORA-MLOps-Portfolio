@@ -200,7 +200,7 @@ how a stage is run, never what it computes.
 |---|---|---|---|---|
 | the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, by `serve.py` choosing its role, and by `record.py` for the service a stage ran in and, failing a `--tickers`, the assets it covered — never by a stage module, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | a compose service that is one asset's container: resident, answering `/status`, the place every per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
-| the one service that holds the docker socket, and the only one | `portraefik` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
+| the one service that holds the docker socket, and the only one | `devops` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
@@ -320,18 +320,18 @@ links to it and never repeats it.
 
 ## DevOps panel
 
-The names of `module_monitoring/sub_module_portraefik` — the machines the
+The names of `module_monitoring/sub_module_devops` — the machines the
 project runs on, and the three verbs offered for them. The contract is
 `../module_monitoring/skills/skill_devops_panel.md`.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the panel and its sub-module — the owner's coinage, and nothing of the two tools it blends | `sub_module_portraefik` | — | DevOps | `sub_module_devops`, `sub_module_docker`, Portainer, Traefik, any routing this name might suggest |
+| the panel and its sub-module — named, like `sub_module_dx`, for the persona whose page it is | `sub_module_devops`; the compose service `devops` | — | DevOps | `portraefik` (the retired coinage), `sub_module_docker`, Portainer, Traefik, a tool's brand as a name, any routing the old name suggested |
 | one container the daemon reports, whether or not this project owns it | `machine` — `machines` in the payload, `machine_row()` | `machines` | container | `node`, `host`, `instance`; a foreign container hidden rather than listed |
 | whether a container belongs to the project the panel itself runs in | `own_project`, compared on `com.docker.compose.project` read from the panel's own labels | `own_project`, `compose_project` | `own` | a match on service name or image; the project written as a literal |
 | the whole set of state changes the panel offers | `CONTAINER_ACTIONS` = `("start", "stop", "restart")` | `actions` | start / stop / restart | `rm`, `exec`, `prune`, compose up/down from the browser, an action outside the tuple |
 | the refusal of an action on another project's container | HTTP 403 with `refused` and `reason` | `refused`, `reason` | the reason, shown | a silent no-op, a disabled button as the only guard, a 404 that hides the reason |
-| the panel's own API, proxied by the dashboard and reached by literal name from the page | `DEVOPS_ROUTE_PREFIX` = `/devops`, `portraefik_api_url()` | `GET /devops/api/{machines,networks,volumes,image,events}`, `POST /devops/api/machines/<id>/<action>` | — | a route on the dashboard that opens the socket; a second prefix for the same panel |
+| the panel's own API, proxied by the dashboard and reached by literal name from the page | `DEVOPS_ROUTE_PREFIX` = `/devops`, `devops_api_url()` | `GET /devops/api/{machines,networks,volumes,image,events}`, `POST /devops/api/machines/<id>/<action>` | — | a route on the dashboard that opens the socket; a second prefix for the same panel |
 | what one machine row publishes about a container | `machine_row()` | `container_id`, `name`, `compose_project`, `compose_service`, `own_project`, `state`, `image`, `started_at_utc`, `restart_count`, `ports`, `memory_bytes`, `memory_limit_bytes`, `cpu_usage_seconds`, `cpu_count` | the container table's columns | a key the page does not read; `mem`, `cpu_pct`, a bare duration for uptime |
 | what the three engine inventories publish beside the machines | `networks_payload()`, `volumes_payload()`, `image_payload()` | `networks` with `name`, `driver`, `scope`, `attached`; `volumes` with `name`, `driver`, `size_bytes`, `reference_count`; `bind_mounts` with `source`, `destination`, `writable`, `containers`; the image as `image`, `image_id`, `size_bytes`, `created_utc`, `repo_tags` | the networks, volumes, bind-mount and image tables | a hash as an image identity; a volume size the daemon did not report |
 | one daemon event of this project, over a doubly bounded window | `events_payload()` | `events` with `time_utc`, `type`, `action`, `name`, `compose_service` | the events table | an unbounded `/events`; a host's other stacks in this project's tail |

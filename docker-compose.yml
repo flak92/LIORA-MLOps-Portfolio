@@ -2,7 +2,7 @@
 # command the dashboard and the assets share — the dashboard publishes it on the host, each asset
 # container runs it in its asset role. The thread cap sits on the anchor because it is correctness,
 # not a setting: every service of this file gets it, and asset-btc respells it because environment:
-# replaces the anchor's key rather than extending it, the same way portraefik respells its mount.
+# replaces the anchor's key rather than extending it, the same way devops respells its mount.
 x-service: &service
   build: .
   image: mlops-portfolio-1m-pipeline
@@ -36,9 +36,9 @@ services:
   # the one service that holds the docker socket, and the only one: its whole responsibility is
   # docker management and monitoring. It publishes no port — the dashboard proxies /devops/* to it.
   # volumes: replaces the anchor's key rather than extending it, so the code mount is repeated here.
-  portraefik:
+  devops:
     <<: *service
-    command: python -m module_monitoring.sub_module_portraefik.serve
+    command: python -m module_monitoring.sub_module_devops.serve
     group_add: ["${DOCKER_GID:-999}"]
     volumes:
       - .:/app

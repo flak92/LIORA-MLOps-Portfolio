@@ -188,7 +188,7 @@ function renderRun(record) {
   const host = document.getElementById("run-detail");
   host.textContent = "";
   if (!record.manifest || !record.summary) {
-    host.appendChild(buildFootnote("run " + record.run_id + " has no summary — it was never finalized."));
+    host.appendChild(buildFootnote("run " + record.run_id + " has no summary — it was never finalised."));
     return;
   }
   const header = buildFrame("RUN — " + record.run_id);
