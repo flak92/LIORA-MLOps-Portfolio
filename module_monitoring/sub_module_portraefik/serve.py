@@ -27,6 +27,14 @@ from module_monitoring.serve import to_json_bytes, write_response
 from . import config
 
 
+class EngineUnavailable(Exception):
+    """The daemon did not answer at all — distinct from an answer that was not 200.
+
+    A view that cannot reach the Engine has nothing to report, and reporting nothing is not the same
+    as reporting an empty host: the panel owes the reader dashes, never a number it did not measure.
+    """
+
+
 class EngineConnection(http.client.HTTPConnection):
     """The Engine API over its unix socket: http.client, with the one connection it opens swapped for AF_UNIX."""
 
@@ -57,6 +65,8 @@ def fetch_engine(method: str, path: str) -> tuple[int, bytes]:
 def engine_object(path: str):
     """One Engine GET decoded, or None when it did not answer 200 — a view renders what answered and dashes the rest."""
     status, body = fetch_engine("GET", path)
+    if status == HTTPStatus.SERVICE_UNAVAILABLE:
+        raise EngineUnavailable(path)
     if status != HTTPStatus.OK or not body:
         return None
     return json.loads(body)
@@ -65,6 +75,8 @@ def engine_object(path: str):
 def engine_events(path: str) -> list:
     """The event stream is newline-delimited JSON; a bounded window terminates it."""
     status, body = fetch_engine("GET", path)
+    if status == HTTPStatus.SERVICE_UNAVAILABLE:
+        raise EngineUnavailable(path)
     if status != HTTPStatus.OK or not body:
         return []
     return [json.loads(line) for line in body.splitlines() if line.strip()]
@@ -120,6 +132,11 @@ def machine_row(container: dict, project: str | None) -> dict:
         "cpu_usage_seconds": None if total_usage is None else round(total_usage / config.NANOSECONDS_PER_SECOND, 3),
         "cpu_count": (sample.get("cpu_stats") or {}).get("online_cpus"),
     }
+
+
+def unavailable_reason() -> dict:
+    """What a view says when the daemon did not answer: a reason, never an empty inventory."""
+    return {"reason": "the docker daemon did not answer on its socket"}
 
 
 def machines_payload(project: str | None) -> dict:
@@ -242,25 +259,33 @@ class PanelHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         segments = self.path.split("?")[0].split("/")
         project = self.server.project
-        if segments[:3] == ["", "api", "machines"] and len(segments) == 3:
-            write_response(self, HTTPStatus.OK, to_json_bytes(machines_payload(project)))
-        elif self.path.split("?")[0] == "/api/networks":
-            write_response(self, HTTPStatus.OK, to_json_bytes(networks_payload(project)))
-        elif self.path.split("?")[0] == "/api/volumes":
-            write_response(self, HTTPStatus.OK, to_json_bytes(volumes_payload(project)))
-        elif self.path.split("?")[0] == "/api/image":
-            write_response(self, HTTPStatus.OK, to_json_bytes(image_payload(self.server.hostname)))
-        elif self.path.split("?")[0] == "/api/events":
-            write_response(self, HTTPStatus.OK, to_json_bytes(events_payload(project)))
-        else:
-            write_response(self, HTTPStatus.NOT_FOUND)
+        try:
+            if segments[:3] == ["", "api", "machines"] and len(segments) == 3:
+                write_response(self, HTTPStatus.OK, to_json_bytes(machines_payload(project)))
+            elif self.path.split("?")[0] == "/api/networks":
+                write_response(self, HTTPStatus.OK, to_json_bytes(networks_payload(project)))
+            elif self.path.split("?")[0] == "/api/volumes":
+                write_response(self, HTTPStatus.OK, to_json_bytes(volumes_payload(project)))
+            elif self.path.split("?")[0] == "/api/image":
+                write_response(self, HTTPStatus.OK, to_json_bytes(image_payload(self.server.hostname)))
+            elif self.path.split("?")[0] == "/api/events":
+                if not self.server.project_known:
+                    raise EngineUnavailable("/api/events")   # an empty tail would read as a quiet project
+                write_response(self, HTTPStatus.OK, to_json_bytes(events_payload(project)))
+            else:
+                write_response(self, HTTPStatus.NOT_FOUND)
+        except EngineUnavailable:
+            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE, to_json_bytes(unavailable_reason()))
 
     def do_POST(self):
         segments = self.path.split("?")[0].split("/")
-        if len(segments) == 5 and segments[:3] == ["", "api", "machines"]:
-            write_response(self, *act_on_machine(segments[3], segments[4], self.server.project))
-        else:
-            write_response(self, HTTPStatus.NOT_FOUND)
+        try:
+            if len(segments) == 5 and segments[:3] == ["", "api", "machines"]:
+                write_response(self, *act_on_machine(segments[3], segments[4], self.server.project))
+            else:
+                write_response(self, HTTPStatus.NOT_FOUND)
+        except EngineUnavailable:
+            write_response(self, HTTPStatus.SERVICE_UNAVAILABLE, to_json_bytes(unavailable_reason()))
 
 
 class PanelServer(ThreadingHTTPServer):
@@ -269,7 +294,14 @@ class PanelServer(ThreadingHTTPServer):
     def __init__(self):
         super().__init__((monitoring_config.BIND_ADDRESS, monitoring_config.CONTAINER_PORT), PanelHandler)
         self.hostname = socket.gethostname()
-        self.project = own_project(self.hostname)
+        try:
+            self.project = own_project(self.hostname)
+            self.project_known = True
+        except EngineUnavailable:
+            # a daemon silent at boot leaves the panel read-only, which is the guard's own default; the
+            # flag keeps that apart from a panel the daemon answered about but that carries no project
+            self.project = None
+            self.project_known = False
 
 
 def main() -> int:

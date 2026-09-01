@@ -166,6 +166,19 @@ function renderEvents(payload) {
   ]));
 }
 
+/* a view the engine did not answer holds no rows: an empty table is what this page knows, and an
+   empty host is a measurement, so the outage clears them rather than leaving the last ones up */
+function clearPanelViews() {
+  ["machines", "networks", "volumes", "bind-mounts", "events"].forEach((id) => {
+    const table = document.getElementById(id);
+    table.querySelector("thead").textContent = "";
+    table.querySelector("tbody").textContent = "";
+  });
+  document.getElementById("image").textContent = "-";
+  PANEL_MACHINES = null;
+  Object.keys(MACHINE_SAMPLES).forEach((containerId) => delete MACHINE_SAMPLES[containerId]);
+}
+
 /* one poll of every engine view; the CPU rate needs the previous sample, so it is kept per container */
 function renderPanel() {
   if (PANEL_POLL_IN_FLIGHT) return;
@@ -202,6 +215,7 @@ function renderPanel() {
       renderEvents(events);
     })
     .catch((error) => {
+      clearPanelViews();
       meta.className = "box err";
       meta.textContent = "could not load /devops/api (" + error.message + ") — run `make docker-up`";
     })
@@ -217,9 +231,17 @@ function initPanel() {
       renderPanel();
     })
     .catch((error) => {
+      clearPanelViews();
       const meta = document.getElementById("panel-meta");
       meta.className = "box err";
       meta.textContent = "could not load /devops/api/machines (" + error.message + ") — run `make docker-up`";
+      /* the cadence is the server's to publish, so a panel that never reached it has no interval to
+         install; it retries when the tab is next looked at rather than staying dead until a reload */
+      document.addEventListener("visibilitychange", function retryPanel() {
+        if (document.visibilityState !== "visible") return;
+        document.removeEventListener("visibilitychange", retryPanel);
+        initPanel();
+      });
     });
 }
 
