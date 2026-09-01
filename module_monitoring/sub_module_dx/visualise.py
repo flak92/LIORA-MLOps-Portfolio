@@ -10,7 +10,7 @@ hand-written rendering code this module never touches.
       -> exclude globs
       -> tree, folders inferred from the paths
       -> aggregate rules collapse a matching folder into a single node
-      -> stories by longest prefix (unmapped is an error, not a default)
+      -> stories by longest prefix, and default_story when no prefix matches
       -> NODES / EDGES + the header block
       -> splice -> files_and_folders_visualisation.html
 
@@ -47,9 +47,8 @@ PROVENANCE_WALK_LIMIT = 64          # a chain of output-only commits longer than
 class VisualisationError(Exception):
     """A configuration or repository state that cannot produce a picture.
 
-    Raised with the offending name and the fix in the message, because the
-    whole point of the strict mode is that a change in the files forces a
-    conscious one-line decision in the JSON.
+    Raised with the offending name and the fix in the message: an unknown key is
+    reported rather than ignored, so a typo cannot pass for a default.
     """
 
 
