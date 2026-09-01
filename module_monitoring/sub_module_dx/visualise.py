@@ -194,6 +194,7 @@ def load_config(path: Path) -> dict:
     _validate_keys('"camera"', settings["camera"], config.CAMERA_KEYS)
     _validate_keys('"header"', settings["header"], config.HEADER_KEYS)
     _validate_keys('"core"', settings["core"], config.CORE_KEYS)
+    _validate_keys('"stories"', settings["stories"], config.STORY_IDS)
     for story_id, story in settings["stories"].items():
         _validate_keys(f'"stories"."{story_id}"', story, config.STORY_KEYS)
     for place_key, place in settings["place"].items():

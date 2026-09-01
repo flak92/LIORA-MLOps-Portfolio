@@ -76,6 +76,7 @@ CONFIG_DEFAULTS = {
     "camera": {},
     "header": {},
 }
+STORY_IDS = {"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"}   # the drawing gives an island one digit; a tenth story is a different picture
 STORY_KEYS = {"name", "color", "hub"}
 PLACE_KEYS = {"r", "da", "y", "jit"}
 HEADER_KEYS = {"eyebrow_from_git", "title", "subtitle"}
