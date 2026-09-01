@@ -25,8 +25,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
-from .lean import (MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, lean_day_zip_name,
-                   lean_day_zip_paths, write_lean_zip)
+from .lean import (LEAN_DAY_ZIP_NAME_PATTERN, MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day,
+                   lean_day_zip_name, lean_day_zip_paths, write_lean_zip)
 
 KLINE_REQUEST_WINDOW_MS = 720 * config.MILLISECONDS_PER_MINUTE  # half a day fits in one 1000-candle response
 
@@ -79,7 +79,7 @@ def load_earliest_traded_day(out_dir: Path) -> str | None:
         with zipfile.ZipFile(zip_path) as day_zip:
             entries = day_zip.infolist()
             if entries and entries[0].file_size > 0:
-                return zip_path.name[:8]
+                return LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1)
     return None
 
 
