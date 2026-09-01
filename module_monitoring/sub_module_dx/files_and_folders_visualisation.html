@@ -123,7 +123,7 @@ const META = {
  },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "64 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 01f677e \u00b7 2026-09-01 18:48:38",
+ "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 16cdcc9 \u00b7 2026-09-01 23:00:08",
  "title": "Files and Folders"
 };
 const ISLANDS = {
@@ -440,6 +440,62 @@ const NODES = [
   "type": "file"
  },
  {
+  "desc": "The DevOps panel, and the one container that holds the docker socket.",
+  "id": "module_monitoring/sub_module_devops/",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/sub_module_devops/config.py",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/config.py",
+  "role": "config",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/sub_module_devops/containers.js",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/containers.js",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/sub_module_devops/devops.css",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/devops.css",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/sub_module_devops/devops.js",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/devops.js",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "",
+  "id": "module_monitoring/sub_module_devops/index.html",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/index.html",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "desc": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
+  "id": "module_monitoring/sub_module_devops/serve.py",
+  "island": "S4",
+  "path": "module_monitoring/sub_module_devops/serve.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
   "desc": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
   "id": "module_monitoring/sub_module_dx/",
   "island": "S4",
@@ -476,62 +532,6 @@ const NODES = [
   "id": "module_monitoring/sub_module_dx/visualise.py",
   "island": "S4",
   "path": "module_monitoring/sub_module_dx/visualise.py",
-  "role": "code",
-  "type": "file"
- },
- {
-  "desc": "The DevOps panel, and the one container that holds the docker socket.",
-  "id": "module_monitoring/sub_module_portraefik/",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "desc": "",
-  "id": "module_monitoring/sub_module_portraefik/config.py",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/config.py",
-  "role": "config",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_monitoring/sub_module_portraefik/containers.js",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/containers.js",
-  "role": "code",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_monitoring/sub_module_portraefik/devops.css",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/devops.css",
-  "role": "code",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_monitoring/sub_module_portraefik/devops.js",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/devops.js",
-  "role": "code",
-  "type": "file"
- },
- {
-  "desc": "",
-  "id": "module_monitoring/sub_module_portraefik/index.html",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/index.html",
-  "role": "code",
-  "type": "file"
- },
- {
-  "desc": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
-  "id": "module_monitoring/sub_module_portraefik/serve.py",
-  "island": "S4",
-  "path": "module_monitoring/sub_module_portraefik/serve.py",
   "role": "code",
   "type": "file"
  },
@@ -690,6 +690,14 @@ const NODES = [
  },
  {
   "desc": "",
+  "id": "module_skills/skill_pre_aws_solution.md",
+  "island": "S2",
+  "path": "module_skills/skill_pre_aws_solution.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "desc": "",
   "id": "module_skills/skill_self_explaining_naming.md",
   "island": "S2",
   "path": "module_skills/skill_self_explaining_naming.md",
@@ -705,7 +713,7 @@ const NODES = [
   "type": "file"
  },
  {
-  "desc": "Per-asset artifacts \u2014 the only objects the system produces.",
+  "desc": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them.",
   "id": "store_assets_artifacts/",
   "island": "S4",
   "path": "store_assets_artifacts/",
@@ -996,13 +1004,13 @@ const EDGES = [
  {
   "from": "module_monitoring/",
   "thick": true,
-  "to": "module_monitoring/sub_module_dx/",
+  "to": "module_monitoring/sub_module_devops/",
   "type": "tree"
  },
  {
   "from": "module_monitoring/",
   "thick": true,
-  "to": "module_monitoring/sub_module_portraefik/",
+  "to": "module_monitoring/sub_module_dx/",
   "type": "tree"
  },
  {
@@ -1102,6 +1110,42 @@ const EDGES = [
   "type": "tree"
  },
  {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/config.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/containers.js",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/devops.css",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/devops.js",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/index.html",
+  "type": "tree"
+ },
+ {
+  "from": "module_monitoring/sub_module_devops/",
+  "thick": false,
+  "to": "module_monitoring/sub_module_devops/serve.py",
+  "type": "tree"
+ },
+ {
   "from": "module_monitoring/sub_module_dx/",
   "thick": false,
   "to": "module_monitoring/sub_module_dx/config.py",
@@ -1123,42 +1167,6 @@ const EDGES = [
   "from": "module_monitoring/sub_module_dx/",
   "thick": false,
   "to": "module_monitoring/sub_module_dx/visualise.py",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/config.py",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/containers.js",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/devops.css",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/devops.js",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/index.html",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/sub_module_portraefik/",
-  "thick": false,
-  "to": "module_monitoring/sub_module_portraefik/serve.py",
   "type": "tree"
  },
  {
@@ -1189,6 +1197,12 @@ const EDGES = [
   "from": "module_skills/",
   "thick": false,
   "to": "module_skills/skill_determinism.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_skills/",
+  "thick": false,
+  "to": "module_skills/skill_pre_aws_solution.md",
   "type": "tree"
  },
  {
