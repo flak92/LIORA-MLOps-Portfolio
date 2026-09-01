@@ -132,7 +132,7 @@ and its reading are § 16.
 DuckDB is embedded, not a service: there is no database server and no network
 hop. A container is a Python process with the repository bind-mounted at
 `/app`, opening a `.duckdb` file on that filesystem. Docker starts the process,
-gives it a filesystem and caps its memory and CPU — it never defines candle
+gives it a filesystem and caps its memory — it never defines candle
 validity, the primary-failover order, or OHLC, volume and `ffill` semantics.
 Those are the module's own, and they hold identically outside a container.
 
