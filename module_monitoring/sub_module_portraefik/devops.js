@@ -179,7 +179,7 @@ function renderEvents(payload) {
 
 /* a view the engine did not answer holds no rows: an empty table is what this page knows, and an
    empty host is a measurement, so the outage clears them rather than leaving the last ones up */
-function clearPanelViews() {
+function renderPanelCleared() {
   ["machines", "networks", "volumes", "bind-mounts", "events"].forEach((id) => {
     const table = document.getElementById(id);
     table.querySelector("thead").textContent = "";
@@ -226,7 +226,7 @@ function renderPanel() {
       renderEvents(events);
     })
     .catch((error) => {
-      clearPanelViews();
+      renderPanelCleared();
       meta.className = "box err";
       meta.textContent = "could not load /devops/api (" + error.message + ") — run `make docker-up`";
     })
@@ -242,7 +242,7 @@ function initPanel() {
       renderPanel();
     })
     .catch((error) => {
-      clearPanelViews();
+      renderPanelCleared();
       const meta = document.getElementById("panel-meta");
       meta.className = "box err";
       meta.textContent = "could not load /devops/api/machines (" + error.message + ") — run `make docker-up`";
