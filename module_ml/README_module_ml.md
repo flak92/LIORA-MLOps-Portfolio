@@ -21,8 +21,9 @@ writer of the ML layer — every other ML stage opens that database read-only.
 
 ## Stages
 
-Run in order; `make ml-all` runs the chain, and each stage fans out one process
-per asset with its threads pinned to one.
+Run in order; `make ml-all` runs the chain. The six stages above `status` fan
+out one process per asset with its threads pinned to one; `status` runs once and
+aggregates the whole basket.
 
 | stage | local | writes |
 |---|---|---|
@@ -34,8 +35,8 @@ per asset with its threads pinned to one.
 | strategy | `make ml-strategy` | `<TICKER>_strategy_evaluation.json` |
 | status | `make ml-status` | `module_monitoring/ml_status.json`, `<TICKER>_README.md` |
 
-Every target has a `docker-` twin that runs the same stage inside each asset's
-own container.
+Every target has a `docker-` twin: a per-asset stage runs inside each asset's
+own container, `status` inside `pipeline`.
 
 ## What it writes
 
