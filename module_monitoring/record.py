@@ -495,8 +495,6 @@ def finalize(run_id: str) -> int:
 
 def main() -> int:
     argv = sys.argv[1:]
-    if not argv:
-        raise SystemExit("usage: record <run_id> <command...>  |  record --finalize <run_id>")
     if argv[0] == "--finalize":
         return finalize(argv[1])
     return record_stage(argv[0], argv[1:])
