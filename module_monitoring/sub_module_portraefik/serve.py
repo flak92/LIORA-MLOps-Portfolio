@@ -123,7 +123,6 @@ def machine_row(container: dict, project: str | None) -> dict:
         "compose_service": labels.get(config.COMPOSE_SERVICE_LABEL),
         "own_project": bool(project) and labels.get(config.COMPOSE_PROJECT_LABEL) == project,
         "state": container.get("State"),
-        "state_text": container.get("Status"),
         "image": container.get("Image"),
         "started_at_utc": state.get("StartedAt"),
         "restart_count": inspected.get("RestartCount"),
@@ -225,7 +224,6 @@ def events_payload(project: str | None) -> dict:
     } for event in events]
     return {"generated_at_utc": monitoring_config.to_utc_text(now),
             "compose_project": project,
-            "window_minutes": config.EVENT_TAIL_MINUTES,
             "events": rows[-config.EVENT_TAIL_LIMIT:][::-1]}
 
 
