@@ -235,7 +235,7 @@ def main() -> int:
 
     assets = []
     for ticker in config.TICKERS:
-        if not all(descriptor(ticker).exists() for descriptor in config.ARTIFACT_SET_DESCRIPTORS):
+        if not config.is_artifact_set_complete(ticker):
             continue
         hyperparameter_search_result = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]
         metrics = dataset.load_json(config.model_evaluation_json(ticker))

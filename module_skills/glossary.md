@@ -157,7 +157,8 @@ key is in this register.
 of the same result.** One directory per ticker under `store_assets_artifacts/`;
 every file carries the `<TICKER>_` prefix, a time series carries its grid in
 timeframe slots, and paths are built only by the descriptors of
-`module_ml/config.py`.
+`module_ml/config.py`; whether an asset holds its three result files is asked
+once, by `is_artifact_set_complete()` beside them.
 
 The nine manifest files in `LC_COLLATE=C` listing order — the order
 `FILE_MANIFEST` in `module_ml/status.py` and the generated README share:

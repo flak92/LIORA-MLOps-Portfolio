@@ -86,7 +86,7 @@ def data_block(ticker: str, data_status: dict) -> dict | None:
 def artifacts_block(ticker: str, ml_status: dict) -> dict | None:
     """The folder's facts the tab shows; None while the ML snapshot has no block for the asset, or the
     folder no longer holds the artifact set that block describes."""
-    if not all(descriptor(ticker).exists() for descriptor in ml_config.ARTIFACT_SET_DESCRIPTORS):
+    if not ml_config.is_artifact_set_complete(ticker):
         return None
     for asset in ml_status["assets"]:
         if asset["ticker"] == ticker:
