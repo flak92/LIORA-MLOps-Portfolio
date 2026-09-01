@@ -91,8 +91,9 @@ td:first-child, th:first-child { text-align: left; }
 .final-holdout { font-weight: bold; }
 
 /* DevOps panel: a badge is the compact element carrying one variable of an asset's state;
-   --warn marks an observation or a measurement older than the download cadence,
-   --down a container whose endpoint did not answer */
+   --warn marks a state the reader should look at — a stale observation or measurement, an uncovered
+   research window, a threshold that fell back; --down a container that did not answer, or was not
+   asked yet */
 .badge {
   display: inline-block;
   border: 1px solid #111;

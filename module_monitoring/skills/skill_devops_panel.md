@@ -55,10 +55,20 @@ minimum, so upgrading the engine does not move the contract underneath the panel
 | `GET /devops/api/events` | this project's own daemon events over a bounded window, newest first |
 | `POST /devops/api/machines/<id>/<action>` | `start`, `stop`, `restart` — the whole allowlist |
 
-Both bounds on the event tail are deliberate: a window in minutes, because an
+A daemon that does not answer is answered for: every route above returns
+**503 with no body**, the shape and the reading
+`../../module_skills/skill_asset_containers.md` § Down semantics already fixes
+for an asset's endpoint. The page decides on the status alone and clears the
+views it can no longer vouch for, so an unreachable Engine is never rendered as
+an empty host. Having reached no cadence to poll on, it retries once the tab is
+next looked at.
+
+Three bounds on the event tail are deliberate: a window in minutes, because an
 unbounded `/events` grows with the daemon's uptime rather than with the question;
-and a project label filter, because a host's other stacks bury this project's
-events under their health checks.
+a count cap, because the page holds the tail and nothing persists it — this is
+the bound that actually drops an event a reader asked for; and a project label
+filter, because a host's other stacks bury this project's events under their
+health checks.
 
 ## The guard
 
@@ -73,8 +83,16 @@ every other, with the reason in the body:
 The project is read from the panel's own container labels at start, never
 written as a literal: a host may run a sibling project whose services carry the
 same names — `dashboard`, `asset-btc` — and only the `com.docker.compose.project`
-label separates them. An action outside the allowlist and a container the daemon
-does not know are both `404`.
+label separates them, and the read happens once — a daemon silent at that moment
+leaves the panel read-only for the life of the process and `/api/events`
+answering 503 rather than an empty tail, because an empty tail would read as a
+quiet project. An action outside the allowlist and a container the daemon does
+not know are both `404`.
+
+A third answer is neither acceptance nor refusal: the engine returns `304` when
+the container already holds the state the action asks for. It carries no body —
+a 304 cannot — so the page reads the status and says the action changed nothing.
+`refused` belongs to the 403 above and to nothing else.
 
 Not in v1, each needing its own decision: `rm`, `exec`, `prune`, image
 operations, compose up/down from the browser, log streaming.
@@ -89,7 +107,12 @@ included, against the ceiling that container actually runs under. The
 container including foreign ones. For an asset, the cgroup figures are the truer
 ones; the Engine's are what exists for a container that reports nothing.
 
-Its columns and badges are the ones the asset-container view has always had:
+Five more sections sit below those two — **networks**, **volumes**, **bind
+mounts**, **image** and **events** — each a flat table of what its route
+answered, with no arithmetic of the page's own. Their keys are registered in
+`../../module_skills/glossary.md` § DevOps panel and are not restated here.
+
+The asset-container columns and badges are the ones that view has always had:
 
 | column / badge | label | source |
 |---|---|---|
@@ -108,9 +131,11 @@ Its columns and badges are the ones the asset-container view has always had:
 | cpu (badge) | `cpu <seconds>s on <n> cpus` | `footprint.cpu_usage_seconds`, `cpu_count` — the container's total so far |
 | a symbol with no row, or an asset with no database | `no data yet` | `data: null` — never `down` |
 
-`badge--warn` marks an observation or a measurement older than
-`download_cadence_minutes` from the data snapshot — never a literal in the page;
-`badge--down` a container whose endpoint did not answer 200.
+`badge--warn` marks three conditions: an observation or a measurement older than
+`download_cadence_minutes` from the data snapshot — never a literal in the page —
+a research window the asset's grid does not cover, and an entry threshold that
+fell back rather than meeting its trade floor. `badge--down` marks a container
+whose endpoint did not answer 200, and a container not asked yet.
 
 ## What the panel owes the reader
 
