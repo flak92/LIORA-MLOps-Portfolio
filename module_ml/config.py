@@ -16,6 +16,8 @@ from module_data.config import (  # re-exported
 SEED = 42
 
 # ---- frozen research window (later data top-ups do not change this experiment)
+# The start repeats module_data's DATA_WINDOW_START_UTC on purpose rather than importing it: the
+# download window may be widened without moving an experiment already run against this one.
 RESEARCH_START_UTC = "2021-01-01"   # inclusive
 RESEARCH_END_UTC = "2026-08-26"     # exclusive
 

@@ -20,8 +20,12 @@ Standard library plus the `git` binary — there is nothing to install.
 ## The one rule
 
 **`visualisation_config.json` is the whole configuration surface.** Shape, colour, wording, camera
-and placement all live there. Changing the drawing never means editing Python. An unknown key is an
-error naming the key, so a typo cannot pass unnoticed.
+and placement all live there. An unknown key is an error naming the key, so a typo in a key cannot
+pass unnoticed — a typo in a *path*, under `roles` or `descriptions`, is dropped in silence, because
+a path left behind by a deleted file is stale rather than broken. The one thing the JSON overrides
+rather than owns is the default role of an extension: `roles` retypes a path at a time, and the
+`.md` → doc, `.py` → code, `.json` → artifact defaults live in `config.py`, the way edge weight
+does — not a knob.
 
 ## Every key
 
