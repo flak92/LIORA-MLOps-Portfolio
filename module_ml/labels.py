@@ -34,13 +34,14 @@ Y_COLUMNS = {
 def load_research_1m(con: duckdb.DuckDBPyConnection) -> dict[str, np.ndarray]:
     """The canonical 1m series over the research window — the market object."""
     bars_1m = con.execute(
-        f"""SELECT open, high, low, close, volume FROM ohlcv_1m_canonical
+        f"""SELECT timestamp_ms, open, high, low, close, volume FROM ohlcv_1m_canonical
             WHERE timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
-    expected = (config.RESEARCH_END_MS - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
-    assert bars_1m["open"].size == expected, "canonical 1m grid incomplete inside the research window"
+    grid = np.arange(config.RESEARCH_START_MS, config.RESEARCH_END_MS, config.MILLISECONDS_PER_MINUTE)
+    assert np.array_equal(bars_1m["timestamp_ms"].astype(np.int64), grid), \
+        "canonical 1m grid incomplete inside the research window"
     return bars_1m
 
 
