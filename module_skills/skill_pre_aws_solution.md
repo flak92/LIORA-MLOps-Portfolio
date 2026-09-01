@@ -65,7 +65,7 @@ today:
 |---|---|---|
 | SOURCE | an external observation fetched as it came | `module_data/download_binance.py`, `module_data/download_bybit.py` |
 | INGEST | raw evidence materialised, unchanged, into the asset's database | `module_data/ingest.py` — the two venue tables |
-| CANONICAL | the one research series built from the evidence | `module_data/ingest.py` — `CANONICAL_INSERT`; `module_data/lean.py`, the raw format it is read from |
+| CANONICAL | the one research series built from the evidence, and its aggregations | `module_data/ingest.py` — `CANONICAL_INSERT`; `module_data/lean.py`, the raw format it is read from; `module_ml/bars.py`, the 15m/1h/4h tables of the same series |
 | STORAGE | where state lives, and the descriptors that name it | the `store_*` roots; every path descriptor of a `config.py` |
 | FEATURE | X, a pure function of the canonical series | `module_ml/features.py`, `module_ml/indicators.py` |
 | LABEL | Y, resolved on the canonical path | `module_ml/labels.py` |
@@ -168,9 +168,11 @@ needs the snapshots out of `module_monitoring/` first.
 
 Compose services are named for their runtime role — `pipeline`, `dashboard`,
 `asset-<ticker>`, `devops` — never for a ticker, a tool or an author. Container,
-network and volume names stay compose-derived on purpose: two checkouts of LIORA
-share this host with the same service names, and a fixed project name or a named
-network would merge them into one project on one network. No code depends on a
+network and volume names stay compose-derived on purpose: checkouts of LIORA can
+sit side by side on one host with the same service names
+(`../module_monitoring/skills/skill_devops_panel.md` § The guard), and a fixed
+project name or a named network would merge them into one project on one
+network. No code depends on a
 container name; code knows `ASSET`, and every address is built once, in
 `module_monitoring/config.py`. The asset's database is the GOOD example of the
 whole stance — one embedded file, one whole-file lock, one writer at a time
@@ -194,7 +196,7 @@ over the basket rather than asset-scoped stages: `module_data.status` and
 writer and run only in the one-off `pipeline`, never fanned out
 (`../module_data/README_module_data.md` § Stages,
 `../module_ml/README_module_ml.md` § Stages); the asset README the second also
-writes is an asset artifact of an asset-scoped step, the snapshot a fold over
+writes is an asset artifact of an asset-scoped part of that stage, the snapshot a fold over
 completed asset artifacts. The download stays basket-wide and sequential for a
 venue reason, not a namespace one (`skill_asset_containers.md` § The topology).
 If the basket ever outgrows a handful, the direction is a per-asset status object
@@ -212,7 +214,9 @@ parameters that orchestration owns — width, stage instrumentation, execution
 identity — and no stage reads or derives any of them (`skill_determinism.md` for
 width). The basket crosses in as data read once, by importing `TICKERS`, never
 as a branch. One stage vocabulary holds in every layer — the Makefile,
-`stage_of()` in the recorder, the run record, the page, these documents.
+`stage_of()` in the recorder, the run record, the page, these documents — with
+one seam named: the target `data-download` runs both download stages, so the
+record spells them `data-download-binance` and `data-download-bybit`.
 
 Read forward, the Makefile is a state machine whose states are the stages. The
 test of a stage's width is whether it has a one-line state name; every stage
@@ -287,9 +291,11 @@ boxes and the two absent consumers.
 The left column is what this repository has; the right column is the shape the
 same responsibility would take elsewhere. No path in the right column is a
 proposal for a local directory. The cloud's proper nouns are spelled out here
-and live in this column and nowhere else in the tree — not in a tracked path, a
-make target, a compose service, a container environment variable, a payload key
-or a code comment.
+and where the stance is stated — `AGENTS.md` § Pre-AWS architectural direction,
+`README.md` § Architectural direction and this document's prose — and among the
+tree's names they live in this column alone: never in a make target, a compose
+service, a container environment variable, a payload key or a code comment, and
+in no tracked path but this file's own `pre_aws` stem.
 
 | this repository has | responsibility | the same responsibility elsewhere |
 |---|---|---|
@@ -314,7 +320,7 @@ or a code comment.
 
 "How does AWS look? Copy it locally": a database server because the cloud would
 have one, a queue because the cloud would have events, a retry layer because a
-Task might fail, a `StorageManager` or a `CloudCompatibleStorageInterface` while
+remote container run might fail, a `StorageManager` or a `CloudCompatibleStorageInterface` while
 there is one filesystem. The order is the reverse: what responsibilities does
 the system have → build the simplest local implementation of each → check that
 the boundary between them has a natural cloud equivalent. A second storage
@@ -325,7 +331,7 @@ tooling* (`AGENTS.md` § Values) is the general rule; this is its special case.
 
 When production realism and academic simplicity conflict, simplicity wins,
 provided no boundary results that would hinder the migration. GOOD: a DuckDB
-file per asset — trivial locally, one object pulled into a Task's disk later.
+file per asset — trivial locally, one object pulled into a container's own disk later.
 BAD: a local PostgreSQL "because the cloud should have a database".
 
 Build the simplest local academic implementation whose architectural boundaries
@@ -354,8 +360,8 @@ here, because they are no longer true.
 | `module_monitoring/` is served wholesale, four routes and a proxy beside static files | one root is page, package and status store | the files and the snapshots are static objects; the routes are a reader process | no — described |
 | no callable "does this asset need a rebuild?" exists | the condition has no home; nothing is wrongly fused | keep compute unconditional; a future predicate is the `is_` / `has_` / `requires_` question above, never a lift of the downloader's loop | no — described |
 | `docker-btc-all`, `docker-btc-lifecycle` | a ticker in a target name | detached from every document and page; retire when the basket grows, as their sunset notes say | no — described |
-| compose project, container and network names derive from the directory | none | two checkouts of LIORA share this host; a fixed name would merge them | no — described |
-| the image is named `mlops-portfolio-1m-pipeline`, a name older than LIORA | none for the mapping: one runtime package, no ticker | kept; a rename would share a tag with the sibling checkout that builds the same name | no — described |
+| compose project, container and network names derive from the directory | none | checkouts of LIORA can sit side by side on one host with the same service names; a fixed name would merge them | no — described |
+| the image is named `mlops-portfolio-1m-pipeline`, a name older than LIORA | none for the mapping: one runtime package, no ticker | kept; the name is one runtime package with no ticker, which is all the mapping needs; two checkouts that build one tag share whichever built last, so a rename is worth doing only under a tag no sibling builds | no — described |
 | `centered_rsi14` is spelled the American way | the one identifier that breaks the British spelling of the prose | a stored column, an artifact key and a feature name — a contract with files on disk that moves only with every writer and reader in one commit | no — described |
 | `hpo` names the stage and the file; `hyperparameter_search_result` names the key | one term in two forms | a domain abbreviation `AGENTS.md` § Canonical vocabulary admits, spelled out where a key has no file name beside it — as UTC and OHLCV are | no — described |
-| `module_ml.status` writes a basket snapshot and per-asset READMEs in one stage | two namespaces in one stage | each named: the README is an asset artifact of an asset-scoped step, the snapshot a fold over completed asset artifacts | no — described |
+| `module_ml.status` writes a basket snapshot and per-asset READMEs in one stage | two namespaces in one stage | each named: the README is an asset artifact of an asset-scoped part of that stage, the snapshot a fold over completed asset artifacts | no — described |

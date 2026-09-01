@@ -147,9 +147,11 @@ and built nowhere.
   need, is described in the skill as its future equivalent and never built here.
   Stated, not mitigated.
 - **The asset is the namespace.** `ASSET=<TICKER>` — `--tickers` at the process
-  boundary — selects every datum and artifact; no code, file, target or service
-  definition is named for a ticker; a new asset is one line in `TICKERS` and one
-  block under the compose anchor.
+  boundary — selects every datum and artifact; no code, file, function or
+  service definition is named for a ticker — `asset-<ticker>` is one instance
+  of the asset container, and a ticker may name a convenience alias in the
+  Makefile, with its sunset note, never a target another file depends on; a new
+  asset is one line in `TICKERS` and one block under the compose anchor.
 - **Compute owns no state.** A stage reads a store, writes a store and exits; it
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
   no resident peer.
@@ -174,14 +176,17 @@ and built nowhere.
   `asset-<ticker>` is how the fan-out and the panel do it locally, and no stage
   depends on it.
 - **A few assets are proof enough.** The whole chain on `BTC` demonstrates the
-  architecture; scale is `ASSET=<ticker>`, never hundreds of assets.
+  architecture; scale is `ASSET=<TICKER>`, never hundreds of assets.
 
-Cloud proper nouns are external vocabulary and live in the skill's mapping table
-alone — never in a path, a make target, a compose service, an environment
-variable, a payload key or a code comment. The non-goals, the twelve classes,
-the review of what stays local and the mapping table are
-`module_skills/skill_pre_aws_solution.md` — the second cross-cutting skill of
-the kind § The default choice names.
+Cloud proper nouns are external vocabulary. Apart from the repository's own word
+*Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
+file stem it registers — they are spoken only where the stance is stated: this
+section, `README.md` § Architectural direction, the skill's prose and the right
+column of its mapping table. Never in a make target, a compose service, an
+environment variable, a payload key or a code comment. The non-goals, the twelve
+classes, the review of what stays local and the mapping table are
+`module_skills/skill_pre_aws_solution.md` — a cross-cutting skill of the kind
+§ The default choice names, beside `skill_asset_containers.md`.
 
 ## Canonical vocabulary
 

@@ -19,7 +19,7 @@ from module_data.config import REPO_ROOT
 CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
 PIPELINE_SERVICE = "pipeline"            # the compose service a basket-wide stage runs in
-DEVOPS_SERVICE = "devops"        # the one compose service that holds the docker socket
+DEVOPS_SERVICE = "devops"                # the one compose service that holds the docker socket
 DEVOPS_ROUTE_PREFIX = "/devops"          # the dashboard route the panel's API is proxied under
 CONTAINER_POLL_INTERVAL_SECONDS = 5      # published to the page, which never carries a cadence of its own
 RUN_SAMPLE_POINT_LIMIT = 900             # the timeline's stride: a long run is thinned, never truncated

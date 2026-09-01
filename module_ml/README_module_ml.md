@@ -21,10 +21,10 @@ writer of the ML layer — every other ML stage opens that database read-only.
 
 Every stage here is a one-off process addressed as
 `python -m module_ml.<stage> --tickers <TICKER>`: it reads files, writes files
-and holds nothing between runs, so the module already has the shape of
-asset-scoped compute that receives a finished canonical object and leaves
-artifacts in the asset's folder; `bars.py` above is the one write across that
-seam. The direction:
+and holds nothing between runs, so the six stages above `status` already have
+the shape of asset-scoped compute that receives a finished canonical object and
+leaves artifacts in the asset's folder, while `status` is the basket-wide fold
+over them; `bars.py` above is the one write across that seam. The direction:
 [../module_skills/skill_pre_aws_solution.md](../module_skills/skill_pre_aws_solution.md).
 
 ## Stages
