@@ -25,8 +25,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import config
-from .lean import (LEAN_DAY_ZIP_GLOB, MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day,
-                   lean_day_zip_name, write_lean_zip)
+from .lean import (MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day, lean_day_zip_name,
+                   lean_day_zip_paths, write_lean_zip)
 
 KLINE_REQUEST_WINDOW_MS = 720 * config.MILLISECONDS_PER_MINUTE  # half a day fits in one 1000-candle response
 
@@ -75,11 +75,11 @@ def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
 def load_earliest_traded_day(out_dir: Path) -> str | None:
     """The first day whose ZIP holds a non-empty CSV: evidence that precedes a day is what tells pre-listing from a
     failed request."""
-    for p in sorted(out_dir.glob(LEAN_DAY_ZIP_GLOB)):
-        with zipfile.ZipFile(p) as z:
-            entries = z.infolist()
+    for zip_path in lean_day_zip_paths(out_dir):
+        with zipfile.ZipFile(zip_path) as day_zip:
+            entries = day_zip.infolist()
             if entries and entries[0].file_size > 0:
-                return p.name[:8]
+                return zip_path.name[:8]
     return None
 
 

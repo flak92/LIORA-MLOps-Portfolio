@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 import duckdb
 
 from . import config
-from .lean import LEAN_DAY_ZIP_GLOB, MINUTES_PER_DAY
+from .lean import MINUTES_PER_DAY, lean_day_zip_paths
 
 VENUE_SCAN = """
 SELECT count(*)                     AS row_count,
@@ -117,7 +117,7 @@ def main() -> int:
 
     tickers = [ticker for ticker in config.TICKERS if ticker in canonical_rows]
     zip_counts = {
-        venue: {ticker: sum(1 for _ in config.raw_symbol_dir(ticker, venue).glob(LEAN_DAY_ZIP_GLOB)) for ticker in tickers}
+        venue: {ticker: len(lean_day_zip_paths(config.raw_symbol_dir(ticker, venue))) for ticker in tickers}
         for venue in config.SOURCE_VENUES
     }
 

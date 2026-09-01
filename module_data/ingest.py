@@ -20,7 +20,7 @@ from pathlib import Path
 import duckdb
 
 from . import config
-from .lean import LEAN_DAY_ZIP_GLOB, LEAN_DAY_ZIP_NAME_PATTERN
+from .lean import LEAN_DAY_ZIP_NAME_PATTERN, lean_day_zip_paths
 
 VENUE_DDL = """
 CREATE TABLE IF NOT EXISTS ohlcv_1m_{venue} (
@@ -136,10 +136,6 @@ def utc_midnight_ms(yyyymmdd: str) -> int:
     return int(datetime.strptime(yyyymmdd, "%Y%m%d").replace(tzinfo=UTC).timestamp() * config.MILLISECONDS_PER_SECOND)
 
 
-def load_zip_paths(zip_dir: Path) -> list[Path]:
-    return [p for _, p in sorted((p.name[:8], p) for p in zip_dir.glob(LEAN_DAY_ZIP_GLOB) if LEAN_DAY_ZIP_NAME_PATTERN.match(p.name))]
-
-
 def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
     """Yield (epoch_ms, open, high, low, close, volume) from one Lean minute ZIP."""
     midnight_ms = utc_midnight_ms(LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1))
@@ -154,7 +150,7 @@ def write_venue_spool(ticker: str, venue: str, spool_csv: Path) -> int:
     row_count = 0
     with spool_csv.open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
-        for zip_path in load_zip_paths(config.raw_symbol_dir(ticker, venue)):
+        for zip_path in lean_day_zip_paths(config.raw_symbol_dir(ticker, venue)):
             for ts, o, h, lo, c, v in parse_zip(zip_path):
                 w.writerow((ts, o, h, lo, c, v))
                 row_count += 1

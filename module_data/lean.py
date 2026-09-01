@@ -22,6 +22,16 @@ LEAN_DAY_ZIP_GLOB = "*_trade.zip"
 LEAN_DAY_ZIP_NAME_PATTERN = re.compile(r"^(\d{8})_trade\.zip$")
 
 
+def lean_day_zip_paths(zip_dir: Path) -> list[Path]:
+    """Every day ZIP of one symbol directory, in day order — the one enumeration of a raw leaf.
+
+    The grammar is the filter: a name the pattern does not match is not a day of this tree, so a
+    foreign `*_trade.zip` is invisible to every stage rather than to some of them.
+    """
+    matched = ((LEAN_DAY_ZIP_NAME_PATTERN.match(path.name), path) for path in zip_dir.glob(LEAN_DAY_ZIP_GLOB))
+    return [path for _, path in sorted((match.group(1), path) for match, path in matched if match)]
+
+
 def lean_day_zip_name(day: str) -> str:
     """`YYYYMMDD_trade.zip` — one UTC calendar day."""
     return f"{day}_trade.zip"
