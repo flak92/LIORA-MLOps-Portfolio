@@ -78,6 +78,23 @@ where a Bybit listing falls inside the window, the pre-listing minutes are
 Binance-only in the canonical series, which covers the identical full minute
 grid.
 
+## Architectural direction
+
+LIORA is an academic, local MLOps research system, not an AWS deployment. Its
+module, storage and container boundaries are drawn as a Pre-AWS architecture on
+purpose: every local implementation is the smallest that works — one DuckDB file
+per asset, Parquet and JSON in the asset's folder, one image, a Makefile — and
+the responsibilities are cut so that a later move onto standard cloud primitives
+(an object store, a container runtime, a stage orchestrator) would replace the
+local storage, the local Docker execution and the local stage order without
+redrawing the domain pipeline. No cloud infrastructure exists here and none is
+planned; the mapping is described, not built. Correctness is shown by the whole
+chain running end to end on a small representative basket, `BTC` today, never by
+production-scale infrastructure: there is no test suite, no security layer and
+no guard beyond the seven the mathematics needs. The rule, its non-goals and the
+mapping table:
+[module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
+
 ## Quickstart
 
 Four direct dependencies and nothing else — `duckdb` (storage and query),

@@ -205,6 +205,7 @@ how a stage is run, never what it computes.
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
 | the memory ceiling every service runs under | the `x-service` anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation, a service written outside the anchor and so without a ceiling |
+| how long a container lives: one-off — a `run --rm` process that exits with its stage — or resident — a server that stays up | the `lifetime` column of `skill_asset_containers.md` § The topology | — | — | one-shot, ephemeral, daemon, long-running; `task` or `job` for the one-off |
 
 ## Container status endpoint
 
@@ -317,6 +318,20 @@ choice holds the rule; these are the names it uses.
 
 A skill exists exactly once, in the directory its ownership names — the index
 links to it and never repeats it.
+
+## Pre-AWS direction
+
+The names `AGENTS.md` § Pre-AWS architectural direction and
+`skill_pre_aws_solution.md` use — how the repository is drawn, not what it
+computes; the rules are there, not here. Cloud proper nouns are external
+vocabulary and live in that skill's mapping table alone; none is registered here.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| the stance: a local academic architecture whose boundaries would survive a move onto standard cloud primitives, with no cloud used and none planned | Pre-AWS — a word of the documents; `pre_aws` in the file stem, no identifier carries it | — | — | cloud-ready, AWS-ready, cloud-native, a migration plan, a deployment guide; `pre-aws` or `PreAWS` in prose |
+| compute: a process that reads a store, writes a store and exits, owning no asset state between invocations | every stage's `main()`, `python -m <module>.<stage> --tickers <TICKER>`; the container that runs it | — | — | a container as the home of an asset's state; a resident as a requirement of a stage; an in-process cache between stages; `worker`, `processor` |
+| the rebuild condition: whether an asset's artifacts must be rebuilt from its canonical series, answered without launching anything | `is_artifact_set_complete()` is its completeness half; freshness has no predicate yet — its names when written: `has_new_market_data()`, `requires_canonical_rebuild()`, `requires_feature_rebuild()`, `requires_model_rebuild()`; until then the rerun table of `../module_ml/skills/methodology_ml.md` § 11 is read by a human | — | — | a scheduler, a watcher, an event bus, a function that both detects new data and trains; `should_run()`, `check_update()`, `trigger()` |
+| the mapping table: the one place cloud proper nouns are spoken — what this repository has, beside the shape the same responsibility takes elsewhere | `skill_pre_aws_solution.md` § The mapping table | — | — | an adapter, a cloud config file, a proper noun outside the table; a right-column path read as a proposal for a local directory |
 
 ## DevOps panel
 

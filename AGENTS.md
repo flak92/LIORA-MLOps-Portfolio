@@ -126,6 +126,63 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 
+## Pre-AWS architectural direction
+
+Pre-AWS is this repository's word for its own shape: a local, academic
+architecture whose boundaries would still be the right boundaries after local
+storage, local container execution and local stage order were replaced by their
+standard equivalents on Amazon Web Services (AWS). No cloud is used and none is
+planned; the mapping is described in `module_skills/skill_pre_aws_solution.md`
+and built nowhere.
+
+- **Academic, not AWS.** The runtime is local — a venv, or one image under
+  docker compose — and the goal is a correct dataflow with visible
+  responsibilities: a demonstrator, not a deployment.
+- **Every boundary decision weighs the future mapping.** Where a function lives,
+  who writes a file, what a stage takes as its parameter, how a container is
+  started — each is chosen so the mapping stays a rename, never a redesign;
+  nothing is implemented for the cloud.
+- **No cloud complexity without an academic need.** A mechanism that exists only
+  because production would require it, and that the research logic does not
+  need, is described in the skill as its future equivalent and never built here.
+  Stated, not mitigated.
+- **The asset is the namespace.** `ASSET=<TICKER>` — `--tickers` at the process
+  boundary — selects every datum and artifact; no code, file, target or service
+  definition is named for a ticker; a new asset is one line in `TICKERS` and one
+  block under the compose anchor.
+- **Compute owns no state.** A stage reads a store, writes a store and exits; it
+  holds nothing between invocations, binds no port, reads no `ASSET` and assumes
+  no resident peer.
+- **Storage is separate from compute.** Pipeline state lives at paths one
+  `config.py` per module builds — the `store_*` roots and the two tracked
+  snapshots — never inside a container; the one bind mount carries code and
+  state together as a local convenience, not as a contract.
+- **Modules are built by ownership and lifetime.** A function sits beside the
+  functions that write the same state and live as long as it does, never beside
+  what happened to be written with it; every object is classified before it is
+  placed.
+- **Names carry the responsibility.** A name says what the object is, what it
+  does and where it belongs — a service by its runtime role, a store by what it
+  holds, a function by its verb from the closed list or by the quantity it is;
+  local names never imitate cloud resources, and cloud resources would inherit
+  the local vocabulary unchanged.
+- **The Makefile is the local developer interface.** It names stages after their
+  modules, lists their order and never schedules; orchestration sits above the
+  stages and inside none.
+- **Docker is compute.** A container is the local counterpart of the one-off
+  container a cloud runtime would launch per stage and per asset; the resident
+  `asset-<ticker>` is how the fan-out and the panel do it locally, and no stage
+  depends on it.
+- **A few assets are proof enough.** The whole chain on `BTC` demonstrates the
+  architecture; scale is `ASSET=<ticker>`, never hundreds of assets.
+
+Cloud proper nouns are external vocabulary and live in the skill's mapping table
+alone — never in a path, a make target, a compose service, an environment
+variable, a payload key or a code comment. The non-goals, the twelve classes,
+the review of what stays local and the mapping table are
+`module_skills/skill_pre_aws_solution.md` — the second cross-cutting skill of
+the kind § The default choice names.
+
 ## Canonical vocabulary
 
 **Names must be self-explanatory before they are project-specific. Prefer
@@ -135,7 +192,8 @@ documentation, in the skills and in the interface alike — and do not invent
 local terminology for a standard concept. A glossary confirms meaning; it must
 not be required to decode an obscure name.**
 
-One concept, one name — in the code, in the artifacts and in the interface. The
+One concept, one name — in the code, in the artifacts, in the interface, in the
+Makefile, in docker compose and in the documents. The
 register is `module_skills/glossary.md`, and a new name enters it in the same
 commit that introduces it. The word "test" never names a fold.
 
@@ -180,7 +238,7 @@ from its layer's grammar, never invented:
 | CLI entry | `main()` — one per stage module, returning the exit code | `main` | `run`, `cli`, `entrypoint` |
 | quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `returns_15m` | `n_min`, `off` |
 | index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
-| booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_` | `entry_observable`, `label_valid`, `is_full_utc_day()` | `flag`, `ok`, `check` |
+| booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_`, `has_` or `requires_` — state, possession, obligation | `entry_observable`, `label_valid`, `is_full_utc_day()`, `is_artifact_set_complete()` | `flag`, `ok`, `check`; `should_`, `check_`, `needs_`, a bare `trigger` |
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
@@ -249,7 +307,9 @@ list holds the words bound to neither.
 - **module and file stems:** `module_compose`, `module_docker`,
   `module_capsule`, `module_asset`, `module_viz`; `dashboard.py`, `proxy.py`,
   `server.py` beside `serve.py`; a strategy file per asset, a parameters file
-  per stage, an `export` stage, a per-asset OHLCV parquet
+  per stage, an `export` stage, a per-asset OHLCV parquet; a module named for
+  a cloud resource (`module_s3`, `module_ecs`, `module_eventbridge`); `worker`,
+  `processor`
 - **function verbs:** `read_`, `probe_`, `spool_`, `iter_`, `run_`, `compute_`,
   `_factory`; in JavaScript `load`, `poll`
 - **key names:** bare `lag`, `age`, `usage` — without the subject and the unit —
@@ -264,7 +324,9 @@ list holds the words bound to neither.
   `devops` — the one service whose responsibility is docker management, and
   which publishes no port (`module_skills/skill_asset_containers.md`); `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
-  generator, framework; `authority`, `single source of truth`
+  generator, framework; `authority`, `single source of truth`; `one-shot` for a
+  one-off; `cloud-ready`, `AWS-ready`, `cloud-native`; `s3://` in a path
+  constant, an adapter for a cloud that is not there
 
 ## The default choice
 

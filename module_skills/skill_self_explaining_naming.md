@@ -76,3 +76,41 @@ Mint at the **third** occurrence of a pattern: two is a coincidence, three is a
 convention. Write it into `AGENTS.md` in the same commit that makes the third
 name follow it, and state what it forbids — the forbidden form is the half of
 the rule that does the work.
+
+## The naming review
+
+Before a module, a file, a function, a compose service, a network, a volume, a
+folder, an artifact, a make target, a JSON key or an environment variable is
+added, eight answers are written down, in order:
+
+1. what does it represent;
+2. how long does it live;
+3. who writes or creates it;
+4. who reads or uses it;
+5. does the name reveal that responsibility;
+6. would a second asset force a rename;
+7. is its future cloud equivalent obvious from the responsibility
+   (`skill_pre_aws_solution.md`);
+8. is the term already in use elsewhere (`glossary.md`).
+
+A no at 5 or 6 means the name is wrong. The classes a name is placed in are
+`skill_pre_aws_solution.md` § Every object is classified before it is placed.
+
+## The closed list absorbs its synonyms
+
+The generic verbs a reader may reach for, and the house form each already has —
+one concept, one name, so none of them enters:
+
+| reached for | written as |
+|---|---|
+| `save_`, `publish_` | `write_` |
+| `read_` | `load_` |
+| `download_` inside a function | `fetch_` — a stage file may be `download_<venue>.py`, because a file names a stage |
+| `generate_`, `calculate_`, `compute_`, `aggregate_` | `build_<object>`, or the quantity itself with no verb |
+| `train_` | `fit`, at the xgboost boundary |
+| `evaluate_` | `<object>_evaluation`, the noun the stage writes |
+| `process`, `handle`, `run`, `execute`, `manage`, `do_work` | never |
+
+A function that computes never writes; a function that writes says so in its
+verb. When the two would share a body, the body is split at the store: the
+quantity is built, then written.
