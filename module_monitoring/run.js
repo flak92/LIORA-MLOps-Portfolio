@@ -213,7 +213,7 @@ function initRun() {
     .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
     .then((runs) => {
       if (!runs.run_ids.length) {
-        meta.textContent = "no recorded run yet — run `make docker-btc-lifecycle`";
+        meta.textContent = "no recorded run yet — run `make docker-all-record`";
         return;
       }
       meta.textContent = runs.run_ids.length + " recorded run(s) · newest " + runs.run_ids[0];
