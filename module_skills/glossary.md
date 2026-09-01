@@ -16,7 +16,7 @@ confirmation; the rest of the concept column states what the name means.
 | the fold that is only ever evaluated | `FINAL_HOLDOUT_FOLD_ID` = 5 | `final_holdout`, `final_holdout_fold_id` | `F5 — final holdout (out-of-sample)` | test, test set, locked test, final OOS |
 | the evaluated block of a fold, and which one a prediction belongs to | `oos`, `oos_fold_id` | `oos_fold_id` (parquet column) | out-of-sample | test block, test period |
 | dropping training events that overlap the evaluated block | `purge` — `event_end_ts <= oos_start` | — | purged | gap, buffer |
-| a forced wait after the evaluated block — **width zero here**, forward chaining needs none | `embargo` | — | — | cooldown, post-test embargo |
+| a forced wait after the evaluated block — **width zero here**, forward chaining needs none | — (the field's term, carried by no identifier, because there is nothing to implement) | — | — | cooldown, post-test embargo |
 | bars consumed before the first decision is allowed | `WARMUP_4H_BARS` = 200, `WARMUP_END_MS` | `warmup_excluded_decision_count` | warm-up excluded | burn-in |
 
 ## Market object
@@ -30,8 +30,8 @@ confirmation; the rest of the concept column states what the name means.
 | the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | — | — | DECISION_TF |
 | how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
 | a data provider, above the ingest boundary only | `binance` / `bybit`, in `module_data` | `venues.*`, `binance_pct` / `bybit_pct` | Raw source | venue or exchange used below ingest |
-| which provider a canonical minute came from | `source`, `source_switch_count` | same | primary / secondary / ffill | — |
-| a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume`, `zero_volume_bars` | zero-vol | carried-forward price (true only of forward-filled minutes) |
+| which provider a canonical minute came from | `source`, `source_switch_count` | `source_switch_count`; `source` is a database column, published only as the shares `binance_pct` / `bybit_pct` / `ffill_pct` | primary / secondary / ffill | — |
+| a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume_bars`; `zero_volume` is a database column | zero-vol | carried-forward price (true only of forward-filled minutes) |
 | a synthesised continuity minute | `source = 'ffill'` | `ffill_bars` | ffill | gap, missing bar |
 | quality columns that are never features | `binance_valid`, `bybit_valid`, `rel_divergence` | — (database columns; `rel_divergence` is published only as `relative_divergence_mean` / `relative_divergence_p99` / `relative_divergence_max`) | — | signal, feature |
 
@@ -81,7 +81,7 @@ adjective (`ambiguous`) names no number.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| decisions on the 15m grid after the warm-up | `decision_count` | `decision_count` | decisions | rows, `n` |
+| decisions on the 15m grid after the warm-up whose horizon still fits the research window — the labelled population, so it is short of the feature grid by the dropped tail | `decision_count` | `decision_count` | decisions | rows, `n` |
 | rows a fold's metrics are computed on | `scored_row_count` | `scored_row_count` | scored | `n` |
 | rows the model is fitted on, and the events purged before them | `training_row_count`, `purged_event_count` | same | trained on / purged | n_train, n_purged |
 | rows in a prediction window | `window_row_count` | `window_row_count` | window | n_window |
@@ -118,6 +118,7 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss (`best LL` in the search table) | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | the chosen point itself — the closed set of eight, in xgboost's own spelling because `module_ml/hpo.py` is a named boundary | the keys of `HYPERPARAMETER_SEARCH_SPACE`, `module_ml/config.py` — the one definition the search, the file and the table all derive from | `best_params`: `alpha`, `colsample_bytree`, `eta`, `lambda`, `max_depth`, `min_child_weight`, `num_boost_round`, `subsample` | depth, eta, min child, subsample, colsample, lambda, alpha, rounds — the search table's columns | a project synonym for an xgboost parameter; a second name for any of the eight; registering them one by one |
+| what the search never touches — the constants the experiment freezes before it starts | `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER`, `LABEL_HORIZON_MINUTES`, the five feature parameters (`EMA_FAST_SPAN_BARS`, `EMA_SLOW_SPAN_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS`, `RSI_WILDER_SMOOTHING_PERIOD_BARS`, `RANGE_POSITION_LOOKBACK_BARS`, `LOG_VOLUME_ZSCORE_LOOKBACK_BARS`), `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md | a searched parameter among them; a value changed without a commit that says so |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe; `selection score` for the validation mean, and `degradation` for holdout Sharpe minus the selection score — presentation arithmetic | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
@@ -235,7 +236,9 @@ stage already runs in. Its paths come from the descriptors of
 content hash, but git's own identity, the record `module_ml/config.py` already
 names — so it sorts chronologically and points at the code that ran.
 
-**A `process_` key is the stage; a `container_` key is not.** The stage's cost
+**In `events.jsonl` and `resources.jsonl` a `process_` key is the stage and a `container_` key
+is not.** `summary.json` needs no prefix on the stage's own numbers, because every unprefixed
+number in a stage row is already the stage's; only the container ones are marked there. The stage's cost
 comes from `wait4` rusage of the process the recorder spawned and reaped — exact,
 never sampled. The cgroup counters carry the whole container over the same
 window: the resident server, the recorder and the stage together.
@@ -326,5 +329,10 @@ project runs on, and the three verbs offered for them. The contract is
 | whether a container belongs to the project the panel itself runs in | `own_project`, compared on `com.docker.compose.project` read from the panel's own labels | `own_project`, `compose_project` | `own` | a match on service name or image; the project written as a literal |
 | the whole set of state changes the panel offers | `CONTAINER_ACTIONS` = `("start", "stop", "restart")` | `actions` | start / stop / restart | `rm`, `exec`, `prune`, compose up/down from the browser, an action outside the tuple |
 | the refusal of an action on another project's container | HTTP 403 with `refused` and `reason` | `refused`, `reason` | the reason, shown | a silent no-op, a disabled button as the only guard, a 404 that hides the reason |
+| the panel's own API, proxied by the dashboard and reached by literal name from the page | `DEVOPS_ROUTE_PREFIX` = `/devops`, `portraefik_api_url()` | `GET /devops/api/{machines,networks,volumes,image,events}`, `POST /devops/api/machines/<id>/<action>` | — | a route on the dashboard that opens the socket; a second prefix for the same panel |
+| what one machine row publishes about a container | `machine_row()` | `container_id`, `name`, `compose_project`, `compose_service`, `own_project`, `state`, `image`, `started_at_utc`, `restart_count`, `ports`, `memory_bytes`, `memory_limit_bytes`, `cpu_usage_seconds`, `cpu_count` | the container table's columns | a key the page does not read; `mem`, `cpu_pct`, a bare duration for uptime |
+| what the three engine inventories publish beside the machines | `networks_payload()`, `volumes_payload()`, `image_payload()` | networks `name`, `driver`, `scope`, `attached`; volumes `name`, `driver`, `size_bytes`, `reference_count`, and bind mounts `source`, `destination`, `writable`, `containers`; image `image`, `image_id`, `size_bytes`, `created_utc`, `repo_tags` | the networks, volumes, bind-mount and image tables | a hash as an image identity; a volume size the daemon did not report |
+| one daemon event of this project, over a doubly bounded window | `events_payload()` | `events` with `time_utc`, `type`, `action`, `name`, `compose_service` | the events table | an unbounded `/events`; a host's other stacks in this project's tail |
+| an action the container's state already satisfies | HTTP 304 from the engine, forwarded with no body | — (the status is the answer) | `changed nothing … already in that state` | `refused` for a 304; an error style for a success |
 | a control that leaves a page for another persona's page | `.jump` | — | DX / DevOps | `dx-link` as the class of a second control, a tab for a machine view |
 | the toolkit every page loads before its own sections | `page.js` | — | — | `utils.js`, `common.js`, `shared.js`, `lib.js`; a page-specific element written from it |
