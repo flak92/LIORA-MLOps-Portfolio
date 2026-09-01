@@ -3,6 +3,11 @@
    beside it is containers.js, which reads the assets' own endpoints instead of the engine. */
 "use strict";
 
+/* the two answers the engine gives that are not a plain success: an ownership refusal, and an action
+   the container's state already satisfies */
+const HTTP_NOT_MODIFIED = 304;
+const HTTP_FORBIDDEN = 403;
+
 let PANEL_MACHINES = null;
 const MACHINE_SAMPLES = {};
 let PANEL_POLL_IN_FLIGHT = false;
@@ -50,10 +55,16 @@ function selectMachineAction(containerId, action) {
   meta.textContent = action + " " + containerId + "…";
   fetchMachineAction(containerId, action)
     .then((answer) => {
-      meta.className = answer.status < 300 ? "box" : "box err";
-      meta.textContent = answer.status < 300
-        ? action + " " + containerId + " accepted (HTTP " + answer.status + ")"
-        : action + " " + containerId + " refused (HTTP " + answer.status + "): " + (answer.body.reason || "no reason given");
+      /* refused is the ownership guard's own word and the body carries it; 304 is the engine saying
+         the container already holds the state that was asked for, which is not a refusal at all */
+      const refused = answer.status === HTTP_FORBIDDEN && answer.body.refused;
+      const unchanged = answer.status === HTTP_NOT_MODIFIED;
+      meta.className = answer.status < 300 || unchanged ? "box" : "box err";
+      meta.textContent = action + " " + containerId + (
+        refused ? " refused (HTTP " + answer.status + "): " + (answer.body.reason || "no reason given")
+          : unchanged ? " changed nothing (HTTP " + answer.status + "): already in that state"
+            : answer.status < 300 ? " accepted (HTTP " + answer.status + ")"
+              : " failed (HTTP " + answer.status + ")");
     })
     .catch((error) => {
       meta.className = "box err";
