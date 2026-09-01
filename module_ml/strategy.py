@@ -30,7 +30,7 @@ DECISION_BAR_MINUTES = config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME] /
 BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on the last minute of its block
 
 
-def load_inputs(ticker: str) -> dict:
+def load_simulation_inputs(ticker: str) -> dict:
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
@@ -45,38 +45,39 @@ def load_inputs(ticker: str) -> dict:
     parquet_con = duckdb.connect()
     parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     parquet_con.execute("SET threads=1")   # float summation must not be reordered
-    preds = parquet_con.execute(
+    oos_predictions = parquet_con.execute(
         f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker)}') ORDER BY oos_fold_id, decision_ts"
     ).fetchnumpy()
     parquet_con.close()
 
     trend = {timeframe: xy["x"][:, config.FEATURE_COLUMNS.index(f"{config.TREND_FAMILY}_{timeframe}")]
              for timeframe in config.HIERARCHY_TIMEFRAMES}
-    return {"xy": xy, "close_1m": close_1m, "trend": trend, "preds": preds}
+    return {"xy": xy, "close_1m": close_1m, "trend": trend, "oos_predictions": oos_predictions}
 
 
-def signals_for_fold(inputs: dict, fold_id: int) -> dict:
+def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     """Signal arrays for one fold, aligned to the label-event grid."""
-    xy = inputs["xy"]
-    in_fold = inputs["preds"]["oos_fold_id"] == fold_id
-    ts = inputs["preds"]["decision_ts"][in_fold].astype(np.int64)
+    xy = simulation_inputs["xy"]
+    oos_predictions = simulation_inputs["oos_predictions"]
+    in_fold = oos_predictions["oos_fold_id"] == fold_id
+    ts = oos_predictions["decision_ts"][in_fold].astype(np.int64)
     pos = np.searchsorted(xy["decision_ts"], ts)
-    p_short, p_long = inputs["preds"]["p_short"][in_fold], inputs["preds"]["p_long"][in_fold]
-    p_neutral = inputs["preds"]["p_neutral"][in_fold]
+    p_short, p_long = oos_predictions["p_short"][in_fold], oos_predictions["p_long"][in_fold]
+    p_neutral = oos_predictions["p_neutral"][in_fold]
     directional_probability_edge = p_long - p_short
     side = np.sign(directional_probability_edge)
     agreeing_trend_timeframe_count = sum(
-        (np.sign(inputs["trend"][timeframe][pos]) == side).astype(np.int64)
+        (np.sign(simulation_inputs["trend"][timeframe][pos]) == side).astype(np.int64)
         for timeframe in config.HIERARCHY_TIMEFRAMES)
-    gate = (
+    gate_open = (
         (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
-        & (side == np.sign(inputs["trend"][config.TREND_GATE_TIMEFRAME][pos]))
+        & (side == np.sign(simulation_inputs["trend"][config.TREND_GATE_TIMEFRAME][pos]))
         & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     return {
         "directional_probability_edge": directional_probability_edge,
-        "side": side, "gate": gate,
+        "side": side, "gate_open": gate_open,
         "entry_observable": xy["entry_observable"][pos],
         "entry_ts": xy["entry_ts"][pos], "event_end_ts": xy["event_end_ts"][pos],
         "event_resolution": xy["event_resolution"][pos],
@@ -98,16 +99,16 @@ def fill_price(side: float, event_resolution: int, upper_barrier: float,
             else max(upper_barrier, exit_reference_price))
 
 
-def backtest(inputs: dict, signals: dict, entry_edge_threshold: float,
+def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float,
              fold_start_ms: int, fold_end_ms: int) -> dict:
     """Single-position state machine producing one continuous equity path."""
     c = config.EXECUTION_COST_RATE_PER_TRADE_SIDE
     fold_start_minute = (fold_start_ms - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
     fold_minute_count = (fold_end_ms - fold_start_ms) // config.MILLISECONDS_PER_MINUTE
-    close_1m = inputs["close_1m"]
+    close_1m = simulation_inputs["close_1m"]
     equity_1m = np.empty(fold_minute_count)
 
-    enter = (signals["gate"] & signals["entry_observable"]
+    enter = (signals["gate_open"] & signals["entry_observable"]
              & (np.abs(signals["directional_probability_edge"]) >= entry_edge_threshold))
     # eligibility must be decidable at t_0, so the maximum horizon is tested, not the real event_end_ts
     fits = ((signals["entry_ts"] >= fold_start_ms)
@@ -177,8 +178,8 @@ def main() -> int:
     ).parse_args()
 
     for ticker in config.parse_tickers(args.tickers):
-        inputs = load_inputs(ticker)
-        validation_rows = {fold_id: signals_for_fold(inputs, fold_id)
+        simulation_inputs = load_simulation_inputs(ticker)
+        validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
                            for fold_id in config.VALIDATION_FOLD_IDS}
         validation_bounds = {fold_id: validation.fold_bounds(fold_id)
                              for fold_id in config.VALIDATION_FOLD_IDS}
@@ -188,7 +189,7 @@ def main() -> int:
         validation_by_fold, entry_edge_threshold_constraint_met = None, False
         results_at_grid_floor = None                     # kept for the fallback below
         for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
-            results_by_fold = {fold_id: backtest(inputs, validation_rows[fold_id], threshold,
+            results_by_fold = {fold_id: backtest(simulation_inputs, validation_rows[fold_id], threshold,
                                                  *validation_bounds[fold_id])
                                for fold_id in config.VALIDATION_FOLD_IDS}
             if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:
@@ -208,7 +209,7 @@ def main() -> int:
                 np.mean([r["sharpe"] for r in validation_by_fold.values()]))
 
         holdout_start, holdout_end = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
-        final_holdout = backtest(inputs, signals_for_fold(inputs, config.FINAL_HOLDOUT_FOLD_ID),
+        final_holdout = backtest(simulation_inputs, signals_for_fold(simulation_inputs, config.FINAL_HOLDOUT_FOLD_ID),
                                  entry_edge_threshold, holdout_start, holdout_end)
 
         payload = {

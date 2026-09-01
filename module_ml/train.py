@@ -34,7 +34,7 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
 
 def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], "object"]:
     """Fit before the fold's window, predict the FULL window, score the supervised
-    subset only. Returns (metrics, segment, prediction_rows, booster)."""
+    subset only. Returns (metrics, segment, prediction_records, booster)."""
     oos_start, oos_end = validation.fold_bounds(fold_id)
     training_rows, train_weight = validation.training_set(
         xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start)
@@ -47,7 +47,7 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
     window_proba = model.predict_proba(booster, xy["x"][window_rows])
     pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
     metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
-    prediction_rows = [
+    prediction_records = [
         (xy["decision_ts"][i], fold_id, window_proba[k, 0], window_proba[k, 1], window_proba[k, 2])
         for k, i in enumerate(window_rows)
     ]
@@ -58,7 +58,7 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
         "window_row_count": int(window_rows.size),
         "scored_row_count": int(scoring_rows.size),
     }
-    return metrics, segment, prediction_rows, booster
+    return metrics, segment, prediction_records, booster
 
 
 def main() -> int:
@@ -69,16 +69,16 @@ def main() -> int:
         xy = dataset.load_xy(ticker)
         y_cls = model.to_class(xy["y"])
 
-        pred_rows, per_fold, segments = [], {}, {}
+        prediction_records, per_fold, segments = [], {}, {}
         for fold_id in config.VALIDATION_FOLD_IDS:
             per_fold[f"fold_{fold_id}"], segments[f"fold_{fold_id}"], rows, _ = fold_evaluation(xy, y_cls, best, fold_id)
-            pred_rows.extend(rows)
+            prediction_records.extend(rows)
 
         # the final holdout: fitted on everything before it, never used for a choice
         final_holdout, segments[f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"], rows, booster = fold_evaluation(
             xy, y_cls, best, config.FINAL_HOLDOUT_FOLD_ID)
-        pred_rows.extend(rows)
-        write_predictions(ticker, pred_rows)
+        prediction_records.extend(rows)
+        write_predictions(ticker, prediction_records)
 
         trainable = xy["sample_valid"]
         # attribution of the final-holdout booster, the one fit that saw the most history
