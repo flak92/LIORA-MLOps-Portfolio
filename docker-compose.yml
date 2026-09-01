@@ -1,11 +1,14 @@
 # one image, two anchors: x-service is what every service of this file is, x-server adds the one
 # command the dashboard and the assets share — the dashboard publishes it on the host, each asset
-# container runs it in its asset role
+# container runs it in its asset role. The thread cap sits on the anchor because it is correctness,
+# not a setting: every service of this file gets it, and asset-btc respells it because environment:
+# replaces the anchor's key rather than extending it, the same way portraefik respells its mount.
 x-service: &service
   build: .
   image: mlops-portfolio-1m-pipeline
   init: true
   user: "${UID:-1000}:${GID:-1000}"
+  environment: {OMP_NUM_THREADS: "1"}
   volumes:
     - .:/app
   deploy:
