@@ -36,7 +36,10 @@ aggregates the whole basket.
 | status | `make ml-status` | `module_monitoring/ml_status.json`, `<TICKER>_README.md` |
 
 Every target has a `docker-` twin: a per-asset stage runs inside each asset's
-own container, `status` inside `pipeline`.
+own container, `status` inside `pipeline`. Each per-asset stage takes
+`--tickers`; `status` takes it too, but there it scopes only which
+`<TICKER>_README.md` files are rewritten — the snapshot always folds the whole
+basket.
 
 ## What it writes
 

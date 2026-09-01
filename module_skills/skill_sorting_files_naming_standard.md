@@ -68,5 +68,10 @@ already speak (`store_raw_1m/`, `ohlcv_1m_canonical`, `WARMUP_4H_BARS`); the
 feature files of one asset are read as one block, so they take the slots
 (`BTC_features_ss-15-hh-dd-MM.parquet`, `…ss-mm-01-dd-MM…`, `…ss-mm-04-dd-MM…`).
 The slots govern filesystem names only: serialised schema — table names,
-parquet columns, feature names, artifact keys — keeps the compact token,
-because those names are contracts with the files on disk.
+feature names, artifact keys — keeps the compact token,
+because those names are contracts with the files on disk. A feature parquet's
+columns are the exception and carry no timeframe at all: the file name already
+says which one, so repeating it in every column would be the same fact twice.
+That is why a stored column reads `centered_rsi14` while the `gain_importance`
+key that publishes it reads `centered_rsi14_1h` — the key has no file name
+beside it to say so.

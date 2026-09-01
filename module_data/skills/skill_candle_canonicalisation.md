@@ -447,12 +447,12 @@ value of them is by itself a failure:
 | `gap_count` | minutes a venue never printed; the canonical grid closes them |
 | `zero_volume_bars` | valid candles that traded nothing |
 | `ffill_bars` | minutes neither venue printed |
-| `binance_source_count` | minutes the primary venue won |
-| `bybit_source_count` | minutes the failover fired — evidence it works, not a fault |
+| `binance_pct` | the share of minutes the primary venue won |
+| `bybit_pct` | the share the failover carried — evidence it works, not a fault |
 | `source_switch_count` | places the cross-venue basis can enter a return |
 | `relative_divergence` | the mean / p99 / max of the cross-venue close distance |
 
-`bybit_source_count > 0` is proof of a working failover. `zero_volume_bars > 0`
+`bybit_pct > 0` is proof of a working failover. `zero_volume_bars > 0`
 in a raw venue is not automatically a fault either — what it means depends on
 whether that minute won the canonical selection.
 

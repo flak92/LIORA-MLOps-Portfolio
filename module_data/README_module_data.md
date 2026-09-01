@@ -123,9 +123,10 @@ ohlc_violation_count == 0
 ```
 
 Everything else is an observation about the market, not a pass/fail. In
-particular `bybit_source_count > 0` is evidence the failover works, and
-`zero_volume_bars > 0` in a raw venue is not by itself a fault. The full list
-and its reading are § 16.
+particular `bybit_pct > 0` is evidence the failover works, and
+`zero_volume_bars > 0` in a raw venue is not by itself a fault. § 16 reads the
+ones that need reading; `../module_skills/glossary.md` § Data quality registers
+every key the snapshot carries.
 
 ## Docker and the database
 

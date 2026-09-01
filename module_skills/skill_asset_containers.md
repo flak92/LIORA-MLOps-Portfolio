@@ -49,7 +49,7 @@ bind mount — `portraefik` respells `.:/app` beside the socket because a servic
 `volumes:` replaces the anchor's key rather than extending it, and takes the host's
 docker group through `group_add` so it reads the socket without being root; the raw
 store stays central and Lean-exact. Every process binds
-`0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `serve.py`, with no
+`0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
 argument: the server is docker-only; `PORT` is only the host side of the
 dashboard's mapping, so a stage run with another `PORT` never recreates a
 resident. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
