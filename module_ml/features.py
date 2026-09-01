@@ -78,6 +78,8 @@ def main() -> int:
     args = config.build_ticker_parser("hierarchical feature matrix X per asset").parse_args()
     for ticker in config.parse_tickers(args.tickers):
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+        con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+        con.execute("SET threads=1")   # float summation must not be reordered
         decision_ts, cols = build_x(con)
         con.close()
         written = write_x(ticker, decision_ts, cols)

@@ -33,6 +33,8 @@ BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on
 def load_inputs(ticker: str) -> dict:
     xy = dataset.load_xy(ticker)
     con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+    con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+    con.execute("SET threads=1")   # float summation must not be reordered
     close_1m = con.execute(
         f"""SELECT close FROM ohlcv_1m_canonical
             WHERE timestamp_ms >= {config.RESEARCH_START_MS}
@@ -41,6 +43,8 @@ def load_inputs(ticker: str) -> dict:
     ).fetchnumpy()["close"]
     con.close()
     parquet_con = duckdb.connect()
+    parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+    parquet_con.execute("SET threads=1")   # float summation must not be reordered
     preds = parquet_con.execute(
         f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker)}') ORDER BY oos_fold_id, decision_ts"
     ).fetchnumpy()

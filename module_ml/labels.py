@@ -105,6 +105,8 @@ def main() -> int:
     args = config.build_ticker_parser("triple-barrier labels on the canonical 1m path").parse_args()
     for ticker in config.parse_tickers(args.tickers):
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+        con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+        con.execute("SET threads=1")   # float summation must not be reordered
         bars_1h = con.execute(
             """SELECT timestamp_ms, high, low, close FROM ohlcv_1h_canonical
                ORDER BY timestamp_ms"""

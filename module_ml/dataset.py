@@ -49,6 +49,8 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
     try:
         spec = ", ".join(f"'{name}': '{sqltype}'" for name, sqltype in columns.items())
         con = duckdb.connect()
+        con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+        con.execute("SET threads=1")   # float summation must not be reordered
         con.execute(
             f"""COPY (SELECT * FROM read_csv('{spool}', header=false, columns={{{spec}}})
                       ORDER BY {order_by})
@@ -63,6 +65,8 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
 def load_xy(ticker: str) -> dict[str, np.ndarray]:
     """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
     con = duckdb.connect()
+    con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
+    con.execute("SET threads=1")   # float summation must not be reordered
     x, decision_grids = {}, []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         per_timeframe = con.execute(
