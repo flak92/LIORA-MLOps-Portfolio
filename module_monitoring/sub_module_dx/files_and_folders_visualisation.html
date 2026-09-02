@@ -53,6 +53,12 @@ background:rgba(10,17,38,.72); color:var(--text); font-size:13px; cursor:pointer
 }
 .controls button:hover{border-color:#31456F;}
 .controls button:focus-visible{outline:2px solid var(--text); outline-offset:2px;}
+.legend{position:fixed; right:16px; bottom:44px; font-family:var(--mono); font-size:10px; color:var(--dim);
+display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
+.legend__view{color:var(--text); letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px;}
+.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer;}
+.legend__row:hover{color:var(--text);}
+.legend__row .dot{width:7px; height:7px; border-radius:50%; flex:none;}
 aside#panel{
 position:fixed; top:56px; right:16px; width:296px; max-width:calc(100vw - 32px);
 background:rgba(9,15,34,.94); border:1px solid var(--line); border-radius:4px;
@@ -86,11 +92,13 @@ aside#panel button.close:hover{color:var(--text);}
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
 </div>
-<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause<span id="hintView"></span></div>
 <div class="controls">
 <button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
-<button id="btnReset" title="Reset view (0)">&#10226;</button>
+<button id="btnView" title="Deployment view / development view (v)">&#9729;&#xFE0E;</button>
+<button id="btnReset" title="Reset camera (0)">&#10226;</button>
 </div>
+<div class="legend" id="legend"></div>
 <aside id="panel" aria-live="polite">
 <button class="close" id="panelClose" title="Close">&#10005;</button>
 <div class="path" id="pPath"></div>
@@ -124,663 +132,902 @@ MAX_DPR: 1.5            // pixel-ratio cap
 };
 /* VISUALISATION:STRUCTURE:BEGIN - written by module_monitoring/sub_module_dx/visualise.py, do not edit by hand */
 const META = {
- "config": {
-  "FIT_WIDTH": 1400,
-  "START_ROT_X": -0.4,
-  "START_ROT_Y": 6.21
- },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of b796b59 \u00b7 2026-09-02 13:06:05",
+ "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 91428f5 \u00b7 2026-09-02 14:33:17",
  "title": "Files and Folders"
 };
-const ISLANDS = {
- "S1": {
-  "color": "#7D93BF",
-  "name": "S1 \u00b7 Infrastructure"
+const VIEWS = {
+ "deployment": {
+  "camera": {
+   "FIT_WIDTH": 1400,
+   "START_ROT_X": -0.4,
+   "START_ROT_Y": 1.09
+  },
+  "desc": {
+   "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
+   "Dockerfile": "The one image every stage runs in, `mlops-portfolio-1m-pipeline`: a container image in a registry (Amazon ECR), the runtime package of every task; there it carries the code the bind mount carries today.",
+   "Makefile": "The state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus. It sits above every stage and inside none; `all:` and `ml-all:` are the same order, read locally.",
+   "README.md": "The overview: the domain drawing, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
+   "docker-compose.yml": "One task definition parameterised by `ASSET`, never a new unit per asset; the anchors are its local spelling, one service per ticker written out so the parameter stays visible.",
+   "module_data/": "The data-ingest task: one container run per stage (an Amazon ECS Task on AWS Fargate) that fetches raw objects, builds the asset's canonical market object and exits, owning no state between runs.",
+   "module_data/README_module_data.md": "",
+   "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects; `ASSET` is the parameter every run of the task takes.",
+   "module_data/download_binance.py": "",
+   "module_data/download_bybit.py": "",
+   "module_data/ingest.py": "The BuildCanonicalData state: reads the raw objects under a venue and symbol prefix and writes the canonical market object back whole \u2014 the storage \u2192 ML-compute line begins at its output.",
+   "module_data/lean.py": "",
+   "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
+   "module_data/skills/methodology_data.md": "",
+   "module_data/skills/skill_candle_canonicalisation.md": "",
+   "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out.",
+   "module_ml/": "The ml-research task: the same Task shape parameterised by `ASSET` (`RunTask` with `ASSET=BTC`), one container run per stage from bars to strategy evaluation, reading and writing the asset's prefix and holding nothing between runs.",
+   "module_ml/README_module_ml.md": "",
+   "module_ml/bars.py": "The AggregateBars state, and the one write across the storage \u2192 ML-compute line: the three aggregation tables are a pure function of the canonical series, written back into the object the task read.",
+   "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; a future `\u003cprefix>/\u003cticker>/\u003cversion>/` is a rename there, not a redesign here.",
+   "module_ml/dataset.py": "",
+   "module_ml/features.py": "",
+   "module_ml/hpo.py": "",
+   "module_ml/indicators.py": "",
+   "module_ml/labels.py": "",
+   "module_ml/model.py": "",
+   "module_ml/skills/": "The research methodology travels inside the task's code: a document, not a primitive.",
+   "module_ml/skills/methodology_ml.md": "",
+   "module_ml/status.py": "The PublishStatus state for ML: the basket's status object as a fold over completed asset artifacts, and each asset's README as an artifact object under its prefix.",
+   "module_ml/strategy.py": "",
+   "module_ml/train.py": "",
+   "module_ml/validation.py": "The gate of the whole system, and the same gate wherever it runs: purged walk-forward folds and the frozen final holdout are code inside the task, not a primitive.",
+   "module_monitoring/": "The static dashboard: the page files and the two snapshots as static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront), and beside them one small reader container that stays running for the container, run and `/devops/*` routes.",
+   "module_monitoring/README_module_monitoring.md": "",
+   "module_monitoring/asset.js": "",
+   "module_monitoring/config.py": "Every address the reader knows \u2014 the internal port, the service names, the run record's paths \u2014 built once here; no code depends on a container name.",
+   "module_monitoring/data.js": "",
+   "module_monitoring/data_status.json": "A status object produced by data compute and read by the page \u2014 a static object beside the page today, tracked so a fresh clone opens on real numbers; its own prefix is a handful of edits away, listed in the skill's review table.",
+   "module_monitoring/index.html": "The page: a static object; no process renders it.",
+   "module_monitoring/ml.js": "",
+   "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts \u2014 a static object beside the page today, the same handful of edits away from its own prefix.",
+   "module_monitoring/page.js": "",
+   "module_monitoring/record.py": "Writes the run object, `store_run_records/\u003crun_id>/`, from inside whichever task ran the stage; its logs and 1 s samples are log streams keyed by stage and container, and metrics (Amazon CloudWatch).",
+   "module_monitoring/run.js": "",
+   "module_monitoring/serve.py": "The one process on this island: the registry, run and proxy routes are a container that stays running, while every file it serves today is a static object.",
+   "module_monitoring/skills/": "The page's conventions and this drawing's contract travel with the code: documents, not primitives.",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "",
+   "module_monitoring/skills/skill_devops_panel.md": "",
+   "module_monitoring/style.css": "",
+   "module_monitoring/sub_module_devops/": "The engine's views \u2014 a console, not project code; the socket it holds is a local mechanism with no primitive of its own.",
+   "module_monitoring/sub_module_devops/config.py": "",
+   "module_monitoring/sub_module_devops/containers.js": "",
+   "module_monitoring/sub_module_devops/devops.css": "",
+   "module_monitoring/sub_module_devops/devops.js": "",
+   "module_monitoring/sub_module_devops/index.html": "",
+   "module_monitoring/sub_module_devops/serve.py": "The one container that holds the docker socket: a console over the local engine's own inventory, a local mechanism.",
+   "module_monitoring/sub_module_dx/": "The repository's view \u2014 this drawing, a static object like the page, and not project code.",
+   "module_monitoring/sub_module_dx/config.py": "",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "",
+   "module_monitoring/sub_module_dx/visualise.py": "",
+   "module_skills/": "Repository-wide skills and the register: they travel with the code and deploy nowhere \u2014 not project code, not a primitive, and the contract of every boundary this picture draws.",
+   "module_skills/README.md": "",
+   "module_skills/glossary.md": "",
+   "module_skills/skill_agent_first_development.md": "",
+   "module_skills/skill_asset_containers.md": "",
+   "module_skills/skill_determinism.md": "",
+   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its right column is this one.",
+   "module_skills/skill_self_explaining_naming.md": "",
+   "module_skills/skill_sorting_files_naming_standard.md": "",
+   "requirements.txt": "The image's dependency layer, resolved when the image is built and read by no task at run time.",
+   "root": "The same tracked tree, read forward: every file and folder seated on the standard primitive its responsibility answers to \u2014 the right column of the mapping table in `module_skills/skill_pre_aws_solution.md`. Described and drawn, built nowhere.",
+   "store_assets_artifacts/": "One prefix per asset in object storage (Amazon S3): the canonical market object, a versioned object pulled into a Task's own disk and written back whole, with the research artifacts as objects under the same prefix.",
+   "store_assets_artifacts/BTC/": "The `BTC` prefix: `BTC_research_ohlcv.duckdb` as the one versioned object, the parquets and JSONs as artifact objects keyed `BTC_\u003cartifact>`; the tracked README and parameters are two of them."
+  },
+  "hub": {
+   "S1": "Dockerfile",
+   "S2": "Makefile",
+   "S3": "module_data/",
+   "S4": "module_ml/",
+   "S5": "store_assets_artifacts/",
+   "S6": "module_monitoring/",
+   "S7": "module_skills/"
+  },
+  "island": {
+   "AGENTS.md": "S7",
+   "Dockerfile": "S1",
+   "Makefile": "S2",
+   "README.md": "S7",
+   "docker-compose.yml": "S1",
+   "module_data/": "S3",
+   "module_data/README_module_data.md": "S3",
+   "module_data/config.py": "S3",
+   "module_data/download_binance.py": "S3",
+   "module_data/download_bybit.py": "S3",
+   "module_data/ingest.py": "S3",
+   "module_data/lean.py": "S3",
+   "module_data/skills/": "S3",
+   "module_data/skills/methodology_data.md": "S3",
+   "module_data/skills/skill_candle_canonicalisation.md": "S3",
+   "module_data/status.py": "S3",
+   "module_ml/": "S4",
+   "module_ml/README_module_ml.md": "S4",
+   "module_ml/bars.py": "S4",
+   "module_ml/config.py": "S4",
+   "module_ml/dataset.py": "S4",
+   "module_ml/features.py": "S4",
+   "module_ml/hpo.py": "S4",
+   "module_ml/indicators.py": "S4",
+   "module_ml/labels.py": "S4",
+   "module_ml/model.py": "S4",
+   "module_ml/skills/": "S4",
+   "module_ml/skills/methodology_ml.md": "S4",
+   "module_ml/status.py": "S4",
+   "module_ml/strategy.py": "S4",
+   "module_ml/train.py": "S4",
+   "module_ml/validation.py": "S4",
+   "module_monitoring/": "S6",
+   "module_monitoring/README_module_monitoring.md": "S6",
+   "module_monitoring/asset.js": "S6",
+   "module_monitoring/config.py": "S6",
+   "module_monitoring/data.js": "S6",
+   "module_monitoring/data_status.json": "S6",
+   "module_monitoring/index.html": "S6",
+   "module_monitoring/ml.js": "S6",
+   "module_monitoring/ml_status.json": "S6",
+   "module_monitoring/page.js": "S6",
+   "module_monitoring/record.py": "S6",
+   "module_monitoring/run.js": "S6",
+   "module_monitoring/serve.py": "S6",
+   "module_monitoring/skills/": "S6",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "S6",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "S6",
+   "module_monitoring/skills/skill_devops_panel.md": "S6",
+   "module_monitoring/style.css": "S6",
+   "module_monitoring/sub_module_devops/": "S6",
+   "module_monitoring/sub_module_devops/config.py": "S6",
+   "module_monitoring/sub_module_devops/containers.js": "S6",
+   "module_monitoring/sub_module_devops/devops.css": "S6",
+   "module_monitoring/sub_module_devops/devops.js": "S6",
+   "module_monitoring/sub_module_devops/index.html": "S6",
+   "module_monitoring/sub_module_devops/serve.py": "S6",
+   "module_monitoring/sub_module_dx/": "S6",
+   "module_monitoring/sub_module_dx/config.py": "S6",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S6",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "S6",
+   "module_monitoring/sub_module_dx/visualise.py": "S6",
+   "module_skills/": "S7",
+   "module_skills/README.md": "S7",
+   "module_skills/glossary.md": "S7",
+   "module_skills/skill_agent_first_development.md": "S7",
+   "module_skills/skill_asset_containers.md": "S7",
+   "module_skills/skill_determinism.md": "S7",
+   "module_skills/skill_pre_aws_solution.md": "S7",
+   "module_skills/skill_self_explaining_naming.md": "S7",
+   "module_skills/skill_sorting_files_naming_standard.md": "S7",
+   "requirements.txt": "S1",
+   "root": "core",
+   "store_assets_artifacts/": "S5",
+   "store_assets_artifacts/BTC/": "S5"
+  },
+  "islands": {
+   "S1": {
+    "color": "#7D93BF",
+    "name": "S1 \u00b7 Image and task definitions (Amazon ECR, Amazon ECS)"
+   },
+   "S2": {
+    "color": "#F26B5B",
+    "name": "S2 \u00b7 State machine (AWS Step Functions)"
+   },
+   "S3": {
+    "color": "#F2B24E",
+    "name": "S3 \u00b7 data-ingest task (Amazon ECS on AWS Fargate)"
+   },
+   "S4": {
+    "color": "#E06BD8",
+    "name": "S4 \u00b7 ml-research task per ASSET (Amazon ECS on AWS Fargate)"
+   },
+   "S5": {
+    "color": "#5BC8F2",
+    "name": "S5 \u00b7 One prefix per asset (Amazon S3)"
+   },
+   "S6": {
+    "color": "#96D850",
+    "name": "S6 \u00b7 Static dashboard and one reader container (Amazon S3, Amazon CloudFront)"
+   },
+   "S7": {
+    "color": "#2BD4BD",
+    "name": "S7 \u00b7 The repository \u2014 deploys nowhere"
+   },
+   "core": {
+    "color": "#EDF2FF",
+    "name": "Repository root"
+   }
+  },
+  "order": [
+   "S1",
+   "S2",
+   "S3",
+   "S4",
+   "S5",
+   "S6",
+   "S7"
+  ],
+  "place": {
+   "AGENTS.md": {
+    "da": 0.3,
+    "r": 0.38,
+    "y": -34
+   },
+   "README.md": {
+    "da": -0.3,
+    "r": 0.38,
+    "y": -34
+   }
+  }
  },
- "S2": {
-  "color": "#2BD4BD",
-  "name": "S2 \u00b7 Contract & skills"
- },
- "S3": {
-  "color": "#F2B24E",
-  "name": "S3 \u00b7 Data"
- },
- "S4": {
-  "color": "#E06BD8",
-  "name": "S4 \u00b7 Research"
- },
- "S5": {
-  "color": "#96D850",
-  "name": "S5 \u00b7 Monitoring"
- },
- "core": {
-  "color": "#EDF2FF",
-  "name": "Repository root"
+ "development": {
+  "camera": {
+   "FIT_WIDTH": 1400,
+   "START_ROT_X": -0.4,
+   "START_ROT_Y": 6.21
+  },
+  "desc": {
+   "AGENTS.md": "",
+   "Dockerfile": "",
+   "Makefile": "Entrypoint of everything \u2014 per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
+   "README.md": "",
+   "docker-compose.yml": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
+   "module_data/": "Ingest \u2014 venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
+   "module_data/README_module_data.md": "",
+   "module_data/config.py": "",
+   "module_data/download_binance.py": "",
+   "module_data/download_bybit.py": "",
+   "module_data/ingest.py": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",
+   "module_data/lean.py": "",
+   "module_data/skills/": "The module's own contract: candle canonicalisation, and the acquisition methodology beside it.",
+   "module_data/skills/methodology_data.md": "",
+   "module_data/skills/skill_candle_canonicalisation.md": "",
+   "module_data/status.py": "",
+   "module_ml/": "Research \u2014 bars, features, triple-barrier labels, purged walk-forward XGBoost.",
+   "module_ml/README_module_ml.md": "",
+   "module_ml/bars.py": "",
+   "module_ml/config.py": "",
+   "module_ml/dataset.py": "",
+   "module_ml/features.py": "",
+   "module_ml/hpo.py": "",
+   "module_ml/indicators.py": "",
+   "module_ml/labels.py": "",
+   "module_ml/model.py": "",
+   "module_ml/skills/": "The module's own contract: the research methodology, equation by equation.",
+   "module_ml/skills/methodology_ml.md": "",
+   "module_ml/status.py": "",
+   "module_ml/strategy.py": "",
+   "module_ml/train.py": "",
+   "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout \u2014 the gate of the whole system.",
+   "module_monitoring/": "Presentation of what the runtime modules measured, and the one server that serves it.",
+   "module_monitoring/README_module_monitoring.md": "",
+   "module_monitoring/asset.js": "",
+   "module_monitoring/config.py": "",
+   "module_monitoring/data.js": "",
+   "module_monitoring/data_status.json": "",
+   "module_monitoring/index.html": "",
+   "module_monitoring/ml.js": "",
+   "module_monitoring/ml_status.json": "",
+   "module_monitoring/page.js": "",
+   "module_monitoring/record.py": "",
+   "module_monitoring/run.js": "",
+   "module_monitoring/serve.py": "The one server, two roles: the dashboard, and a container reporting itself.",
+   "module_monitoring/skills/": "The module's own contract: the dashboard conventions and the drawing.",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "",
+   "module_monitoring/skills/skill_devops_panel.md": "",
+   "module_monitoring/style.css": "",
+   "module_monitoring/sub_module_devops/": "The DevOps panel, and the one container that holds the docker socket.",
+   "module_monitoring/sub_module_devops/config.py": "",
+   "module_monitoring/sub_module_devops/containers.js": "",
+   "module_monitoring/sub_module_devops/devops.css": "",
+   "module_monitoring/sub_module_devops/devops.js": "",
+   "module_monitoring/sub_module_devops/index.html": "",
+   "module_monitoring/sub_module_devops/serve.py": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
+   "module_monitoring/sub_module_dx/": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
+   "module_monitoring/sub_module_dx/config.py": "",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "",
+   "module_monitoring/sub_module_dx/visualise.py": "",
+   "module_skills/": "Repository-wide skills, and the index of the skills each module owns.",
+   "module_skills/README.md": "",
+   "module_skills/glossary.md": "",
+   "module_skills/skill_agent_first_development.md": "",
+   "module_skills/skill_asset_containers.md": "",
+   "module_skills/skill_determinism.md": "",
+   "module_skills/skill_pre_aws_solution.md": "",
+   "module_skills/skill_self_explaining_naming.md": "",
+   "module_skills/skill_sorting_files_naming_standard.md": "",
+   "requirements.txt": "",
+   "root": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
+   "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them.",
+   "store_assets_artifacts/BTC/": ""
+  },
+  "hub": {
+   "S1": "docker-compose.yml",
+   "S2": "module_skills/",
+   "S3": "module_data/",
+   "S4": "module_ml/",
+   "S5": "module_monitoring/"
+  },
+  "island": {
+   "AGENTS.md": "S2",
+   "Dockerfile": "S1",
+   "Makefile": "S1",
+   "README.md": "S2",
+   "docker-compose.yml": "S1",
+   "module_data/": "S3",
+   "module_data/README_module_data.md": "S3",
+   "module_data/config.py": "S3",
+   "module_data/download_binance.py": "S3",
+   "module_data/download_bybit.py": "S3",
+   "module_data/ingest.py": "S3",
+   "module_data/lean.py": "S3",
+   "module_data/skills/": "S3",
+   "module_data/skills/methodology_data.md": "S3",
+   "module_data/skills/skill_candle_canonicalisation.md": "S3",
+   "module_data/status.py": "S3",
+   "module_ml/": "S4",
+   "module_ml/README_module_ml.md": "S4",
+   "module_ml/bars.py": "S4",
+   "module_ml/config.py": "S4",
+   "module_ml/dataset.py": "S4",
+   "module_ml/features.py": "S4",
+   "module_ml/hpo.py": "S4",
+   "module_ml/indicators.py": "S4",
+   "module_ml/labels.py": "S4",
+   "module_ml/model.py": "S4",
+   "module_ml/skills/": "S4",
+   "module_ml/skills/methodology_ml.md": "S4",
+   "module_ml/status.py": "S4",
+   "module_ml/strategy.py": "S4",
+   "module_ml/train.py": "S4",
+   "module_ml/validation.py": "S4",
+   "module_monitoring/": "S5",
+   "module_monitoring/README_module_monitoring.md": "S5",
+   "module_monitoring/asset.js": "S5",
+   "module_monitoring/config.py": "S5",
+   "module_monitoring/data.js": "S5",
+   "module_monitoring/data_status.json": "S5",
+   "module_monitoring/index.html": "S5",
+   "module_monitoring/ml.js": "S5",
+   "module_monitoring/ml_status.json": "S5",
+   "module_monitoring/page.js": "S5",
+   "module_monitoring/record.py": "S5",
+   "module_monitoring/run.js": "S5",
+   "module_monitoring/serve.py": "S5",
+   "module_monitoring/skills/": "S5",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "S5",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "S5",
+   "module_monitoring/skills/skill_devops_panel.md": "S5",
+   "module_monitoring/style.css": "S5",
+   "module_monitoring/sub_module_devops/": "S5",
+   "module_monitoring/sub_module_devops/config.py": "S5",
+   "module_monitoring/sub_module_devops/containers.js": "S5",
+   "module_monitoring/sub_module_devops/devops.css": "S5",
+   "module_monitoring/sub_module_devops/devops.js": "S5",
+   "module_monitoring/sub_module_devops/index.html": "S5",
+   "module_monitoring/sub_module_devops/serve.py": "S5",
+   "module_monitoring/sub_module_dx/": "S5",
+   "module_monitoring/sub_module_dx/config.py": "S5",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S5",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "S5",
+   "module_monitoring/sub_module_dx/visualise.py": "S5",
+   "module_skills/": "S2",
+   "module_skills/README.md": "S2",
+   "module_skills/glossary.md": "S2",
+   "module_skills/skill_agent_first_development.md": "S2",
+   "module_skills/skill_asset_containers.md": "S2",
+   "module_skills/skill_determinism.md": "S2",
+   "module_skills/skill_pre_aws_solution.md": "S2",
+   "module_skills/skill_self_explaining_naming.md": "S2",
+   "module_skills/skill_sorting_files_naming_standard.md": "S2",
+   "requirements.txt": "S1",
+   "root": "core",
+   "store_assets_artifacts/": "S4",
+   "store_assets_artifacts/BTC/": "S4"
+  },
+  "islands": {
+   "S1": {
+    "color": "#7D93BF",
+    "name": "S1 \u00b7 Infrastructure"
+   },
+   "S2": {
+    "color": "#2BD4BD",
+    "name": "S2 \u00b7 Contract & skills"
+   },
+   "S3": {
+    "color": "#F2B24E",
+    "name": "S3 \u00b7 Data"
+   },
+   "S4": {
+    "color": "#E06BD8",
+    "name": "S4 \u00b7 Research"
+   },
+   "S5": {
+    "color": "#96D850",
+    "name": "S5 \u00b7 Monitoring"
+   },
+   "core": {
+    "color": "#EDF2FF",
+    "name": "Repository root"
+   }
+  },
+  "order": [
+   "S1",
+   "S3",
+   "S4",
+   "S5",
+   "S2"
+  ],
+  "place": {
+   "AGENTS.md": {
+    "da": 0.3,
+    "r": 0.38,
+    "y": -34
+   },
+   "README.md": {
+    "da": -0.3,
+    "r": 0.38,
+    "y": -34
+   }
+  }
  }
 };
-const ISLAND_ORDER = [
- "S1",
- "S3",
- "S4",
- "S5",
- "S2"
+const VIEW_ORDER = [
+ "development",
+ "deployment"
 ];
-const PLACE = {
- "AGENTS.md": {
-  "da": 0.3,
-  "r": 0.38,
-  "y": -34
- },
- "README.md": {
-  "da": -0.3,
-  "r": 0.38,
-  "y": -34
- }
-};
 const NODES = [
  {
-  "desc": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
   "id": "root",
-  "island": "core",
   "path": "repo/",
   "role": "root",
   "type": "core"
  },
  {
-  "desc": "Ingest \u2014 venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
-  "hub": true,
   "id": "module_data/",
-  "island": "S3",
   "path": "module_data/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "The module's own contract: candle canonicalisation, and the acquisition methodology beside it.",
   "id": "module_data/skills/",
-  "island": "S3",
   "path": "module_data/skills/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_data/skills/methodology_data.md",
-  "island": "S3",
   "path": "module_data/skills/methodology_data.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/skills/skill_candle_canonicalisation.md",
-  "island": "S3",
   "path": "module_data/skills/skill_candle_canonicalisation.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/README_module_data.md",
-  "island": "S3",
   "path": "module_data/README_module_data.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/config.py",
-  "island": "S3",
   "path": "module_data/config.py",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/download_binance.py",
-  "island": "S3",
   "path": "module_data/download_binance.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/download_bybit.py",
-  "island": "S3",
   "path": "module_data/download_bybit.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",
   "id": "module_data/ingest.py",
-  "island": "S3",
   "path": "module_data/ingest.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/lean.py",
-  "island": "S3",
   "path": "module_data/lean.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_data/status.py",
-  "island": "S3",
   "path": "module_data/status.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "Research \u2014 bars, features, triple-barrier labels, purged walk-forward XGBoost.",
-  "hub": true,
   "id": "module_ml/",
-  "island": "S4",
   "path": "module_ml/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "The module's own contract: the research methodology, equation by equation.",
   "id": "module_ml/skills/",
-  "island": "S4",
   "path": "module_ml/skills/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_ml/skills/methodology_ml.md",
-  "island": "S4",
   "path": "module_ml/skills/methodology_ml.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/README_module_ml.md",
-  "island": "S4",
   "path": "module_ml/README_module_ml.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/bars.py",
-  "island": "S4",
   "path": "module_ml/bars.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/config.py",
-  "island": "S4",
   "path": "module_ml/config.py",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/dataset.py",
-  "island": "S4",
   "path": "module_ml/dataset.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/features.py",
-  "island": "S4",
   "path": "module_ml/features.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/hpo.py",
-  "island": "S4",
   "path": "module_ml/hpo.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/indicators.py",
-  "island": "S4",
   "path": "module_ml/indicators.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/labels.py",
-  "island": "S4",
   "path": "module_ml/labels.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/model.py",
-  "island": "S4",
   "path": "module_ml/model.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/status.py",
-  "island": "S4",
   "path": "module_ml/status.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/strategy.py",
-  "island": "S4",
   "path": "module_ml/strategy.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_ml/train.py",
-  "island": "S4",
   "path": "module_ml/train.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "Purged walk-forward splits and the frozen final holdout \u2014 the gate of the whole system.",
   "id": "module_ml/validation.py",
-  "island": "S4",
   "path": "module_ml/validation.py",
   "role": "gate",
   "type": "file"
  },
  {
-  "desc": "Presentation of what the runtime modules measured, and the one server that serves it.",
-  "hub": true,
   "id": "module_monitoring/",
-  "island": "S5",
   "path": "module_monitoring/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "The module's own contract: the dashboard conventions and the drawing.",
   "id": "module_monitoring/skills/",
-  "island": "S5",
   "path": "module_monitoring/skills/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_monitoring/skills/skill_dashboard_conventions.md",
-  "island": "S5",
   "path": "module_monitoring/skills/skill_dashboard_conventions.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/skills/skill_developer_experience_drawing.md",
-  "island": "S5",
   "path": "module_monitoring/skills/skill_developer_experience_drawing.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/skills/skill_devops_panel.md",
-  "island": "S5",
   "path": "module_monitoring/skills/skill_devops_panel.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "The DevOps panel, and the one container that holds the docker socket.",
   "id": "module_monitoring/sub_module_devops/",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_devops/config.py",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/config.py",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_devops/containers.js",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/containers.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_devops/devops.css",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/devops.css",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_devops/devops.js",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/devops.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_devops/index.html",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/index.html",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
   "id": "module_monitoring/sub_module_devops/serve.py",
-  "island": "S5",
   "path": "module_monitoring/sub_module_devops/serve.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
   "id": "module_monitoring/sub_module_dx/",
-  "island": "S5",
   "path": "module_monitoring/sub_module_dx/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_dx/config.py",
-  "island": "S5",
   "path": "module_monitoring/sub_module_dx/config.py",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html",
-  "island": "S5",
   "path": "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_dx/visualisation_config.json",
-  "island": "S5",
   "path": "module_monitoring/sub_module_dx/visualisation_config.json",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/sub_module_dx/visualise.py",
-  "island": "S5",
   "path": "module_monitoring/sub_module_dx/visualise.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/README_module_monitoring.md",
-  "island": "S5",
   "path": "module_monitoring/README_module_monitoring.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/asset.js",
-  "island": "S5",
   "path": "module_monitoring/asset.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/config.py",
-  "island": "S5",
   "path": "module_monitoring/config.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/data.js",
-  "island": "S5",
   "path": "module_monitoring/data.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/data_status.json",
-  "island": "S5",
   "path": "module_monitoring/data_status.json",
   "role": "artifact",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/index.html",
-  "island": "S5",
   "path": "module_monitoring/index.html",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/ml.js",
-  "island": "S5",
   "path": "module_monitoring/ml.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/ml_status.json",
-  "island": "S5",
   "path": "module_monitoring/ml_status.json",
   "role": "artifact",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/page.js",
-  "island": "S5",
   "path": "module_monitoring/page.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/record.py",
-  "island": "S5",
   "path": "module_monitoring/record.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/run.js",
-  "island": "S5",
   "path": "module_monitoring/run.js",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "The one server, two roles: the dashboard, and a container reporting itself.",
   "id": "module_monitoring/serve.py",
-  "island": "S5",
   "path": "module_monitoring/serve.py",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_monitoring/style.css",
-  "island": "S5",
   "path": "module_monitoring/style.css",
   "role": "code",
   "type": "file"
  },
  {
-  "desc": "Repository-wide skills, and the index of the skills each module owns.",
-  "hub": true,
   "id": "module_skills/",
-  "island": "S2",
   "path": "module_skills/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "module_skills/README.md",
-  "island": "S2",
   "path": "module_skills/README.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/glossary.md",
-  "island": "S2",
   "path": "module_skills/glossary.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_agent_first_development.md",
-  "island": "S2",
   "path": "module_skills/skill_agent_first_development.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_asset_containers.md",
-  "island": "S2",
   "path": "module_skills/skill_asset_containers.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_determinism.md",
-  "island": "S2",
   "path": "module_skills/skill_determinism.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_pre_aws_solution.md",
-  "island": "S2",
   "path": "module_skills/skill_pre_aws_solution.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_self_explaining_naming.md",
-  "island": "S2",
   "path": "module_skills/skill_self_explaining_naming.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "module_skills/skill_sorting_files_naming_standard.md",
-  "island": "S2",
   "path": "module_skills/skill_sorting_files_naming_standard.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them.",
   "id": "store_assets_artifacts/",
-  "island": "S4",
   "path": "store_assets_artifacts/",
   "role": "module",
   "type": "folder"
  },
  {
-  "desc": "",
   "id": "store_assets_artifacts/BTC/",
-  "island": "S4",
   "path": "store_assets_artifacts/BTC/",
   "role": "artifact",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "AGENTS.md",
-  "island": "S2",
   "path": "AGENTS.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "Dockerfile",
-  "island": "S1",
   "path": "Dockerfile",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "Entrypoint of everything \u2014 per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
   "id": "Makefile",
-  "island": "S1",
   "path": "Makefile",
   "role": "entrypoint",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "README.md",
-  "island": "S2",
   "path": "README.md",
   "role": "doc",
   "type": "file"
  },
  {
-  "desc": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
-  "hub": true,
   "id": "docker-compose.yml",
-  "island": "S1",
   "path": "docker-compose.yml",
   "role": "config",
   "type": "file"
  },
  {
-  "desc": "",
   "id": "requirements.txt",
-  "island": "S1",
   "path": "requirements.txt",
   "role": "config",
   "type": "file"
@@ -1233,7 +1480,6 @@ const EDGES = [
  }
 ];
 /* VISUALISATION:STRUCTURE:END */
-Object.assign(CONFIG, META.config);
 document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
 document.getElementById('hudTitle').textContent = META.title;
@@ -1347,9 +1593,48 @@ fanAround(isl.hub.p, leftover, 110, isl.theta, CONFIG.RING_Y_JITTER);
 }
 });
 }
+var ISLANDS, ISLAND_ORDER, PLACE, VIEW, activeView;   // the placement that is live: one tree, seated by the active view
+var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
+var PAL = {};
+/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
+   isolates nothing is never offered and never dims the whole drawing */
+var STORY_DIGITS = [];
+var CAM_DIST_FLOOR = CONFIG.CAM_DIST;
+var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH };   // a view lays its camera over these, never over the other view's
+function nextView(){ return VIEW_ORDER[(VIEW_ORDER.indexOf(activeView) + 1) % VIEW_ORDER.length]; }
+function setView(name){   // a view writes its facts onto the one tree; the tree is then laid out again
+activeView = name; VIEW = VIEWS[name];
+ISLANDS = VIEW.islands; ISLAND_ORDER = VIEW.order; PLACE = VIEW.place;
+NODES.forEach(function(n){
+n.island = VIEW.island[n.id];
+n.hub = VIEW.hub[n.island] === n.id;
+n.desc = VIEW.desc[n.id];
+n.p = null;   // layout seats only what is unseated
+});
+Object.assign(CONFIG, CAMERA_DEFAULTS, VIEW.camera);
 layout();
-var PICTURE_RADIUS = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
-CONFIG.CAM_DIST = Math.max(CONFIG.CAM_DIST, CONFIG.CAM_DIST_PER_RADIUS * PICTURE_RADIUS);   // the front of a bigger picture stays as far from the lens
+var radius = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
+CONFIG.CAM_DIST = Math.max(CAM_DIST_FLOOR, CONFIG.CAM_DIST_PER_RADIUS * radius);   // the front of a bigger picture stays as far from the lens
+EDGES.forEach(sampleEdge);
+PAL = {};
+HUB_DEPTH = {};
+NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
+STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
+document.getElementById('hintStories').textContent = STORY_DIGITS.length
+  ? STORY_DIGITS[0] + '–' + STORY_DIGITS[STORY_DIGITS.length - 1] : 'no story key';
+document.getElementById('hintView').textContent = VIEW_ORDER.length > 1 ? ' · v ' + nextView() : '';
+document.getElementById('btnView').textContent = nextView() === 'deployment' ? '☁︎' : '⌂';   // the glyph names the view the control goes to, as ⏸ / ▶ name the action
+document.querySelectorAll('#tree .trow').forEach(function(row){   // none before buildTree; restyled on every later flip
+row.dotEl.style.background = paletteOf(nodeById[row.dataset.id]).line;
+});
+renderLegend();
+activeIsland = null;   // an island id names another group in the other view; the selection, the subtree and the sidebar are the tree's and stay
+if (!userZoomed) zoom = fitZoom();
+if (selectedId) select(selectedId);   // an open panel re-reads island, colour and sentence
+invalidate();
+}
+var rafId = null, needsFrame = true, lastDraw = 0;   // declared before the first frame is asked for, so no initialiser runs after one is queued
+setView(VIEW_ORDER[0]);
 function sampleEdge(e){
 var a = nodeById[e.from].p, b = nodeById[e.to].p;
 var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
@@ -1369,7 +1654,6 @@ z: u*u*a.z + 2*u*t*m.z + t*t*b.z
 }
 e.pts = pts;
 }
-EDGES.forEach(sampleEdge);
 var STARS = [];
 (function(){
 var seed = 42;
@@ -1481,9 +1765,6 @@ var q = (1 - Math.abs(2*l - 1)) * s, x = q * (1 - Math.abs((h/60) % 2 - 1)), m =
 var sector = [[q,x,0],[x,q,0],[0,q,x],[0,x,q],[x,0,q],[q,0,x]][Math.floor(h/60) % 6];
 return '#' + sector.map(function(v){ return ('0' + Math.round((v + m)*255).toString(16)).slice(-2); }).join('');
 }
-var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
-NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
-var PAL = {};
 function paletteOf(n){   // one palette per (island, nesting level), built on first use
 var level = Math.max(0, pathDepth(n) - HUB_DEPTH[n.island]);
 var key = n.island + ':' + level;
@@ -1671,7 +1952,6 @@ ctx.fillText(name, pr.x, pr.y - lift - 7);
 var prefersReducedMotion = window.matchMedia &&
 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var projCache = {};
-var rafId = null, needsFrame = true, lastDraw = 0;
 function draw(){
 drawBackground();
 var i, e, n, j;
@@ -1890,6 +2170,7 @@ var dot = document.createElement('span');
 dot.className = 'dot';
 dot.style.background = paletteOf(nd).line;   // a row is a node, so its dot carries the node's shade
 row.appendChild(dot);
+row.dotEl = dot;
 row.appendChild(document.createTextNode(labelOf(nd)));
 row.addEventListener('click', function(){
 if (nd.type === 'file'){ select(id); } else { setSubtree(id); }
@@ -1918,6 +2199,24 @@ treeTab.addEventListener('click', function(){
 setTreeOpen(treeWrap.classList.contains('closed'));
 });
 setTreeOpen(true);
+function renderLegend(){   // the active view by name, and its islands in layout order; a row isolates its island as the digit does
+var legend = document.getElementById('legend');
+legend.innerHTML = '';
+var head = document.createElement('div');
+head.className = 'legend__view';
+head.textContent = activeView + ' view';
+legend.appendChild(head);
+ISLAND_ORDER.forEach(function(key){
+var row = document.createElement('div');
+row.className = 'legend__row';
+var dot = document.createElement('span');
+dot.className = 'dot'; dot.style.background = ISLANDS[key].color;
+row.appendChild(dot);
+row.appendChild(document.createTextNode(ISLANDS[key].name));
+row.addEventListener('click', function(){ setIsland(key); });
+legend.appendChild(row);
+});
+}
 function setIsland(key){
 activeIsland = (activeIsland === key) ? null : key;
 clearSubtree();
@@ -1932,23 +2231,22 @@ btnPlay.textContent = playing ? '⏸' : '▶';
 invalidate();
 }
 btnPlay.addEventListener('click', function(){ setPlaying(!playing); });
-function resetView(){
+function resetCamera(){
 rotY = CONFIG.START_ROT_Y; rotX = CONFIG.START_ROT_X;
 userZoomed = false; zoom = fitZoom();
 activeIsland = null;
 clearSubtree();
 select(null);
 }
-/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
-   isolates nothing is never offered and never dims the whole drawing */
-var STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
-document.getElementById('hintStories').textContent = STORY_DIGITS.join('') === ''
-  ? 'no story key' : STORY_DIGITS[0] + '\u2013' + STORY_DIGITS[STORY_DIGITS.length - 1];
-document.getElementById('btnReset').addEventListener('click', resetView);
+document.getElementById('btnReset').addEventListener('click', resetCamera);
+var btnView = document.getElementById('btnView');
+btnView.style.display = VIEW_ORDER.length > 1 ? '' : 'none';   // one view, no view control
+btnView.addEventListener('click', function(){ setView(nextView()); });
 window.addEventListener('keydown', function(ev){
 if (ev.key === ' '){ ev.preventDefault(); setPlaying(!playing); }
 else if (STORY_DIGITS.indexOf(ev.key) >= 0){ setIsland('S' + ev.key); }
-else if (ev.key === '0' || ev.key === 'Escape'){ resetView(); }
+else if (ev.key === '0' || ev.key === 'Escape'){ resetCamera(); }
+else if (ev.key === 'v' && VIEW_ORDER.length > 1){ setView(nextView()); }   // offered only when there is another view, like the digits
 });
 </script>
 </body>
