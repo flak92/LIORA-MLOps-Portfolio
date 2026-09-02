@@ -206,6 +206,7 @@ how a stage is run, never what it computes.
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
 | the memory ceiling every service runs under | the `x-service` anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation, a service written outside the anchor and so without a ceiling |
 | how long a container lives: one-off — a `run --rm` process that exits with its stage — or resident — a server that stays up | the `lifetime` column of `skill_asset_containers.md` § The topology | — | — | one-shot, ephemeral, daemon, long-running; `task` or `job` for the one-off |
+| the presentation switch: the whole stack up with the page open, or everything down, in one word | `make on` = `docker-up`, `make off` = `docker-down` — the one alias pair the Makefile grammar admits | — | — | `start` / `stop` (the panel's verbs for one container), bare `up` / `down` (compose's), `run`, a third alias |
 
 ## Container status endpoint
 

@@ -59,7 +59,8 @@ resident. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1
 fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
 `make docker-up` builds the image if needed, starts the dashboard and the
-residents, and opens the page. `make docker-all` then runs the whole chain through them,
+residents, and opens the page; `make on` is its presentation alias, `make off`
+that of `make docker-down`. `make docker-all` then runs the whole chain through them,
 download to snapshots. Locally, every per-asset stage runs inside its asset's container: the
 fan-out does an idempotent `up -d`, then `docker compose exec -T asset-<ticker>
 sh -c 'python -m module_<x>.<stage> --tickers $ASSET'` — ingest one container at

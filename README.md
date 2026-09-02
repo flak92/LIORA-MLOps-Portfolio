@@ -19,6 +19,58 @@ The working path through the repo is `AGENTS.md → module names →
 README_module_<name>.md → the module's own skills → code`; this README is the
 general overview.
 
+## Quickstart
+
+Everything runs through the Makefile; `make help` lists every target with its
+one-line purpose. On and off — one word each, the presentation switch; from
+there everything is a click in the page:
+
+```bash
+make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, open http://127.0.0.1:8900/  (= make docker-up)
+make off                   # stop and remove every container of this project  (= make docker-down)
+```
+
+`on` and `off` are the one alias pair the target grammar admits ([AGENTS.md](AGENTS.md)
+§ Canonical vocabulary): two words for a presenter to remember; the targets they
+name are the convention.
+
+The chain, and the pictures it leaves:
+
+```bash
+make all                   # the whole pipeline on the host from a fresh clone: venv -> data-download -> data-ingest -> data-status -> ml-all
+make docker-all            # the same chain inside the containers, download to snapshots
+make docker-all-record     # the same chain, recorded stage by stage into store_run_records/<run_id>/ — the Lifecycle tab
+make monitoring-dx-update  # redraw the developer-experience picture after the tracked tree changes
+```
+
+Three readers, three doors, all behind `make on`:
+
+- **business** — the status page at `http://127.0.0.1:8900/`: *Pipeline*, *Data
+  Quality*, *ML Research*, *ML Assets* and *Lifecycle*, the results and the cost
+  of producing them (§ Dashboard below);
+- **developer** — the **DX** control in the top right opens the drawing of the
+  tracked tree, one self-contained page;
+- **DevOps** — the **DevOps** control opens the panel: the asset containers as
+  they report themselves, every container on the host with its ports, the
+  networks, volumes, bind mounts, the image and the engine's events, with
+  start / stop / restart offered for this project's own containers alone.
+
+A single stage runs by name, on the host or in its container — `make ml-features`,
+`make docker-ml-features`: every `data-<stage>` and `ml-<stage>` target has its
+`docker-` twin, and `docker-ml-all` and `docker-all` are the chains. The stage
+order is the Makefile's `all:` and `ml-all:`; every document points there. `PORT=8902 make docker-up` moves the dashboard's host
+port, `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
+a rerun fetches and rebuilds only what its contract says. The dashboard is
+docker-only and reachable on loopback alone; on a remote machine tunnel with
+`ssh -L 8900:127.0.0.1:8900 <host>`. Locally, every per-asset stage runs inside
+that asset's own resident container, `asset-<ticker>` — one service of
+`docker-compose.yml` per ticker of the basket, one image for all — though no stage
+depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
+the container merely hosts. Four direct dependencies and nothing else — `duckdb`
+(storage and query), `numpy` (mathematics), `optuna` (hyper-parameter search) and
+`xgboost-cpu` (model); the CPU wheel is deliberate, because the research layer
+trains with `tree_method=hist` and `nthread=1`.
+
 ```
                  ┌── market source A ──┐
 MARKET DATA ─────┤                     ├──► NORMALISED RAW 1m OHLCV  (Lean ZIPs)
@@ -94,33 +146,6 @@ production-scale infrastructure: there is no test suite, no security layer and
 no guard beyond the seven the mathematics needs. The rule, its non-goals and the
 mapping table:
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
-
-## Quickstart
-
-Four direct dependencies and nothing else — `duckdb` (storage and query),
-`numpy` (mathematics), `optuna` (hyper-parameter search) and `xgboost-cpu`
-(model); the CPU wheel is deliberate, because the research layer trains with
-`tree_method=hist` and `nthread=1`.
-
-```bash
-make all          # venv -> data-download -> data-ingest -> data-status -> full ML chain
-make docker-up    # build the image, start the dashboard, the DevOps panel and the asset containers, open http://127.0.0.1:8900/
-make docker-all   # the whole chain inside the containers, download to snapshots
-make docker-all-record     # the same chain, recorded stage by stage into a run directory
-```
-
-The dashboard is docker-only: `make docker-up` / `make docker-down`. The stages
-run inside Docker too: `docker-data-download`, `docker-data-ingest` and
-`docker-data-status` and `docker-ml-<stage>` (or `docker-ml-all`), and `docker-all` runs
-the whole chain. Locally, every per-asset stage runs inside that asset's own resident
-container, `asset-<ticker>` — one service of `docker-compose.yml` per ticker of the
-basket, under the anchor it shares with the dashboard, one image for all — though no
-stage depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
-the container merely hosts. `make docker-up` starts
-the dashboard and the residents, each answering the dashboard's proxy with its
-data, its artifacts and its own memory and CPU. The stage order is the Makefile's `all:`
-and `ml-all:`; every document points there. Remote machine? Tunnel with
-`ssh -L 8900:127.0.0.1:8900 <host>`.
 
 ## Stages
 

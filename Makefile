@@ -67,6 +67,10 @@ docker-up: docker-build ## start the dashboard, the DevOps panel and the asset c
 	@python3 -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')"
 docker-down:     ## stop and remove every container
 	$(COMPOSE) down
+# the presentation switch — the one alias pair the target grammar admits (AGENTS.md § Canonical vocabulary):
+# two words to type in front of an audience; the rest is a click in the page, and the targets they name stay the convention
+on: docker-up    ## the presentation switch: the same as docker-up
+off: docker-down ## the presentation switch: the same as docker-down
 docker-data-download: ## both download stages inside the container (basket-wide, sequential)
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_binance
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit
