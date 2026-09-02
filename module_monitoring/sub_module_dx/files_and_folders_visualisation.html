@@ -103,6 +103,7 @@ const CONFIG = {
 ISLAND_RADIUS: 310,     // floor of the islands' distance from the core; the tree pushes it out when discs would meet
 ISLAND_GAP: 60,         // clear space between neighbouring islands' discs, and between an island and the core
 RING_GAP: 16,           // clear space between neighbouring discs on one ring
+FAN_SPAN: 4*Math.PI/3,  // widest arc a folder's children fan over, facing away from its parent; the third left free is where its own edge arrives
 FILE_EXTENT: 12,        // radius of the disc a file glyph occupies
 LABEL_CHAR_EXTENT: 0.4, // radius added per character of a file's name, so a long label gets room
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
@@ -126,11 +127,11 @@ const META = {
  "config": {
   "FIT_WIDTH": 1400,
   "START_ROT_X": -0.4,
-  "START_ROT_Y": 3.12
+  "START_ROT_Y": 6.21
  },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 5ec8aa1 \u00b7 2026-09-02 12:31:42",
+ "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of b796b59 \u00b7 2026-09-02 13:06:05",
  "title": "Files and Folders"
 };
 const ISLANDS = {
@@ -176,12 +177,6 @@ const PLACE = {
   "da": -0.3,
   "r": 0.38,
   "y": -34
- },
- "store_assets_artifacts/": {
-  "da": 0.14,
-  "jit": 10,
-  "r": 1.62,
-  "y": 6
  }
 };
 const NODES = [
@@ -1266,21 +1261,22 @@ EXTENT[n.id] = kids.length
 }
 return EXTENT[n.id];
 }
-function ringRadiusOf(members){   // wide enough for the members' discs side by side, never inside a child folder's own disc
+function ringRadiusOf(members){   // wide enough for the members' discs side by side on the fan, never inside a child folder's own disc
 var arc = 0, widest = 0;
 members.forEach(function(m){
 var e = extentOf(m);
 arc += 2*e + CONFIG.RING_GAP;
 if (m.type === 'folder') widest = Math.max(widest, e);
 });
-return Math.max(72, 30 + members.length * 6.5, arc / (2*Math.PI), widest + CONFIG.RING_GAP);
+return Math.max(72, 30 + members.length * 6.5, arc / CONFIG.FAN_SPAN, widest + CONFIG.RING_GAP);
 }
-function ringAround(c, members, radius, startAngle, yJitter){
+function fanAround(c, members, radius, outward, yJitter){   // members side by side on an arc centred on `outward`, never wider than FAN_SPAN
 var arcs = members.map(function(m){ return 2*extentOf(m) + CONFIG.RING_GAP; });
 var total = arcs.reduce(function(s, a){ return s + a; }, 0);
-var phi = startAngle;
+var span = Math.min(CONFIG.FAN_SPAN, total / radius);   // a few children fan narrowly, many fill the whole arc
+var phi = outward - span/2;
 members.forEach(function(m, j){
-var step = 2*Math.PI * arcs[j] / total;   // a slot as wide as the subtree in it
+var step = span * arcs[j] / total;   // a slot as wide as the subtree in it
 m.p = {
 x: c.x + radius * Math.cos(phi + step/2),
 y: c.y + [1, 0, -1][j % 3] * yJitter,   // 3-phase jitter breaks view-ray alignment
@@ -1290,59 +1286,64 @@ phi += step;
 });
 }
 function layout(){
-nodeById['root'].p = { x:0, y:8, z:0 };
-// pass one: what each island needs; the island radius depends on all of them
+var root = nodeById['root'];
+root.p = { x:0, y:8, z:0 };
+// the root's own ring is the islands: each takes the arc its root-level members need, side by side
 var islands = ISLAND_ORDER.map(function(key){
 var members = NODES.filter(function(n){ return n.island === key; });
 var hub = members.find(function(n){ return n.hub; });
-// a member whose tree parent lives on another island can never be reached by a folder ring, so it rings the hub
-var loose = members.filter(function(n){
+// an island's roots: the hub, then every member whose tree parent lives on another island — no fan in the island can reach them
+var roots = [hub].concat(members.filter(function(n){
 var parent = nodeById[PARENT_OF[n.id]];
 return !n.hub && !PLACE[n.id] && (!parent || parent.island !== key);
+}));
+var arcs = roots.map(function(n){ return 2*extentOf(n) + CONFIG.RING_GAP; });
+return { key:key, members:members, hub:hub, roots:roots, arcs:arcs,
+arc: arcs.reduce(function(s, a){ return s + a; }, 0) + CONFIG.ISLAND_GAP,
+reach: Math.max.apply(null, roots.map(extentOf)) };
 });
-var widestLoose = loose.length ? Math.max.apply(null, loose.map(extentOf)) : 0;
-var looseRadius = loose.length
-? Math.max(80, ringRadiusOf(loose), extentOf(hub) + widestLoose + CONFIG.RING_GAP)
-: 0;
-return { key:key, members:members, hub:hub, loose:loose, looseRadius:looseRadius,
-reach: Math.max(extentOf(hub), looseRadius + widestLoose) };
+// the island radius: the floor, the circumference all the arcs need, and no island's disc reaching the core
+var total = islands.reduce(function(s, isl){ return s + isl.arc; }, 0);
+var radius = Math.max(CONFIG.ISLAND_RADIUS, total / (2*Math.PI));
+islands.forEach(function(isl){ radius = Math.max(radius, isl.reach + CONFIG.ISLAND_GAP); });
+var phi = -Math.PI/2;   // the first island starts at the top, the rest follow clockwise, each as wide as its arc
+islands.forEach(function(isl){
+var span = 2*Math.PI * isl.arc / total, perUnit = span / isl.arc;
+isl.theta = phi + span/2;   // the island's bearing — what `place.da` offsets from
+var a = phi + CONFIG.ISLAND_GAP/2 * perUnit;
+isl.roots.forEach(function(n, j){
+var centre = a + isl.arcs[j]/2 * perUnit;
+n.p = { x: radius * Math.cos(centre), y: 0, z: radius * Math.sin(centre) };
+a += isl.arcs[j] * perUnit;
 });
-// the island count comes from the data, so a story added in JSON needs no code change
-var count = islands.length, radius = CONFIG.ISLAND_RADIUS;
-islands.forEach(function(isl, i){
-var next = islands[(i + 1) % count];
-radius = Math.max(radius, isl.reach + CONFIG.ISLAND_GAP);   // an island never reaches the core
-if (count > 1){   // neighbours' discs never meet across the chord 2R sin(pi/N)
-radius = Math.max(radius, (isl.reach + next.reach + CONFIG.ISLAND_GAP) / (2 * Math.sin(Math.PI / count)));
-}
+phi += span;
 });
-islands.forEach(function(isl, i){
-var theta = -Math.PI/2 + i * (2*Math.PI/count);
-isl.hub.p = { x: radius * Math.cos(theta), y: 0, z: radius * Math.sin(theta) };
+islands.forEach(function(isl){
 isl.members.forEach(function(n){
 var pl = PLACE[n.id];
 if (pl){
-var a = theta + pl.da, r = radius * pl.r;
+var a = isl.theta + pl.da, r = radius * pl.r;
 n.p = { x: r*Math.cos(a), y: pl.y, z: r*Math.sin(a) };
 }
 });
-if (isl.loose.length){
-ringAround(isl.hub.p, isl.loose, isl.looseRadius, theta, CONFIG.RING_Y_JITTER);
-}
-// folders shallowest first: a parent holds a position before its children ring around it
+// folders shallowest first: a parent holds a position before its children fan out from it, away from
+// its own parent — so the edge that arrives at a folder never runs through the fan the folder holds
 isl.members.filter(function(n){ return n.type === 'folder'; })
 .sort(function(a, b){ return pathDepth(a) - pathDepth(b); })
 .forEach(function(f){
 if (!f.p) return;
 var kids = childrenOf(f.id).filter(function(k){ return !k.p; });   // a placed child keeps its place
 if (!kids.length) return;
+var parent = nodeById[PARENT_OF[f.id]];
+var from = (parent && parent.p) ? parent.p : root.p;
+var outward = Math.atan2(f.p.z - from.z, f.p.x - from.x);
 var pl = PLACE[f.id];
 var jit = (pl && pl.jit != null) ? pl.jit : CONFIG.RING_Y_JITTER;
-ringAround(f.p, kids, ringRadiusOf(kids), theta, jit);
+fanAround(f.p, kids, ringRadiusOf(kids), outward, jit);
 });
 var leftover = isl.members.filter(function(n){ return !n.p; });
 if (leftover.length){
-ringAround(isl.hub.p, leftover, 110, theta, CONFIG.RING_Y_JITTER);
+fanAround(isl.hub.p, leftover, 110, isl.theta, CONFIG.RING_Y_JITTER);
 }
 });
 }
