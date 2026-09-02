@@ -109,7 +109,9 @@ named for one.
   backtest could read it directly
   (`../module_data/skills/skill_candle_canonicalisation.md` § 13); that is the
   whole of Lean's presence. No Lean runtime, container or dependency exists in
-  this repository. Strategy execution, if it ever exists, is `module_trading/` —
+  this repository; the deployment view of the drawing seats it where it would be
+  — a separate Linux host running Lean, its brokerage credentials in a secrets
+  store — as primitives drawn absent. Strategy execution, if it ever exists, is `module_trading/` —
   its own container beside `module_ml`, never inside it; the register keeps one
   Lean row, `glossary.md` § Market object.
 
@@ -178,7 +180,9 @@ container name; code knows `ASSET`, and every address is built once, in
 whole stance — one embedded file, one whole-file lock, one writer at a time
 (`skill_asset_containers.md` § The server) — later one versioned object pulled
 into a container's own disk and put back whole; never a database process, never
-a shared mount, never a local PostgreSQL.
+a shared mount, never a local PostgreSQL. Read forward the host is the same: one
+Linux container instance runs every asset's tasks, and an asset's files and
+folders exist on its disk for one run — the prefix is where they live.
 
 ## The resident container is a local mechanism
 
@@ -294,8 +298,11 @@ proposal for a local directory. The cloud's proper nouns are spelled out here
 and where the stance is stated — `AGENTS.md` § Pre-AWS architectural direction,
 `README.md` § Architectural direction and this document's prose — and in the one
 picture of this column, the deployment view of the developer-experience drawing,
-whose islands are the rows below that a tracked path answers to, and one island
-for the documents that answer to none
+whose primitives are rows of this column drawn as icons, each with the tracked
+paths that answer to its row seated beside it and the flows between primitives
+drawn; a row whose primitive has no local counterpart — its left column names
+what stands in today — is drawn absent, and one island is no row — the documents
+that answer to none
 (`../module_monitoring/skills/skill_developer_experience_drawing.md` § Two views
 of one tree). Among the tree's names they live in this column alone: never in a
 make target, a compose service, a container environment variable, a payload key
@@ -304,8 +311,8 @@ or a code comment, and in no tracked path but this file's own `pre_aws` stem.
 | this repository has | responsibility | the same responsibility elsewhere |
 |---|---|---|
 | the one image, `mlops-portfolio-1m-pipeline` | COMPUTE — the runtime every stage runs in | a container image in a registry (Amazon ECR) |
-| `docker compose run --rm -T pipeline python -m <module>.<stage>` | COMPUTE — one stage, one one-off process | one container run (an Amazon ECS Task on AWS Fargate — a data-ingest or ml-research task) |
-| a per-asset stage, `--tickers <TICKER>`, inside `asset-<ticker>` | COMPUTE — one stage for one asset | the same Task parameterised by `ASSET` (`RunTask` with `ASSET=BTC` — an asset-rebuild task) |
+| `docker compose run --rm -T pipeline python -m <module>.<stage>` | COMPUTE — one stage, one one-off process | one container run (an Amazon ECS Task — a data-ingest or ml-research task) on one Amazon EC2 Linux container instance shared by every asset's runs, whose disk holds an asset's files and folders for the length of one run and nothing after it; AWS Fargate is the same task without the host |
+| a per-asset stage, `--tickers <TICKER>`, inside `asset-<ticker>` | COMPUTE — one stage for one asset | the same Task parameterised by `ASSET` (`RunTask` with `ASSET=BTC` — the data-ingest task for BuildCanonicalData, the ml-research task from AggregateBars on) |
 | one compose service per ticker under one anchor | INFRASTRUCTURE — the parameter made visible | one task definition parameterised by `ASSET`, never a new unit per asset |
 | the Makefile's `all:` and `ml-all:` | ORCHESTRATION — the explicit stage order | a state machine whose states are the stages above (AWS Step Functions) |
 | `store_raw_1m/cryptofuture/<venue>/minute/<symbol>/YYYYMMDD_trade.zip` | STORAGE — raw, immutable, one object per UTC day | raw objects under a venue and symbol prefix in object storage (Amazon S3) |
@@ -317,7 +324,8 @@ or a code comment, and in no tracked path but this file's own `pre_aws` stem.
 | `logs/<stage>_<docker_service>.log` and the 1 s cgroup samples of a run | MONITORING — logs and resource metrics | log streams keyed by stage and container, and metrics (Amazon CloudWatch) |
 | the page files of `module_monitoring/` and the two snapshots | MONITORING — the static dashboard | static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) |
 | the `/containers`, `/runs` and `/devops/*` routes | MONITORING — a small reader process | a container that stays running, not a static object |
-| the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean — a lean-backtest task, or a long-running service |
+| the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Amazon EC2 Linux instance — the strategy host: a lean-backtest task, or a container that stays running and trades live, its brokerage credentials read from the secret below when it starts |
+| none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts |
 | `sub_module_devops`, `sub_module_dx` | INFRASTRUCTURE — the engine's views, the repository's view | a console and a repository view, not project code |
 
 ## The chief antipattern

@@ -185,9 +185,9 @@ section, `README.md` § Architectural direction, the skill's prose, the right
 column of its mapping table, and the one picture of that column — the deployment
 view of the developer-experience drawing, the `deployment` block of
 `module_monitoring/sub_module_dx/visualisation_config.json` and the page drawn
-from it, which names no primitive the table does not. Never in a make target, a
-compose service, an environment variable, a payload key or a code comment. The
-non-goals, the twelve
+from it, whose every primitive drawn is a row of the table and which names no
+primitive the table does not. Never in a make target, a compose service, an
+environment variable, a payload key or a code comment. The non-goals, the twelve
 classes, the review of what stays local and the mapping table are
 `module_skills/skill_pre_aws_solution.md` — a cross-cutting skill of the kind
 § The default choice names, beside `skill_asset_containers.md`.

@@ -143,9 +143,10 @@ the responsibilities are cut so that a later move onto standard cloud primitives
 local storage, the local Docker execution and the local stage order without
 redrawing the domain pipeline. No cloud infrastructure exists here and none is
 planned; the mapping is described, not built. It is also drawn: the deployment
-view of the developer-experience drawing, one control on the **DX** page, seats
-every tracked file and folder on the primitive its responsibility answers to, or
-with the documents that deploy nowhere.
+view of the developer-experience drawing, one control on the **DX** page, draws
+the primitives of the mapping table as icons with the flows between them, and
+seats every tracked file and folder beside the one its responsibility answers
+to, or with the documents that deploy nowhere.
 Correctness is shown by the whole chain running end to end on a small
 representative basket, `BTC` today, never by production-scale infrastructure:
 there is no test suite, no security layer and no guard beyond the seven the
