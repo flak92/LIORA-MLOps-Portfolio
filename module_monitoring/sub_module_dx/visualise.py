@@ -477,6 +477,7 @@ def build_view(view_id: str, view: dict, emitted: list) -> dict:
         "hub": hubs,
         "island": {node_id: node["island"] for node_id, node in nodes.items()},
         "islands": islands,
+        "notice": view["notice"],
         "order": order,
         "place": {resolve_key(k, nodes, f'{where}"place"'): v for k, v in view["place"].items()},
         "primitives": primitives,

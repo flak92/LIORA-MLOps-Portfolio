@@ -83,6 +83,7 @@ CONFIG_DEFAULTS = {
     "flows": [],        # {from, to} over two primitive ids of the view, drawn as a dashed arrow
     "place": {},
     "camera": {},
+    "notice": "",       # the words a view shows in the top right, one line per newline; empty shows nothing
     "header": {},
     "deployment": None,   # the second view of the same tree; None means one view and no view control
 }
@@ -101,7 +102,7 @@ FLOW_KEYS = {"from", "to"}
 # what a second view of the same tree restates; exclude, aggregate and header define the
 # tree and are shared by every view
 VIEW_KEYS = {"default_story", "story_map", "stories", "story_order", "core", "place", "roles",
-             "descriptions", "camera", "primitives", "flows"}
+             "descriptions", "camera", "primitives", "flows", "notice"}
 LAYERED_VIEW_KEYS = {"roles", "descriptions", "camera"}   # laid over the top level's entry by entry; every other view key replaces it whole
 DEVELOPMENT_VIEW = "development"   # the top level of the JSON: the tree as tracked
 DEPLOYMENT_VIEW = "deployment"     # the block of that name: the same tree on the primitives the mapping table names
