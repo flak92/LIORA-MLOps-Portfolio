@@ -28,7 +28,7 @@ will land in, on any server, under any locale. *The repository shows the destina
   dot-files), `<TICKER>_README.md` and `README_module_<name>.md` keep their
   spelling, so they are the only
   names whose sort position depends on the collation: `<TICKER>_README.md` is
-  first in its folder under `LC_COLLATE=C` and ninth under `en_US.UTF-8`, and
+  first in its folder under `LC_COLLATE=C` and eighth under `en_US.UTF-8`, and
   the `<TICKER>_*` block stays contiguous under both.
 - **A module's orientation file is derived from its directory:
   `module_<name>/README_module_<name>.md`.** The name is not chosen — it is

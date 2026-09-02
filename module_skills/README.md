@@ -4,16 +4,7 @@ Where every rule of this repository is written down. This file links; it holds
 no rule of its own, so nothing here can disagree with the document it points
 at. *The repository shows the destination, not the road*.
 
-Ownership decides location, and `AGENTS.md` § The default choice holds the rule:
-
-```
-a rule about one module          → module_<name>/skills/
-a rule about several, or the repo → module_skills/
-one module's orientation          → module_<name>/README_module_<name>.md
-```
-
-A skill exists **once**, in the directory its ownership names. There is no
-second copy anywhere in this tree.
+Ownership decides location, and `AGENTS.md` § The default choice holds the rule.
 
 ## Cross-cutting — the skills in this directory
 
@@ -26,13 +17,6 @@ second copy anywhere in this tree.
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the non-goals, and why none of it is built |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
-
-`skill_asset_containers.md` is the worked example of the cross-cutting
-boundary: it describes one image, the `pipeline` and `asset-<ticker>` services,
-the Makefile fan-out, the memory ceilings, the bind mount and the dashboard's
-reach into the asset containers — a contract between the infrastructure and
-`module_data`, `module_ml` and `module_monitoring` alike. It belongs to no
-single module, so it stays here.
 
 ## module_data
 

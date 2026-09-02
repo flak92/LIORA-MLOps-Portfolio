@@ -34,11 +34,8 @@ begin at the first traded minute and hold a partial file — a property of raw
 per-day storage, not a canonical gap: the canonical grid is rebuilt downstream
 from both providers, and every later day must be complete.
 
-Both downloaders write identical QuantConnect Lean-exact day ZIPs
-(`YYYYMMDD_trade.zip` → `YYYYMMDD_<symbol>_minute_trade_perp.csv`, headerless
-`offset_ms_from_utc_midnight,open,high,low,close,volume`) into
-`store_raw_1m/cryptofuture/<venue>/minute/<symbol>/`; a day file is written
-once, because exchanges do not restate klines. The tree's shape and the
+Both downloaders write the same QuantConnect Lean-exact day ZIP, once, because
+exchanges do not restate klines; the tree's shape, the file names and the
 prohibition on combining the two venues' raw data are
 [skill_candle_canonicalisation.md](skill_candle_canonicalisation.md) § 3.
 

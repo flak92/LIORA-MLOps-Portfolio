@@ -1,8 +1,8 @@
 # module_monitoring — what the runtime modules measured, made readable
 
 The front door of this module: what it is, where its responsibility stops, and
-how to run it. The page's own conventions and the developer-experience drawing
-are `skills/` and are not repeated here. *The repository shows the destination,
+how to run it. The page's own conventions, the developer-experience drawing and
+the DevOps panel are `skills/` and are not repeated here. *The repository shows the destination,
 not the road*.
 
 `module_monitoring` computes nothing about the market. It presents what

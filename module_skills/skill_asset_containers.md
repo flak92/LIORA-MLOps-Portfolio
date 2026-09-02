@@ -79,9 +79,9 @@ compose file, every service visible in it. Adding an asset is one line in
 
 ## The server
 
-`module_monitoring/serve.py`, one file, two roles chosen by `ASSET`. The
-dashboard role serves the static page, `GET /containers` — the registry:
-`generated_at_utc`, `poll_interval_seconds` and `tickers` from
+`module_monitoring/serve.py`, one file, two roles chosen by `ASSET`. Of the
+dashboard role's routes, two concern the asset containers: `GET /containers` —
+the registry: `generated_at_utc`, `poll_interval_seconds` and `tickers` from
 `module_data.config.TICKERS` — and `GET /containers/<TICKER>/status`, proxied to
 `http://asset-<ticker>:8900/status`. The asset role answers `GET /status`.
 

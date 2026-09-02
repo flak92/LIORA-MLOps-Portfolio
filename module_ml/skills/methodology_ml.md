@@ -423,7 +423,7 @@ by it: `source_switch_count` and `rel_divergence` are monitored per symbol
 precisely so the effect is visible and countable.
 
 Known limitations: no regime-conditional gating, no per-asset
-feature selection, no CUSUM event sampling, no meta-labeling, no fractional
+feature selection, no CUSUM event sampling, no meta-labelling, no fractional
 differentiation, fixed costs, unit position sizing. The class distribution is
 dominated by `y = 0` (the 2×ATR barrier is rarely touched within one 4H
 block) — reported per asset, not resampled.

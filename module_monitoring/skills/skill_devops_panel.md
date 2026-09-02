@@ -117,7 +117,7 @@ mounts**, **image** and **events** — each a flat table of what its route
 answered, with no arithmetic of the page's own. Their keys are registered in
 `../../module_skills/glossary.md` § DevOps panel and are not restated here.
 
-The asset-container columns and badges are the ones that view has always had:
+The asset-container columns and badges:
 
 | column / badge | label | source |
 |---|---|---|
@@ -145,7 +145,7 @@ whose endpoint did not answer 200, and a container not asked yet.
 ## What the panel owes the reader
 
 A container that does not answer renders `down` with dashes and never a previous
-number, exactly as the tab it replaces did. The engine reports counters, not
+number. The engine reports counters, not
 rates: a CPU rate is this page's arithmetic over two polls, a dash until the
 second, and a counter that went backwards is a container that restarted rather
 than a negative rate. An action never renders optimistically — the panel re-reads
@@ -155,9 +155,3 @@ refuse them.
 
 The panel polls only while it is visible, at the interval the server publishes;
 no cadence is a literal in the page.
-
-## What the business reader sees
-
-One tab fewer and one button more. The status page keeps *Pipeline*, *Data
-Quality*, *ML Research*, *ML Assets* and *Lifecycle*; **Containers** left the tab
-row for this panel. The four result tabs are unchanged.

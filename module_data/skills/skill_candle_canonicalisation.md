@@ -491,7 +491,7 @@ probe, idempotence by file presence — are `methodology_data.md` § 3.
 ## 18. Reference observation
 
 **Example only — an observed run, not an invariant.** These are the numbers of
-one BTC run over `2021-01-01 00:00` … `2026-08-29 23:59` UTC, read from
+one BTC run of the window as it stood when this was read, from
 `module_monitoring/data_status.json`. Nothing in the system may be coded
 against them.
 

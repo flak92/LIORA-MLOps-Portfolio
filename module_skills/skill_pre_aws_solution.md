@@ -304,7 +304,9 @@ drawn; a row whose primitive has no local counterpart — its left column names
 what stands in today — is drawn absent, and one island is no row — the documents
 that answer to none
 (`../module_monitoring/skills/skill_developer_experience_drawing.md` § Two views
-of one tree). Among the tree's names they live in this column alone: never in a
+of one tree), and in the UI-label column of `glossary.md` § Developer
+experience, which records the words that view shows. Among the tree's names they
+live in this column alone: never in a
 make target, a compose service, a container environment variable, a payload key
 or a code comment, and in no tracked path but this file's own `pre_aws` stem.
 
@@ -357,7 +359,7 @@ the same responsibility vocabulary without renaming the architecture.
 
 ## What stays as it is, and why
 
-The tree as reviewed at commit `5ddc2fb`, in the commissioned columns. A row
+The tree as it stands, in four columns. A row
 disappears when the line it names does; the rows whose change was made are not
 here, because they are no longer true.
 
@@ -365,7 +367,7 @@ here, because they are no longer true.
 |---|---|---|---|
 | `module_ml/bars.py` opens `module_data`'s database read-write; every other ML open is read-only | one stored object, two writing modules, across the storage → ML-compute line | one durable writer at a time, sequenced by `ml-all` and enforced by the whole-file lock; the three aggregation tables are a pure, idempotent function of `ohlcv_1m_canonical`; a second database is forbidden by `../module_data/skills/skill_candle_canonicalisation.md` § 13 | no — described |
 | `module_data.status` takes no `--tickers`; `module_ml.status` accepts it and folds the basket regardless | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
-| the two snapshots are written into `module_monitoring/` and tracked | status objects live under a `module_*` and are the web root at once | classify, do not move: STORAGE produced by DATA and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; a future move turns four points — the two path constants, the directory `serve.py` serves, the two literal fetches — and is the prerequisite of ever narrowing the mount | no — described |
+| the two snapshots are written into `module_monitoring/` and tracked | status objects live under a `module_*` and are the web root at once | classify, do not move: STORAGE produced by DATA and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; a future move turns five points — the two path constants, the directory `serve.py` serves, the two literal fetches — and is the prerequisite of ever narrowing the mount | no — described |
 | `Dockerfile` copies no code; code and state both arrive through `.:/app` | the image is a dependency layer, not a compute artifact | said, not built: one mount is the local simplification; a future image carries the code and the mount carries the state | no — described |
 | `record.py` holds the map of every stage to the artifacts it leaves | pipeline-shape knowledge in the representation module | measurement may hold stage → artifact, never the stage order or a dependency between stages; a later condition reads this table rather than starting a second | no — described |
 | a recorded run fails if any stage failed *or* the dashboard probe failed; finalising needs `docker` and `git` on the host | two facts in one number; the run cannot be finalised elsewhere | a local lifecycle verdict — the chain ran and the page represents it; a future execution record judges on the exit codes alone, which are already in the record | no — described |
@@ -375,5 +377,6 @@ here, because they are no longer true.
 | compose project, container and network names derive from the directory | none | checkouts of LIORA can sit side by side on one host with the same service names; a fixed name would merge them | no — described |
 | the image is named `mlops-portfolio-1m-pipeline`, a name older than LIORA | none for the mapping: one runtime package, no ticker | kept; the name is one runtime package with no ticker, which is all the mapping needs; two checkouts that build one tag share whichever built last, so a rename is worth doing only under a tag no sibling builds | no — described |
 | `centered_rsi14` is spelled the American way | the one identifier that breaks the British spelling of the prose | a stored column, an artifact key and a feature name — a contract with files on disk that moves only with every writer and reader in one commit | no — described |
+| the drawing's `color` key is spelled the CSS way beside prose that says colour | one key against the British prose around it | the word of the CSS it feeds; fifteen keys of `visualisation_config.json`, the generator, the template and a redraw of the derived page would move together for one letter | no — described |
 | `hpo` names the stage and the file; `hyperparameter_search_result` names the key | one term in two forms | a domain abbreviation `AGENTS.md` § Canonical vocabulary admits, spelled out where a key has no file name beside it — as UTC and OHLCV are | no — described |
 | `module_ml.status` writes a basket snapshot and per-asset READMEs in one stage | two namespaces in one stage | each named: the README is an asset artifact of an asset-scoped part of that stage, the snapshot a fold over completed asset artifacts | no — described |

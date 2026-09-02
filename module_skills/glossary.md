@@ -118,7 +118,7 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss (`best LL` in the search table) | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | the chosen point itself — the closed set of eight, in xgboost's own spelling because `module_ml/hpo.py` is a named boundary | the keys of `HYPERPARAMETER_SEARCH_SPACE`, `module_ml/config.py` — the one definition the search, the file and the table all derive from | `best_params`: `alpha`, `colsample_bytree`, `eta`, `lambda`, `max_depth`, `min_child_weight`, `num_boost_round`, `subsample` | depth, eta, min child, subsample, colsample, lambda, alpha, rounds — the search table's columns | a project synonym for an xgboost parameter; a second name for any of the eight; registering them one by one |
-| what the search never touches — the constants the experiment freezes before it starts | `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER`, `LABEL_HORIZON_MINUTES`, the five feature parameters (`EMA_FAST_SPAN_BARS`, `EMA_SLOW_SPAN_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS`, `RSI_WILDER_SMOOTHING_PERIOD_BARS`, `RANGE_POSITION_LOOKBACK_BARS`, `LOG_VOLUME_ZSCORE_LOOKBACK_BARS`), `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md | a searched parameter among them; a value changed without a commit that says so |
+| what the search never touches — the constants the experiment freezes before it starts | `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER`, `LABEL_HORIZON_MINUTES`, the six parameters of the five feature families (`EMA_FAST_SPAN_BARS`, `EMA_SLOW_SPAN_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS`, `RSI_WILDER_SMOOTHING_PERIOD_BARS`, `RANGE_POSITION_LOOKBACK_BARS`, `LOG_VOLUME_ZSCORE_LOOKBACK_BARS`), `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md | a searched parameter among them; a value changed without a commit that says so |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe; `selection score` for the validation mean, and `degradation` for holdout Sharpe minus the selection score — presentation arithmetic | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
@@ -249,10 +249,10 @@ window: the resident server, the recorder and the stage together.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | one recorded execution of the chain | `run_id` | `run_id` | run | build, job, a content hash |
-| one command of a run, named for the Makefile target that runs it | `stage_of()` | `stage` | stage | step, task |
+| one command of a run, named in the Makefile's target grammar — one seam, `data-download`, runs two stages (`skill_pre_aws_solution.md` § The Makefile is the developer interface) | `stage_of()` | `stage` | stage | step, task |
 | the compose service the stage ran in | `docker_service()` | `docker_service` | container | host; a bare `container`, which the DevOps panel already uses for up/down |
 | CPU the stage process and its reaped descendants used | `rusage.ru_utime + ru_stime` | `process_cpu_seconds` | CPU | cpu, cpu_pct, cpu_time |
-| peak resident set of the stage process | `rusage.ru_maxrss` | `process_memory_peak_bytes` | peak RAM | RSS, RAM, mem, max_rss |
+| peak resident set of the stage process | `rusage.ru_maxrss` | `process_memory_peak_bytes` | peak resident set | RSS, RAM, mem, max_rss |
 | bytes the stage moved through `read()` / `write()`, independent of the page cache | `/proc/<pid>/io` | `process_read_chars`, `process_write_chars` | read / write | io, bytes_in |
 | physical blocks the stage caused, cache-dependent and writeback-delayed | `rusage.ru_inblock`, `ru_oublock` | `process_disk_read_bytes`, `process_disk_write_bytes` | — | a headline I/O number |
 | the whole container over the stage's window | the cgroup | `container_cpu_seconds_delta`, `container_memory_charged_peak_bytes`, `container_disk_*_bytes_delta`, `container_network_*_bytes_delta` | container | any of these as a stage cost |
@@ -292,15 +292,16 @@ sub-module and the control that opens its page.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
-| one coloured band the drawing sorts a path into | story, `island` | `island`, `story_map` | the story ids of the active view — `S1` … `S5` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
-| the key that isolates one band | the digit of the story id — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for a band that does not exist |
-| the node at the centre of a band, per view | `hub` | `hub` | — | anchor, root of the band |
+| one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S5` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
+| the arc of the root's ring a story occupies — its roots at the island radius, their fans beyond | `island`, `ISLANDS`, `ISLAND_ORDER`, `ISLAND_RADIUS`, `ISLAND_GAP` | `island` (the per-node map of a view) | — | a second word for the story in the configuration; band, cluster, section |
+| the key that isolates one island | the digit of the story id — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
+| the node at the centre of an island, per view | `hub` | `hub` | — | anchor, root of the island |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |
 | a node's shade: the island colour turned per nesting level below the hub | `shadeStr`, `paletteOf` | — | — | tint (the white mix inside one shade), a second colour per story |
 | the commit the tree was read from, and its date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date |
 | the control that opens the drawing from the status page | — | — | DX | help, docs, about |
-| the two views of one tree — the development view, the tree as tracked, its bands the stories; the deployment view, the same tree seated beside the primitives the mapping table's rows become (the 4+1 model's two names; a view, not a deployment — nothing is built) | `VIEWS`, `VIEW_ORDER`, `activeView`, `setView`; `build_view` | the top level of `visualisation_config.json`, and its `deployment` block | *development view* / *deployment view* — the legend heading | production view, cloud view, AWS view, simulation, target, mode, layer, physical view; "reset view" for the camera — that control is Reset camera |
+| the two views of one tree — the development view, the tree as tracked, its islands the stories; the deployment view, the same tree seated beside the primitives the mapping table's rows become (the 4+1 model's two names; a view, not a deployment — nothing is built) | `VIEWS`, `VIEW_ORDER`, `activeView`, `setView`; `build_view` | the top level of `visualisation_config.json`, and its `deployment` block | *development view* / *deployment view* — the legend heading | production view, cloud view, AWS view, simulation, target, mode, layer, physical view; "reset view" for the camera — that control is Reset camera |
 | the control that flips the page to the other view, and back | `btnView` | — | ☁ / ⌂, "Deployment view / development view (v)", the key `v`, `v deployment` / `v development` in the hint | switch (the presentation switch), toggle, a tab, a second page |
 | the legend: the active view by name, and its islands in layout order | `renderLegend`, `legend` | — | the island names | key (the edge key is `.edgekey`), map |
 | a primitive: a node a view declares for a row of the mapping table no tracked path is — an island root drawn as its icon, the hub when the story names it | `type: 'primitive'`, `drawPrimitiveIcon`, `PRIMITIVE_KEYS`, `PRIMITIVE_ROLES` | `primitives` — id → `role`, `name`, `absent` | its name; the head before the dash or the parenthesis on the canvas | construct (the infrastructure-as-code word), service box, resource, component; icon or node as the noun for it |
@@ -329,16 +330,14 @@ choice holds the rule; these are the names it uses.
 | the link surface that finds every skill without holding one | `module_skills/README.md` | — | — | a collection of copies; an index that restates a rule it links to |
 | one module's reader-facing front door | `module_<name>/README_module_<name>.md` | — | — | `module_<name>/README.md`; a front door that restates a skill or a decision table |
 
-A skill exists exactly once, in the directory its ownership names — the index
-links to it and never repeats it.
-
 ## Pre-AWS direction
 
 The names `AGENTS.md` § Pre-AWS architectural direction and
 `skill_pre_aws_solution.md` use — how the repository is drawn, not what it
 computes; the rules are there, not here. Cloud proper nouns are external
 vocabulary and live in that skill's mapping table and in the one picture of it, the
-drawing's deployment view (§ Developer experience); none is registered here.
+drawing's deployment view, whose notice § Developer experience records as that
+view's UI label; no identifier, key or path carries one.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
@@ -365,5 +364,5 @@ project runs on, and the three verbs offered for them. The contract is
 | what the three engine inventories publish beside the machines | `networks_payload()`, `volumes_payload()`, `image_payload()` | `networks` with `name`, `driver`, `scope`, `attached`; `volumes` with `name`, `driver`, `size_bytes`, `reference_count`; `bind_mounts` with `source`, `destination`, `writable`, `containers`; the image as `image`, `image_id`, `size_bytes`, `created_utc`, `repo_tags` | the networks, volumes, bind-mount and image tables | a hash as an image identity; a volume size the daemon did not report |
 | one daemon event of this project, over a doubly bounded window | `events_payload()` | `events` with `time_utc`, `type`, `action`, `name`, `compose_service` | the events table | an unbounded `/events`; a host's other stacks in this project's tail |
 | an action the container's state already satisfies | HTTP 304 from the engine, forwarded with no body | — (the status is the answer) | `changed nothing … already in that state` | `refused` for a 304; an error style for a success |
-| a control that leaves a page for another persona's page | `.jump` | — | DX / DevOps | `dx-link` as the class of a second control, a tab for a machine view |
+| a control that leaves a page for another persona's page | `.jump` | — | DX / DevOps / Status | `dx-link` as the class of a second control, a tab for a machine view |
 | the toolkit every page loads before its own sections | `page.js` | — | — | `utils.js`, `common.js`, `shared.js`, `lib.js`; a page-specific element written from it |
