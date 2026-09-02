@@ -44,6 +44,7 @@ color:var(--dim); display:flex; flex-direction:column; gap:4px; pointer-events:n
 .edgekey i{width:26px; height:0; border-top:2px solid var(--dim); display:inline-block;}
 .edgekey i.tt{border-top-width:2.5px; border-color:#5F79B8;}
 .edgekey i.tf{border-top-width:1px; border-color:#3A4C74;}
+.edgekey i.fl{border-top:1.4px dashed var(--dim);}
 .hint{position:fixed; left:18px; bottom:14px; font-family:var(--mono); font-size:10px;
 letter-spacing:.06em; color:var(--dim); pointer-events:none;}
 .controls{position:fixed; top:16px; right:16px; display:flex; gap:6px; font-family:var(--mono);}
@@ -56,7 +57,7 @@ background:rgba(10,17,38,.72); color:var(--text); font-size:13px; cursor:pointer
 .legend{position:fixed; right:16px; bottom:44px; font-family:var(--mono); font-size:10px; color:var(--dim);
 display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
 .legend__view{color:var(--text); letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px;}
-.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer;}
+.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer; max-width:34vw; text-align:right;}
 .legend__row:hover{color:var(--text);}
 .legend__row .dot{width:7px; height:7px; border-radius:50%; flex:none;}
 aside#panel{
@@ -68,6 +69,7 @@ display:none; backdrop-filter:blur(4px);
 aside#panel.open{display:block;}
 aside#panel .path{font-family:var(--mono); font-size:12px; color:var(--text);
 word-break:break-all; padding-right:22px;}
+aside#panel .path--name{word-break:normal; overflow-wrap:anywhere;}   /* a primitive's name breaks at spaces, a path anywhere */
 aside#panel .story{display:inline-flex; align-items:center; gap:6px; margin-top:8px;
 font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);}
 aside#panel .story .dot{width:7px; height:7px; border-radius:50%;}
@@ -91,6 +93,7 @@ aside#panel button.close:hover{color:var(--text);}
 <div class="edgekey">
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
+<span id="edgekeyFlow"><i class="fl"></i>flow</span>
 </div>
 <div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause<span id="hintView"></span></div>
 <div class="controls">
@@ -114,13 +117,17 @@ RING_GAP: 16,           // clear space between neighbouring discs on one ring
 FAN_SPAN: 4*Math.PI/3,  // widest arc a folder's children fan over, facing away from its parent; the third left free is where its own edge arrives
 FILE_EXTENT: 12,        // radius of the disc a file glyph occupies
 LABEL_CHAR_EXTENT: 0.4, // radius added per character of a file's name, so a long label gets room
+PRIMITIVE_EXTENT: 32,   // radius of the disc a primitive glyph occupies — a hub-scale icon inside its halo
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
 CAM_DIST: 1100,         // camera distance — a floor; the picture's own radius pushes it out
 CAM_DIST_PER_RADIUS: 2, // camera distance in picture radii
+FLOW_LIFT_PER_LENGTH: 0.2, // rise of a flow's control point per unit of its length: a flow rises with its length and clears the fans it passes
+FLOW_TIP_GAP: 34,       // distance a flow stops short of its target — a hub's halo radius — so the arrowhead is seen
 LEVEL_HUE_STEP: 12,     // degrees the island hue turns per nesting level below the hub
 LEVEL_LIGHT_STEP: -0.09, // HSL lightness change per nesting level
 FOV: 760,               // projection focal length
-FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the picture
+FIT_WIDTH: 1400,        // viewport width at which zoom = FIT_ZOOM fits the picture
+FIT_ZOOM: 1,            // the zoom the picture is fitted at; a view with a wider ring asks for more
 ZOOM_MIN: 0.4,
 ZOOM_MAX: 2.4,
 AUTO_SPEED: 0.10,       // rad/s auto-rotation
@@ -134,34 +141,43 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
- "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 91428f5 \u00b7 2026-09-02 14:33:17",
+ "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 14f70de \u00b7 2026-09-02 17:04:53",
  "title": "Files and Folders"
 };
 const VIEWS = {
  "deployment": {
   "camera": {
    "FIT_WIDTH": 1400,
+   "FIT_ZOOM": 1.25,
    "START_ROT_X": -0.4,
-   "START_ROT_Y": 1.09
+   "START_ROT_Y": 0.19
   },
   "desc": {
    "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
-   "Dockerfile": "The one image every stage runs in, `mlops-portfolio-1m-pipeline`: a container image in a registry (Amazon ECR), the runtime package of every task; there it carries the code the bind mount carries today.",
-   "Makefile": "The state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus. It sits above every stage and inside none; `all:` and `ml-all:` are the same order, read locally.",
+   "Dockerfile": "The recipe of the one image, `mlops-portfolio-1m-pipeline`: a dependency layer today, and a future image carries the code \u2014 built from the tree and pushed to the registry beside it.",
+   "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
    "README.md": "The overview: the domain drawing, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
-   "docker-compose.yml": "One task definition parameterised by `ASSET`, never a new unit per asset; the anchors are its local spelling, one service per ticker written out so the parameter stays visible.",
-   "module_data/": "The data-ingest task: one container run per stage (an Amazon ECS Task on AWS Fargate) that fetches raw objects, builds the asset's canonical market object and exits, owning no state between runs.",
+   "asset_store": "Object storage with one prefix per asset (Amazon S3): the canonical market object as one versioned object, the parquets and JSONs as artifact objects under the same prefix \u2014 `store_assets_artifacts/\u003cTICKER>/` read forward. The asset's whole namespace lives here and on no host.",
+   "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none \u2014 the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here \u2014 described.",
+   "dashboard_front": "Static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront): the page files and the two snapshots, served to the browser with no process rendering them; the reader container answers beside it.",
+   "data_ingest_task": "The data-ingest task (an Amazon ECS Task on the task host): one container run per stage \u2014 DownloadMarketData and PublishStatus for data once for the basket, BuildCanonicalData once per asset \u2014 that fetches the venues' public endpoints, writes the raw objects, builds the asset's canonical market object and exits, holding nothing between runs.",
+   "docker-compose.yml": "One task definition parameterised by `ASSET`, registered with the service that runs it on the host beside it \u2014 never a new unit per asset; the anchors are its local spelling, one service per ticker written out so the parameter stays visible.",
+   "event_rule": "An event rule and a condition state (Amazon EventBridge, a Step Functions choice): new raw objects \u2192 does this asset need its artifacts rebuilt? \u2192 yes: run the asset's states from BuildCanonicalData on. Today the condition is the downloaders' day-presence skip and the rerun table of `methodology_ml.md` \u00a7 11, read by a human. Absent here \u2014 described.",
+   "image_registry": "A container image in a registry (Amazon ECR): `mlops-portfolio-1m-pipeline`, the one runtime package every task runs \u2014 built from the tree, carrying the code the bind mount carries today, pulled by the task host.",
+   "log_streams": "Log streams keyed by stage and container, and metrics (Amazon CloudWatch): every task's output and the 1 s samples `record.py` keeps in the run record today, shipped off the host. Absent here \u2014 described.",
+   "ml_research_task": "The ml-research task per `ASSET` (`RunTask` with `ASSET=BTC`, on the same host): one container run per stage from AggregateBars to EvaluateStrategy, and PublishStatus for ML once for the basket, never per asset \u2014 pulling the asset's versioned object into its own disk, writing it back whole with the artifacts beside it, and holding nothing between runs.",
+   "module_data/": "The code of the data-ingest task: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status \u2014 it travels in the image and runs in the task beside it.",
    "module_data/README_module_data.md": "",
-   "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects; `ASSET` is the parameter every run of the task takes.",
+   "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects; `--tickers \u003cTICKER>` \u2014 `ASSET` at the container boundary \u2014 is the parameter an asset-scoped run takes.",
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
    "module_data/ingest.py": "The BuildCanonicalData state: reads the raw objects under a venue and symbol prefix and writes the canonical market object back whole \u2014 the storage \u2192 ML-compute line begins at its output.",
-   "module_data/lean.py": "",
+   "module_data/lean.py": "The Lean-exact raw format \u2014 the whole of Lean's presence here; the strategy host would read the raw objects in this format directly.",
    "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
    "module_data/skills/methodology_data.md": "",
    "module_data/skills/skill_candle_canonicalisation.md": "",
    "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out.",
-   "module_ml/": "The ml-research task: the same Task shape parameterised by `ASSET` (`RunTask` with `ASSET=BTC`), one container run per stage from bars to strategy evaluation, reading and writing the asset's prefix and holding nothing between runs.",
+   "module_ml/": "The code of the ml-research task: bars, features, labels, search, model, strategy evaluation and the ML status \u2014 it travels in the image and runs in the task beside it, one `ASSET` at a time.",
    "module_ml/README_module_ml.md": "",
    "module_ml/bars.py": "The AggregateBars state, and the one write across the storage \u2192 ML-compute line: the three aggregation tables are a pure function of the canonical series, written back into the object the task read.",
    "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; a future `\u003cprefix>/\u003cticker>/\u003cversion>/` is a rename there, not a redesign here.",
@@ -177,7 +193,7 @@ const VIEWS = {
    "module_ml/strategy.py": "",
    "module_ml/train.py": "",
    "module_ml/validation.py": "The gate of the whole system, and the same gate wherever it runs: purged walk-forward folds and the frozen final holdout are code inside the task, not a primitive.",
-   "module_monitoring/": "The static dashboard: the page files and the two snapshots as static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront), and beside them one small reader container that stays running for the container, run and `/devops/*` routes.",
+   "module_monitoring/": "The static dashboard's files \u2014 the page, its scripts, the two snapshots \u2014 as static objects behind the front beside them; `serve.py`'s routes and `record.py` are the reader container's and the tasks' code.",
    "module_monitoring/README_module_monitoring.md": "",
    "module_monitoring/asset.js": "",
    "module_monitoring/config.py": "Every address the reader knows \u2014 the internal port, the service names, the run record's paths \u2014 built once here; no code depends on a container name.",
@@ -187,9 +203,9 @@ const VIEWS = {
    "module_monitoring/ml.js": "",
    "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts \u2014 a static object beside the page today, the same handful of edits away from its own prefix.",
    "module_monitoring/page.js": "",
-   "module_monitoring/record.py": "Writes the run object, `store_run_records/\u003crun_id>/`, from inside whichever task ran the stage; its logs and 1 s samples are log streams keyed by stage and container, and metrics (Amazon CloudWatch).",
+   "module_monitoring/record.py": "Writes the run object from inside whichever task ran the stage; its logs and 1 s samples are the log streams and metrics on the task host's island.",
    "module_monitoring/run.js": "",
-   "module_monitoring/serve.py": "The one process on this island: the registry, run and proxy routes are a container that stays running, while every file it serves today is a static object.",
+   "module_monitoring/serve.py": "Three things in one file: every file it serves today is a static object behind the front, its `/containers`, `/runs` and `/devops/*` routes are the reader container that stays running, and its asset role, `/status`, is the resident container \u2014 a local mechanism with no primitive.",
    "module_monitoring/skills/": "The page's conventions and this drawing's contract travel with the code: documents, not primitives.",
    "module_monitoring/skills/skill_dashboard_conventions.md": "",
    "module_monitoring/skills/skill_developer_experience_drawing.md": "",
@@ -213,128 +229,268 @@ const VIEWS = {
    "module_skills/skill_agent_first_development.md": "",
    "module_skills/skill_asset_containers.md": "",
    "module_skills/skill_determinism.md": "",
-   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its right column is this one.",
+   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its right column is these primitives.",
    "module_skills/skill_self_explaining_naming.md": "",
    "module_skills/skill_sorting_files_naming_standard.md": "",
+   "raw_store": "Raw objects under a venue and symbol prefix (Amazon S3): one immutable object per UTC day, written Lean-exact so the strategy host could read them as they are; their presence is the rebuild condition's only input today. Here it is `store_raw_1m/`, on disk and untracked, so the development view does not hold it.",
+   "reader_container": "A container that stays running, not a static object: the `/containers`, `/runs` and `/devops/*` routes of `serve.py`, reading the run objects and reporting the containers \u2014 the one project process on this island; the console beside it is not project code.",
    "requirements.txt": "The image's dependency layer, resolved when the image is built and read by no task at run time.",
-   "root": "The same tracked tree, read forward: every file and folder seated on the standard primitive its responsibility answers to \u2014 the right column of the mapping table in `module_skills/skill_pre_aws_solution.md`. Described and drawn, built nowhere.",
-   "store_assets_artifacts/": "One prefix per asset in object storage (Amazon S3): the canonical market object, a versioned object pulled into a Task's own disk and written back whole, with the research artifacts as objects under the same prefix.",
-   "store_assets_artifacts/BTC/": "The `BTC` prefix: `BTC_research_ohlcv.duckdb` as the one versioned object, the parquets and JSONs as artifact objects keyed `BTC_\u003cartifact>`; the tracked README and parameters are two of them."
+   "root": "The same tracked tree, read forward: every file and folder seated beside the primitive it would run on or live in \u2014 the right column of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them, and the rows inside them seated beside them. Described and drawn, built nowhere.",
+   "run_store": "Status and run objects in object storage: `store_run_records/\u003crun_id>/`, written by `record.py` from inside whichever task ran the stage and closed by its `--finalise` on the host, read by the reader container; the two status snapshots would live here too \u2014 tracked beside the page today, so this picture seats them there. Here it is on disk and untracked.",
+   "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:` and `ml-all:` are the same order, read locally.",
+   "store_assets_artifacts/": "The local form of the asset prefixes: one folder per ticker, the tracked README and parameters two of its objects; the store beside it is this folder read forward.",
+   "store_assets_artifacts/BTC/": "The `BTC` prefix: `BTC_research_ohlcv.duckdb` as the one versioned database object \u2014 pulled into a task's own disk, one writer at a time, written back whole \u2014 with the parquets and JSONs as artifact objects keyed `BTC_\u003cartifact>` beside it.",
+   "strategy_host": "A separate Linux instance running QuantConnect Lean (Amazon EC2): one strategy container \u2014 a lean-backtest task, or one that stays running and trades live \u2014 reading the raw objects in Lean's own format and the research artifacts under the asset prefix, its brokerage credentials read once from the secrets store when it starts. No Lean runtime, container or dependency exists in this repository. Absent here \u2014 described.",
+   "task_host": "One Linux container instance (Amazon ECS on Amazon EC2): the one host every asset's runs share. It pulls the image and runs the data-ingest and ml-research tasks the state machine starts, and owns no state \u2014 a task builds the asset's files and folders on its disk from the asset's prefix and writes them back whole, and nothing stays after the run. `ASSET` is a namespace, never a host of its own; AWS Fargate would be the same task without the host."
   },
+  "flows": [
+   {
+    "from": "image_registry",
+    "thick": false,
+    "to": "task_host",
+    "type": "flow"
+   },
+   {
+    "from": "task_host",
+    "thick": false,
+    "to": "data_ingest_task",
+    "type": "flow"
+   },
+   {
+    "from": "task_host",
+    "thick": false,
+    "to": "log_streams",
+    "type": "flow"
+   },
+   {
+    "from": "data_ingest_task",
+    "thick": false,
+    "to": "raw_store",
+    "type": "flow"
+   },
+   {
+    "from": "data_ingest_task",
+    "thick": false,
+    "to": "asset_store",
+    "type": "flow"
+   },
+   {
+    "from": "data_ingest_task",
+    "thick": false,
+    "to": "run_store",
+    "type": "flow"
+   },
+   {
+    "from": "asset_store",
+    "thick": false,
+    "to": "ml_research_task",
+    "type": "flow"
+   },
+   {
+    "from": "ml_research_task",
+    "thick": false,
+    "to": "asset_store",
+    "type": "flow"
+   },
+   {
+    "from": "ml_research_task",
+    "thick": false,
+    "to": "run_store",
+    "type": "flow"
+   },
+   {
+    "from": "reader_container",
+    "thick": false,
+    "to": "dashboard_front",
+    "type": "flow"
+   },
+   {
+    "from": "brokerage_secret",
+    "thick": false,
+    "to": "strategy_host",
+    "type": "flow"
+   },
+   {
+    "from": "event_rule",
+    "thick": false,
+    "to": "state_machine",
+    "type": "flow"
+   },
+   {
+    "from": "state_machine",
+    "thick": false,
+    "to": "task_host",
+    "type": "flow"
+   },
+   {
+    "from": "raw_store",
+    "thick": false,
+    "to": "event_rule",
+    "type": "flow"
+   },
+   {
+    "from": "task_host",
+    "thick": false,
+    "to": "ml_research_task",
+    "type": "flow"
+   },
+   {
+    "from": "run_store",
+    "thick": false,
+    "to": "reader_container",
+    "type": "flow"
+   },
+   {
+    "from": "asset_store",
+    "thick": false,
+    "to": "strategy_host",
+    "type": "flow"
+   },
+   {
+    "from": "raw_store",
+    "thick": false,
+    "to": "strategy_host",
+    "type": "flow"
+   }
+  ],
   "hub": {
-   "S1": "Dockerfile",
-   "S2": "Makefile",
-   "S3": "module_data/",
-   "S4": "module_ml/",
-   "S5": "store_assets_artifacts/",
-   "S6": "module_monitoring/",
-   "S7": "module_skills/"
+   "S1": "module_skills/",
+   "S2": "image_registry",
+   "S3": "task_host",
+   "S4": "data_ingest_task",
+   "S5": "asset_store",
+   "S6": "ml_research_task",
+   "S7": "dashboard_front",
+   "S8": "strategy_host",
+   "S9": "state_machine"
   },
   "island": {
-   "AGENTS.md": "S7",
-   "Dockerfile": "S1",
-   "Makefile": "S2",
-   "README.md": "S7",
-   "docker-compose.yml": "S1",
-   "module_data/": "S3",
-   "module_data/README_module_data.md": "S3",
-   "module_data/config.py": "S3",
-   "module_data/download_binance.py": "S3",
-   "module_data/download_bybit.py": "S3",
-   "module_data/ingest.py": "S3",
-   "module_data/lean.py": "S3",
-   "module_data/skills/": "S3",
-   "module_data/skills/methodology_data.md": "S3",
-   "module_data/skills/skill_candle_canonicalisation.md": "S3",
-   "module_data/status.py": "S3",
-   "module_ml/": "S4",
-   "module_ml/README_module_ml.md": "S4",
-   "module_ml/bars.py": "S4",
-   "module_ml/config.py": "S4",
-   "module_ml/dataset.py": "S4",
-   "module_ml/features.py": "S4",
-   "module_ml/hpo.py": "S4",
-   "module_ml/indicators.py": "S4",
-   "module_ml/labels.py": "S4",
-   "module_ml/model.py": "S4",
-   "module_ml/skills/": "S4",
-   "module_ml/skills/methodology_ml.md": "S4",
-   "module_ml/status.py": "S4",
-   "module_ml/strategy.py": "S4",
-   "module_ml/train.py": "S4",
-   "module_ml/validation.py": "S4",
-   "module_monitoring/": "S6",
-   "module_monitoring/README_module_monitoring.md": "S6",
-   "module_monitoring/asset.js": "S6",
-   "module_monitoring/config.py": "S6",
-   "module_monitoring/data.js": "S6",
-   "module_monitoring/data_status.json": "S6",
-   "module_monitoring/index.html": "S6",
-   "module_monitoring/ml.js": "S6",
-   "module_monitoring/ml_status.json": "S6",
-   "module_monitoring/page.js": "S6",
-   "module_monitoring/record.py": "S6",
-   "module_monitoring/run.js": "S6",
-   "module_monitoring/serve.py": "S6",
-   "module_monitoring/skills/": "S6",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "S6",
-   "module_monitoring/skills/skill_developer_experience_drawing.md": "S6",
-   "module_monitoring/skills/skill_devops_panel.md": "S6",
-   "module_monitoring/style.css": "S6",
-   "module_monitoring/sub_module_devops/": "S6",
-   "module_monitoring/sub_module_devops/config.py": "S6",
-   "module_monitoring/sub_module_devops/containers.js": "S6",
-   "module_monitoring/sub_module_devops/devops.css": "S6",
-   "module_monitoring/sub_module_devops/devops.js": "S6",
-   "module_monitoring/sub_module_devops/index.html": "S6",
-   "module_monitoring/sub_module_devops/serve.py": "S6",
-   "module_monitoring/sub_module_dx/": "S6",
-   "module_monitoring/sub_module_dx/config.py": "S6",
-   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S6",
-   "module_monitoring/sub_module_dx/visualisation_config.json": "S6",
-   "module_monitoring/sub_module_dx/visualise.py": "S6",
-   "module_skills/": "S7",
-   "module_skills/README.md": "S7",
-   "module_skills/glossary.md": "S7",
-   "module_skills/skill_agent_first_development.md": "S7",
-   "module_skills/skill_asset_containers.md": "S7",
-   "module_skills/skill_determinism.md": "S7",
-   "module_skills/skill_pre_aws_solution.md": "S7",
-   "module_skills/skill_self_explaining_naming.md": "S7",
-   "module_skills/skill_sorting_files_naming_standard.md": "S7",
-   "requirements.txt": "S1",
+   "AGENTS.md": "S1",
+   "Dockerfile": "S2",
+   "Makefile": "S9",
+   "README.md": "S1",
+   "asset_store": "S5",
+   "brokerage_secret": "S8",
+   "dashboard_front": "S7",
+   "data_ingest_task": "S4",
+   "docker-compose.yml": "S3",
+   "event_rule": "S9",
+   "image_registry": "S2",
+   "log_streams": "S3",
+   "ml_research_task": "S6",
+   "module_data/": "S4",
+   "module_data/README_module_data.md": "S4",
+   "module_data/config.py": "S4",
+   "module_data/download_binance.py": "S4",
+   "module_data/download_bybit.py": "S4",
+   "module_data/ingest.py": "S4",
+   "module_data/lean.py": "S4",
+   "module_data/skills/": "S4",
+   "module_data/skills/methodology_data.md": "S4",
+   "module_data/skills/skill_candle_canonicalisation.md": "S4",
+   "module_data/status.py": "S4",
+   "module_ml/": "S6",
+   "module_ml/README_module_ml.md": "S6",
+   "module_ml/bars.py": "S6",
+   "module_ml/config.py": "S6",
+   "module_ml/dataset.py": "S6",
+   "module_ml/features.py": "S6",
+   "module_ml/hpo.py": "S6",
+   "module_ml/indicators.py": "S6",
+   "module_ml/labels.py": "S6",
+   "module_ml/model.py": "S6",
+   "module_ml/skills/": "S6",
+   "module_ml/skills/methodology_ml.md": "S6",
+   "module_ml/status.py": "S6",
+   "module_ml/strategy.py": "S6",
+   "module_ml/train.py": "S6",
+   "module_ml/validation.py": "S6",
+   "module_monitoring/": "S7",
+   "module_monitoring/README_module_monitoring.md": "S7",
+   "module_monitoring/asset.js": "S7",
+   "module_monitoring/config.py": "S7",
+   "module_monitoring/data.js": "S7",
+   "module_monitoring/data_status.json": "S7",
+   "module_monitoring/index.html": "S7",
+   "module_monitoring/ml.js": "S7",
+   "module_monitoring/ml_status.json": "S7",
+   "module_monitoring/page.js": "S7",
+   "module_monitoring/record.py": "S7",
+   "module_monitoring/run.js": "S7",
+   "module_monitoring/serve.py": "S7",
+   "module_monitoring/skills/": "S7",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "S7",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "S7",
+   "module_monitoring/skills/skill_devops_panel.md": "S7",
+   "module_monitoring/style.css": "S7",
+   "module_monitoring/sub_module_devops/": "S7",
+   "module_monitoring/sub_module_devops/config.py": "S7",
+   "module_monitoring/sub_module_devops/containers.js": "S7",
+   "module_monitoring/sub_module_devops/devops.css": "S7",
+   "module_monitoring/sub_module_devops/devops.js": "S7",
+   "module_monitoring/sub_module_devops/index.html": "S7",
+   "module_monitoring/sub_module_devops/serve.py": "S7",
+   "module_monitoring/sub_module_dx/": "S7",
+   "module_monitoring/sub_module_dx/config.py": "S7",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S7",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "S7",
+   "module_monitoring/sub_module_dx/visualise.py": "S7",
+   "module_skills/": "S1",
+   "module_skills/README.md": "S1",
+   "module_skills/glossary.md": "S1",
+   "module_skills/skill_agent_first_development.md": "S1",
+   "module_skills/skill_asset_containers.md": "S1",
+   "module_skills/skill_determinism.md": "S1",
+   "module_skills/skill_pre_aws_solution.md": "S1",
+   "module_skills/skill_self_explaining_naming.md": "S1",
+   "module_skills/skill_sorting_files_naming_standard.md": "S1",
+   "raw_store": "S5",
+   "reader_container": "S7",
+   "requirements.txt": "S2",
    "root": "core",
+   "run_store": "S5",
+   "state_machine": "S9",
    "store_assets_artifacts/": "S5",
-   "store_assets_artifacts/BTC/": "S5"
+   "store_assets_artifacts/BTC/": "S5",
+   "strategy_host": "S8",
+   "task_host": "S3"
   },
   "islands": {
    "S1": {
-    "color": "#7D93BF",
-    "name": "S1 \u00b7 Image and task definitions (Amazon ECR, Amazon ECS)"
+    "color": "#2BD4BD",
+    "name": "S1 \u00b7 The repository \u2014 deploys nowhere"
    },
    "S2": {
-    "color": "#F26B5B",
-    "name": "S2 \u00b7 State machine (AWS Step Functions)"
+    "color": "#7D93BF",
+    "name": "S2 \u00b7 Image registry (Amazon ECR)"
    },
    "S3": {
-    "color": "#F2B24E",
-    "name": "S3 \u00b7 data-ingest task (Amazon ECS on AWS Fargate)"
+    "color": "#4F9259",
+    "name": "S3 \u00b7 Task host (Amazon ECS on Amazon EC2)"
    },
    "S4": {
-    "color": "#E06BD8",
-    "name": "S4 \u00b7 ml-research task per ASSET (Amazon ECS on AWS Fargate)"
+    "color": "#F2B24E",
+    "name": "S4 \u00b7 data-ingest task (Amazon ECS)"
    },
    "S5": {
     "color": "#5BC8F2",
-    "name": "S5 \u00b7 One prefix per asset (Amazon S3)"
+    "name": "S5 \u00b7 Object storage (Amazon S3)"
    },
    "S6": {
-    "color": "#96D850",
-    "name": "S6 \u00b7 Static dashboard and one reader container (Amazon S3, Amazon CloudFront)"
+    "color": "#E06BD8",
+    "name": "S6 \u00b7 ml-research task per ASSET (Amazon ECS)"
    },
    "S7": {
-    "color": "#2BD4BD",
-    "name": "S7 \u00b7 The repository \u2014 deploys nowhere"
+    "color": "#96D850",
+    "name": "S7 \u00b7 Static dashboard (Amazon CloudFront)"
+   },
+   "S8": {
+    "color": "#FBBBCE",
+    "name": "S8 \u00b7 Strategy execution \u2014 absent here (Amazon EC2)"
+   },
+   "S9": {
+    "color": "#F26B5B",
+    "name": "S9 \u00b7 State machine (AWS Step Functions)"
    },
    "core": {
     "color": "#EDF2FF",
@@ -348,19 +504,215 @@ const VIEWS = {
    "S4",
    "S5",
    "S6",
-   "S7"
+   "S7",
+   "S8",
+   "S9"
   ],
-  "place": {
-   "AGENTS.md": {
-    "da": 0.3,
-    "r": 0.38,
-    "y": -34
+  "place": {},
+  "primitives": [
+   {
+    "absent": false,
+    "id": "image_registry",
+    "name": "Image registry \u2014 the one container image (Amazon ECR)",
+    "path": "image_registry",
+    "role": "registry",
+    "type": "primitive"
    },
-   "README.md": {
-    "da": -0.3,
-    "r": 0.38,
-    "y": -34
+   {
+    "absent": false,
+    "id": "task_host",
+    "name": "Task host \u2014 one Linux container instance for every asset's runs (Amazon ECS on Amazon EC2)",
+    "path": "task_host",
+    "role": "instance",
+    "type": "primitive"
+   },
+   {
+    "absent": true,
+    "id": "log_streams",
+    "name": "Log streams \u2014 and metrics (Amazon CloudWatch)",
+    "path": "log_streams",
+    "role": "log_streams",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "data_ingest_task",
+    "name": "data-ingest task (Amazon ECS)",
+    "path": "data_ingest_task",
+    "role": "container",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "asset_store",
+    "name": "Asset store \u2014 one prefix per asset in object storage (Amazon S3)",
+    "path": "asset_store",
+    "role": "store",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "raw_store",
+    "name": "Raw store \u2014 raw objects under a venue and symbol prefix (Amazon S3)",
+    "path": "raw_store",
+    "role": "store",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "run_store",
+    "name": "Run store \u2014 status and run objects in object storage",
+    "path": "run_store",
+    "role": "store",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "ml_research_task",
+    "name": "ml-research task \u2014 per ASSET (Amazon ECS)",
+    "path": "ml_research_task",
+    "role": "container",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "dashboard_front",
+    "name": "Dashboard front \u2014 static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront)",
+    "path": "dashboard_front",
+    "role": "front",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "reader_container",
+    "name": "Reader container \u2014 stays running, not a static object",
+    "path": "reader_container",
+    "role": "container",
+    "type": "primitive"
+   },
+   {
+    "absent": true,
+    "id": "strategy_host",
+    "name": "Strategy host \u2014 a separate Linux instance running QuantConnect Lean (Amazon EC2)",
+    "path": "strategy_host",
+    "role": "instance",
+    "type": "primitive"
+   },
+   {
+    "absent": true,
+    "id": "brokerage_secret",
+    "name": "Brokerage secret \u2014 the credentials a live strategy reads (AWS Secrets Manager)",
+    "path": "brokerage_secret",
+    "role": "secret",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "state_machine",
+    "name": "State machine \u2014 the stages as states (AWS Step Functions)",
+    "path": "state_machine",
+    "role": "state_machine",
+    "type": "primitive"
+   },
+   {
+    "absent": true,
+    "id": "event_rule",
+    "name": "Event rule \u2014 and a condition state (Amazon EventBridge, a Step Functions choice)",
+    "path": "event_rule",
+    "role": "event_rule",
+    "type": "primitive"
    }
+  ],
+  "role": {
+   "AGENTS.md": "doc",
+   "Dockerfile": "config",
+   "Makefile": "entrypoint",
+   "README.md": "doc",
+   "asset_store": "store",
+   "brokerage_secret": "secret",
+   "dashboard_front": "front",
+   "data_ingest_task": "container",
+   "docker-compose.yml": "config",
+   "event_rule": "event_rule",
+   "image_registry": "registry",
+   "log_streams": "log_streams",
+   "ml_research_task": "container",
+   "module_data/": "module",
+   "module_data/README_module_data.md": "doc",
+   "module_data/config.py": "config",
+   "module_data/download_binance.py": "code",
+   "module_data/download_bybit.py": "code",
+   "module_data/ingest.py": "code",
+   "module_data/lean.py": "code",
+   "module_data/skills/": "module",
+   "module_data/skills/methodology_data.md": "doc",
+   "module_data/skills/skill_candle_canonicalisation.md": "doc",
+   "module_data/status.py": "code",
+   "module_ml/": "module",
+   "module_ml/README_module_ml.md": "doc",
+   "module_ml/bars.py": "code",
+   "module_ml/config.py": "config",
+   "module_ml/dataset.py": "code",
+   "module_ml/features.py": "code",
+   "module_ml/hpo.py": "code",
+   "module_ml/indicators.py": "code",
+   "module_ml/labels.py": "code",
+   "module_ml/model.py": "code",
+   "module_ml/skills/": "module",
+   "module_ml/skills/methodology_ml.md": "doc",
+   "module_ml/status.py": "code",
+   "module_ml/strategy.py": "code",
+   "module_ml/train.py": "code",
+   "module_ml/validation.py": "gate",
+   "module_monitoring/": "module",
+   "module_monitoring/README_module_monitoring.md": "doc",
+   "module_monitoring/asset.js": "code",
+   "module_monitoring/config.py": "code",
+   "module_monitoring/data.js": "code",
+   "module_monitoring/data_status.json": "artifact",
+   "module_monitoring/index.html": "code",
+   "module_monitoring/ml.js": "code",
+   "module_monitoring/ml_status.json": "artifact",
+   "module_monitoring/page.js": "code",
+   "module_monitoring/record.py": "code",
+   "module_monitoring/run.js": "code",
+   "module_monitoring/serve.py": "code",
+   "module_monitoring/skills/": "module",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "doc",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "doc",
+   "module_monitoring/skills/skill_devops_panel.md": "doc",
+   "module_monitoring/style.css": "code",
+   "module_monitoring/sub_module_devops/": "module",
+   "module_monitoring/sub_module_devops/config.py": "config",
+   "module_monitoring/sub_module_devops/containers.js": "code",
+   "module_monitoring/sub_module_devops/devops.css": "code",
+   "module_monitoring/sub_module_devops/devops.js": "code",
+   "module_monitoring/sub_module_devops/index.html": "code",
+   "module_monitoring/sub_module_devops/serve.py": "code",
+   "module_monitoring/sub_module_dx/": "module",
+   "module_monitoring/sub_module_dx/config.py": "config",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "code",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "config",
+   "module_monitoring/sub_module_dx/visualise.py": "code",
+   "module_skills/": "module",
+   "module_skills/README.md": "doc",
+   "module_skills/glossary.md": "doc",
+   "module_skills/skill_agent_first_development.md": "doc",
+   "module_skills/skill_asset_containers.md": "doc",
+   "module_skills/skill_determinism.md": "doc",
+   "module_skills/skill_pre_aws_solution.md": "doc",
+   "module_skills/skill_self_explaining_naming.md": "doc",
+   "module_skills/skill_sorting_files_naming_standard.md": "doc",
+   "raw_store": "store",
+   "reader_container": "container",
+   "requirements.txt": "config",
+   "root": "root",
+   "run_store": "store",
+   "state_machine": "state_machine",
+   "store_assets_artifacts/": "module",
+   "store_assets_artifacts/BTC/": "database",
+   "strategy_host": "instance",
+   "task_host": "instance"
   }
  },
  "development": {
@@ -381,7 +733,7 @@ const VIEWS = {
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
    "module_data/ingest.py": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",
-   "module_data/lean.py": "",
+   "module_data/lean.py": "The Lean-exact raw format \u2014 the one external-format boundary; the raw tree is written so a Lean backtest could read it directly.",
    "module_data/skills/": "The module's own contract: candle canonicalisation, and the acquisition methodology beside it.",
    "module_data/skills/methodology_data.md": "",
    "module_data/skills/skill_candle_canonicalisation.md": "",
@@ -443,9 +795,10 @@ const VIEWS = {
    "module_skills/skill_sorting_files_naming_standard.md": "",
    "requirements.txt": "",
    "root": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
-   "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them.",
+   "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so this view does not hold them.",
    "store_assets_artifacts/BTC/": ""
   },
+  "flows": [],
   "hub": {
    "S1": "docker-compose.yml",
    "S2": "module_skills/",
@@ -574,6 +927,84 @@ const VIEWS = {
     "r": 0.38,
     "y": -34
    }
+  },
+  "primitives": [],
+  "role": {
+   "AGENTS.md": "doc",
+   "Dockerfile": "config",
+   "Makefile": "entrypoint",
+   "README.md": "doc",
+   "docker-compose.yml": "config",
+   "module_data/": "module",
+   "module_data/README_module_data.md": "doc",
+   "module_data/config.py": "config",
+   "module_data/download_binance.py": "code",
+   "module_data/download_bybit.py": "code",
+   "module_data/ingest.py": "code",
+   "module_data/lean.py": "code",
+   "module_data/skills/": "module",
+   "module_data/skills/methodology_data.md": "doc",
+   "module_data/skills/skill_candle_canonicalisation.md": "doc",
+   "module_data/status.py": "code",
+   "module_ml/": "module",
+   "module_ml/README_module_ml.md": "doc",
+   "module_ml/bars.py": "code",
+   "module_ml/config.py": "config",
+   "module_ml/dataset.py": "code",
+   "module_ml/features.py": "code",
+   "module_ml/hpo.py": "code",
+   "module_ml/indicators.py": "code",
+   "module_ml/labels.py": "code",
+   "module_ml/model.py": "code",
+   "module_ml/skills/": "module",
+   "module_ml/skills/methodology_ml.md": "doc",
+   "module_ml/status.py": "code",
+   "module_ml/strategy.py": "code",
+   "module_ml/train.py": "code",
+   "module_ml/validation.py": "gate",
+   "module_monitoring/": "module",
+   "module_monitoring/README_module_monitoring.md": "doc",
+   "module_monitoring/asset.js": "code",
+   "module_monitoring/config.py": "code",
+   "module_monitoring/data.js": "code",
+   "module_monitoring/data_status.json": "artifact",
+   "module_monitoring/index.html": "code",
+   "module_monitoring/ml.js": "code",
+   "module_monitoring/ml_status.json": "artifact",
+   "module_monitoring/page.js": "code",
+   "module_monitoring/record.py": "code",
+   "module_monitoring/run.js": "code",
+   "module_monitoring/serve.py": "code",
+   "module_monitoring/skills/": "module",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "doc",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "doc",
+   "module_monitoring/skills/skill_devops_panel.md": "doc",
+   "module_monitoring/style.css": "code",
+   "module_monitoring/sub_module_devops/": "module",
+   "module_monitoring/sub_module_devops/config.py": "config",
+   "module_monitoring/sub_module_devops/containers.js": "code",
+   "module_monitoring/sub_module_devops/devops.css": "code",
+   "module_monitoring/sub_module_devops/devops.js": "code",
+   "module_monitoring/sub_module_devops/index.html": "code",
+   "module_monitoring/sub_module_devops/serve.py": "code",
+   "module_monitoring/sub_module_dx/": "module",
+   "module_monitoring/sub_module_dx/config.py": "config",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "code",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "config",
+   "module_monitoring/sub_module_dx/visualise.py": "code",
+   "module_skills/": "module",
+   "module_skills/README.md": "doc",
+   "module_skills/glossary.md": "doc",
+   "module_skills/skill_agent_first_development.md": "doc",
+   "module_skills/skill_asset_containers.md": "doc",
+   "module_skills/skill_determinism.md": "doc",
+   "module_skills/skill_pre_aws_solution.md": "doc",
+   "module_skills/skill_self_explaining_naming.md": "doc",
+   "module_skills/skill_sorting_files_naming_standard.md": "doc",
+   "requirements.txt": "config",
+   "root": "root",
+   "store_assets_artifacts/": "module",
+   "store_assets_artifacts/BTC/": "artifact"
   }
  }
 };
@@ -581,7 +1012,7 @@ const VIEW_ORDER = [
  "development",
  "deployment"
 ];
-const NODES = [
+const TREE_NODES = [
  {
   "id": "root",
   "path": "repo/",
@@ -621,7 +1052,7 @@ const NODES = [
  {
   "id": "module_data/config.py",
   "path": "module_data/config.py",
-  "role": "config",
+  "role": "code",
   "type": "file"
  },
  {
@@ -687,7 +1118,7 @@ const NODES = [
  {
   "id": "module_ml/config.py",
   "path": "module_ml/config.py",
-  "role": "config",
+  "role": "code",
   "type": "file"
  },
  {
@@ -747,7 +1178,7 @@ const NODES = [
  {
   "id": "module_ml/validation.py",
   "path": "module_ml/validation.py",
-  "role": "gate",
+  "role": "code",
   "type": "file"
  },
  {
@@ -789,7 +1220,7 @@ const NODES = [
  {
   "id": "module_monitoring/sub_module_devops/config.py",
   "path": "module_monitoring/sub_module_devops/config.py",
-  "role": "config",
+  "role": "code",
   "type": "file"
  },
  {
@@ -831,7 +1262,7 @@ const NODES = [
  {
   "id": "module_monitoring/sub_module_dx/config.py",
   "path": "module_monitoring/sub_module_dx/config.py",
-  "role": "config",
+  "role": "code",
   "type": "file"
  },
  {
@@ -843,7 +1274,7 @@ const NODES = [
  {
   "id": "module_monitoring/sub_module_dx/visualisation_config.json",
   "path": "module_monitoring/sub_module_dx/visualisation_config.json",
-  "role": "config",
+  "role": "artifact",
   "type": "file"
  },
  {
@@ -1033,7 +1464,7 @@ const NODES = [
   "type": "file"
  }
 ];
-const EDGES = [
+const TREE_EDGES = [
  {
   "from": "root",
   "thick": true,
@@ -1484,26 +1915,25 @@ document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
 document.getElementById('hudTitle').textContent = META.title;
 document.getElementById('hudSub').textContent = META.subtitle;
-const nodeById = {};
-NODES.forEach(function(n){ nodeById[n.id] = n; });
 const PARENT_OF = {};
-EDGES.forEach(function(e){ if (e.type === 'tree') PARENT_OF[e.to] = e.from; });
+TREE_EDGES.forEach(function(e){ if (e.type === 'tree') PARENT_OF[e.to] = e.from; });
 function childrenOf(id){
-return EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
+return TREE_EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
 .map(function(e){ return nodeById[e.to]; });
 }
 function labelOf(n){
 if (n.type === 'core') return 'repo/';
+if (n.type === 'primitive') return n.name.split(' — ')[0].split(' (')[0];   // the head of the name; the rest is the panel's
 return n.path.replace(/\/$/, '').split('/').pop() + (n.type !== 'file' ? '/' : '');
 }
 function pathDepth(n){ return (n.path.match(/\//g) || []).length; }
 var EXTENT = {};
-function extentOf(n){   // radius of the disc n and everything beneath it occupy — a function of the tree alone, so cached
+function extentOf(n){   // radius of the disc n and everything beneath it occupy — a function of the tree and the view's primitives, so cached per view
 if (EXTENT[n.id] == null){
 var kids = childrenOf(n.id);
 EXTENT[n.id] = kids.length
 ? ringRadiusOf(kids) + Math.max.apply(null, kids.map(extentOf))
-: CONFIG.FILE_EXTENT + CONFIG.LABEL_CHAR_EXTENT * labelOf(n).length;
+: (n.type === 'primitive' ? CONFIG.PRIMITIVE_EXTENT : CONFIG.FILE_EXTENT) + CONFIG.LABEL_CHAR_EXTENT * labelOf(n).length;
 }
 return EXTENT[n.id];
 }
@@ -1560,6 +1990,7 @@ var a = phi + CONFIG.ISLAND_GAP/2 * perUnit;
 isl.roots.forEach(function(n, j){
 var centre = a + isl.arcs[j]/2 * perUnit;
 n.p = { x: radius * Math.cos(centre), y: 0, z: radius * Math.sin(centre) };
+n.root = true;   // an island root keeps its name in sight, hub or not
 a += isl.arcs[j] * perUnit;
 });
 phi += span;
@@ -1594,43 +2025,50 @@ fanAround(isl.hub.p, leftover, 110, isl.theta, CONFIG.RING_Y_JITTER);
 });
 }
 var ISLANDS, ISLAND_ORDER, PLACE, VIEW, activeView;   // the placement that is live: one tree, seated by the active view
-var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
+var NODES, EDGES, nodeById;   // the live sets: the one tree, and the primitives and flows the active view declares beside it
+var LEVEL = {};   // nesting counted from the island root a node fans from, memoised per view
 var PAL = {};
 /* the digits the story ids answer to; the handler and the hint read this one list, so a key that
    isolates nothing is never offered and never dims the whole drawing */
 var STORY_DIGITS = [];
 var CAM_DIST_FLOOR = CONFIG.CAM_DIST;
-var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH };   // a view lays its camera over these, never over the other view's
+var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH, FIT_ZOOM: CONFIG.FIT_ZOOM };   // a view lays its camera over these, never over the other view's
 function nextView(){ return VIEW_ORDER[(VIEW_ORDER.indexOf(activeView) + 1) % VIEW_ORDER.length]; }
-function setView(name){   // a view writes its facts onto the one tree; the tree is then laid out again
+function setView(name){   // a view writes its facts onto the one tree, seats its primitives beside it, and the picture is laid out again
 activeView = name; VIEW = VIEWS[name];
 ISLANDS = VIEW.islands; ISLAND_ORDER = VIEW.order; PLACE = VIEW.place;
+NODES = VIEW.primitives.concat(TREE_NODES);   // primitives first, so an island seats its hub, then its primitives, then its tracked roots
+EDGES = TREE_EDGES.concat(VIEW.flows);
+nodeById = {};
 NODES.forEach(function(n){
+nodeById[n.id] = n;
 n.island = VIEW.island[n.id];
 n.hub = VIEW.hub[n.island] === n.id;
+n.role = VIEW.role[n.id];
 n.desc = VIEW.desc[n.id];
+n.root = false;
 n.p = null;   // layout seats only what is unseated
 });
+if (hoverId && !nodeById[hoverId]) hoverId = null;   // a primitive of the view just left is under no pointer
 Object.assign(CONFIG, CAMERA_DEFAULTS, VIEW.camera);
+EXTENT = {}; LEVEL = {}; PAL = {};   // a primitive's disc, level and shade are the view's, so the memos are the view's
 layout();
 var radius = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
 CONFIG.CAM_DIST = Math.max(CAM_DIST_FLOOR, CONFIG.CAM_DIST_PER_RADIUS * radius);   // the front of a bigger picture stays as far from the lens
 EDGES.forEach(sampleEdge);
-PAL = {};
-HUB_DEPTH = {};
-NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
 STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
 document.getElementById('hintStories').textContent = STORY_DIGITS.length
   ? STORY_DIGITS[0] + '–' + STORY_DIGITS[STORY_DIGITS.length - 1] : 'no story key';
 document.getElementById('hintView').textContent = VIEW_ORDER.length > 1 ? ' · v ' + nextView() : '';
 document.getElementById('btnView').textContent = nextView() === 'deployment' ? '☁︎' : '⌂';   // the glyph names the view the control goes to, as ⏸ / ▶ name the action
+document.getElementById('edgekeyFlow').style.display = VIEW.flows.length ? '' : 'none';   // the key names only what the view draws
 document.querySelectorAll('#tree .trow').forEach(function(row){   // none before buildTree; restyled on every later flip
 row.dotEl.style.background = paletteOf(nodeById[row.dataset.id]).line;
 });
 renderLegend();
 activeIsland = null;   // an island id names another group in the other view; the selection, the subtree and the sidebar are the tree's and stay
 if (!userZoomed) zoom = fitZoom();
-if (selectedId) select(selectedId);   // an open panel re-reads island, colour and sentence
+if (selectedId) select(nodeById[selectedId] ? selectedId : null);   // a tracked node's panel re-reads island, colour and sentence; a primitive of the view just left has no panel here
 invalidate();
 }
 var rafId = null, needsFrame = true, lastDraw = 0;   // declared before the first frame is asked for, so no initialiser runs after one is queued
@@ -1639,13 +2077,15 @@ function sampleEdge(e){
 var a = nodeById[e.from].p, b = nodeById[e.to].p;
 var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
 var len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
-var bend = 0.05, lift = 8;
+var flow = e.type === 'flow';
+var bend = 0.05, lift = flow ? -CONFIG.FLOW_LIFT_PER_LENGTH * len : 8;   // a flow rises with its length (negative y is up on the screen); the bend keeps a pair going both ways apart
+var tEnd = flow ? 1 - CONFIG.FLOW_TIP_GAP / len : 1;   // a flow stops at the target's halo, where its arrowhead is seen
 var px = -dz/len, pz = dx/len;                    // perpendicular in XZ
 var m = { x:(a.x+b.x)/2 + px*len*bend, y:(a.y+b.y)/2 + lift, z:(a.z+b.z)/2 + pz*len*bend };
 var N = 12;
 var pts = [];
 for (var i=0; i<=N; i++){
-var t = i/N, u = 1-t;
+var t = tEnd * i/N, u = 1-t;
 pts.push({
 x: u*u*a.x + 2*u*t*m.x + t*t*b.x,
 y: u*u*a.y + 2*u*t*m.y + t*t*b.y,
@@ -1680,7 +2120,7 @@ g.addColorStop(1, '#070C1C');
 return g;
 }
 function fitZoom(){
-return Math.max(CONFIG.ZOOM_MIN, Math.min(1, W / CONFIG.FIT_WIDTH));
+return Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.FIT_ZOOM, CONFIG.FIT_ZOOM * W / CONFIG.FIT_WIDTH));
 }
 function resize(){
 DPR = Math.min(window.devicePixelRatio || 1, CONFIG.MAX_DPR);
@@ -1765,8 +2205,16 @@ var q = (1 - Math.abs(2*l - 1)) * s, x = q * (1 - Math.abs((h/60) % 2 - 1)), m =
 var sector = [[q,x,0],[x,q,0],[0,q,x],[0,x,q],[x,0,q],[q,0,x]][Math.floor(h/60) % 6];
 return '#' + sector.map(function(v){ return ('0' + Math.round((v + m)*255).toString(16)).slice(-2); }).join('');
 }
+function levelOf(n){   // nesting counted from the island root a node fans from — a module beside a primitive hub keeps level 0
+if (LEVEL[n.id] == null){
+var parent = nodeById[PARENT_OF[n.id]];
+LEVEL[n.id] = (n.type === 'primitive' || !parent || parent.type === 'core' || parent.island !== n.island)
+? 0 : levelOf(parent) + pathDepth(n) - pathDepth(parent);
+}
+return LEVEL[n.id];
+}
 function paletteOf(n){   // one palette per (island, nesting level), built on first use
-var level = Math.max(0, pathDepth(n) - HUB_DEPTH[n.island]);
+var level = levelOf(n);
 var key = n.island + ':' + level;
 if (!PAL[key]){
 var col = shadeStr(ISLANDS[n.island].color, level);
@@ -1805,6 +2253,26 @@ var midFog = fog(pts[pts.length >> 1].d);
 ctx.beginPath();
 ctx.moveTo(pts[0].x, pts[0].y);
 for (var i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+if (e.type === 'flow'){   /* primitive → primitive: dashed, the source island's colour, an arrowhead at the target */
+var P = paletteOf(nodeById[e.from]);
+ctx.strokeStyle = P.line;
+ctx.globalAlpha = 0.6 * alpha * midFog;
+ctx.lineWidth = 1.4;
+ctx.setLineDash([4, 3]);
+ctx.stroke();
+ctx.setLineDash([]);
+var tip = pts[pts.length - 1], k = pts.length - 2;
+while (k > 0 && Math.abs(pts[k].x - tip.x) + Math.abs(pts[k].y - tip.y) < 1) k--;   // seen end-on the last samples coincide; the head takes its bearing from the first that does not
+var ang = Math.atan2(tip.y - pts[k].y, tip.x - pts[k].x), head = Math.max(5, 9 * tip.s);
+ctx.beginPath();
+ctx.moveTo(tip.x, tip.y);
+ctx.lineTo(tip.x - head*Math.cos(ang - 0.42), tip.y - head*Math.sin(ang - 0.42));
+ctx.lineTo(tip.x - head*Math.cos(ang + 0.42), tip.y - head*Math.sin(ang + 0.42));
+ctx.closePath();
+ctx.fillStyle = P.line;
+ctx.fill();
+return;
+}
 if (e.thick){          /* folder – folder */
 ctx.strokeStyle = '#5F79B8';
 ctx.globalAlpha = 0.75 * alpha * midFog;
@@ -1904,13 +2372,125 @@ ctx.stroke();
 }
 }
 }
+var PRIMITIVE_ICON = {   // one glyph per primitive role — the closed set visualise.py checks a view's primitives against
+registry: drawRegistryIcon, container: drawContainerIcon, instance: drawInstanceIcon, store: drawStoreIcon,
+database: drawDatabaseIcon, state_machine: drawStateMachineIcon, event_rule: drawEventRuleIcon,
+log_streams: drawLogStreamsIcon, front: drawFrontIcon, secret: drawSecretIcon
+};
+function drawPrimitiveIcon(role, pr, P, alpha, u, absent){   // absent: a dashed outline and a paler glyph — described here, built nowhere
+ctx.lineWidth = 1;
+ctx.setLineDash(absent ? [3, 3] : []);
+PRIMITIVE_ICON[role](pr, P, absent ? alpha * 0.6 : alpha, u);
+ctx.setLineDash([]);   // the halo and the selection ring that follow are solid
+ctx.lineWidth = 1;     // two glyphs stroke thicker; nothing after them may inherit it
+}
+function drawRegistryIcon(pr, P, alpha, u){   // three image layers, the front one whole
+var w = 2.0*u, h = 1.2*u, step = 0.26*u, rad = Math.max(1.2, 0.14*u);
+ctx.globalAlpha = alpha;
+for (var i = 2; i >= 0; i--){
+pathRoundRect(pr.x - w/2 + (i - 1)*step*0.6, pr.y - h/2 - (i - 1)*step, w, h, rad);
+ctx.fillStyle = i ? P.folderTab : P.folderBody; ctx.fill();
+ctx.strokeStyle = P.stroke; ctx.stroke();
+}
+ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.moveTo(pr.x - w*0.3, pr.y + step); ctx.lineTo(pr.x + w*0.3, pr.y + step); ctx.stroke();
+}
+function drawContainerIcon(pr, P, alpha, u){   // a box with a run mark: one process that starts, runs and exits
+var w = 2.0*u, h = 1.4*u, rad = Math.max(1.2, 0.16*u);
+ctx.globalAlpha = alpha;
+pathRoundRect(pr.x - w/2, pr.y - h/2, w, h, rad);
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(pr.x - 0.28*u, pr.y - 0.38*u); ctx.lineTo(pr.x + 0.40*u, pr.y); ctx.lineTo(pr.x - 0.28*u, pr.y + 0.38*u); ctx.closePath();
+ctx.fillStyle = P.lines; ctx.fill();
+}
+function drawInstanceIcon(pr, P, alpha, u){   // a chassis with two bays
+var w = 2.2*u, h = 1.6*u, rad = Math.max(1.2, 0.16*u), x0 = pr.x - w/2, y0 = pr.y - h/2;
+ctx.globalAlpha = alpha;
+pathRoundRect(x0, y0, w, h, rad);
+ctx.fillStyle = P.folderTab; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.globalAlpha = alpha * 0.7; ctx.strokeStyle = P.lines;
+[1/3, 2/3].forEach(function(f){ ctx.beginPath(); ctx.moveTo(x0 + 0.25*u, y0 + h*f); ctx.lineTo(x0 + w - 0.25*u, y0 + h*f); ctx.stroke(); });
+}
+function drawStoreIcon(pr, P, alpha, u){   // a bucket: the rim, and a body that narrows to the bottom
+var rw = 1.1*u, rh = 0.32*u, h = 1.5*u, bw = 0.85*u, top = pr.y - h/2;
+ctx.globalAlpha = alpha;
+ctx.beginPath();
+ctx.moveTo(pr.x - rw, top); ctx.lineTo(pr.x - bw, top + h);
+ctx.ellipse(pr.x, top + h, bw, rh*0.8, 0, Math.PI, 0, true);
+ctx.lineTo(pr.x + rw, top); ctx.closePath();
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.beginPath(); ctx.ellipse(pr.x, top, rw, rh, 0, 0, TAU);
+ctx.fillStyle = P.folderTab; ctx.fill(); ctx.stroke();
+}
+function drawDatabaseIcon(pr, P, alpha, u){   // a cylinder — the one database object per asset; written in u alone, so it reads at file scale and at hub scale
+var rx = 0.8*u, ry = 0.3*u, h = 1.5*u, top = pr.y - h/2;
+ctx.globalAlpha = alpha;
+ctx.beginPath();
+ctx.moveTo(pr.x - rx, top); ctx.lineTo(pr.x - rx, top + h);
+ctx.ellipse(pr.x, top + h, rx, ry, 0, Math.PI, 0, true);
+ctx.lineTo(pr.x + rx, top); ctx.closePath();
+ctx.fillStyle = P.fileBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.lineWidth = 1; ctx.stroke();
+ctx.beginPath(); ctx.ellipse(pr.x, top, rx, ry, 0, 0, TAU);
+ctx.fillStyle = P.fileFold; ctx.fill(); ctx.stroke();
+ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.ellipse(pr.x, top + h*0.45, rx, ry, 0, 0, Math.PI); ctx.stroke();
+}
+function drawStateMachineIcon(pr, P, alpha, u){   // two states on a rail
+var s = 0.6*u, gap = 0.3*u, y = pr.y, x0 = pr.x - 1.1*u, x1 = pr.x + 1.1*u;
+ctx.globalAlpha = alpha; ctx.strokeStyle = P.stroke;
+ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+[0, 1].forEach(function(i){
+pathRoundRect(pr.x - s - gap/2 + i*(s + gap), y - s/2, s, s, Math.max(1.2, 0.12*u));
+ctx.fillStyle = i ? P.folderTab : P.folderBody; ctx.fill(); ctx.stroke();
+});
+}
+function drawEventRuleIcon(pr, P, alpha, u){   // a choice diamond with a bolt: an event, and the condition it answers to
+var r = 0.95*u;
+ctx.globalAlpha = alpha;
+ctx.beginPath(); ctx.moveTo(pr.x, pr.y - r); ctx.lineTo(pr.x + r, pr.y); ctx.lineTo(pr.x, pr.y + r); ctx.lineTo(pr.x - r, pr.y); ctx.closePath();
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.strokeStyle = P.lines; ctx.lineWidth = Math.max(1, 0.14*u);
+ctx.beginPath(); ctx.moveTo(pr.x + 0.25*u, pr.y - 0.45*u); ctx.lineTo(pr.x - 0.25*u, pr.y); ctx.lineTo(pr.x + 0.25*u, pr.y + 0.45*u); ctx.stroke();
+ctx.lineWidth = 1;
+}
+function drawLogStreamsIcon(pr, P, alpha, u){   // three streams, of unequal length
+var x0 = pr.x - 1.0*u, bh = 0.34*u, gap = 0.2*u, top = pr.y - (3*bh + 2*gap)/2;
+ctx.globalAlpha = alpha;
+[0.6, 0.85, 0.7].forEach(function(f, i){
+pathRoundRect(x0, top + i*(bh + gap), 2.0*u*f, bh, bh/2);
+ctx.fillStyle = i === 1 ? P.folderTab : P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+});
+}
+function drawFrontIcon(pr, P, alpha, u){   // a globe: the rim, one meridian, the equator
+var r = 0.95*u;
+ctx.globalAlpha = alpha;
+ctx.beginPath(); ctx.arc(pr.x, pr.y, r, 0, TAU); ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.globalAlpha = alpha * 0.7; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.ellipse(pr.x, pr.y, r*0.42, r, 0, 0, TAU); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(pr.x - r, pr.y); ctx.lineTo(pr.x + r, pr.y); ctx.stroke();
+}
+function drawSecretIcon(pr, P, alpha, u){   // a key: the bow, the shaft, two bits
+var r = 0.42*u, bx = pr.x - 0.75*u, y = pr.y;
+ctx.globalAlpha = alpha; ctx.strokeStyle = P.stroke; ctx.lineWidth = Math.max(1, 0.14*u);
+ctx.beginPath(); ctx.arc(bx, y, r, 0, TAU); ctx.fillStyle = P.folderBody; ctx.fill(); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(bx + r, y); ctx.lineTo(pr.x + 1.0*u, y); ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(pr.x + 0.55*u, y); ctx.lineTo(pr.x + 0.55*u, y + 0.35*u);
+ctx.moveTo(pr.x + 0.9*u, y); ctx.lineTo(pr.x + 0.9*u, y + 0.35*u); ctx.stroke();
+ctx.lineWidth = 1;
+}
+function baseOf(n){ return n.type === 'core' ? 17 : n.type === 'primitive' ? 16 : (n.type === 'folder' || n.hub) ? 13 : 8; }   // one rule for glyph, label and hit radius
 function drawNode(n, pr){
 var P = paletteOf(n);
 var alpha = nodeAlpha(n) * fog(pr.d);
-var base = (n.type === 'core') ? 17 : (n.type === 'folder') ? 13 : (n.hub ? 13 : 8);
-var u = base * pr.s;
+var u = baseOf(n) * pr.s;
 if (n.type === 'folder' || n.type === 'core'){
 drawFolderIcon(pr, P, alpha, u, n.type === 'core');
+} else if (n.type === 'primitive'){
+drawPrimitiveIcon(n.role, pr, P, alpha, u, n.absent);
+} else if (n.role === 'database'){
+drawDatabaseIcon(pr, P, alpha, u);
 } else {
 drawFileIcon(pr, P, alpha, u, n.role === 'artifact');
 }
@@ -1932,7 +2512,7 @@ ctx.stroke();
 }
 }
 function labelVisible(n){
-if (n.hub || n.type === 'core') return true;
+if (n.hub || n.root || n.type === 'core' || n.type === 'primitive') return true;   // an island root and a primitive are always named
 if (subtreeSet && subtreeSet[n.id]) return true;
 if (selectedId && neighbourSet(selectedId)[n.id]) return true;
 if (hoverId && neighbourSet(hoverId)[n.id]) return true;
@@ -1942,12 +2522,12 @@ return false;
 function drawLabel(n, pr){
 if (!labelVisible(n)) return;
 var alpha = nodeAlpha(n) * fog(pr.d);
-if (alpha < 0.2 || pr.s < 0.45) return;
+if (alpha < 0.2 || (pr.d > CONFIG.CAM_DIST && n.type !== 'core')) return;   // the far half of the picture carries no name, whatever its size; the core is the middle, not the far half
 var name = labelOf(n);
 ctx.globalAlpha = 0.92 * alpha;
-var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
-var lift = ((n.type === 'folder' || n.type === 'core') ? 1.25 : 1.05) * base * pr.s;
-ctx.fillText(name, pr.x, pr.y - lift - 7);
+var lift = (n.type === 'file' ? 1.05 : 1.25) * baseOf(n) * pr.s;
+if (n.type === 'primitive') ctx.fillText(name, pr.x, pr.y + lift + 12);   // below the glyph: a flow leaves it upward
+else ctx.fillText(name, pr.x, pr.y - lift - 7);
 }
 var prefersReducedMotion = window.matchMedia &&
 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1963,8 +2543,8 @@ for (j=0; j<e.pts.length; j++) e.scr.push({ x:0, y:0, s:0, d:0 });
 }
 for (j=0; j<e.pts.length; j++) projectInto(e.pts[j], e.scr[j]);
 }
-var edgeOrder = EDGES.slice().sort(function(a, b){
-return b.scr[b.scr.length >> 1].d - a.scr[a.scr.length >> 1].d;
+var edgeOrder = EDGES.slice().sort(function(a, b){   // flows over the tree's edges, each set far to near
+return ((a.type === 'flow') - (b.type === 'flow')) || (b.scr[b.scr.length >> 1].d - a.scr[a.scr.length >> 1].d);
 });
 for (i=0; i<edgeOrder.length; i++) strokeEdge(edgeOrder[i]);
 for (i=0; i<NODES.length; i++){
@@ -2007,8 +2587,7 @@ function hitTest(mx, my){
 var best = null, bestDist = 1e9;
 NODES.forEach(function(n){
 var pr = projCache[n.id] || project(n.p);
-var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
-var r = Math.max(1.3 * base * pr.s + 8, 15);
+var r = Math.max(1.3 * baseOf(n) * pr.s + 8, 15);
 var dx = mx - pr.x, dy = my - pr.y;
 var d2 = dx*dx + dy*dy;
 if (d2 < r*r && d2 < bestDist){ best = n; bestDist = d2; }
@@ -2070,13 +2649,15 @@ invalidate();
 if (!id){ panel.classList.remove('open'); return; }
 var n = nodeById[id];
 var isl = ISLANDS[n.island];
-document.getElementById('pPath').textContent = n.path;
+var pPath = document.getElementById('pPath');
+pPath.textContent = n.type === 'primitive' ? n.name : n.path;
+pPath.classList.toggle('path--name', n.type === 'primitive');
 var st = document.getElementById('pStory');
 st.innerHTML = '';
 var dot = document.createElement('span');
 dot.className = 'dot'; dot.style.background = isl.color;
 st.appendChild(dot);
-st.appendChild(document.createTextNode(isl.name + ' · ' + n.role));
+st.appendChild(document.createTextNode(isl.name + ' · ' + n.role.replace(/_/g, ' ')));   // the role word, not its key
 document.getElementById('pDesc').textContent = n.desc;
 panel.classList.add('open');
 }
@@ -2086,7 +2667,7 @@ var treeEl = document.getElementById('tree');
 var treeTab = document.getElementById('treeTab');
 var TREE_CHILDREN = {};
 var TREE_PARENT = {};
-EDGES.forEach(function(e){
+TREE_EDGES.forEach(function(e){
 if (e.type !== 'tree') return;
 if (!TREE_CHILDREN[e.from]) TREE_CHILDREN[e.from] = [];
 TREE_CHILDREN[e.from].push(e.to);
