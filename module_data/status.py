@@ -85,9 +85,77 @@ def share_pct(part: int, whole: int) -> float:
     return round(100.0 * part / whole, 3) if whole else 0.0
 
 
+def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows: dict, zip_counts: dict) -> list[dict]:
+    """One venue's table of the snapshot: a row per asset, each judged against its own canonical end."""
+    table = []
+    for ticker in tickers:
+        # every asset is judged against its OWN canonical end, so a young asset is never charged
+        # an older one's history and a stale feed is the only thing a gap can mean
+        asset_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
+        expected = (asset_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
+        # a scalar scan of an empty venue table returns one row of zero and NULLs, never no row
+        venue_row = venue_rows[venue][ticker]
+        venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
+        table.append(
+            {
+                "symbol": config.symbol(ticker),
+                "zip_count": zip_counts[venue][ticker],
+                "row_count": venue_row_count,
+                "coverage_pct": share_pct(distinct, expected),
+                "gap_count": expected - distinct,
+                # measured from the first observation to the end of the window, so a stale feed reports its gap
+                "gap_count_after_first_observation": (
+                    (asset_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
+                ) if venue_row["first_timestamp_ms"] is not None else 0,
+                "duplicate_count": venue_row_count - distinct,
+                "ohlc_violation_count": int(venue_row["ohlc_violation_count"]),
+                "zero_volume_bars": int(venue_row["zero_volume_bars"]),
+                "flat_bars": int(venue_row["flat_bars"]),
+                "first_observation_utc": to_utc_minute(venue_row["first_timestamp_ms"]),
+                "last_observation_utc": to_utc_minute(venue_row["last_timestamp_ms"]),
+            }
+        )
+    return table
+
+
+def canonical_source_block(ticker: str, canonical_row: dict) -> dict:
+    """One asset's row of the canonical-construction table."""
+    canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
+    return {
+        "symbol": config.symbol(ticker),
+        "row_count": canonical_row_count,
+        "last_observation_utc": to_utc_minute(canonical_row["last_timestamp_ms"]),
+        "binance_pct": share_pct(int(canonical_row["binance_source_count"]), canonical_row_count),
+        "bybit_pct": share_pct(int(canonical_row["bybit_source_count"]), canonical_row_count),
+        "ffill_pct": share_pct(ffill_bars, canonical_row_count),
+        "ffill_bars": ffill_bars,
+        "zero_volume_bars": int(canonical_row["zero_volume_bars"]),
+        "source_switch_count": int(canonical_row["source_switch_count"]),
+        "max_abs_return_at_switch": config.rounded(canonical_row["max_abs_return_at_switch"], 6),
+        "relative_divergence_mean": config.rounded(canonical_row["relative_divergence_mean"], 8),
+        "relative_divergence_p99": config.rounded(canonical_row["relative_divergence_p99"], 8),
+        "relative_divergence_max": config.rounded(canonical_row["relative_divergence_max"], 8),
+        "ohlc_violation_count": int(canonical_row["ohlc_violation_count"]),
+        "max_abs_return_1m": config.rounded(canonical_row["max_abs_return_1m"], 6),
+        "longest_flat_run_minutes": int(canonical_row["longest_flat_run_minutes"]),
+    }
+
+
+def symbol_block(ticker: str, canonical_row: dict, db_bytes: int) -> dict:
+    """One asset's row of the pipeline table: the canonical series and the database that holds it."""
+    canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
+    return {
+        "symbol": config.symbol(ticker),
+        "row_count": canonical_row_count,
+        "db_bytes": db_bytes,
+        "ffill_bars": ffill_bars,
+        "real_data_pct": share_pct(canonical_row_count - ffill_bars, canonical_row_count),
+    }
+
+
 def main() -> int:
     argparse.ArgumentParser(
-        description="data & DB monitoring -> stdout + module_monitoring/data_status.json"
+        description="data & database monitoring -> stdout + module_monitoring/data_status.json"
     ).parse_args()
     venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
     canonical_rows, db_bytes = {}, {}
@@ -121,73 +189,9 @@ def main() -> int:
         for venue in config.SOURCE_VENUES
     }
 
-    venues = {}
-    for venue in config.SOURCE_VENUES:
-        venue_table = []
-        for ticker in tickers:
-            symbol = config.symbol(ticker)
-            # every asset is judged against its OWN canonical end, so a young asset is never charged
-            # an older one's history and a stale feed is the only thing a gap can mean
-            asset_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
-            expected = (asset_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
-            # a scalar scan of an empty venue table returns one row of zero and NULLs, never no row
-            venue_row = venue_rows[venue][ticker]
-            venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
-            venue_table.append(
-                {
-                    "symbol": symbol,
-                    "zip_count": zip_counts[venue][ticker],
-                    "row_count": venue_row_count,
-                    "coverage_pct": share_pct(distinct, expected),
-                    "gap_count": expected - distinct,
-                    # measured from the first observation to the end of the window, so a stale feed reports its gap
-                    "gap_count_after_first_observation": (
-                        (asset_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
-                    ) if venue_row["first_timestamp_ms"] is not None else 0,
-                    "duplicate_count": venue_row_count - distinct,
-                    "ohlc_violation_count": int(venue_row["ohlc_violation_count"]),
-                    "zero_volume_bars": int(venue_row["zero_volume_bars"]),
-                    "flat_bars": int(venue_row["flat_bars"]),
-                    "first_observation_utc": to_utc_minute(venue_row["first_timestamp_ms"]),
-                    "last_observation_utc": to_utc_minute(venue_row["last_timestamp_ms"]),
-                }
-            )
-        venues[venue] = venue_table
-
-    canonical, symbols = [], []
-    for ticker in tickers:
-        symbol = config.symbol(ticker)
-        canonical_row = canonical_rows[ticker]
-        canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
-        canonical.append(
-            {
-                "symbol": symbol,
-                "row_count": canonical_row_count,
-                "last_observation_utc": to_utc_minute(canonical_row["last_timestamp_ms"]),
-                "binance_pct": share_pct(int(canonical_row["binance_source_count"]), canonical_row_count),
-                "bybit_pct": share_pct(int(canonical_row["bybit_source_count"]), canonical_row_count),
-                "ffill_pct": share_pct(ffill_bars, canonical_row_count),
-                "ffill_bars": ffill_bars,
-                "zero_volume_bars": int(canonical_row["zero_volume_bars"]),
-                "source_switch_count": int(canonical_row["source_switch_count"]),
-                "max_abs_return_at_switch": config.rounded(canonical_row["max_abs_return_at_switch"], 6),
-                "relative_divergence_mean": config.rounded(canonical_row["relative_divergence_mean"], 8),
-                "relative_divergence_p99": config.rounded(canonical_row["relative_divergence_p99"], 8),
-                "relative_divergence_max": config.rounded(canonical_row["relative_divergence_max"], 8),
-                "ohlc_violation_count": int(canonical_row["ohlc_violation_count"]),
-                "max_abs_return_1m": config.rounded(canonical_row["max_abs_return_1m"], 6),
-                "longest_flat_run_minutes": int(canonical_row["longest_flat_run_minutes"]),
-            }
-        )
-        symbols.append(
-            {
-                "symbol": symbol,
-                "row_count": canonical_row_count,
-                "db_bytes": db_bytes[ticker],
-                "ffill_bars": ffill_bars,
-                "real_data_pct": share_pct(canonical_row_count - ffill_bars, canonical_row_count),
-            }
-        )
+    venues = {venue: venue_block(venue, tickers, venue_rows, canonical_rows, zip_counts) for venue in config.SOURCE_VENUES}
+    canonical = [canonical_source_block(ticker, canonical_rows[ticker]) for ticker in tickers]
+    symbols = [symbol_block(ticker, canonical_rows[ticker], db_bytes[ticker]) for ticker in tickers]
 
     status = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),

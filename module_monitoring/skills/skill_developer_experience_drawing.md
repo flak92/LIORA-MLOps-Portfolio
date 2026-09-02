@@ -53,8 +53,8 @@ way edge weight does — not a knob.
 | `primitives` | Id → `role`, `name`, optional `absent`. A primitive is a node a view declares for a row of the mapping table no tracked path is. It joins the view's nodes beside the tree, so `story_map` may name its id (exact match), a story may make it its `hub`, `place` may seat it and `descriptions` may give it a sentence; an unmapped id joins `default_story` like a path. `role` picks the icon from one closed set — registry, instance, container, store, database, state_machine, event_rule, log_streams, front, secret — and an unknown role is an error naming it. `absent: true` draws a dashed outline for a primitive nothing local answers to. An island seats its hub first, then its primitives in the order listed, then its tracked roots. The name's head — before the dash or the parenthesis — is the canvas label, so it is short; the rest is the panel's. The development view declares none. |
 | `notice` | The words a view shows in the top right, in red capitals, one line per newline — what the picture is, in the presenter's words; empty shows nothing. The development view has none; the deployment view says its mapping is in progress, and that the tree is shaped for the move. |
 | `flows` | List of `{from, to}` over primitive ids of the same view. Each is one dashed edge with an arrowhead at `to`, coloured by the island it leaves, rising with its length (§ Two views of one tree). An endpoint that is not a node of the view is an error. |
-| `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>`, read from `remote.origin.url`. |
-| `header.title` | The heading, and the first half of the browser tab title. |
+| `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>`, read from `remote.origin.url`, and the tab title ends with the repository name. Off, the page names no repository, so the same bytes are fresh in every clone. |
+| `header.title` | The heading and the browser tab title; with `eyebrow_from_git` on, the repository name follows it in the tab. |
 | `header.subtitle` | The line under the heading. May use `{files}`, `{modules}`, `{assets}`, `{nodes}`, `{edges}` — tracked files that survived `exclude`, top-level folders, aggregated folders, and the tree's totals (a view's primitives and flows are not counted). Any other placeholder is an error naming it. |
 
 ## The provenance stamp
@@ -129,7 +129,7 @@ lives. A flip that leaves the selected primitive behind closes the panel. ⟲ �
 subtree and the isolated island. Nine islands exhaust the digit keys; a tenth row can never be an
 island.
 
-The deployment view is the one picture of the mapping table's right column, and the fifth place a
+The deployment view is the one picture of the mapping table's right column, and one of the places a
 cloud proper noun may be spoken (`AGENTS.md` § Pre-AWS architectural direction). Every primitive
 drawn is a row of that column, drawn as the icon of its role — a registry, a Linux instance, a
 container, a store with the asset's database inside it, a state machine, an event rule, log streams,

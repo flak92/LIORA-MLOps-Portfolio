@@ -34,6 +34,8 @@ SAMPLE_INTERVAL_SECONDS = 1.0
 PROCESS_POLL_INTERVAL_SECONDS = 0.05
 PIPE_READ_SIZE_BYTES = 65536
 MICROSECONDS_PER_SECOND = 1_000_000
+SECONDS_PER_HOUR = 3600
+BYTES_PER_DISK_BLOCK = 512   # the unit rusage counts ru_inblock and ru_oublock in
 
 # ---- the run record: one directory per run of the chain, the whole basket inside it
 STORE_RUN_RECORDS_DIR = REPO_ROOT / "store_run_records"

@@ -10,8 +10,6 @@ const SECONDS_PER_MINUTE = 60;
 const BYTES_PER_SECOND_LABEL = "/s";
 const HTTP_OK = 200;
 
-let RUN_RECORD = null;
-
 /* the endpoint writes UTC as "YYYY-MM-DD HH:MM:SS" */
 function secondsSinceEpoch(utcText) {
   const [day, clock] = utcText.split(" ");
@@ -112,7 +110,7 @@ function buildRunHeader(record) {
     ["total time", formatSeconds(summary.total_wall_seconds) + "  (stages " + formatSeconds(summary.total_stage_seconds)
       + ", orchestration " + formatSeconds(summary.orchestration_seconds) + ")"],
     ["total CPU", formatSeconds(summary.total_cpu_seconds) + "  (" + summary.total_cpu_core_hours + " core-hours)"],
-    ["peak RAM of a stage", formatBytes(summary.global_memory_peak_bytes)],
+    ["peak resident set of a stage", formatBytes(summary.global_memory_peak_bytes)],
     ["bottleneck", summary.bottleneck_stage],
     ["exit code", manifest.exit_code + "  (" + summary.status + ")"
       + (summary.failed_stage ? "  failed at " + summary.failed_stage : "")],
@@ -126,7 +124,7 @@ function buildRunHeader(record) {
 
 function renderRunStages(body, summary) {
   body.appendChild(buildTable(
-    ["stage", "container", "pid", "time", "CPU", "CPU share", "peak RAM", "read", "write",
+    ["stage", "container", "pid", "time", "CPU", "CPU share", "peak resident set", "read", "write",
      "net in (container)", "net out (container)", "samples", "exit"],
     summary.stages.map((stage) => {
       const share = document.createElement("span");
@@ -173,7 +171,7 @@ function renderRunTimelines(body, record) {
     .map(([service, own]) => [service, buildLevelSeries(own, key)]));
   appendTimeline(body, "CPU — container seconds per second",
     rates((sample) => sample.container_cpu_usage_seconds), boundaries, startAt, endAt);
-  appendTimeline(body, "RAM — resident set of the stage process (bytes)",
+  appendTimeline(body, "resident set of the stage process (bytes)",
     levels((sample) => sample.process_memory_resident_bytes), boundaries, startAt, endAt);
   appendTimeline(body, "disk — container block bytes" + BYTES_PER_SECOND_LABEL,
     rates((sample) => sample.container_disk_read_bytes + sample.container_disk_write_bytes),
@@ -184,7 +182,6 @@ function renderRunTimelines(body, record) {
 }
 
 function renderRun(record) {
-  RUN_RECORD = record;
   const host = document.getElementById("run-detail");
   host.textContent = "";
   if (!record.manifest || !record.summary) {

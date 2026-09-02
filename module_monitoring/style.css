@@ -56,7 +56,7 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
-/* a jump out of a page: the developer-experience drawing, and the DevOps panel.
+/* a jump between the pages of the three personas: the status page, the developer-experience drawing and the DevOps panel.
    Floated, so the first in source order sits furthest right */
 .jump {
   float: right;

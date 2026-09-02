@@ -32,7 +32,7 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     }
 
 
-def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], "object"]:
+def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], object]:
     """Fit before the fold's window, predict the FULL window, score the supervised
     subset only. Returns (metrics, segment, prediction_records, booster)."""
     oos_start, oos_end = validation.fold_bounds(fold_id)

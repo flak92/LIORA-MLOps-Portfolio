@@ -35,7 +35,7 @@ data-download:   ## fetch Binance + Bybit 1m klines (UTC calendar-day files, ide
 	$(PY) -m module_data.download_bybit
 data-ingest:     ## load both ZIP trees into each asset's <TICKER>_research_ohlcv.duckdb and rebuild its canonical series, one asset at a time
 	$(PY) -m module_data.ingest
-data-status:     ## data & DB monitoring -> stdout + module_monitoring/data_status.json
+data-status:     ## data & database monitoring -> stdout + module_monitoring/data_status.json
 	$(PY) -m module_data.status
 
 ml-bars:         ## canonical 1m -> 15m/1h/4h bars, in each asset's own database
@@ -57,7 +57,7 @@ ml-all:          ## the whole ML chain in order
 
 # python3, not $(PY): standard library only, so it runs on a fresh clone that has
 # never seen `make setup`. Refreshed by hand — nothing refreshes it for you.
-monitoring-dx-update: ## redraw the developer-experience picture of the tracked tree
+monitoring-dx-update: ## redraw the developer-experience drawing of the tracked tree
 	python3 -m module_monitoring.sub_module_dx.visualise
 
 docker-build:    ## build the one image every service runs

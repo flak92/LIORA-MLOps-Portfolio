@@ -1,10 +1,10 @@
-"""Paths and defaults for the developer-experience picture — the only place this sub-module builds a path.
+"""Paths and defaults for the developer-experience drawing — the only place this sub-module builds a path.
 
 It imports nothing from module_data or module_ml. Those are the runtime pipeline
 and pull duckdb, numpy and xgboost with them; this one is standard library plus
 the git binary, so it runs on a bare clone with no virtual environment.
 
-The defaults below are what the picture uses when visualisation_config.json says
+The defaults below are what the drawing uses when visualisation_config.json says
 nothing. Every one of them is overridable from that file, and the file wins: an
 unknown key there is an error rather than a silent typo, so the JSON is the whole
 configuration surface and Python is never edited to change the drawing.
@@ -31,6 +31,7 @@ VISUALISATION_TEMPLATE_HTML_PATH = SUB_MODULE_DX_DIR / "files_and_folders_visual
 FILES_AND_FOLDERS_VISUALISATION_HTML_PATH = SUB_MODULE_DX_DIR / "files_and_folders_visualisation.html"
 
 MAKE_TARGET = "monitoring-dx-update"
+BYTES_PER_KIBIBYTE = 1024   # declared here too: this sub-module imports nothing from module_data
 
 # the one region of the template this sub-module writes; everything outside it is
 # hand-written rendering code and is never touched
@@ -87,7 +88,7 @@ CONFIG_DEFAULTS = {
     "header": {},
     "deployment": None,   # the second view of the same tree; None means one view and no view control
 }
-STORY_IDS = {"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"}   # the drawing gives an island one digit; a tenth story is a different picture
+STORY_IDS = {"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"}   # the drawing gives an island one digit; a tenth story is a different drawing
 STORY_KEYS = {"name", "color", "hub"}
 PLACE_KEYS = {"r", "da", "y", "jit"}
 HEADER_KEYS = {"eyebrow_from_git", "title", "subtitle"}

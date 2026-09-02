@@ -251,18 +251,19 @@ class PanelHandler(BaseHTTPRequestHandler):
     """The panel's API. The page itself is static and served by the dashboard, so no route answers with HTML."""
 
     def do_GET(self):
-        segments = self.path.split("?")[0].split("/")
+        route = self.path.split("?")[0]
+        segments = route.split("/")
         project = self.server.project
         try:
             if segments[:3] == ["", "api", "machines"] and len(segments) == 3:
                 write_response(self, HTTPStatus.OK, to_json_bytes(machines_payload(project)))
-            elif self.path.split("?")[0] == "/api/networks":
+            elif route == "/api/networks":
                 write_response(self, HTTPStatus.OK, to_json_bytes(networks_payload(project)))
-            elif self.path.split("?")[0] == "/api/volumes":
+            elif route == "/api/volumes":
                 write_response(self, HTTPStatus.OK, to_json_bytes(volumes_payload(project)))
-            elif self.path.split("?")[0] == "/api/image":
+            elif route == "/api/image":
                 write_response(self, HTTPStatus.OK, to_json_bytes(image_payload(self.server.hostname)))
-            elif self.path.split("?")[0] == "/api/events":
+            elif route == "/api/events":
                 if not self.server.project_known:
                     raise EngineUnavailable("/api/events")   # an empty tail would read as a quiet project
                 write_response(self, HTTPStatus.OK, to_json_bytes(events_payload(project)))

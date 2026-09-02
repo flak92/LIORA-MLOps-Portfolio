@@ -37,10 +37,10 @@ name are the convention.
 The chain, and the pictures it leaves:
 
 ```bash
-make all                   # the whole pipeline on the host from a fresh clone: venv -> data-download -> data-ingest -> data-status -> ml-all
+make all                   # the whole pipeline on the host from a fresh clone: setup -> data-download -> data-ingest -> data-status -> ml-all
 make docker-all            # the same chain inside the containers, download to snapshots
 make docker-all-record     # the same chain, recorded stage by stage into store_run_records/<run_id>/ — the Lifecycle tab
-make monitoring-dx-update  # redraw the developer-experience picture after the tracked tree changes
+make monitoring-dx-update  # redraw the developer-experience drawing after the tracked tree changes
 ```
 
 Three readers, three doors, all behind `make on`:
@@ -160,7 +160,7 @@ mathematics needs. The rule, its non-goals and the mapping table:
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
-| lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
+| lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
@@ -188,7 +188,8 @@ raw ZIP trees. Schema:
   which PID, for how long, at what CPU and peak resident set, what bytes it moved
   and what it left on disk; then one shared timeline with a dashed rule at every
   stage boundary. A column marked *container* is the whole container over the
-  same window; every unmarked number is the stage's own, and the page says so;
+  same window; every unmarked number is the stage's own, and the page says so.
+
 Two controls in the top right leave the page, one per persona beyond the
 business reader:
 

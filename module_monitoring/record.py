@@ -111,7 +111,7 @@ def load_network_bytes() -> tuple[int, int]:
     return received, transmitted
 
 
-def container_counters() -> dict:
+def load_container_counters() -> dict:
     """The container's own cgroup and interfaces — the whole container, never one stage."""
     own = load_cgroup_dir()
     memory_max = load_text(own / "memory.max")
@@ -141,7 +141,7 @@ def container_counters() -> dict:
     }
 
 
-def process_counters(pid: int) -> dict | None:
+def load_process_counters(pid: int) -> dict | None:
     """The wrapped process while it still lives; None once it is a zombie or gone."""
     try:
         io = dict(line.split(": ") for line in Path(f"/proc/{pid}/io").read_text().splitlines())
@@ -200,7 +200,7 @@ def record_stage(run_id: str, command: list[str]) -> int:
 
     started_at = datetime.now(tz=UTC)
     started_monotonic = time.monotonic()
-    counters_at_start = container_counters()
+    counters_at_start = load_container_counters()
 
     read_fd, write_fd = os.pipe()
     pid = os.posix_spawnp(
@@ -218,7 +218,7 @@ def record_stage(run_id: str, command: list[str]) -> int:
         while open_pipe:
             timeout = max(0.0, min(deadline - time.monotonic(), config.PROCESS_POLL_INTERVAL_SECONDS))
             readable = select.select([pipe], [], [], timeout)[0]
-            process = process_counters(pid)
+            process = load_process_counters(pid)
             if process is not None:
                 last_process = process
             if readable:
@@ -231,7 +231,7 @@ def record_stage(run_id: str, command: list[str]) -> int:
                 else:
                     open_pipe = False
             if time.monotonic() >= deadline:
-                sample = container_counters()
+                sample = load_container_counters()
                 memory_charged_peak_bytes = max(memory_charged_peak_bytes,
                                                 sample["container_memory_charged_bytes"])
                 append_json_line(config.resources_jsonl(run_id), {
@@ -248,7 +248,7 @@ def record_stage(run_id: str, command: list[str]) -> int:
     # and its rusage is the kernel's own accounting of the process that call took
     _, status, rusage = os.wait4(pid, 0)
     exit_code = os.waitstatus_to_exitcode(status)
-    counters_at_end = container_counters()
+    counters_at_end = load_container_counters()
     ended_at = datetime.now(tz=UTC)
     record = {
         "run_id": run_id, "tickers": tickers, "stage": stage, "module": module,
@@ -262,8 +262,8 @@ def record_stage(run_id: str, command: list[str]) -> int:
         "process_system_cpu_seconds": round(rusage.ru_stime, 3),
         "process_memory_peak_bytes": rusage.ru_maxrss * BYTES_PER_KIBIBYTE,
         "process_major_fault_count": rusage.ru_majflt,
-        "process_disk_read_bytes": rusage.ru_inblock * 512,
-        "process_disk_write_bytes": rusage.ru_oublock * 512,
+        "process_disk_read_bytes": rusage.ru_inblock * config.BYTES_PER_DISK_BLOCK,
+        "process_disk_write_bytes": rusage.ru_oublock * config.BYTES_PER_DISK_BLOCK,
         **(last_process or {}),
         # the container over the same window — every reader is told which is which
         "container_cpu_seconds_delta": round(counters_at_end["container_cpu_usage_seconds"]
@@ -355,7 +355,7 @@ def summary_row(record: dict) -> dict:
         "start_utc": record["started_at_utc"], "end_utc": record["ended_at_utc"],
         "wall_seconds": wall_seconds,
         "cpu_seconds": cpu_seconds,
-        "cpu_core_hours": round(cpu_seconds / 3600.0, 6),
+        "cpu_core_hours": round(cpu_seconds / config.SECONDS_PER_HOUR, 6),
         "cpu_share": round(cpu_seconds / wall_seconds, 3) if wall_seconds else None,
         "memory_peak_bytes": record["process_memory_peak_bytes"],
         "read_chars": record.get("process_read_chars"),
@@ -439,7 +439,7 @@ def write_summary(run_id: str, readiness: dict, status: str) -> dict:
         "orchestration_seconds": (round(total_wall_seconds - total_stage_seconds, 3)
                                   if total_wall_seconds is not None else None),
         "total_cpu_seconds": total_cpu_seconds,
-        "total_cpu_core_hours": round(total_cpu_seconds / 3600.0, 6),
+        "total_cpu_core_hours": round(total_cpu_seconds / config.SECONDS_PER_HOUR, 6),
         "global_memory_peak_bytes": max((row["memory_peak_bytes"] for row in rows), default=None),
         "bottleneck_stage": bottleneck["stage"] if bottleneck else None,
         "failed_stage": next((row["stage"] for row in rows if row["exit_code"] != 0), None),

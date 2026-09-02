@@ -67,7 +67,7 @@
     "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout \u2014 the gate of the whole system.",
     "module_monitoring/": "Presentation of what the runtime modules measured, and the one server that serves it.",
     "module_monitoring/serve.py": "The one server, two roles: the dashboard, and a container reporting itself.",
-    "module_monitoring/skills/": "The module's own contract: the dashboard conventions and the drawing.",
+    "module_monitoring/skills/": "The module's own contract: the dashboard conventions, the drawing and the DevOps panel.",
     "module_monitoring/sub_module_dx/": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
     "module_monitoring/sub_module_devops/": "The DevOps panel, and the one container that holds the docker socket.",
     "module_monitoring/sub_module_devops/serve.py": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
@@ -190,7 +190,7 @@
       "module_monitoring/index.html": "The page: a static object; no process renders it.",
       "module_monitoring/data_status.json": "A status object produced by data compute and read by the page — a static object beside the page today, tracked so a fresh clone opens on real numbers; its own prefix is a handful of edits away, listed in the skill's review table.",
       "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts — a static object beside the page today, the same handful of edits away from its own prefix.",
-      "module_monitoring/skills/": "The page's conventions and this drawing's contract travel with the code: documents, not primitives.",
+      "module_monitoring/skills/": "The page's conventions, this drawing's contract and the panel's travel with the code: documents, not primitives.",
       "module_monitoring/sub_module_dx/": "The repository's view — this drawing, a static object like the page, and not project code.",
       "module_monitoring/sub_module_devops/": "The engine's views — a console, not project code; the socket it holds is a local mechanism with no primitive of its own.",
       "module_monitoring/sub_module_devops/serve.py": "The one container that holds the docker socket: a console over the local engine's own inventory, a local mechanism.",
@@ -213,7 +213,7 @@
     "notice": "Mapping functionalities\ninto AWS-env architecture\nin progress —\nthe files and folders of this repository\nare shaped for an easier migration to AWS"
   },
   "header": {
-    "eyebrow_from_git": true,
+    "eyebrow_from_git": false,
     "title": "Files and Folders",
     "subtitle": "{files} tracked files · {modules} top-level folders · {assets} asset artifacts"
   }

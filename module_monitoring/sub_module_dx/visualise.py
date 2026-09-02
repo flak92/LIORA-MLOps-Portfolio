@@ -148,7 +148,7 @@ def _glob_regex(pattern: str, subtree: bool) -> re.Pattern:
     return re.compile("^" + "".join(out) + tail + "$")
 
 
-def path_matches(pattern: str, path: str) -> bool:
+def is_path_matched(pattern: str, path: str) -> bool:
     return _glob_regex(pattern, pattern.endswith("/")).match(path) is not None
 
 
@@ -303,8 +303,8 @@ def annotations_for(raw: dict, nodes: dict) -> dict:
     """Path-keyed annotations resolved to node ids.
 
     A key that matches nothing is dropped rather than reported: a description
-    left behind by a deleted file is stale, not broken, and the WO asks for a
-    missing description to be an empty panel line and never an error. The keys
+    left behind by a deleted file is stale, not broken, and a missing description
+    is an empty panel line, never an error. The keys
     that DO change geometry — "place" and a story's "hub" — go through
     resolve_key instead, where a typo is a hard error.
     """
@@ -344,7 +344,7 @@ def build_structure(settings: dict) -> tuple[list, list, dict]:
     the edges and the counts."""
     paths = load_tracked_paths()
     kept = [p for p in paths
-            if not any(path_matches(pattern, p) for pattern in settings["exclude"])]
+            if not any(is_path_matched(pattern, p) for pattern in settings["exclude"])]
     nodes, children = build_tree(kept, settings["aggregate"])
     order = ordered_ids(children)
 
@@ -488,7 +488,8 @@ def build_view(view_id: str, view: dict, emitted: list) -> dict:
 
 def build_meta(settings: dict, counts: dict) -> dict:
     header = settings["header"]
-    owner, repository = load_repository_name()
+    eyebrow_from_git = header.get("eyebrow_from_git", True)
+    owner, repository = load_repository_name() if eyebrow_from_git else ("", "")   # the repository's name enters the page only when it is shown
     short, committed_at = load_provenance_stamp(
         str(config.FILES_AND_FOLDERS_VISUALISATION_HTML_PATH.relative_to(config.REPO_ROOT)))
     template = header.get("subtitle") or "{files} tracked files"
@@ -500,11 +501,10 @@ def build_meta(settings: dict, counts: dict) -> dict:
             f"  fix: use one of {', '.join('{' + k + '}' for k in sorted(counts))}."
         ) from None
     title = header.get("title") or "Files and Folders"
-    eyebrow = f"{owner} / {repository}" if header.get("eyebrow_from_git", True) else ""
     return {
         "title": title,
-        "documentTitle": f"{title} · {repository}",
-        "eyebrow": eyebrow,
+        "documentTitle": f"{title} · {repository}" if eyebrow_from_git else title,
+        "eyebrow": f"{owner} / {repository}" if eyebrow_from_git else "",
         "subtitle": f"{subtitle} · tree as of {short} · {committed_at}",
     }
 
@@ -586,7 +586,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8", newline="\n")
     print(f"wrote {out.relative_to(config.REPO_ROOT)} "
-          f"({len(html) / 1024:.1f} KB) — {counts['nodes']} nodes, {counts['edges']} edges, "
+          f"({len(html) / config.BYTES_PER_KIBIBYTE:.1f} KiB) — {counts['nodes']} nodes, {counts['edges']} edges, "
           f"{counts['files']} tracked files, {counts['assets']} aggregated")
     return 0
 

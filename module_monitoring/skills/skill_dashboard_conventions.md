@@ -35,9 +35,9 @@ linter, no build step, no framework.
   payload carries only fields the page reads. The DevOps panel reads the live
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
-  `GET /runs` and `GET /runs/<run_id>` into `RUN_RECORD`. The DevOps panel adds its
-  own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — seven state
-  globals across the two pages; the pill-hook registry `PILL_HOOKS`, the load
+  `GET /runs` and `GET /runs/<run_id>` and renders it as it arrives. The DevOps panel
+  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — six
+  state globals across the two pages; the pill-hook registry `PILL_HOOKS`, the load
   promise `DATA_STATUS_LOADED` and the latches `CONTAINER_POLL_IN_FLIGHT`,
   `PANEL_POLL_IN_FLIGHT` and `MACHINE_ACTION_IN_FLIGHT` are not state.
   The panel's behaviour is `skill_devops_panel.md`.

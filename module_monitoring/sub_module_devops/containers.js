@@ -6,6 +6,7 @@
 const MILLISECONDS_PER_MINUTE = 60000;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
+const HTTP_OK = 200;
 
 /* the tab's two live globals beside the page's snapshot globals: the registry, and the latest answer per
    ticker — { status, payload, askedAt, cpuRate }; one poll at a time */
@@ -93,7 +94,7 @@ function renderContainerOverview() {
   appendRows(table, CONTAINER_REGISTRY.tickers.map((ticker) => {
     const answer = CONTAINER_STATUS[ticker];
     const link = buildTickerLink(ticker, selectContainer);
-    if (answer.status !== 200) return [link, buildBadge("down", "badge--down"), "-", "-", "-", "-", "-", "-"];
+    if (answer.status !== HTTP_OK) return [link, buildBadge("down", "badge--down"), "-", "-", "-", "-", "-", "-"];
     const payload = answer.payload;
     return [
       link,
@@ -114,7 +115,7 @@ function renderContainerOverview() {
 function renderContainer(ticker) {
   const host = document.getElementById("container-detail");
   const answer = CONTAINER_STATUS[ticker] || null;
-  const payload = answer && answer.status === 200 ? answer.payload : null;
+  const payload = answer && answer.status === HTTP_OK ? answer.payload : null;
   host.textContent = "";
   const frame = buildFrame(ticker + " — the container, as it reports itself");
   const row = document.createElement("div");

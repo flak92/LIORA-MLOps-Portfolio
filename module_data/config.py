@@ -1,5 +1,6 @@
 """Static configuration: the asset basket, time window, endpoints and paths — the plain values every stage reads,
-so a fresh clone reconstructs the dataset for the window from the public market APIs."""
+so a fresh clone reconstructs the dataset for the window from the public market APIs; beside them the
+`--tickers` parser every asset-scoped stage shares, and the null-tolerant rounding the two status reports share."""
 
 from __future__ import annotations
 
@@ -70,7 +71,7 @@ def research_ohlcv_duckdb(ticker: str) -> Path:
 
 
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
-    """The one CLI every stage shares: --tickers with the full basket default."""
+    """The one CLI every asset-scoped stage shares: --tickers with the full basket default."""
     ap = argparse.ArgumentParser(description=description)
     ap.add_argument("--tickers", default=",".join(TICKERS), help="comma-separated subset")
     return ap
