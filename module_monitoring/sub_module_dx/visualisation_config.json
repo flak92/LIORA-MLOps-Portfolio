@@ -210,7 +210,7 @@
 
     "camera": { "start_rot_y": 0.19, "fit_zoom": 1.25 },
 
-    "notice": "Mapping functionalities\ninto AWS-env architecture\nin progress —\nthe files and folders are shaped\nfor an easier migration to AWS"
+    "notice": "Mapping functionalities\ninto AWS-env architecture\nin progress —\nthe files and folders of this repository\nare shaped for an easier migration to AWS"
   },
   "header": {
     "eyebrow_from_git": true,
