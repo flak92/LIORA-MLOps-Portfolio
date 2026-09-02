@@ -100,9 +100,16 @@ aside#panel button.close:hover{color:var(--text);}
 <script>
 'use strict';
 const CONFIG = {
-ISLAND_RADIUS: 310,     // distance of story islands from the core
+ISLAND_RADIUS: 310,     // floor of the islands' distance from the core; the tree pushes it out when discs would meet
+ISLAND_GAP: 60,         // clear space between neighbouring islands' discs, and between an island and the core
+RING_GAP: 16,           // clear space between neighbouring discs on one ring
+FILE_EXTENT: 12,        // radius of the disc a file glyph occupies
+LABEL_CHAR_EXTENT: 0.4, // radius added per character of a file's name, so a long label gets room
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
-CAM_DIST: 1100,         // camera distance
+CAM_DIST: 1100,         // camera distance — a floor; the picture's own radius pushes it out
+CAM_DIST_PER_RADIUS: 2, // camera distance in picture radii
+LEVEL_HUE_STEP: 12,     // degrees the island hue turns per nesting level below the hub
+LEVEL_LIGHT_STEP: -0.09, // HSL lightness change per nesting level
 FOV: 760,               // projection focal length
 FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the picture
 ZOOM_MIN: 0.4,
@@ -119,7 +126,7 @@ const META = {
  "config": {
   "FIT_WIDTH": 1400,
   "START_ROT_X": -0.4,
-  "START_ROT_Y": 3.491
+  "START_ROT_Y": 3.12
  },
  "documentTitle": "Files and Folders \u00b7 LIORA-MLOps-Portfolio-Single-Asset",
  "eyebrow": "flak92 / LIORA-MLOps-Portfolio-Single-Asset",
@@ -128,7 +135,7 @@ const META = {
 };
 const ISLANDS = {
  "S1": {
-  "color": "#5B8DEF",
+  "color": "#7D93BF",
   "name": "S1 \u00b7 Infrastructure"
  },
  "S2": {
@@ -140,8 +147,12 @@ const ISLANDS = {
   "name": "S3 \u00b7 Data"
  },
  "S4": {
-  "color": "#A98BFA",
-  "name": "S4 \u00b7 Research & monitoring"
+  "color": "#E06BD8",
+  "name": "S4 \u00b7 Research"
+ },
+ "S5": {
+  "color": "#96D850",
+  "name": "S5 \u00b7 Monitoring"
  },
  "core": {
   "color": "#EDF2FF",
@@ -152,6 +163,7 @@ const ISLAND_ORDER = [
  "S1",
  "S3",
  "S4",
+ "S5",
  "S2"
 ];
 const PLACE = {
@@ -401,8 +413,9 @@ const NODES = [
  },
  {
   "desc": "Presentation of what the runtime modules measured, and the one server that serves it.",
+  "hub": true,
   "id": "module_monitoring/",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/",
   "role": "module",
   "type": "folder"
@@ -410,7 +423,7 @@ const NODES = [
  {
   "desc": "The module's own contract: the dashboard conventions and the drawing.",
   "id": "module_monitoring/skills/",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/skills/",
   "role": "module",
   "type": "folder"
@@ -418,7 +431,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/skills/skill_dashboard_conventions.md",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/skills/skill_dashboard_conventions.md",
   "role": "doc",
   "type": "file"
@@ -426,7 +439,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/skills/skill_developer_experience_drawing.md",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/skills/skill_developer_experience_drawing.md",
   "role": "doc",
   "type": "file"
@@ -434,7 +447,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/skills/skill_devops_panel.md",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/skills/skill_devops_panel.md",
   "role": "doc",
   "type": "file"
@@ -442,7 +455,7 @@ const NODES = [
  {
   "desc": "The DevOps panel, and the one container that holds the docker socket.",
   "id": "module_monitoring/sub_module_devops/",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/",
   "role": "module",
   "type": "folder"
@@ -450,7 +463,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_devops/config.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/config.py",
   "role": "config",
   "type": "file"
@@ -458,7 +471,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_devops/containers.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/containers.js",
   "role": "code",
   "type": "file"
@@ -466,7 +479,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_devops/devops.css",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/devops.css",
   "role": "code",
   "type": "file"
@@ -474,7 +487,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_devops/devops.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/devops.js",
   "role": "code",
   "type": "file"
@@ -482,7 +495,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_devops/index.html",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/index.html",
   "role": "code",
   "type": "file"
@@ -490,7 +503,7 @@ const NODES = [
  {
   "desc": "The Docker Engine over its unix socket: the views, and the three verbs offered for this project's own containers.",
   "id": "module_monitoring/sub_module_devops/serve.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_devops/serve.py",
   "role": "code",
   "type": "file"
@@ -498,7 +511,7 @@ const NODES = [
  {
   "desc": "This drawing: the tracked tree rendered by hand with `make monitoring-dx-update`.",
   "id": "module_monitoring/sub_module_dx/",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_dx/",
   "role": "module",
   "type": "folder"
@@ -506,7 +519,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_dx/config.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_dx/config.py",
   "role": "config",
   "type": "file"
@@ -514,7 +527,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html",
   "role": "code",
   "type": "file"
@@ -522,7 +535,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_dx/visualisation_config.json",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_dx/visualisation_config.json",
   "role": "config",
   "type": "file"
@@ -530,7 +543,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/sub_module_dx/visualise.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/sub_module_dx/visualise.py",
   "role": "code",
   "type": "file"
@@ -538,7 +551,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/README_module_monitoring.md",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/README_module_monitoring.md",
   "role": "doc",
   "type": "file"
@@ -546,7 +559,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/asset.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/asset.js",
   "role": "code",
   "type": "file"
@@ -554,7 +567,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/config.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/config.py",
   "role": "code",
   "type": "file"
@@ -562,7 +575,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/data.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/data.js",
   "role": "code",
   "type": "file"
@@ -570,7 +583,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/data_status.json",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/data_status.json",
   "role": "artifact",
   "type": "file"
@@ -578,7 +591,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/index.html",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/index.html",
   "role": "code",
   "type": "file"
@@ -586,7 +599,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/ml.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/ml.js",
   "role": "code",
   "type": "file"
@@ -594,7 +607,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/ml_status.json",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/ml_status.json",
   "role": "artifact",
   "type": "file"
@@ -602,7 +615,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/page.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/page.js",
   "role": "code",
   "type": "file"
@@ -610,7 +623,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/record.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/record.py",
   "role": "code",
   "type": "file"
@@ -618,7 +631,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/run.js",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/run.js",
   "role": "code",
   "type": "file"
@@ -626,7 +639,7 @@ const NODES = [
  {
   "desc": "The one server, two roles: the dashboard, and a container reporting itself.",
   "id": "module_monitoring/serve.py",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/serve.py",
   "role": "code",
   "type": "file"
@@ -634,7 +647,7 @@ const NODES = [
  {
   "desc": "",
   "id": "module_monitoring/style.css",
-  "island": "S4",
+  "island": "S5",
   "path": "module_monitoring/style.css",
   "role": "code",
   "type": "file"
@@ -1238,66 +1251,104 @@ function childrenOf(id){
 return EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
 .map(function(e){ return nodeById[e.to]; });
 }
-function ringAround(c, members, radius, startAngle, yJitter){
-members.forEach(function(m, j){
-var phi = startAngle + (j + 0.5) * (2*Math.PI / members.length);
-m.p = {
-x: c.x + radius * Math.cos(phi),
-y: c.y + [1, 0, -1][j % 3] * yJitter,   // 3-phase jitter breaks view-ray alignment
-z: c.z + radius * Math.sin(phi)
-};
-});
+function labelOf(n){
+if (n.type === 'core') return 'repo/';
+return n.path.replace(/\/$/, '').split('/').pop() + (n.type !== 'file' ? '/' : '');
 }
 function pathDepth(n){ return (n.path.match(/\//g) || []).length; }
+var EXTENT = {};
+function extentOf(n){   // radius of the disc n and everything beneath it occupy — a function of the tree alone, so cached
+if (EXTENT[n.id] == null){
+var kids = childrenOf(n.id);
+EXTENT[n.id] = kids.length
+? ringRadiusOf(kids) + Math.max.apply(null, kids.map(extentOf))
+: CONFIG.FILE_EXTENT + CONFIG.LABEL_CHAR_EXTENT * labelOf(n).length;
+}
+return EXTENT[n.id];
+}
+function ringRadiusOf(members){   // wide enough for the members' discs side by side, never inside a child folder's own disc
+var arc = 0, widest = 0;
+members.forEach(function(m){
+var e = extentOf(m);
+arc += 2*e + CONFIG.RING_GAP;
+if (m.type === 'folder') widest = Math.max(widest, e);
+});
+return Math.max(72, 30 + members.length * 6.5, arc / (2*Math.PI), widest + CONFIG.RING_GAP);
+}
+function ringAround(c, members, radius, startAngle, yJitter){
+var arcs = members.map(function(m){ return 2*extentOf(m) + CONFIG.RING_GAP; });
+var total = arcs.reduce(function(s, a){ return s + a; }, 0);
+var phi = startAngle;
+members.forEach(function(m, j){
+var step = 2*Math.PI * arcs[j] / total;   // a slot as wide as the subtree in it
+m.p = {
+x: c.x + radius * Math.cos(phi + step/2),
+y: c.y + [1, 0, -1][j % 3] * yJitter,   // 3-phase jitter breaks view-ray alignment
+z: c.z + radius * Math.sin(phi + step/2)
+};
+phi += step;
+});
+}
 function layout(){
 nodeById['root'].p = { x:0, y:8, z:0 };
-ISLAND_ORDER.forEach(function(key, i){
-// the island count comes from the data, so a story added in JSON needs no code change
-var theta = -Math.PI/2 + i * (2*Math.PI/ISLAND_ORDER.length);
+// pass one: what each island needs; the island radius depends on all of them
+var islands = ISLAND_ORDER.map(function(key){
 var members = NODES.filter(function(n){ return n.island === key; });
 var hub = members.find(function(n){ return n.hub; });
-hub.p = {
-x: CONFIG.ISLAND_RADIUS * Math.cos(theta),
-y: 0,
-z: CONFIG.ISLAND_RADIUS * Math.sin(theta)
-};
-members.forEach(function(n){
+// a member whose tree parent lives on another island can never be reached by a folder ring, so it rings the hub
+var loose = members.filter(function(n){
+var parent = nodeById[PARENT_OF[n.id]];
+return !n.hub && !PLACE[n.id] && (!parent || parent.island !== key);
+});
+var widestLoose = loose.length ? Math.max.apply(null, loose.map(extentOf)) : 0;
+var looseRadius = loose.length
+? Math.max(80, ringRadiusOf(loose), extentOf(hub) + widestLoose + CONFIG.RING_GAP)
+: 0;
+return { key:key, members:members, hub:hub, loose:loose, looseRadius:looseRadius,
+reach: Math.max(extentOf(hub), looseRadius + widestLoose) };
+});
+// the island count comes from the data, so a story added in JSON needs no code change
+var count = islands.length, radius = CONFIG.ISLAND_RADIUS;
+islands.forEach(function(isl, i){
+var next = islands[(i + 1) % count];
+radius = Math.max(radius, isl.reach + CONFIG.ISLAND_GAP);   // an island never reaches the core
+if (count > 1){   // neighbours' discs never meet across the chord 2R sin(pi/N)
+radius = Math.max(radius, (isl.reach + next.reach + CONFIG.ISLAND_GAP) / (2 * Math.sin(Math.PI / count)));
+}
+});
+islands.forEach(function(isl, i){
+var theta = -Math.PI/2 + i * (2*Math.PI/count);
+isl.hub.p = { x: radius * Math.cos(theta), y: 0, z: radius * Math.sin(theta) };
+isl.members.forEach(function(n){
 var pl = PLACE[n.id];
 if (pl){
-var a = theta + pl.da, r = CONFIG.ISLAND_RADIUS * pl.r;
+var a = theta + pl.da, r = radius * pl.r;
 n.p = { x: r*Math.cos(a), y: pl.y, z: r*Math.sin(a) };
 }
 });
-// a member whose tree parent lives on another island can never be reached by a folder ring,
-// so it takes its slot first. Folders are then walked shallowest first, which is what
-// guarantees a parent already holds a position before its children are ringed around it —
-// the ordering the hand-built picture got away with only because every non-hub folder
-// happened to carry an explicit placement.
-var loose = members.filter(function(n){
-var parent = nodeById[PARENT_OF[n.id]];
-return !n.hub && !n.p && (!parent || parent.island !== key);
-});
-if (loose.length){
-ringAround(hub.p, loose, 80, theta, CONFIG.RING_Y_JITTER);
+if (isl.loose.length){
+ringAround(isl.hub.p, isl.loose, isl.looseRadius, theta, CONFIG.RING_Y_JITTER);
 }
-members.filter(function(n){ return n.type === 'folder'; })
+// folders shallowest first: a parent holds a position before its children ring around it
+isl.members.filter(function(n){ return n.type === 'folder'; })
 .sort(function(a, b){ return pathDepth(a) - pathDepth(b); })
 .forEach(function(f){
 if (!f.p) return;
-var kids = childrenOf(f.id);
+var kids = childrenOf(f.id).filter(function(k){ return !k.p; });   // a placed child keeps its place
 if (!kids.length) return;
-var rr = Math.max(72, 30 + kids.length * 6.5);
 var pl = PLACE[f.id];
 var jit = (pl && pl.jit != null) ? pl.jit : CONFIG.RING_Y_JITTER;
-ringAround(f.p, kids, rr, theta, jit);
+ringAround(f.p, kids, ringRadiusOf(kids), theta, jit);
 });
-var leftover = members.filter(function(n){ return !n.p; });
+var leftover = isl.members.filter(function(n){ return !n.p; });
 if (leftover.length){
-ringAround(hub.p, leftover, 110, theta, CONFIG.RING_Y_JITTER);
+ringAround(isl.hub.p, leftover, 110, theta, CONFIG.RING_Y_JITTER);
 }
 });
 }
 layout();
+var PICTURE_RADIUS = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
+CONFIG.CAM_DIST = Math.max(CONFIG.CAM_DIST, CONFIG.CAM_DIST_PER_RADIUS * PICTURE_RADIUS);   // the front of a bigger picture stays as far from the lens
 function sampleEdge(e){
 var a = nodeById[e.from].p, b = nodeById[e.to].p;
 var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
@@ -1413,10 +1464,31 @@ var g = Math.round(c[1] + (255-c[1])*t);
 var b = Math.round(c[2] + (255-c[2])*t);
 return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
+function shadeStr(hex, level){   // the island colour turned LEVEL_HUE_STEP degrees and moved LEVEL_LIGHT_STEP per nesting level
+if (!level) return hex;
+var c = hexToRgb(hex).map(function(v){ return v/255; });
+var max = Math.max(c[0], c[1], c[2]), min = Math.min(c[0], c[1], c[2]);
+var l = (max + min)/2, d = max - min, h = 0, s = 0;
+if (d > 0){
+s = d / (1 - Math.abs(2*l - 1));
+h = (max === c[0]) ? (c[1] - c[2])/d : (max === c[1]) ? (c[2] - c[0])/d + 2 : (c[0] - c[1])/d + 4;
+h = (h*60 + 360) % 360;
+}
+h = (h + CONFIG.LEVEL_HUE_STEP * level + 360) % 360;
+l = Math.max(0, Math.min(1, l + CONFIG.LEVEL_LIGHT_STEP * level));
+var q = (1 - Math.abs(2*l - 1)) * s, x = q * (1 - Math.abs((h/60) % 2 - 1)), m = l - q/2;
+var sector = [[q,x,0],[x,q,0],[0,q,x],[0,x,q],[x,0,q],[q,0,x]][Math.floor(h/60) % 6];
+return '#' + sector.map(function(v){ return ('0' + Math.round((v + m)*255).toString(16)).slice(-2); }).join('');
+}
+var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
+NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
 var PAL = {};
-Object.keys(ISLANDS).forEach(function(k){
-var col = ISLANDS[k].color;
-PAL[k] = {
+function paletteOf(n){   // one palette per (island, nesting level), built on first use
+var level = Math.max(0, pathDepth(n) - HUB_DEPTH[n.island]);
+var key = n.island + ':' + level;
+if (!PAL[key]){
+var col = shadeStr(ISLANDS[n.island].color, level);
+PAL[key] = {
 line:       col,
 folderBody: tintStr(col, 0.28),
 folderTab:  tintStr(col, 0.14),
@@ -1426,7 +1498,9 @@ fileFold:   tintStr(col, 0.78),
 stroke:     tintStr(col, 0.72),
 lines:      tintStr(col, 0.85)
 };
-});
+}
+return PAL[key];
+}
 var STAR_SCR = { x:0, y:0, s:0, d:0 };
 function drawBackground(){
 if (!bgGrad){ bgGrad = makeBgGrad(); }
@@ -1549,7 +1623,7 @@ ctx.stroke();
 }
 }
 function drawNode(n, pr){
-var P = PAL[n.island];
+var P = paletteOf(n);
 var alpha = nodeAlpha(n) * fog(pr.d);
 var base = (n.type === 'core') ? 17 : (n.type === 'folder') ? 13 : (n.hub ? 13 : 8);
 var u = base * pr.s;
@@ -1587,8 +1661,7 @@ function drawLabel(n, pr){
 if (!labelVisible(n)) return;
 var alpha = nodeAlpha(n) * fog(pr.d);
 if (alpha < 0.2 || pr.s < 0.45) return;
-var name = n.path.replace(/\/$/, '').split('/').pop() + (n.type !== 'file' ? '/' : '');
-if (n.type === 'core') name = 'repo/';
+var name = labelOf(n);
 ctx.globalAlpha = 0.92 * alpha;
 var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
 var lift = ((n.type === 'folder' || n.type === 'core') ? 1.25 : 1.05) * base * pr.s;
@@ -1814,11 +1887,9 @@ row.chevEl = chev;
 row.hasKids = hasKids;
 var dot = document.createElement('span');
 dot.className = 'dot';
-dot.style.background = ISLANDS[nd.island].color;
+dot.style.background = paletteOf(nd).line;   // a row is a node, so its dot carries the node's shade
 row.appendChild(dot);
-var name = nd.path.replace(/\/$/, '').split('/').pop() + (nd.type !== 'file' ? '/' : '');
-if (nd.type === 'core') name = 'repo/';
-row.appendChild(document.createTextNode(name));
+row.appendChild(document.createTextNode(labelOf(nd)));
 row.addEventListener('click', function(){
 if (nd.type === 'file'){ select(id); } else { setSubtree(id); }
 });
