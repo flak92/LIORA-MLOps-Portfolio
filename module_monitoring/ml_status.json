@@ -2,7 +2,7 @@
  "assets": [
   {
    "artifacts": {
-    "model_evaluation_modified_utc": "2026-09-01 18:42:25"
+    "model_evaluation_modified_utc": "2026-09-02 09:52:40"
    },
    "final_holdout": {
     "model_logloss": 0.797182,
@@ -237,7 +237,7 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-01 18:42:28",
+ "generated_at_utc": "2026-09-02 09:52:43",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",
