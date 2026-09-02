@@ -21,18 +21,19 @@
     "module_data/": "S3",
 
     "module_ml/": "S4",
-    "module_monitoring/": "S4",
+    "module_monitoring/": "S5",
     "store_assets_artifacts/": "S4"
   },
 
   "stories": {
-    "S1": { "name": "S1 · Infrastructure",        "color": "#5B8DEF", "hub": "docker-compose.yml" },
-    "S2": { "name": "S2 · Contract & skills",     "color": "#2BD4BD", "hub": "module_skills/" },
-    "S3": { "name": "S3 · Data",                  "color": "#F2B24E", "hub": "module_data/" },
-    "S4": { "name": "S4 · Research & monitoring", "color": "#A98BFA", "hub": "module_ml/" }
+    "S1": { "name": "S1 · Infrastructure",    "color": "#7D93BF", "hub": "docker-compose.yml" },
+    "S2": { "name": "S2 · Contract & skills", "color": "#2BD4BD", "hub": "module_skills/" },
+    "S3": { "name": "S3 · Data",              "color": "#F2B24E", "hub": "module_data/" },
+    "S4": { "name": "S4 · Research",          "color": "#E06BD8", "hub": "module_ml/" },
+    "S5": { "name": "S5 · Monitoring",        "color": "#96D850", "hub": "module_monitoring/" }
   },
 
-  "story_order": ["S1", "S3", "S4", "S2"],
+  "story_order": ["S1", "S3", "S4", "S5", "S2"],
 
   "core": { "name": "Repository root", "color": "#EDF2FF" },
 
@@ -74,7 +75,7 @@
     "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them."
   },
 
-  "camera": { "start_rot_y": 3.491, "start_rot_x": -0.40, "fit_width": 1400 },
+  "camera": { "start_rot_y": 3.12, "start_rot_x": -0.40, "fit_width": 1400 },
 
   "header": {
     "eyebrow_from_git": true,

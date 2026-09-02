@@ -34,12 +34,12 @@ does — not a knob.
 | `default_story` | Group for paths no `story_map` entry covers. It is **set**, so a newly added file simply joins that group and the drawing still builds. Setting it to `null` would instead make an unmapped path a hard error — deliberate friction this repository does not ask for. |
 | `exclude` | Glob patterns removed before anything else. `*` and `?` never cross `/`; `**/` stands for zero or more leading segments; a trailing `/` means the directory and everything beneath it. The drawn page excludes itself here. |
 | `story_map` | Path → group id. **Longest prefix wins.** A key ending in `/` covers that directory and its subtree; any other key is an exact path. |
-| `stories` | The four groups, each with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the page reads a digit key as `S` plus that digit, and offers only the digits its stories answer to. |
+| `stories` | The groups, one island each, with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the page reads a digit key as `S` plus that digit, and offers only the digits its stories answer to. |
 | `stories.<id>.hub` | The path drawn at the centre of that group's island. Optional — by default the shallowest folder in the group wins. A `hub` naming a path that is not in the drawing is an error, and so is one that `story_map` puts on another story: that island would be drawn with no centre and the other with two. |
 | `story_order` | The order the islands are laid out in, clockwise. The island count comes from this list. |
 | `core` | `name` and `color` of the repository-root node. |
 | `aggregate` | Directory glob → role. Each matching folder collapses into **one** node carrying the folder's name, and its contents leave the drawing. Used for the per-asset artifact folder. |
-| `place` | Path → hand-tuned position: `r` (fraction of the island radius), `da` (angle offset in radians), `y` (vertical offset), optional `jit` (vertical jitter of that folder's child ring). A path that is not in the drawing is an error. |
+| `place` | Path → hand-tuned position: `r` (fraction of the island radius — the one the tree needs, `ISLAND_RADIUS` or more, so a placed node moves out with the picture), `da` (angle offset in radians), `y` (vertical offset), optional `jit` (vertical jitter of that folder's child ring). A path that is not in the drawing is an error. |
 | `roles` | Path → role, overriding the extension default. A role picks the glyph and the word the side panel shows; `artifact` draws the halo and diamond. |
 | `descriptions` | Path → the sentence the side panel shows. Optional everywhere: a node without one gets an empty line, and a description left behind by a deleted file is dropped rather than reported. |
 | `camera` | `start_rot_y`, `start_rot_x` (radians) and `fit_width` (viewport width at which the drawing fits at zoom 1). |
@@ -73,6 +73,19 @@ markers are missing, out of order, or appear more than once, the run refuses rat
 which region is its own.
 
 Edge weight is not a knob: an edge between two folders is drawn at 2.2 px, an edge to a file at 1 px.
+
+Spacing is not a knob either. Every node owns a disc — a file's is its glyph plus a share of its
+name, a folder's is its children's ring plus the widest disc on it — and a ring is as wide as the
+discs on it side by side, a loose member sits outside the hub's disc, and the islands stand where
+neighbouring discs do not meet. The floors (`ISLAND_RADIUS`, the 72-unit ring, the 80-unit loose
+ring), the gaps and the camera factor live in the template's `CONFIG` block; the tree does the rest,
+so a folder that grows pushes its neighbours away by itself.
+
+A node's shade is its island's colour turned a fixed step per nesting level below the hub
+(`LEVEL_HUE_STEP`, `LEVEL_LIGHT_STEP`, also in `CONFIG`): a sub-module resembles its module and is
+told apart from it, and the sidebar dot carries the same shade. The side panel's story dot stays the
+island colour, because it names the story. Two levels down the amber family turns yellow and leans
+toward the green; nothing in the tree nests that deep.
 
 ## Determinism
 
