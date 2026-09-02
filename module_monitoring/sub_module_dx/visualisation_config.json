@@ -40,7 +40,6 @@
   "aggregate": { "store_assets_artifacts/*/": "artifact" },
 
   "place": {
-    "store_assets_artifacts/": { "r": 1.62, "da": 0.14,  "y": 6,   "jit": 10 },
     "README.md":               { "r": 0.38, "da": -0.30, "y": -34 },
     "AGENTS.md":               { "r": 0.38, "da": 0.30,  "y": -34 }
   },
@@ -75,7 +74,7 @@
     "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so the drawing does not hold them."
   },
 
-  "camera": { "start_rot_y": 3.12, "start_rot_x": -0.40, "fit_width": 1400 },
+  "camera": { "start_rot_y": 6.21, "start_rot_x": -0.40, "fit_width": 1400 },
 
   "header": {
     "eyebrow_from_git": true,

@@ -296,7 +296,7 @@ sub-module and the control that opens its page.
 | the key that isolates one band | the digit of the story id — the page reads `S` plus the digit, and offers only the digits its stories answer to | — | `1` … `5` | a story id that is not `S` plus a digit; a key offered for a band that does not exist |
 | the node at the centre of a band | `hub` | `hub` | — | anchor, root of the band |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
-| the disc a node and everything beneath it occupy, and the ring and island spacing derived from it | `extentOf`, `ringRadiusOf` | — | — | padding, margin, bounding box |
+| the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |
 | a node's shade: the island colour turned per nesting level below the hub | `shadeStr`, `paletteOf` | — | — | tint (the white mix inside one shade), a second colour per story |
 | the commit the tree was read from, and its date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date |
 | the control that opens the drawing from the status page | — | — | DX | help, docs, about |
