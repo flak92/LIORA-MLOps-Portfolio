@@ -44,6 +44,7 @@ color:var(--dim); display:flex; flex-direction:column; gap:4px; pointer-events:n
 .edgekey i{width:26px; height:0; border-top:2px solid var(--dim); display:inline-block;}
 .edgekey i.tt{border-top-width:2.5px; border-color:#5F79B8;}
 .edgekey i.tf{border-top-width:1px; border-color:#3A4C74;}
+.edgekey i.fl{border-top:1.4px dashed var(--dim);}
 .hint{position:fixed; left:18px; bottom:14px; font-family:var(--mono); font-size:10px;
 letter-spacing:.06em; color:var(--dim); pointer-events:none;}
 .controls{position:fixed; top:16px; right:16px; display:flex; gap:6px; font-family:var(--mono);}
@@ -56,7 +57,7 @@ background:rgba(10,17,38,.72); color:var(--text); font-size:13px; cursor:pointer
 .legend{position:fixed; right:16px; bottom:44px; font-family:var(--mono); font-size:10px; color:var(--dim);
 display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
 .legend__view{color:var(--text); letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px;}
-.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer;}
+.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer; max-width:34vw; text-align:right;}
 .legend__row:hover{color:var(--text);}
 .legend__row .dot{width:7px; height:7px; border-radius:50%; flex:none;}
 aside#panel{
@@ -68,6 +69,7 @@ display:none; backdrop-filter:blur(4px);
 aside#panel.open{display:block;}
 aside#panel .path{font-family:var(--mono); font-size:12px; color:var(--text);
 word-break:break-all; padding-right:22px;}
+aside#panel .path--name{word-break:normal; overflow-wrap:anywhere;}   /* a primitive's name breaks at spaces, a path anywhere */
 aside#panel .story{display:inline-flex; align-items:center; gap:6px; margin-top:8px;
 font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim);}
 aside#panel .story .dot{width:7px; height:7px; border-radius:50%;}
@@ -91,6 +93,7 @@ aside#panel button.close:hover{color:var(--text);}
 <div class="edgekey">
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
+<span id="edgekeyFlow"><i class="fl"></i>flow</span>
 </div>
 <div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause<span id="hintView"></span></div>
 <div class="controls">
@@ -114,13 +117,17 @@ RING_GAP: 16,           // clear space between neighbouring discs on one ring
 FAN_SPAN: 4*Math.PI/3,  // widest arc a folder's children fan over, facing away from its parent; the third left free is where its own edge arrives
 FILE_EXTENT: 12,        // radius of the disc a file glyph occupies
 LABEL_CHAR_EXTENT: 0.4, // radius added per character of a file's name, so a long label gets room
+PRIMITIVE_EXTENT: 32,   // radius of the disc a primitive glyph occupies — a hub-scale icon inside its halo
 RING_Y_JITTER: 24,      // vertical offset alternation inside a ring
 CAM_DIST: 1100,         // camera distance — a floor; the picture's own radius pushes it out
 CAM_DIST_PER_RADIUS: 2, // camera distance in picture radii
+FLOW_LIFT_PER_LENGTH: 0.2, // rise of a flow's control point per unit of its length: a flow rises with its length and clears the fans it passes
+FLOW_TIP_GAP: 34,       // distance a flow stops short of its target — a hub's halo radius — so the arrowhead is seen
 LEVEL_HUE_STEP: 12,     // degrees the island hue turns per nesting level below the hub
 LEVEL_LIGHT_STEP: -0.09, // HSL lightness change per nesting level
 FOV: 760,               // projection focal length
-FIT_WIDTH: 1400,        // viewport width at which zoom = 1 fits the picture
+FIT_WIDTH: 1400,        // viewport width at which zoom = FIT_ZOOM fits the picture
+FIT_ZOOM: 1,            // the zoom the picture is fitted at; a view with a wider ring asks for more
 ZOOM_MIN: 0.4,
 ZOOM_MAX: 2.4,
 AUTO_SPEED: 0.10,       // rad/s auto-rotation
@@ -141,19 +148,22 @@ const VIEWS = {
 development: {
 camera: {},
 desc: { root: '', placeholder: '' },
+flows: [],
 hub: { S1: 'placeholder' },
 island: { root: 'core', placeholder: 'S1' },
 islands: { core: { name: 'Repository root', color: '#EDF2FF' }, S1: { name: 'S1', color: '#5B8DEF' } },
 order: ['S1'],
-place: {}
+place: {},
+primitives: [],
+role: { root: 'root', placeholder: 'doc' }
 }
 };
 const VIEW_ORDER = ['development'];
-const NODES = [
+const TREE_NODES = [
 { id:'root', path:'repo/', type:'core', role:'root' },
 { id:'placeholder', path:'placeholder', type:'file', role:'doc' }
 ];
-const EDGES = [
+const TREE_EDGES = [
 { from:'root', to:'placeholder', type:'tree', thick:false }
 ];
 /* VISUALISATION:STRUCTURE:END */
@@ -161,26 +171,25 @@ document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
 document.getElementById('hudTitle').textContent = META.title;
 document.getElementById('hudSub').textContent = META.subtitle;
-const nodeById = {};
-NODES.forEach(function(n){ nodeById[n.id] = n; });
 const PARENT_OF = {};
-EDGES.forEach(function(e){ if (e.type === 'tree') PARENT_OF[e.to] = e.from; });
+TREE_EDGES.forEach(function(e){ if (e.type === 'tree') PARENT_OF[e.to] = e.from; });
 function childrenOf(id){
-return EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
+return TREE_EDGES.filter(function(e){ return e.type === 'tree' && e.from === id; })
 .map(function(e){ return nodeById[e.to]; });
 }
 function labelOf(n){
 if (n.type === 'core') return 'repo/';
+if (n.type === 'primitive') return n.name.split(' — ')[0].split(' (')[0];   // the head of the name; the rest is the panel's
 return n.path.replace(/\/$/, '').split('/').pop() + (n.type !== 'file' ? '/' : '');
 }
 function pathDepth(n){ return (n.path.match(/\//g) || []).length; }
 var EXTENT = {};
-function extentOf(n){   // radius of the disc n and everything beneath it occupy — a function of the tree alone, so cached
+function extentOf(n){   // radius of the disc n and everything beneath it occupy — a function of the tree and the view's primitives, so cached per view
 if (EXTENT[n.id] == null){
 var kids = childrenOf(n.id);
 EXTENT[n.id] = kids.length
 ? ringRadiusOf(kids) + Math.max.apply(null, kids.map(extentOf))
-: CONFIG.FILE_EXTENT + CONFIG.LABEL_CHAR_EXTENT * labelOf(n).length;
+: (n.type === 'primitive' ? CONFIG.PRIMITIVE_EXTENT : CONFIG.FILE_EXTENT) + CONFIG.LABEL_CHAR_EXTENT * labelOf(n).length;
 }
 return EXTENT[n.id];
 }
@@ -237,6 +246,7 @@ var a = phi + CONFIG.ISLAND_GAP/2 * perUnit;
 isl.roots.forEach(function(n, j){
 var centre = a + isl.arcs[j]/2 * perUnit;
 n.p = { x: radius * Math.cos(centre), y: 0, z: radius * Math.sin(centre) };
+n.root = true;   // an island root keeps its name in sight, hub or not
 a += isl.arcs[j] * perUnit;
 });
 phi += span;
@@ -271,43 +281,50 @@ fanAround(isl.hub.p, leftover, 110, isl.theta, CONFIG.RING_Y_JITTER);
 });
 }
 var ISLANDS, ISLAND_ORDER, PLACE, VIEW, activeView;   // the placement that is live: one tree, seated by the active view
-var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
+var NODES, EDGES, nodeById;   // the live sets: the one tree, and the primitives and flows the active view declares beside it
+var LEVEL = {};   // nesting counted from the island root a node fans from, memoised per view
 var PAL = {};
 /* the digits the story ids answer to; the handler and the hint read this one list, so a key that
    isolates nothing is never offered and never dims the whole drawing */
 var STORY_DIGITS = [];
 var CAM_DIST_FLOOR = CONFIG.CAM_DIST;
-var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH };   // a view lays its camera over these, never over the other view's
+var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH, FIT_ZOOM: CONFIG.FIT_ZOOM };   // a view lays its camera over these, never over the other view's
 function nextView(){ return VIEW_ORDER[(VIEW_ORDER.indexOf(activeView) + 1) % VIEW_ORDER.length]; }
-function setView(name){   // a view writes its facts onto the one tree; the tree is then laid out again
+function setView(name){   // a view writes its facts onto the one tree, seats its primitives beside it, and the picture is laid out again
 activeView = name; VIEW = VIEWS[name];
 ISLANDS = VIEW.islands; ISLAND_ORDER = VIEW.order; PLACE = VIEW.place;
+NODES = VIEW.primitives.concat(TREE_NODES);   // primitives first, so an island seats its hub, then its primitives, then its tracked roots
+EDGES = TREE_EDGES.concat(VIEW.flows);
+nodeById = {};
 NODES.forEach(function(n){
+nodeById[n.id] = n;
 n.island = VIEW.island[n.id];
 n.hub = VIEW.hub[n.island] === n.id;
+n.role = VIEW.role[n.id];
 n.desc = VIEW.desc[n.id];
+n.root = false;
 n.p = null;   // layout seats only what is unseated
 });
+if (hoverId && !nodeById[hoverId]) hoverId = null;   // a primitive of the view just left is under no pointer
 Object.assign(CONFIG, CAMERA_DEFAULTS, VIEW.camera);
+EXTENT = {}; LEVEL = {}; PAL = {};   // a primitive's disc, level and shade are the view's, so the memos are the view's
 layout();
 var radius = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
 CONFIG.CAM_DIST = Math.max(CAM_DIST_FLOOR, CONFIG.CAM_DIST_PER_RADIUS * radius);   // the front of a bigger picture stays as far from the lens
 EDGES.forEach(sampleEdge);
-PAL = {};
-HUB_DEPTH = {};
-NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
 STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
 document.getElementById('hintStories').textContent = STORY_DIGITS.length
   ? STORY_DIGITS[0] + '–' + STORY_DIGITS[STORY_DIGITS.length - 1] : 'no story key';
 document.getElementById('hintView').textContent = VIEW_ORDER.length > 1 ? ' · v ' + nextView() : '';
 document.getElementById('btnView').textContent = nextView() === 'deployment' ? '☁︎' : '⌂';   // the glyph names the view the control goes to, as ⏸ / ▶ name the action
+document.getElementById('edgekeyFlow').style.display = VIEW.flows.length ? '' : 'none';   // the key names only what the view draws
 document.querySelectorAll('#tree .trow').forEach(function(row){   // none before buildTree; restyled on every later flip
 row.dotEl.style.background = paletteOf(nodeById[row.dataset.id]).line;
 });
 renderLegend();
 activeIsland = null;   // an island id names another group in the other view; the selection, the subtree and the sidebar are the tree's and stay
 if (!userZoomed) zoom = fitZoom();
-if (selectedId) select(selectedId);   // an open panel re-reads island, colour and sentence
+if (selectedId) select(nodeById[selectedId] ? selectedId : null);   // a tracked node's panel re-reads island, colour and sentence; a primitive of the view just left has no panel here
 invalidate();
 }
 var rafId = null, needsFrame = true, lastDraw = 0;   // declared before the first frame is asked for, so no initialiser runs after one is queued
@@ -316,13 +333,15 @@ function sampleEdge(e){
 var a = nodeById[e.from].p, b = nodeById[e.to].p;
 var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
 var len = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
-var bend = 0.05, lift = 8;
+var flow = e.type === 'flow';
+var bend = 0.05, lift = flow ? -CONFIG.FLOW_LIFT_PER_LENGTH * len : 8;   // a flow rises with its length (negative y is up on the screen); the bend keeps a pair going both ways apart
+var tEnd = flow ? 1 - CONFIG.FLOW_TIP_GAP / len : 1;   // a flow stops at the target's halo, where its arrowhead is seen
 var px = -dz/len, pz = dx/len;                    // perpendicular in XZ
 var m = { x:(a.x+b.x)/2 + px*len*bend, y:(a.y+b.y)/2 + lift, z:(a.z+b.z)/2 + pz*len*bend };
 var N = 12;
 var pts = [];
 for (var i=0; i<=N; i++){
-var t = i/N, u = 1-t;
+var t = tEnd * i/N, u = 1-t;
 pts.push({
 x: u*u*a.x + 2*u*t*m.x + t*t*b.x,
 y: u*u*a.y + 2*u*t*m.y + t*t*b.y,
@@ -357,7 +376,7 @@ g.addColorStop(1, '#070C1C');
 return g;
 }
 function fitZoom(){
-return Math.max(CONFIG.ZOOM_MIN, Math.min(1, W / CONFIG.FIT_WIDTH));
+return Math.max(CONFIG.ZOOM_MIN, Math.min(CONFIG.FIT_ZOOM, CONFIG.FIT_ZOOM * W / CONFIG.FIT_WIDTH));
 }
 function resize(){
 DPR = Math.min(window.devicePixelRatio || 1, CONFIG.MAX_DPR);
@@ -442,8 +461,16 @@ var q = (1 - Math.abs(2*l - 1)) * s, x = q * (1 - Math.abs((h/60) % 2 - 1)), m =
 var sector = [[q,x,0],[x,q,0],[0,q,x],[0,x,q],[x,0,q],[q,0,x]][Math.floor(h/60) % 6];
 return '#' + sector.map(function(v){ return ('0' + Math.round((v + m)*255).toString(16)).slice(-2); }).join('');
 }
+function levelOf(n){   // nesting counted from the island root a node fans from — a module beside a primitive hub keeps level 0
+if (LEVEL[n.id] == null){
+var parent = nodeById[PARENT_OF[n.id]];
+LEVEL[n.id] = (n.type === 'primitive' || !parent || parent.type === 'core' || parent.island !== n.island)
+? 0 : levelOf(parent) + pathDepth(n) - pathDepth(parent);
+}
+return LEVEL[n.id];
+}
 function paletteOf(n){   // one palette per (island, nesting level), built on first use
-var level = Math.max(0, pathDepth(n) - HUB_DEPTH[n.island]);
+var level = levelOf(n);
 var key = n.island + ':' + level;
 if (!PAL[key]){
 var col = shadeStr(ISLANDS[n.island].color, level);
@@ -482,6 +509,26 @@ var midFog = fog(pts[pts.length >> 1].d);
 ctx.beginPath();
 ctx.moveTo(pts[0].x, pts[0].y);
 for (var i=1; i<pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+if (e.type === 'flow'){   /* primitive → primitive: dashed, the source island's colour, an arrowhead at the target */
+var P = paletteOf(nodeById[e.from]);
+ctx.strokeStyle = P.line;
+ctx.globalAlpha = 0.6 * alpha * midFog;
+ctx.lineWidth = 1.4;
+ctx.setLineDash([4, 3]);
+ctx.stroke();
+ctx.setLineDash([]);
+var tip = pts[pts.length - 1], k = pts.length - 2;
+while (k > 0 && Math.abs(pts[k].x - tip.x) + Math.abs(pts[k].y - tip.y) < 1) k--;   // seen end-on the last samples coincide; the head takes its bearing from the first that does not
+var ang = Math.atan2(tip.y - pts[k].y, tip.x - pts[k].x), head = Math.max(5, 9 * tip.s);
+ctx.beginPath();
+ctx.moveTo(tip.x, tip.y);
+ctx.lineTo(tip.x - head*Math.cos(ang - 0.42), tip.y - head*Math.sin(ang - 0.42));
+ctx.lineTo(tip.x - head*Math.cos(ang + 0.42), tip.y - head*Math.sin(ang + 0.42));
+ctx.closePath();
+ctx.fillStyle = P.line;
+ctx.fill();
+return;
+}
 if (e.thick){          /* folder – folder */
 ctx.strokeStyle = '#5F79B8';
 ctx.globalAlpha = 0.75 * alpha * midFog;
@@ -581,13 +628,125 @@ ctx.stroke();
 }
 }
 }
+var PRIMITIVE_ICON = {   // one glyph per primitive role — the closed set visualise.py checks a view's primitives against
+registry: drawRegistryIcon, container: drawContainerIcon, instance: drawInstanceIcon, store: drawStoreIcon,
+database: drawDatabaseIcon, state_machine: drawStateMachineIcon, event_rule: drawEventRuleIcon,
+log_streams: drawLogStreamsIcon, front: drawFrontIcon, secret: drawSecretIcon
+};
+function drawPrimitiveIcon(role, pr, P, alpha, u, absent){   // absent: a dashed outline and a paler glyph — described here, built nowhere
+ctx.lineWidth = 1;
+ctx.setLineDash(absent ? [3, 3] : []);
+PRIMITIVE_ICON[role](pr, P, absent ? alpha * 0.6 : alpha, u);
+ctx.setLineDash([]);   // the halo and the selection ring that follow are solid
+ctx.lineWidth = 1;     // two glyphs stroke thicker; nothing after them may inherit it
+}
+function drawRegistryIcon(pr, P, alpha, u){   // three image layers, the front one whole
+var w = 2.0*u, h = 1.2*u, step = 0.26*u, rad = Math.max(1.2, 0.14*u);
+ctx.globalAlpha = alpha;
+for (var i = 2; i >= 0; i--){
+pathRoundRect(pr.x - w/2 + (i - 1)*step*0.6, pr.y - h/2 - (i - 1)*step, w, h, rad);
+ctx.fillStyle = i ? P.folderTab : P.folderBody; ctx.fill();
+ctx.strokeStyle = P.stroke; ctx.stroke();
+}
+ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.moveTo(pr.x - w*0.3, pr.y + step); ctx.lineTo(pr.x + w*0.3, pr.y + step); ctx.stroke();
+}
+function drawContainerIcon(pr, P, alpha, u){   // a box with a run mark: one process that starts, runs and exits
+var w = 2.0*u, h = 1.4*u, rad = Math.max(1.2, 0.16*u);
+ctx.globalAlpha = alpha;
+pathRoundRect(pr.x - w/2, pr.y - h/2, w, h, rad);
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(pr.x - 0.28*u, pr.y - 0.38*u); ctx.lineTo(pr.x + 0.40*u, pr.y); ctx.lineTo(pr.x - 0.28*u, pr.y + 0.38*u); ctx.closePath();
+ctx.fillStyle = P.lines; ctx.fill();
+}
+function drawInstanceIcon(pr, P, alpha, u){   // a chassis with two bays
+var w = 2.2*u, h = 1.6*u, rad = Math.max(1.2, 0.16*u), x0 = pr.x - w/2, y0 = pr.y - h/2;
+ctx.globalAlpha = alpha;
+pathRoundRect(x0, y0, w, h, rad);
+ctx.fillStyle = P.folderTab; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.globalAlpha = alpha * 0.7; ctx.strokeStyle = P.lines;
+[1/3, 2/3].forEach(function(f){ ctx.beginPath(); ctx.moveTo(x0 + 0.25*u, y0 + h*f); ctx.lineTo(x0 + w - 0.25*u, y0 + h*f); ctx.stroke(); });
+}
+function drawStoreIcon(pr, P, alpha, u){   // a bucket: the rim, and a body that narrows to the bottom
+var rw = 1.1*u, rh = 0.32*u, h = 1.5*u, bw = 0.85*u, top = pr.y - h/2;
+ctx.globalAlpha = alpha;
+ctx.beginPath();
+ctx.moveTo(pr.x - rw, top); ctx.lineTo(pr.x - bw, top + h);
+ctx.ellipse(pr.x, top + h, bw, rh*0.8, 0, Math.PI, 0, true);
+ctx.lineTo(pr.x + rw, top); ctx.closePath();
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.beginPath(); ctx.ellipse(pr.x, top, rw, rh, 0, 0, TAU);
+ctx.fillStyle = P.folderTab; ctx.fill(); ctx.stroke();
+}
+function drawDatabaseIcon(pr, P, alpha, u){   // a cylinder — the one database object per asset; written in u alone, so it reads at file scale and at hub scale
+var rx = 0.8*u, ry = 0.3*u, h = 1.5*u, top = pr.y - h/2;
+ctx.globalAlpha = alpha;
+ctx.beginPath();
+ctx.moveTo(pr.x - rx, top); ctx.lineTo(pr.x - rx, top + h);
+ctx.ellipse(pr.x, top + h, rx, ry, 0, Math.PI, 0, true);
+ctx.lineTo(pr.x + rx, top); ctx.closePath();
+ctx.fillStyle = P.fileBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.lineWidth = 1; ctx.stroke();
+ctx.beginPath(); ctx.ellipse(pr.x, top, rx, ry, 0, 0, TAU);
+ctx.fillStyle = P.fileFold; ctx.fill(); ctx.stroke();
+ctx.globalAlpha = alpha * 0.6; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.ellipse(pr.x, top + h*0.45, rx, ry, 0, 0, Math.PI); ctx.stroke();
+}
+function drawStateMachineIcon(pr, P, alpha, u){   // two states on a rail
+var s = 0.6*u, gap = 0.3*u, y = pr.y, x0 = pr.x - 1.1*u, x1 = pr.x + 1.1*u;
+ctx.globalAlpha = alpha; ctx.strokeStyle = P.stroke;
+ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+[0, 1].forEach(function(i){
+pathRoundRect(pr.x - s - gap/2 + i*(s + gap), y - s/2, s, s, Math.max(1.2, 0.12*u));
+ctx.fillStyle = i ? P.folderTab : P.folderBody; ctx.fill(); ctx.stroke();
+});
+}
+function drawEventRuleIcon(pr, P, alpha, u){   // a choice diamond with a bolt: an event, and the condition it answers to
+var r = 0.95*u;
+ctx.globalAlpha = alpha;
+ctx.beginPath(); ctx.moveTo(pr.x, pr.y - r); ctx.lineTo(pr.x + r, pr.y); ctx.lineTo(pr.x, pr.y + r); ctx.lineTo(pr.x - r, pr.y); ctx.closePath();
+ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.strokeStyle = P.lines; ctx.lineWidth = Math.max(1, 0.14*u);
+ctx.beginPath(); ctx.moveTo(pr.x + 0.25*u, pr.y - 0.45*u); ctx.lineTo(pr.x - 0.25*u, pr.y); ctx.lineTo(pr.x + 0.25*u, pr.y + 0.45*u); ctx.stroke();
+ctx.lineWidth = 1;
+}
+function drawLogStreamsIcon(pr, P, alpha, u){   // three streams, of unequal length
+var x0 = pr.x - 1.0*u, bh = 0.34*u, gap = 0.2*u, top = pr.y - (3*bh + 2*gap)/2;
+ctx.globalAlpha = alpha;
+[0.6, 0.85, 0.7].forEach(function(f, i){
+pathRoundRect(x0, top + i*(bh + gap), 2.0*u*f, bh, bh/2);
+ctx.fillStyle = i === 1 ? P.folderTab : P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+});
+}
+function drawFrontIcon(pr, P, alpha, u){   // a globe: the rim, one meridian, the equator
+var r = 0.95*u;
+ctx.globalAlpha = alpha;
+ctx.beginPath(); ctx.arc(pr.x, pr.y, r, 0, TAU); ctx.fillStyle = P.folderBody; ctx.fill(); ctx.strokeStyle = P.stroke; ctx.stroke();
+ctx.globalAlpha = alpha * 0.7; ctx.strokeStyle = P.lines;
+ctx.beginPath(); ctx.ellipse(pr.x, pr.y, r*0.42, r, 0, 0, TAU); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(pr.x - r, pr.y); ctx.lineTo(pr.x + r, pr.y); ctx.stroke();
+}
+function drawSecretIcon(pr, P, alpha, u){   // a key: the bow, the shaft, two bits
+var r = 0.42*u, bx = pr.x - 0.75*u, y = pr.y;
+ctx.globalAlpha = alpha; ctx.strokeStyle = P.stroke; ctx.lineWidth = Math.max(1, 0.14*u);
+ctx.beginPath(); ctx.arc(bx, y, r, 0, TAU); ctx.fillStyle = P.folderBody; ctx.fill(); ctx.stroke();
+ctx.beginPath(); ctx.moveTo(bx + r, y); ctx.lineTo(pr.x + 1.0*u, y); ctx.stroke();
+ctx.beginPath();
+ctx.moveTo(pr.x + 0.55*u, y); ctx.lineTo(pr.x + 0.55*u, y + 0.35*u);
+ctx.moveTo(pr.x + 0.9*u, y); ctx.lineTo(pr.x + 0.9*u, y + 0.35*u); ctx.stroke();
+ctx.lineWidth = 1;
+}
+function baseOf(n){ return n.type === 'core' ? 17 : n.type === 'primitive' ? 16 : (n.type === 'folder' || n.hub) ? 13 : 8; }   // one rule for glyph, label and hit radius
 function drawNode(n, pr){
 var P = paletteOf(n);
 var alpha = nodeAlpha(n) * fog(pr.d);
-var base = (n.type === 'core') ? 17 : (n.type === 'folder') ? 13 : (n.hub ? 13 : 8);
-var u = base * pr.s;
+var u = baseOf(n) * pr.s;
 if (n.type === 'folder' || n.type === 'core'){
 drawFolderIcon(pr, P, alpha, u, n.type === 'core');
+} else if (n.type === 'primitive'){
+drawPrimitiveIcon(n.role, pr, P, alpha, u, n.absent);
+} else if (n.role === 'database'){
+drawDatabaseIcon(pr, P, alpha, u);
 } else {
 drawFileIcon(pr, P, alpha, u, n.role === 'artifact');
 }
@@ -609,7 +768,7 @@ ctx.stroke();
 }
 }
 function labelVisible(n){
-if (n.hub || n.type === 'core') return true;
+if (n.hub || n.root || n.type === 'core' || n.type === 'primitive') return true;   // an island root and a primitive are always named
 if (subtreeSet && subtreeSet[n.id]) return true;
 if (selectedId && neighbourSet(selectedId)[n.id]) return true;
 if (hoverId && neighbourSet(hoverId)[n.id]) return true;
@@ -619,12 +778,12 @@ return false;
 function drawLabel(n, pr){
 if (!labelVisible(n)) return;
 var alpha = nodeAlpha(n) * fog(pr.d);
-if (alpha < 0.2 || pr.s < 0.45) return;
+if (alpha < 0.2 || (pr.d > CONFIG.CAM_DIST && n.type !== 'core')) return;   // the far half of the picture carries no name, whatever its size; the core is the middle, not the far half
 var name = labelOf(n);
 ctx.globalAlpha = 0.92 * alpha;
-var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
-var lift = ((n.type === 'folder' || n.type === 'core') ? 1.25 : 1.05) * base * pr.s;
-ctx.fillText(name, pr.x, pr.y - lift - 7);
+var lift = (n.type === 'file' ? 1.05 : 1.25) * baseOf(n) * pr.s;
+if (n.type === 'primitive') ctx.fillText(name, pr.x, pr.y + lift + 12);   // below the glyph: a flow leaves it upward
+else ctx.fillText(name, pr.x, pr.y - lift - 7);
 }
 var prefersReducedMotion = window.matchMedia &&
 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -640,8 +799,8 @@ for (j=0; j<e.pts.length; j++) e.scr.push({ x:0, y:0, s:0, d:0 });
 }
 for (j=0; j<e.pts.length; j++) projectInto(e.pts[j], e.scr[j]);
 }
-var edgeOrder = EDGES.slice().sort(function(a, b){
-return b.scr[b.scr.length >> 1].d - a.scr[a.scr.length >> 1].d;
+var edgeOrder = EDGES.slice().sort(function(a, b){   // flows over the tree's edges, each set far to near
+return ((a.type === 'flow') - (b.type === 'flow')) || (b.scr[b.scr.length >> 1].d - a.scr[a.scr.length >> 1].d);
 });
 for (i=0; i<edgeOrder.length; i++) strokeEdge(edgeOrder[i]);
 for (i=0; i<NODES.length; i++){
@@ -684,8 +843,7 @@ function hitTest(mx, my){
 var best = null, bestDist = 1e9;
 NODES.forEach(function(n){
 var pr = projCache[n.id] || project(n.p);
-var base = (n.type === 'core') ? 17 : (n.hub || n.type === 'folder') ? 13 : 8;
-var r = Math.max(1.3 * base * pr.s + 8, 15);
+var r = Math.max(1.3 * baseOf(n) * pr.s + 8, 15);
 var dx = mx - pr.x, dy = my - pr.y;
 var d2 = dx*dx + dy*dy;
 if (d2 < r*r && d2 < bestDist){ best = n; bestDist = d2; }
@@ -747,13 +905,15 @@ invalidate();
 if (!id){ panel.classList.remove('open'); return; }
 var n = nodeById[id];
 var isl = ISLANDS[n.island];
-document.getElementById('pPath').textContent = n.path;
+var pPath = document.getElementById('pPath');
+pPath.textContent = n.type === 'primitive' ? n.name : n.path;
+pPath.classList.toggle('path--name', n.type === 'primitive');
 var st = document.getElementById('pStory');
 st.innerHTML = '';
 var dot = document.createElement('span');
 dot.className = 'dot'; dot.style.background = isl.color;
 st.appendChild(dot);
-st.appendChild(document.createTextNode(isl.name + ' · ' + n.role));
+st.appendChild(document.createTextNode(isl.name + ' · ' + n.role.replace(/_/g, ' ')));   // the role word, not its key
 document.getElementById('pDesc').textContent = n.desc;
 panel.classList.add('open');
 }
@@ -763,7 +923,7 @@ var treeEl = document.getElementById('tree');
 var treeTab = document.getElementById('treeTab');
 var TREE_CHILDREN = {};
 var TREE_PARENT = {};
-EDGES.forEach(function(e){
+TREE_EDGES.forEach(function(e){
 if (e.type !== 'tree') return;
 if (!TREE_CHILDREN[e.from]) TREE_CHILDREN[e.from] = [];
 TREE_CHILDREN[e.from].push(e.to);

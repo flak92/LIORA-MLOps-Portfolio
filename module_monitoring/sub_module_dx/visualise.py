@@ -1,9 +1,10 @@
 """Draw the tracked git tree into files_and_folders_visualisation.html, beside this file.
 
 The picture is not a drawing of the repository; it is the repository. Nodes are
-the files and folders `git ls-files` reports, edges are parent -> child and
-nothing else, and the whole structure is spliced into the one marked region of
-files_and_folders_visualisation_template.html. Everything outside that region is
+the files and folders `git ls-files` reports and, in a view, the primitives it
+declares beside them; edges are parent -> child, and the flows a view draws
+between its primitives; the whole structure is spliced into the one marked
+region of files_and_folders_visualisation_template.html. Everything outside that region is
 hand-written rendering code this module never touches.
 
     git ls-files
@@ -11,9 +12,10 @@ hand-written rendering code this module never touches.
       -> tree, folders inferred from the paths
       -> aggregate rules collapse a matching folder into a single node
       -> one view per placement: stories by longest prefix (default_story when no
-         prefix matches), hubs, hand places, descriptions, camera — the top level,
-         and the optional deployment block layered over it
-      -> META / VIEWS / VIEW_ORDER / NODES / EDGES
+         prefix matches), hubs, hand places, roles, descriptions, camera — and the
+         primitives the view seats the tree beside, with the flows between them;
+         the top level, and the optional deployment block layered over it
+      -> META / VIEWS / VIEW_ORDER / TREE_NODES / TREE_EDGES
       -> splice -> files_and_folders_visualisation.html
 
 Two properties are load-bearing. The first is that visualisation_config.json is the
@@ -198,6 +200,17 @@ def _validate_view(where: str, view: dict) -> None:
         _validate_keys(f'{where}"stories"."{story_id}"', story, config.STORY_KEYS)
     for place_key, place in view["place"].items():
         _validate_keys(f'{where}"place"."{place_key}"', place, config.PLACE_KEYS)
+    for primitive_id, primitive in view["primitives"].items():
+        _validate_keys(f'{where}"primitives"."{primitive_id}"', primitive, config.PRIMITIVE_KEYS)
+        if primitive["role"] not in config.PRIMITIVE_ROLES:
+            raise VisualisationError(
+                f'visualisation_config.json: {where}"primitives"."{primitive_id}"."role" is '
+                f'{primitive["role"]!r}, which no icon draws.\n'
+                f"  roles with an icon: {', '.join(sorted(config.PRIMITIVE_ROLES))}\n"
+                f"  fix: pick one of them — a primitive is its icon, and the set of icons is closed."
+            )
+    for index, flow in enumerate(view["flows"]):
+        _validate_keys(f'{where}"flows"[{index}]', flow, config.FLOW_KEYS)
 
 
 def load_config(path: Path) -> dict:
@@ -208,14 +221,14 @@ def load_config(path: Path) -> dict:
     _validate_keys('"header"', settings["header"], config.HEADER_KEYS)
     _validate_view("", settings)
     # the views, development first: the top level is the tree as tracked; the deployment
-    # block restates what it changes, its descriptions and camera layered entry by entry
+    # block restates what it changes, its roles, descriptions and camera layered entry by entry
     development = {key: settings[key] for key in config.VIEW_KEYS}
     settings["views"] = {config.DEVELOPMENT_VIEW: development}
     block = settings[config.DEPLOYMENT_VIEW]
     if block is not None:
         _validate_keys(f'"{config.DEPLOYMENT_VIEW}"', block, config.VIEW_KEYS)
         deployment = {**development, **block}
-        for layered in ("descriptions", "camera"):
+        for layered in sorted(config.LAYERED_VIEW_KEYS):
             deployment[layered] = {**development[layered], **deployment[layered]}
         _validate_view(f'"{config.DEPLOYMENT_VIEW}".', deployment)
         settings["views"][config.DEPLOYMENT_VIEW] = deployment
@@ -281,7 +294,8 @@ def resolve_key(raw: str, nodes: dict, where: str) -> str:
             return candidate
     raise VisualisationError(
         f"visualisation_config.json: {where} points at {raw!r}, which is not in the picture.\n"
-        f"  fix: use a path that `git ls-files` reports and that `exclude` does not remove."
+        f"  fix: use a path that `git ls-files` reports and that `exclude` does not remove, "
+        f"or a primitive id this view declares."
     )
 
 
@@ -317,7 +331,7 @@ def hub_of(story_id: str, story: dict, members: list, nodes: dict, where: str = 
         return hub
     if not members:
         raise VisualisationError(
-            f'visualisation_config.json: {where}"stories"."{story_id}" has no files, so it cannot be drawn.\n'
+            f'visualisation_config.json: {where}"stories"."{story_id}" has no members — no path and no primitive — so it cannot be drawn.\n'
             f'  fix: map at least one path to it in {where}"story_map", or remove the story.'
         )
     folders = [m for m in members if nodes[m]["type"] == "folder"]
@@ -326,12 +340,12 @@ def hub_of(story_id: str, story: dict, members: list, nodes: dict, where: str = 
 
 
 def build_structure(settings: dict) -> tuple[list, list, dict]:
-    """The tree alone, the same in every view: the node records, the edges and the counts."""
+    """The tree alone, the same in every view: the node records with the role a name gives,
+    the edges and the counts."""
     paths = load_tracked_paths()
     kept = [p for p in paths
             if not any(path_matches(pattern, p) for pattern in settings["exclude"])]
     nodes, children = build_tree(kept, settings["aggregate"])
-    roles = annotations_for(settings["roles"], nodes)
     order = ordered_ids(children)
 
     emitted = []
@@ -342,8 +356,7 @@ def build_structure(settings: dict) -> tuple[list, list, dict]:
             "id": node_id,
             "path": node["path"],
             "type": node["type"],
-            "role": roles.get(node_id) or node.get("aggregate_role")
-                    or role_of(node_id, is_folder),
+            "role": node.get("aggregate_role") or role_of(node_id, is_folder),
         })
 
     edges = []
@@ -367,11 +380,26 @@ def build_structure(settings: dict) -> tuple[list, list, dict]:
 
 
 def build_view(view_id: str, view: dict, emitted: list) -> dict:
-    """One placement of the tree: the island each node sits on, each island's hub, name and
-    colour, the hand places, the sentences and the camera. The tree is the same in every
-    view, so this reads the node records and writes nothing back to them."""
+    """One placement: the tree's records with the primitives the view declares beside them,
+    the island each sits on, each island's hub, name and colour, the hand places, the role and
+    the sentence of every node, the flows between primitives and the camera. The tree is the
+    same in every view, so this reads the node records and writes nothing back to them; a
+    primitive belongs to the view that declares it, and is emitted with that view."""
     where = "" if view_id == config.DEVELOPMENT_VIEW else f'"{view_id}".'
     nodes = {record["id"]: dict(record) for record in emitted}   # an island is a fact of the view, so it lives on a copy
+    primitives = []
+    for primitive_id, primitive in view["primitives"].items():   # JSON order, which is also the order they are seated in
+        if primitive_id in nodes:
+            raise VisualisationError(
+                f'visualisation_config.json: {where}"primitives" declares {primitive_id!r}, which is already '
+                f"a node of the picture — one id would seat two things.\n"
+                f"  fix: a primitive id is a snake_case noun that no tracked path spells; rename it."
+            )
+        record = {"id": primitive_id, "path": primitive_id, "type": "primitive",
+                  "role": primitive["role"], "name": primitive["name"],
+                  "absent": primitive.get("absent", False)}
+        primitives.append(record)
+        nodes[primitive_id] = dict(record)   # the island is written on the copy, as for the tree
     stories = view["stories"]
     unmapped = []
     for node_id, node in nodes.items():
@@ -392,7 +420,7 @@ def build_view(view_id: str, view: dict, emitted: list) -> dict:
         listed = "\n".join(f"    {p}" for p in sorted(unmapped)[:40])
         more = "" if len(unmapped) <= 40 else f"\n    ... and {len(unmapped) - 40} more"
         raise VisualisationError(
-            f"visualisation_config.json: {len(unmapped)} path(s) belong to no story of the {view_id} view:\n"
+            f"visualisation_config.json: {len(unmapped)} path(s) or primitive(s) belong to no story of the {view_id} view:\n"
             f"{listed}{more}\n"
             f'  fix: add a {where}"story_map" entry for each — the shortest prefix that covers them is\n'
             f'       usually the right one — or set {where}"default_story" to a story id to stop\n'
@@ -422,15 +450,38 @@ def build_view(view_id: str, view: dict, emitted: list) -> dict:
             f"but never placed, which is the silent half of the same mistake."
         )
 
+    roles = annotations_for(view["roles"], nodes)
     descriptions = annotations_for(view["descriptions"], nodes)
+    primitive_ids = {record["id"]: record for record in primitives}   # a flow joins two primitives, never a path
+    flows = []
+    for index, flow in enumerate(view["flows"]):
+        ends = []
+        for end in ("from", "to"):
+            if flow[end] not in primitive_ids:
+                raise VisualisationError(
+                    f'visualisation_config.json: {where}"flows"[{index}]."{end}" is {flow[end]!r}, which is not a '
+                    f"primitive this view declares.\n"
+                    f'  fix: a flow joins two primitives — name ids from {where}"primitives".'
+                )
+            ends.append(flow[end])
+        if ends[0] == ends[1]:
+            raise VisualisationError(
+                f'visualisation_config.json: {where}"flows"[{index}] leaves and arrives at {ends[0]!r}.\n'
+                f"  fix: a flow joins two primitives; drop it, or name the other end."
+            )
+        flows.append({"from": ends[0], "to": ends[1], "type": "flow", "thick": False})
     return {
         "camera": {config.CAMERA_KEYS[k]: v for k, v in view["camera"].items()},
         "desc": {node_id: descriptions.get(node_id, "") for node_id in nodes},
+        "flows": flows,
         "hub": hubs,
         "island": {node_id: node["island"] for node_id, node in nodes.items()},
         "islands": islands,
         "order": order,
         "place": {resolve_key(k, nodes, f'{where}"place"'): v for k, v in view["place"].items()},
+        "primitives": primitives,
+        "role": {node_id: node["role"] if node["type"] == "primitive" else (roles.get(node_id) or node["role"])
+                 for node_id, node in nodes.items()},   # a primitive's role is its record's alone: `roles` retypes paths
     }
 
 
@@ -470,8 +521,8 @@ def build_structure_block(meta: dict, views: dict, view_order: list,
         _literal("META", meta),
         _literal("VIEWS", views),
         _literal("VIEW_ORDER", view_order),   # a list, because sorted keys would put deployment first
-        _literal("NODES", nodes),
-        _literal("EDGES", edges),
+        _literal("TREE_NODES", nodes),   # the tree alone; a view's primitives and flows travel inside VIEWS
+        _literal("TREE_EDGES", edges),
         config.STRUCTURE_END_MARKER,
     ]
     # a description carrying "</script>" would end the block early; escaping the

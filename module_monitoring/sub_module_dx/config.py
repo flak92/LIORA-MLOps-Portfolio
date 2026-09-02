@@ -10,8 +10,10 @@ unknown key there is an error rather than a silent typo, so the JSON is the whol
 configuration surface and Python is never edited to change the drawing.
 
 The optional `deployment` block restates the placement keys for a second view of
-the same tree; a key it leaves out is the top level's, and its descriptions and
-camera layer over the top level's entry by entry.
+the same tree; a key it leaves out is the top level's, and its roles, descriptions
+and camera layer over the top level's entry by entry. A view may also declare
+primitives — what it seats the tree beside, one icon each — and the flows between
+them; a primitive exists in the view that declares it.
 """
 
 from __future__ import annotations
@@ -42,10 +44,11 @@ CAMERA_KEYS = {
     "start_rot_y": "START_ROT_Y",
     "start_rot_x": "START_ROT_X",
     "fit_width": "FIT_WIDTH",
+    "fit_zoom": "FIT_ZOOM",
 }
 
 # a role decides the glyph the renderer draws and the word the side panel shows;
-# these are the fallbacks, and visualisation_config.json's "roles" overrides any of them
+# these are the fallbacks, and a view's "roles" in visualisation_config.json retypes any of them
 ROLE_BY_EXACT_NAME = {
     "Makefile": "entrypoint",
     "Dockerfile": "config",
@@ -76,6 +79,8 @@ CONFIG_DEFAULTS = {
     "aggregate": {},
     "descriptions": {},
     "roles": {},
+    "primitives": {},   # id -> {role, name, absent}: what a view seats the tree beside, one icon each
+    "flows": [],        # {from, to} over two primitive ids of the view, drawn as a dashed arrow
     "place": {},
     "camera": {},
     "header": {},
@@ -86,9 +91,17 @@ STORY_KEYS = {"name", "color", "hub"}
 PLACE_KEYS = {"r", "da", "y", "jit"}
 HEADER_KEYS = {"eyebrow_from_git", "title", "subtitle"}
 CORE_KEYS = {"name", "color"}
+PRIMITIVE_KEYS = {"role", "name", "absent"}
+# the roles that are icons, one each in the template's drawPrimitiveIcon — closed, because a
+# primitive is nothing but its icon and a role outside this set has no icon to call
+PRIMITIVE_ROLES = {"registry", "instance", "container", "store", "database", "state_machine",
+                   "event_rule", "log_streams", "front", "secret"}
+FLOW_KEYS = {"from", "to"}
 
-# what a second view of the same tree restates; exclude, aggregate, roles and header
-# define the tree and are shared by every view
-VIEW_KEYS = {"default_story", "story_map", "stories", "story_order", "core", "place", "descriptions", "camera"}
+# what a second view of the same tree restates; exclude, aggregate and header define the
+# tree and are shared by every view
+VIEW_KEYS = {"default_story", "story_map", "stories", "story_order", "core", "place", "roles",
+             "descriptions", "camera", "primitives", "flows"}
+LAYERED_VIEW_KEYS = {"roles", "descriptions", "camera"}   # laid over the top level's entry by entry; every other view key replaces it whole
 DEVELOPMENT_VIEW = "development"   # the top level of the JSON: the tree as tracked
 DEPLOYMENT_VIEW = "deployment"     # the block of that name: the same tree on the primitives the mapping table names
