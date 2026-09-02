@@ -292,14 +292,17 @@ sub-module and the control that opens its page.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
-| one coloured band the drawing sorts a path into | story, `island` | `island`, `story_map` | `S1` … `S5` | group, cluster, section |
-| the key that isolates one band | the digit of the story id — the page reads `S` plus the digit, and offers only the digits its stories answer to | — | `1` … `5` | a story id that is not `S` plus a digit; a key offered for a band that does not exist |
-| the node at the centre of a band | `hub` | `hub` | — | anchor, root of the band |
+| one coloured band the drawing sorts a path into | story, `island` | `island`, `story_map` | the story ids of the active view — `S1` … `S5` as tracked, `S1` … `S7` on the primitives | group, cluster, section |
+| the key that isolates one band | the digit of the story id — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `7` in the deployment view | a story id that is not `S` plus a digit; a key offered for a band that does not exist |
+| the node at the centre of a band, per view | `hub` | `hub` | — | anchor, root of the band |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |
 | a node's shade: the island colour turned per nesting level below the hub | `shadeStr`, `paletteOf` | — | — | tint (the white mix inside one shade), a second colour per story |
 | the commit the tree was read from, and its date | `load_provenance_stamp()` | the tail of `subtitle` | `tree as of <hash> · <date>` | generated at, build date |
 | the control that opens the drawing from the status page | — | — | DX | help, docs, about |
+| the two views of one tree — the development view, the tree as tracked, its bands the stories; the deployment view, the same tree seated on the primitives the mapping table names (the 4+1 model's two names; a view, not a deployment — nothing is built) | `VIEWS`, `VIEW_ORDER`, `activeView`, `setView`; `build_view` | the top level of `visualisation_config.json`, and its `deployment` block | *development view* / *deployment view* — the legend heading | production view, cloud view, AWS view, simulation, target, mode, layer, physical view; "reset view" for the camera — that control is Reset camera |
+| the control that flips the page to the other view, and back | `btnView` | — | ☁ / ⌂, "Deployment view / development view (v)", the key `v`, `v deployment` / `v development` in the hint | switch (the presentation switch), toggle, a tab, a second page |
+| the legend: the active view by name, and its islands in layout order | `renderLegend`, `legend` | — | the island names | key (the edge key is `.edgekey`), map |
 
 The drawing is redrawn by hand with `make monitoring-dx-update` and by nothing else. It is a derived
 artifact under *Derived, never drafted*: a hand edit to it is a violation, and the provenance stamp
@@ -327,14 +330,15 @@ links to it and never repeats it.
 The names `AGENTS.md` § Pre-AWS architectural direction and
 `skill_pre_aws_solution.md` use — how the repository is drawn, not what it
 computes; the rules are there, not here. Cloud proper nouns are external
-vocabulary and live in that skill's mapping table alone; none is registered here.
+vocabulary and live in that skill's mapping table and in the one picture of it, the
+drawing's deployment view (§ Developer experience); none is registered here.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the stance: a local academic architecture whose boundaries would survive a move onto standard cloud primitives, with no cloud used and none planned | Pre-AWS — a word of the documents; `pre_aws` in the file stem, no identifier carries it | — | — | cloud-ready, AWS-ready, cloud-native, a migration plan, a deployment guide; `pre-aws` or `PreAWS` in prose |
 | compute: a process that reads a store, writes a store and exits, owning no asset state between invocations | every stage's `main()`, `python -m <module>.<stage> --tickers <TICKER>`; the container that runs it | — | — | a container as the home of an asset's state; a resident as a requirement of a stage; an in-process cache between stages; `worker`, `processor` |
 | the rebuild condition: whether an asset's artifacts must be rebuilt from its canonical series, answered without launching anything | `is_artifact_set_complete()` is its completeness half; freshness has no predicate yet — its names when written: `has_new_market_data()`, `requires_canonical_rebuild()`, `requires_feature_rebuild()`, `requires_model_rebuild()`; until then the rerun table of `../module_ml/skills/methodology_ml.md` § 11 is read by a human | — | — | a scheduler, a watcher, an event bus, a function that both detects new data and trains; `should_run()`, `check_update()`, `trigger()` |
-| the mapping table: the one place cloud proper nouns are spoken — what this repository has, beside the shape the same responsibility takes elsewhere | `skill_pre_aws_solution.md` § The mapping table | — | — | an adapter, a cloud config file, a proper noun outside the table; a right-column path read as a proposal for a local directory |
+| the mapping table: where cloud proper nouns are spoken — what this repository has, beside the shape the same responsibility takes elsewhere — and what the drawing's deployment view draws | `skill_pre_aws_solution.md` § The mapping table | — | — | an adapter, a cloud config file, a proper noun outside the table and the view that draws it; a right-column path read as a proposal for a local directory |
 
 ## DevOps panel
 

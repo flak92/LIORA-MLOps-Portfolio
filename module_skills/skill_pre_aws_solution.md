@@ -292,10 +292,14 @@ The left column is what this repository has; the right column is the shape the
 same responsibility would take elsewhere. No path in the right column is a
 proposal for a local directory. The cloud's proper nouns are spelled out here
 and where the stance is stated — `AGENTS.md` § Pre-AWS architectural direction,
-`README.md` § Architectural direction and this document's prose — and among the
-tree's names they live in this column alone: never in a make target, a compose
-service, a container environment variable, a payload key or a code comment, and
-in no tracked path but this file's own `pre_aws` stem.
+`README.md` § Architectural direction and this document's prose — and in the one
+picture of this column, the deployment view of the developer-experience drawing,
+whose islands are the rows below that a tracked path answers to, and one island
+for the documents that answer to none
+(`../module_monitoring/skills/skill_developer_experience_drawing.md` § Two views
+of one tree). Among the tree's names they live in this column alone: never in a
+make target, a compose service, a container environment variable, a payload key
+or a code comment, and in no tracked path but this file's own `pre_aws` stem.
 
 | this repository has | responsibility | the same responsibility elsewhere |
 |---|---|---|

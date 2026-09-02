@@ -29,7 +29,7 @@ direction:
 |---|---|---|
 | the server | `make docker-up` | one server, two roles by `ASSET`: the dashboard, or one asset container reporting itself |
 | the run recorder | `make docker-all-record` | wraps every stage of a run, samples resources, writes `store_run_records/<run_id>/` |
-| the drawing | `make monitoring-dx-update` | redraws the tracked git tree as one self-contained page |
+| the drawing | `make monitoring-dx-update` | redraws the tracked git tree as one self-contained page, in two views: the tree as tracked, and the same tree seated on the primitives the Pre-AWS mapping names |
 | the DevOps panel | `make docker-up` | `sub_module_devops`: the containers, networks and volumes, and the one container that holds the docker socket |
 
 The dashboard is published on the host at `127.0.0.1:8900` and reaches the

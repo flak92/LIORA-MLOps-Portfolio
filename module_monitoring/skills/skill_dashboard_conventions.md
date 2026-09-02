@@ -53,6 +53,7 @@ linter, no build step, no framework.
   page is not. The drawing is a derived artifact, redrawn only by `make monitoring-dx-update`, and
   its inline renderer is reviewed as a whole and is not bound by the closed verb list above, which
   governs the hand-written dashboard scripts. `skill_developer_experience_drawing.md` holds the
-  drawing's rest — the configuration surface, the provenance stamp and the determinism it owes;
+  drawing's rest — the configuration surface, the two views, the provenance stamp and the
+  determinism it owes;
   `skill_devops_panel.md` holds the panel's.
 

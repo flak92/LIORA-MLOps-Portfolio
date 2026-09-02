@@ -49,7 +49,9 @@ Three readers, three doors, all behind `make on`:
   Quality*, *ML Research*, *ML Assets* and *Lifecycle*, the results and the cost
   of producing them (§ Dashboard below);
 - **developer** — the **DX** control in the top right opens the drawing of the
-  tracked tree, one self-contained page;
+  tracked tree, one self-contained page in two views: the tree as tracked, and
+  the same tree seated where each part would live or run under § Architectural
+  direction;
 - **DevOps** — the **DevOps** control opens the panel: the asset containers as
   they report themselves, every container on the host with its ports, the
   networks, volumes, bind mounts, the image and the engine's events, with
@@ -140,11 +142,14 @@ the responsibilities are cut so that a later move onto standard cloud primitives
 (an object store, a container runtime, a stage orchestrator) would replace the
 local storage, the local Docker execution and the local stage order without
 redrawing the domain pipeline. No cloud infrastructure exists here and none is
-planned; the mapping is described, not built. Correctness is shown by the whole
-chain running end to end on a small representative basket, `BTC` today, never by
-production-scale infrastructure: there is no test suite, no security layer and
-no guard beyond the seven the mathematics needs. The rule, its non-goals and the
-mapping table:
+planned; the mapping is described, not built. It is also drawn: the deployment
+view of the developer-experience drawing, one control on the **DX** page, seats
+every tracked file and folder on the primitive its responsibility answers to, or
+with the documents that deploy nowhere.
+Correctness is shown by the whole chain running end to end on a small
+representative basket, `BTC` today, never by production-scale infrastructure:
+there is no test suite, no security layer and no guard beyond the seven the
+mathematics needs. The rule, its non-goals and the mapping table:
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
 
 ## Stages
@@ -156,7 +161,7 @@ mapping table:
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak RSS from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
-| drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page |
+| drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
 ## Data formats
 

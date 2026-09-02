@@ -53,6 +53,12 @@ background:rgba(10,17,38,.72); color:var(--text); font-size:13px; cursor:pointer
 }
 .controls button:hover{border-color:#31456F;}
 .controls button:focus-visible{outline:2px solid var(--text); outline-offset:2px;}
+.legend{position:fixed; right:16px; bottom:44px; font-family:var(--mono); font-size:10px; color:var(--dim);
+display:flex; flex-direction:column; align-items:flex-end; gap:3px;}
+.legend__view{color:var(--text); letter-spacing:.18em; text-transform:uppercase; margin-bottom:3px;}
+.legend__row{display:flex; align-items:center; gap:7px; cursor:pointer;}
+.legend__row:hover{color:var(--text);}
+.legend__row .dot{width:7px; height:7px; border-radius:50%; flex:none;}
 aside#panel{
 position:fixed; top:56px; right:16px; width:296px; max-width:calc(100vw - 32px);
 background:rgba(9,15,34,.94); border:1px solid var(--line); border-radius:4px;
@@ -86,11 +92,13 @@ aside#panel button.close:hover{color:var(--text);}
 <span><i class="tt"></i>folder &ndash; folder</span>
 <span><i class="tf"></i>folder &ndash; file</span>
 </div>
-<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause</div>
+<div class="hint">tree: &#9656; expand/collapse &middot; folder name = highlight subtree &middot; file = details &middot; drag rotate &middot; scroll zoom &middot; <span id="hintStories"></span> isolate story &middot; 0 all &middot; space pause<span id="hintView"></span></div>
 <div class="controls">
 <button id="btnPlay" title="Pause / resume rotation (space)">&#9208;</button>
-<button id="btnReset" title="Reset view (0)">&#10226;</button>
+<button id="btnView" title="Deployment view / development view (v)">&#9729;&#xFE0E;</button>
+<button id="btnReset" title="Reset camera (0)">&#10226;</button>
 </div>
+<div class="legend" id="legend"></div>
 <aside id="panel" aria-live="polite">
 <button class="close" id="panelClose" title="Close">&#10005;</button>
 <div class="path" id="pPath"></div>
@@ -127,23 +135,28 @@ const META = {
 title: 'Files and Folders',
 eyebrow: 'owner / repository',
 subtitle: 'tree as of 0000000 - never generated',
-config: {}
+documentTitle: 'Files and Folders'
 };
-const ISLANDS = {
-core: { name: 'Repository root', color: '#EDF2FF' },
-S1: { name: 'S1', color: '#5B8DEF' }
+const VIEWS = {
+development: {
+camera: {},
+desc: { root: '', placeholder: '' },
+hub: { S1: 'placeholder' },
+island: { root: 'core', placeholder: 'S1' },
+islands: { core: { name: 'Repository root', color: '#EDF2FF' }, S1: { name: 'S1', color: '#5B8DEF' } },
+order: ['S1'],
+place: {}
+}
 };
-const ISLAND_ORDER = ['S1'];
-const PLACE = {};
+const VIEW_ORDER = ['development'];
 const NODES = [
-{ id:'root', path:'repo/', island:'core', type:'core', role:'root', desc:'' },
-{ id:'placeholder', path:'placeholder', island:'S1', type:'file', hub:true, role:'doc', desc:'' }
+{ id:'root', path:'repo/', type:'core', role:'root' },
+{ id:'placeholder', path:'placeholder', type:'file', role:'doc' }
 ];
 const EDGES = [
 { from:'root', to:'placeholder', type:'tree', thick:false }
 ];
 /* VISUALISATION:STRUCTURE:END */
-Object.assign(CONFIG, META.config);
 document.title = META.documentTitle;
 document.getElementById('hudEyebrow').textContent = META.eyebrow;
 document.getElementById('hudTitle').textContent = META.title;
@@ -257,9 +270,48 @@ fanAround(isl.hub.p, leftover, 110, isl.theta, CONFIG.RING_Y_JITTER);
 }
 });
 }
+var ISLANDS, ISLAND_ORDER, PLACE, VIEW, activeView;   // the placement that is live: one tree, seated by the active view
+var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
+var PAL = {};
+/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
+   isolates nothing is never offered and never dims the whole drawing */
+var STORY_DIGITS = [];
+var CAM_DIST_FLOOR = CONFIG.CAM_DIST;
+var CAMERA_DEFAULTS = { START_ROT_Y: CONFIG.START_ROT_Y, START_ROT_X: CONFIG.START_ROT_X, FIT_WIDTH: CONFIG.FIT_WIDTH };   // a view lays its camera over these, never over the other view's
+function nextView(){ return VIEW_ORDER[(VIEW_ORDER.indexOf(activeView) + 1) % VIEW_ORDER.length]; }
+function setView(name){   // a view writes its facts onto the one tree; the tree is then laid out again
+activeView = name; VIEW = VIEWS[name];
+ISLANDS = VIEW.islands; ISLAND_ORDER = VIEW.order; PLACE = VIEW.place;
+NODES.forEach(function(n){
+n.island = VIEW.island[n.id];
+n.hub = VIEW.hub[n.island] === n.id;
+n.desc = VIEW.desc[n.id];
+n.p = null;   // layout seats only what is unseated
+});
+Object.assign(CONFIG, CAMERA_DEFAULTS, VIEW.camera);
 layout();
-var PICTURE_RADIUS = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
-CONFIG.CAM_DIST = Math.max(CONFIG.CAM_DIST, CONFIG.CAM_DIST_PER_RADIUS * PICTURE_RADIUS);   // the front of a bigger picture stays as far from the lens
+var radius = Math.max.apply(null, NODES.map(function(n){ return Math.sqrt(n.p.x*n.p.x + n.p.z*n.p.z); }));
+CONFIG.CAM_DIST = Math.max(CAM_DIST_FLOOR, CONFIG.CAM_DIST_PER_RADIUS * radius);   // the front of a bigger picture stays as far from the lens
+EDGES.forEach(sampleEdge);
+PAL = {};
+HUB_DEPTH = {};
+NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
+STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
+document.getElementById('hintStories').textContent = STORY_DIGITS.length
+  ? STORY_DIGITS[0] + '–' + STORY_DIGITS[STORY_DIGITS.length - 1] : 'no story key';
+document.getElementById('hintView').textContent = VIEW_ORDER.length > 1 ? ' · v ' + nextView() : '';
+document.getElementById('btnView').textContent = nextView() === 'deployment' ? '☁︎' : '⌂';   // the glyph names the view the control goes to, as ⏸ / ▶ name the action
+document.querySelectorAll('#tree .trow').forEach(function(row){   // none before buildTree; restyled on every later flip
+row.dotEl.style.background = paletteOf(nodeById[row.dataset.id]).line;
+});
+renderLegend();
+activeIsland = null;   // an island id names another group in the other view; the selection, the subtree and the sidebar are the tree's and stay
+if (!userZoomed) zoom = fitZoom();
+if (selectedId) select(selectedId);   // an open panel re-reads island, colour and sentence
+invalidate();
+}
+var rafId = null, needsFrame = true, lastDraw = 0;   // declared before the first frame is asked for, so no initialiser runs after one is queued
+setView(VIEW_ORDER[0]);
 function sampleEdge(e){
 var a = nodeById[e.from].p, b = nodeById[e.to].p;
 var dx = b.x-a.x, dy = b.y-a.y, dz = b.z-a.z;
@@ -279,7 +331,6 @@ z: u*u*a.z + 2*u*t*m.z + t*t*b.z
 }
 e.pts = pts;
 }
-EDGES.forEach(sampleEdge);
 var STARS = [];
 (function(){
 var seed = 42;
@@ -391,9 +442,6 @@ var q = (1 - Math.abs(2*l - 1)) * s, x = q * (1 - Math.abs((h/60) % 2 - 1)), m =
 var sector = [[q,x,0],[x,q,0],[0,q,x],[0,x,q],[x,0,q],[q,0,x]][Math.floor(h/60) % 6];
 return '#' + sector.map(function(v){ return ('0' + Math.round((v + m)*255).toString(16)).slice(-2); }).join('');
 }
-var HUB_DEPTH = {};   // nesting counts from each island's hub, so a story rooted deeper in the tree still starts at level 0
-NODES.forEach(function(n){ if (n.hub || n.type === 'core') HUB_DEPTH[n.island] = pathDepth(n); });
-var PAL = {};
 function paletteOf(n){   // one palette per (island, nesting level), built on first use
 var level = Math.max(0, pathDepth(n) - HUB_DEPTH[n.island]);
 var key = n.island + ':' + level;
@@ -581,7 +629,6 @@ ctx.fillText(name, pr.x, pr.y - lift - 7);
 var prefersReducedMotion = window.matchMedia &&
 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var projCache = {};
-var rafId = null, needsFrame = true, lastDraw = 0;
 function draw(){
 drawBackground();
 var i, e, n, j;
@@ -800,6 +847,7 @@ var dot = document.createElement('span');
 dot.className = 'dot';
 dot.style.background = paletteOf(nd).line;   // a row is a node, so its dot carries the node's shade
 row.appendChild(dot);
+row.dotEl = dot;
 row.appendChild(document.createTextNode(labelOf(nd)));
 row.addEventListener('click', function(){
 if (nd.type === 'file'){ select(id); } else { setSubtree(id); }
@@ -828,6 +876,24 @@ treeTab.addEventListener('click', function(){
 setTreeOpen(treeWrap.classList.contains('closed'));
 });
 setTreeOpen(true);
+function renderLegend(){   // the active view by name, and its islands in layout order; a row isolates its island as the digit does
+var legend = document.getElementById('legend');
+legend.innerHTML = '';
+var head = document.createElement('div');
+head.className = 'legend__view';
+head.textContent = activeView + ' view';
+legend.appendChild(head);
+ISLAND_ORDER.forEach(function(key){
+var row = document.createElement('div');
+row.className = 'legend__row';
+var dot = document.createElement('span');
+dot.className = 'dot'; dot.style.background = ISLANDS[key].color;
+row.appendChild(dot);
+row.appendChild(document.createTextNode(ISLANDS[key].name));
+row.addEventListener('click', function(){ setIsland(key); });
+legend.appendChild(row);
+});
+}
 function setIsland(key){
 activeIsland = (activeIsland === key) ? null : key;
 clearSubtree();
@@ -842,23 +908,22 @@ btnPlay.textContent = playing ? '⏸' : '▶';
 invalidate();
 }
 btnPlay.addEventListener('click', function(){ setPlaying(!playing); });
-function resetView(){
+function resetCamera(){
 rotY = CONFIG.START_ROT_Y; rotX = CONFIG.START_ROT_X;
 userZoomed = false; zoom = fitZoom();
 activeIsland = null;
 clearSubtree();
 select(null);
 }
-/* the digits the story ids answer to; the handler and the hint read this one list, so a key that
-   isolates nothing is never offered and never dims the whole drawing */
-var STORY_DIGITS = '123456789'.split('').filter(function(d){ return ISLANDS['S' + d]; });
-document.getElementById('hintStories').textContent = STORY_DIGITS.join('') === ''
-  ? 'no story key' : STORY_DIGITS[0] + '\u2013' + STORY_DIGITS[STORY_DIGITS.length - 1];
-document.getElementById('btnReset').addEventListener('click', resetView);
+document.getElementById('btnReset').addEventListener('click', resetCamera);
+var btnView = document.getElementById('btnView');
+btnView.style.display = VIEW_ORDER.length > 1 ? '' : 'none';   // one view, no view control
+btnView.addEventListener('click', function(){ setView(nextView()); });
 window.addEventListener('keydown', function(ev){
 if (ev.key === ' '){ ev.preventDefault(); setPlaying(!playing); }
 else if (STORY_DIGITS.indexOf(ev.key) >= 0){ setIsland('S' + ev.key); }
-else if (ev.key === '0' || ev.key === 'Escape'){ resetView(); }
+else if (ev.key === '0' || ev.key === 'Escape'){ resetCamera(); }
+else if (ev.key === 'v' && VIEW_ORDER.length > 1){ setView(nextView()); }   // offered only when there is another view, like the digits
 });
 </script>
 </body>

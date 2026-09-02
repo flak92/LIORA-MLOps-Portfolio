@@ -8,6 +8,10 @@ The defaults below are what the picture uses when visualisation_config.json says
 nothing. Every one of them is overridable from that file, and the file wins: an
 unknown key there is an error rather than a silent typo, so the JSON is the whole
 configuration surface and Python is never edited to change the drawing.
+
+The optional `deployment` block restates the placement keys for a second view of
+the same tree; a key it leaves out is the top level's, and its descriptions and
+camera layer over the top level's entry by entry.
 """
 
 from __future__ import annotations
@@ -75,9 +79,16 @@ CONFIG_DEFAULTS = {
     "place": {},
     "camera": {},
     "header": {},
+    "deployment": None,   # the second view of the same tree; None means one view and no view control
 }
 STORY_IDS = {"S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"}   # the drawing gives an island one digit; a tenth story is a different picture
 STORY_KEYS = {"name", "color", "hub"}
 PLACE_KEYS = {"r", "da", "y", "jit"}
 HEADER_KEYS = {"eyebrow_from_git", "title", "subtitle"}
 CORE_KEYS = {"name", "color"}
+
+# what a second view of the same tree restates; exclude, aggregate, roles and header
+# define the tree and are shared by every view
+VIEW_KEYS = {"default_story", "story_map", "stories", "story_order", "core", "place", "descriptions", "camera"}
+DEVELOPMENT_VIEW = "development"   # the top level of the JSON: the tree as tracked
+DEPLOYMENT_VIEW = "deployment"     # the block of that name: the same tree on the primitives the mapping table names

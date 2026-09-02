@@ -76,6 +76,84 @@
 
   "camera": { "start_rot_y": 6.21, "start_rot_x": -0.40, "fit_width": 1400 },
 
+  "deployment": {
+    "default_story": "S7",
+
+    "story_map": {
+      "Dockerfile": "S1",
+      "requirements.txt": "S1",
+      "docker-compose.yml": "S1",
+
+      "Makefile": "S2",
+
+      "module_data/": "S3",
+      "module_ml/": "S4",
+      "store_assets_artifacts/": "S5",
+      "module_monitoring/": "S6",
+
+      "AGENTS.md": "S7",
+      "README.md": "S7",
+      "module_skills/": "S7"
+    },
+
+    "stories": {
+      "S1": { "name": "S1 · Image and task definitions (Amazon ECR, Amazon ECS)",                     "color": "#7D93BF", "hub": "Dockerfile" },
+      "S2": { "name": "S2 · State machine (AWS Step Functions)",                                      "color": "#F26B5B", "hub": "Makefile" },
+      "S3": { "name": "S3 · data-ingest task (Amazon ECS on AWS Fargate)",                            "color": "#F2B24E", "hub": "module_data/" },
+      "S4": { "name": "S4 · ml-research task per ASSET (Amazon ECS on AWS Fargate)",                  "color": "#E06BD8", "hub": "module_ml/" },
+      "S5": { "name": "S5 · One prefix per asset (Amazon S3)",                                        "color": "#5BC8F2", "hub": "store_assets_artifacts/" },
+      "S6": { "name": "S6 · Static dashboard and one reader container (Amazon S3, Amazon CloudFront)", "color": "#96D850", "hub": "module_monitoring/" },
+      "S7": { "name": "S7 · The repository — deploys nowhere",                                         "color": "#2BD4BD", "hub": "module_skills/" }
+    },
+
+    "story_order": ["S1", "S2", "S3", "S4", "S5", "S6", "S7"],
+
+    "descriptions": {
+      "root": "The same tracked tree, read forward: every file and folder seated on the standard primitive its responsibility answers to — the right column of the mapping table in `module_skills/skill_pre_aws_solution.md`. Described and drawn, built nowhere.",
+
+      "Dockerfile": "The one image every stage runs in, `mlops-portfolio-1m-pipeline`: a container image in a registry (Amazon ECR), the runtime package of every task; there it carries the code the bind mount carries today.",
+      "requirements.txt": "The image's dependency layer, resolved when the image is built and read by no task at run time.",
+      "docker-compose.yml": "One task definition parameterised by `ASSET`, never a new unit per asset; the anchors are its local spelling, one service per ticker written out so the parameter stays visible.",
+
+      "Makefile": "The state machine whose states are the stages (AWS Step Functions): DownloadMarketData → BuildCanonicalData → AggregateBars → GenerateFeatures → GenerateLabels → SearchHyperparameters → TrainModel → EvaluateStrategy → PublishStatus. It sits above every stage and inside none; `all:` and `ml-all:` are the same order, read locally.",
+
+      "module_data/": "The data-ingest task: one container run per stage (an Amazon ECS Task on AWS Fargate) that fetches raw objects, builds the asset's canonical market object and exits, owning no state between runs.",
+      "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects; `ASSET` is the parameter every run of the task takes.",
+      "module_data/ingest.py": "The BuildCanonicalData state: reads the raw objects under a venue and symbol prefix and writes the canonical market object back whole — the storage → ML-compute line begins at its output.",
+      "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out.",
+      "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
+
+      "module_ml/": "The ml-research task: the same Task shape parameterised by `ASSET` (`RunTask` with `ASSET=BTC`), one container run per stage from bars to strategy evaluation, reading and writing the asset's prefix and holding nothing between runs.",
+      "module_ml/bars.py": "The AggregateBars state, and the one write across the storage → ML-compute line: the three aggregation tables are a pure function of the canonical series, written back into the object the task read.",
+      "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; a future `<prefix>/<ticker>/<version>/` is a rename there, not a redesign here.",
+      "module_ml/validation.py": "The gate of the whole system, and the same gate wherever it runs: purged walk-forward folds and the frozen final holdout are code inside the task, not a primitive.",
+      "module_ml/status.py": "The PublishStatus state for ML: the basket's status object as a fold over completed asset artifacts, and each asset's README as an artifact object under its prefix.",
+      "module_ml/skills/": "The research methodology travels inside the task's code: a document, not a primitive.",
+
+      "store_assets_artifacts/": "One prefix per asset in object storage (Amazon S3): the canonical market object, a versioned object pulled into a Task's own disk and written back whole, with the research artifacts as objects under the same prefix.",
+      "store_assets_artifacts/BTC/": "The `BTC` prefix: `BTC_research_ohlcv.duckdb` as the one versioned object, the parquets and JSONs as artifact objects keyed `BTC_<artifact>`; the tracked README and parameters are two of them.",
+
+      "module_monitoring/": "The static dashboard: the page files and the two snapshots as static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront), and beside them one small reader container that stays running for the container, run and `/devops/*` routes.",
+      "module_monitoring/config.py": "Every address the reader knows — the internal port, the service names, the run record's paths — built once here; no code depends on a container name.",
+      "module_monitoring/serve.py": "The one process on this island: the registry, run and proxy routes are a container that stays running, while every file it serves today is a static object.",
+      "module_monitoring/record.py": "Writes the run object, `store_run_records/<run_id>/`, from inside whichever task ran the stage; its logs and 1 s samples are log streams keyed by stage and container, and metrics (Amazon CloudWatch).",
+      "module_monitoring/index.html": "The page: a static object; no process renders it.",
+      "module_monitoring/data_status.json": "A status object produced by data compute and read by the page — a static object beside the page today, tracked so a fresh clone opens on real numbers; its own prefix is a handful of edits away, listed in the skill's review table.",
+      "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts — a static object beside the page today, the same handful of edits away from its own prefix.",
+      "module_monitoring/skills/": "The page's conventions and this drawing's contract travel with the code: documents, not primitives.",
+      "module_monitoring/sub_module_dx/": "The repository's view — this drawing, a static object like the page, and not project code.",
+      "module_monitoring/sub_module_devops/": "The engine's views — a console, not project code; the socket it holds is a local mechanism with no primitive of its own.",
+      "module_monitoring/sub_module_devops/serve.py": "The one container that holds the docker socket: a console over the local engine's own inventory, a local mechanism.",
+
+      "module_skills/": "Repository-wide skills and the register: they travel with the code and deploy nowhere — not project code, not a primitive, and the contract of every boundary this picture draws.",
+      "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its right column is this one.",
+      "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
+      "README.md": "The overview: the domain drawing, and § Architectural direction, where this stance is stated in one paragraph."
+    },
+
+    "camera": { "start_rot_y": 1.09 }
+  },
+
   "header": {
     "eyebrow_from_git": true,
     "title": "Files and Folders",

@@ -10,8 +10,10 @@ hand-written rendering code this module never touches.
       -> exclude globs
       -> tree, folders inferred from the paths
       -> aggregate rules collapse a matching folder into a single node
-      -> stories by longest prefix, and default_story when no prefix matches
-      -> NODES / EDGES + the header block
+      -> one view per placement: stories by longest prefix (default_story when no
+         prefix matches), hubs, hand places, descriptions, camera — the top level,
+         and the optional deployment block layered over it
+      -> META / VIEWS / VIEW_ORDER / NODES / EDGES
       -> splice -> files_and_folders_visualisation.html
 
 Two properties are load-bearing. The first is that visualisation_config.json is the
@@ -186,19 +188,37 @@ def _validate_keys(where: str, given, allowed) -> None:
         )
 
 
+def _validate_view(where: str, view: dict) -> None:
+    """The key sets of one placement; `where` prefixes every key in a message, so an
+    error inside the deployment block says which block it is in."""
+    _validate_keys(f'{where}"camera"', view["camera"], config.CAMERA_KEYS)
+    _validate_keys(f'{where}"core"', view["core"], config.CORE_KEYS)
+    _validate_keys(f'{where}"stories"', view["stories"], config.STORY_IDS)
+    for story_id, story in view["stories"].items():
+        _validate_keys(f'{where}"stories"."{story_id}"', story, config.STORY_KEYS)
+    for place_key, place in view["place"].items():
+        _validate_keys(f'{where}"place"."{place_key}"', place, config.PLACE_KEYS)
+
+
 def load_config(path: Path) -> dict:
     given = json.loads(path.read_text(encoding="utf-8"))
     _validate_keys("the top level", given, config.CONFIG_DEFAULTS)
     settings = dict(config.CONFIG_DEFAULTS)
     settings.update(given)
-    _validate_keys('"camera"', settings["camera"], config.CAMERA_KEYS)
     _validate_keys('"header"', settings["header"], config.HEADER_KEYS)
-    _validate_keys('"core"', settings["core"], config.CORE_KEYS)
-    _validate_keys('"stories"', settings["stories"], config.STORY_IDS)
-    for story_id, story in settings["stories"].items():
-        _validate_keys(f'"stories"."{story_id}"', story, config.STORY_KEYS)
-    for place_key, place in settings["place"].items():
-        _validate_keys(f'"place"."{place_key}"', place, config.PLACE_KEYS)
+    _validate_view("", settings)
+    # the views, development first: the top level is the tree as tracked; the deployment
+    # block restates what it changes, its descriptions and camera layered entry by entry
+    development = {key: settings[key] for key in config.VIEW_KEYS}
+    settings["views"] = {config.DEVELOPMENT_VIEW: development}
+    block = settings[config.DEPLOYMENT_VIEW]
+    if block is not None:
+        _validate_keys(f'"{config.DEPLOYMENT_VIEW}"', block, config.VIEW_KEYS)
+        deployment = {**development, **block}
+        for layered in ("descriptions", "camera"):
+            deployment[layered] = {**development[layered], **deployment[layered]}
+        _validate_view(f'"{config.DEPLOYMENT_VIEW}".', deployment)
+        settings["views"][config.DEPLOYMENT_VIEW] = deployment
     return settings
 
 
@@ -283,85 +303,48 @@ def annotations_for(raw: dict, nodes: dict) -> dict:
     return resolved
 
 
-def hub_of(story_id: str, story: dict, members: list, nodes: dict) -> str:
+def hub_of(story_id: str, story: dict, members: list, nodes: dict, where: str = "") -> str:
     if story.get("hub"):
-        hub = resolve_key(story["hub"], nodes, f'"stories"."{story_id}"."hub"')
+        hub = resolve_key(story["hub"], nodes, f'{where}"stories"."{story_id}"."hub"')
         if hub not in members:
             raise VisualisationError(
-                f'visualisation_config.json: story "{story_id}" names {hub!r} as its hub, but '
-                f'"story_map" puts that path on story {nodes[hub]["island"]!r} — so "{story_id}" '
+                f'visualisation_config.json: {where}"stories"."{story_id}" names {hub!r} as its hub, but '
+                f'{where}"story_map" puts that path on story {nodes[hub]["island"]!r} — so "{story_id}" '
                 f'would be drawn with no centre and {nodes[hub]["island"]!r} with two, and the page '
                 f"would fail before its first frame.\n"
-                f'  fix: map the path to "{story_id}" in "story_map", or name a hub that belongs to it.'
+                f'  fix: map the path to "{story_id}" in {where}"story_map", or name a hub that belongs to it.'
             )
         return hub
     if not members:
         raise VisualisationError(
-            f'visualisation_config.json: story "{story_id}" has no files, so it cannot be drawn.\n'
-            f"  fix: map at least one path to it in \"story_map\", or remove the story."
+            f'visualisation_config.json: {where}"stories"."{story_id}" has no files, so it cannot be drawn.\n'
+            f'  fix: map at least one path to it in {where}"story_map", or remove the story.'
         )
     folders = [m for m in members if nodes[m]["type"] == "folder"]
     pool = folders or members
     return min(pool, key=lambda m: (m.count("/"), m.encode("utf-8")))
 
 
-def build_structure(settings: dict) -> tuple[list, list, dict, dict]:
+def build_structure(settings: dict) -> tuple[list, list, dict]:
+    """The tree alone, the same in every view: the node records, the edges and the counts."""
     paths = load_tracked_paths()
     kept = [p for p in paths
             if not any(path_matches(pattern, p) for pattern in settings["exclude"])]
     nodes, children = build_tree(kept, settings["aggregate"])
-
-    stories = settings["stories"]
-    unmapped = []
-    for node_id, node in nodes.items():
-        if node_id == "root":
-            node["island"] = "core"
-            continue
-        story_id = story_of(node_id, settings["story_map"]) or settings["default_story"]
-        if story_id is None:
-            unmapped.append(node_id)
-        elif story_id not in stories:
-            raise VisualisationError(
-                f"visualisation_config.json: \"story_map\" sends {node_id!r} to story {story_id!r}, "
-                f"which \"stories\" does not define.\n"
-                f"  fix: add {story_id!r} to \"stories\", or point the path at an existing story."
-            )
-        node["island"] = story_id
-    if unmapped:
-        listed = "\n".join(f"    {p}" for p in sorted(unmapped)[:40])
-        more = "" if len(unmapped) <= 40 else f"\n    ... and {len(unmapped) - 40} more"
-        raise VisualisationError(
-            f"visualisation_config.json: {len(unmapped)} path(s) belong to no story:\n{listed}{more}\n"
-            f'  fix: add a "story_map" entry for each — the shortest prefix that covers them is\n'
-            f"       usually the right one — or set \"default_story\" to a story id to stop\n"
-            f"       classifying new things consciously."
-        )
-
-    descriptions = annotations_for(settings["descriptions"], nodes)
     roles = annotations_for(settings["roles"], nodes)
-
     order = ordered_ids(children)
-    hubs = {}
-    for story_id, story in stories.items():
-        members = [n for n in order if nodes[n].get("island") == story_id]
-        hubs[story_id] = hub_of(story_id, story, members, nodes)
 
     emitted = []
     for node_id in order:
         node = nodes[node_id]
         is_folder = node["type"] in ("folder", "core")
-        record = {
+        emitted.append({
             "id": node_id,
             "path": node["path"],
-            "island": node["island"],
             "type": node["type"],
             "role": roles.get(node_id) or node.get("aggregate_role")
                     or role_of(node_id, is_folder),
-            "desc": descriptions.get(node_id, ""),
-        }
-        if node_id in hubs.values():
-            record["hub"] = True
-        emitted.append(record)
+        })
 
     edges = []
     for node_id in order:
@@ -380,8 +363,75 @@ def build_structure(settings: dict) -> tuple[list, list, dict, dict]:
         "nodes": len(emitted),
         "edges": len(edges),
     }
-    place = {resolve_key(k, nodes, '"place"'): v for k, v in settings["place"].items()}
-    return emitted, edges, place, counts
+    return emitted, edges, counts
+
+
+def build_view(view_id: str, view: dict, emitted: list) -> dict:
+    """One placement of the tree: the island each node sits on, each island's hub, name and
+    colour, the hand places, the sentences and the camera. The tree is the same in every
+    view, so this reads the node records and writes nothing back to them."""
+    where = "" if view_id == config.DEVELOPMENT_VIEW else f'"{view_id}".'
+    nodes = {record["id"]: dict(record) for record in emitted}   # an island is a fact of the view, so it lives on a copy
+    stories = view["stories"]
+    unmapped = []
+    for node_id, node in nodes.items():
+        if node_id == "root":
+            node["island"] = "core"
+            continue
+        story_id = story_of(node_id, view["story_map"]) or view["default_story"]
+        if story_id is None:
+            unmapped.append(node_id)
+        elif story_id not in stories:
+            raise VisualisationError(
+                f'visualisation_config.json: {where}"story_map" sends {node_id!r} to story {story_id!r}, '
+                f'which {where}"stories" does not define.\n'
+                f'  fix: add {story_id!r} to {where}"stories", or point the path at an existing story.'
+            )
+        node["island"] = story_id
+    if unmapped:
+        listed = "\n".join(f"    {p}" for p in sorted(unmapped)[:40])
+        more = "" if len(unmapped) <= 40 else f"\n    ... and {len(unmapped) - 40} more"
+        raise VisualisationError(
+            f"visualisation_config.json: {len(unmapped)} path(s) belong to no story of the {view_id} view:\n"
+            f"{listed}{more}\n"
+            f'  fix: add a {where}"story_map" entry for each — the shortest prefix that covers them is\n'
+            f'       usually the right one — or set {where}"default_story" to a story id to stop\n'
+            f"       classifying new things consciously."
+        )
+
+    hubs = {}
+    for story_id, story in stories.items():
+        members = [n for n in nodes if nodes[n]["island"] == story_id]
+        hubs[story_id] = hub_of(story_id, story, members, nodes, where)
+
+    islands = {"core": view["core"]}
+    for story_id, story in stories.items():
+        islands[story_id] = {"name": story["name"], "color": story["color"]}
+    order = view["story_order"] or list(stories)
+    unknown = [s for s in order if s not in stories]
+    if unknown:
+        raise VisualisationError(
+            f'visualisation_config.json: {where}"story_order" names {unknown[0]!r}, which {where}"stories" does not define.\n'
+            f'  fix: list only defined story ids, or drop the key to use the order of {where}"stories".'
+        )
+    unlisted = [s for s in stories if s not in order]
+    if unlisted:
+        raise VisualisationError(
+            f'visualisation_config.json: {where}"stories" defines {unlisted[0]!r}, which {where}"story_order" does not list.\n'
+            f'  fix: add it to the order, or drop {where}"story_order" — an island the order forgets is drawn '
+            f"but never placed, which is the silent half of the same mistake."
+        )
+
+    descriptions = annotations_for(view["descriptions"], nodes)
+    return {
+        "camera": {config.CAMERA_KEYS[k]: v for k, v in view["camera"].items()},
+        "desc": {node_id: descriptions.get(node_id, "") for node_id in nodes},
+        "hub": hubs,
+        "island": {node_id: node["island"] for node_id, node in nodes.items()},
+        "islands": islands,
+        "order": order,
+        "place": {resolve_key(k, nodes, f'{where}"place"'): v for k, v in view["place"].items()},
+    }
 
 
 def build_meta(settings: dict, counts: dict) -> dict:
@@ -404,7 +454,6 @@ def build_meta(settings: dict, counts: dict) -> dict:
         "documentTitle": f"{title} · {repository}",
         "eyebrow": eyebrow,
         "subtitle": f"{subtitle} · tree as of {short} · {committed_at}",
-        "config": {config.CAMERA_KEYS[k]: v for k, v in settings["camera"].items()},
     }
 
 
@@ -413,15 +462,14 @@ def _literal(name: str, value) -> str:
     return f"const {name} = {body};"
 
 
-def build_structure_block(meta: dict, islands: dict, order: list,
-                          place: dict, nodes: list, edges: list) -> str:
+def build_structure_block(meta: dict, views: dict, view_order: list,
+                          nodes: list, edges: list) -> str:
     lines = [
         f"{config.STRUCTURE_BEGIN_MARKER} - written by "
         f"module_monitoring/sub_module_dx/visualise.py, do not edit by hand */",
         _literal("META", meta),
-        _literal("ISLANDS", islands),
-        _literal("ISLAND_ORDER", order),
-        _literal("PLACE", place),
+        _literal("VIEWS", views),
+        _literal("VIEW_ORDER", view_order),   # a list, because sorted keys would put deployment first
         _literal("NODES", nodes),
         _literal("EDGES", edges),
         config.STRUCTURE_END_MARKER,
@@ -449,28 +497,12 @@ def render_html(template_text: str, block: str) -> str:
     return template_text[:begin] + block + template_text[end + len(config.STRUCTURE_END_MARKER):]
 
 
-def visualisation_html() -> str:
+def visualisation_html() -> tuple[str, dict]:
     settings = load_config(config.VISUALISATION_CONFIG_JSON_PATH)
-    nodes, edges, place, counts = build_structure(settings)
+    nodes, edges, counts = build_structure(settings)
     meta = build_meta(settings, counts)
-    islands = {"core": settings["core"]}
-    for story_id, story in settings["stories"].items():
-        islands[story_id] = {"name": story["name"], "color": story["color"]}
-    order = settings["story_order"] or list(settings["stories"])
-    unknown = [s for s in order if s not in settings["stories"]]
-    if unknown:
-        raise VisualisationError(
-            f'visualisation_config.json: "story_order" names {unknown[0]!r}, which "stories" does not define.\n'
-            f"  fix: list only defined story ids, or drop the key to use the order of \"stories\"."
-        )
-    unlisted = [s for s in settings["stories"] if s not in order]
-    if unlisted:
-        raise VisualisationError(
-            f'visualisation_config.json: "stories" defines {unlisted[0]!r}, which "story_order" does not list.\n'
-            f"  fix: add it to the order, or drop \"story_order\" — an island the order forgets is drawn "
-            f"but never placed, which is the silent half of the same mistake."
-        )
-    block = build_structure_block(meta, islands, order, place, nodes, edges)
+    views = {view_id: build_view(view_id, view, nodes) for view_id, view in settings["views"].items()}
+    block = build_structure_block(meta, views, list(settings["views"]), nodes, edges)
     template_text = config.VISUALISATION_TEMPLATE_HTML_PATH.read_text(encoding="utf-8")
     return render_html(template_text, block), counts
 

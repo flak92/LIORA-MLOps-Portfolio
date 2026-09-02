@@ -15,7 +15,9 @@ directly at `/sub_module_dx/files_and_folders_visualisation.html`. The dashboard
 directory, so nothing in `serve.py` changes.
 
 Nodes are the files and folders `git ls-files` reports; edges are parent → child and nothing else.
-Standard library plus the `git` binary — there is nothing to install.
+Standard library plus the `git` binary — there is nothing to install. The page holds two views of
+that one tree, flipped by one control: the nodes and edges are the same in both, only the placement
+and the wording change (§ Two views of one tree).
 
 ## The one rule
 
@@ -43,6 +45,8 @@ does — not a knob.
 | `roles` | Path → role, overriding the extension default. A role picks the glyph and the word the side panel shows; `artifact` draws the halo and diamond. |
 | `descriptions` | Path → the sentence the side panel shows. Optional everywhere: a node without one gets an empty line, and a description left behind by a deleted file is dropped rather than reported. |
 | `camera` | `start_rot_y`, `start_rot_x` (radians) and `fit_width` (viewport width at which the drawing fits at zoom 1). |
+| `deployment` | Optional. The deployment view: a second placement of the same tree, seated on the primitives `../../module_skills/skill_pre_aws_solution.md` § The mapping table names. It holds only the keys that place and word — `default_story`, `story_map`, `stories`, `story_order`, `core`, `place`, `descriptions`, `camera` — each meaning what it means above and checked by the same key sets, the error naming the block; any other key here is an error. `exclude`, `aggregate`, `roles` and `header` define the tree and are shared. Absent, the page has one view and no view control. |
+| `deployment.<key>` | The same key, for the deployment view. A key the block leaves out is the top level's; `descriptions` and `camera` layer over the top level's entry by entry, so the block says only the sentences and the start angle that change, and every other key it names replaces the top level's whole. Its `camera` is scanned for its own layout. |
 | `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>`, read from `remote.origin.url`. |
 | `header.title` | The heading, and the first half of the browser tab title. |
 | `header.subtitle` | The line under the heading. May use `{files}`, `{modules}`, `{assets}`, `{nodes}`, `{edges}` — tracked files that survived `exclude`, top-level folders, aggregated folders, and the totals actually drawn. Any other placeholder is an error naming it. |
@@ -64,13 +68,16 @@ exactly one region of it:
 
 ```js
 /* VISUALISATION:STRUCTURE:BEGIN ... */
-const META, ISLANDS, ISLAND_ORDER, PLACE, NODES, EDGES
+const META, VIEWS, VIEW_ORDER, NODES, EDGES
 /* VISUALISATION:STRUCTURE:END */
 ```
 
 Everything outside those two markers is hand-written canvas code and is never touched. If the
 markers are missing, out of order, or appear more than once, the run refuses rather than guessing
-which region is its own.
+which region is its own. `NODES` and `EDGES` carry the tree alone. `VIEWS` holds, per view, the
+islands and their order, the hand places, each node's island, each island's hub, each node's
+sentence and the camera, so the page can seat one tree twice; `VIEW_ORDER` names the development
+view first, and a page built without a `deployment` block lists one view and hides the control.
 
 Edge weight is not a knob: an edge between two folders is drawn at 2.2 px, an edge to a file at 1 px.
 
@@ -90,6 +97,38 @@ A node's shade is its island's colour turned a fixed step per nesting level belo
 told apart from it, and the sidebar dot carries the same shade. The side panel's story dot stays the
 island colour, because it names the story. Two levels down the amber family turns yellow and leans
 toward the green; nothing in the tree nests that deep.
+
+## Two views of one tree
+
+The top level of `visualisation_config.json` is the **development view** — the tree as tracked, its
+islands the stories. The `deployment` block is the **deployment view** — the same files and folders
+seated on the primitives the mapping table names, so a reader can see that the folder structure
+already has that shape. The names are the 4+1 model's: the development view is the code's
+organisation, the deployment view its mapping onto infrastructure; neither is a deployment, and
+nothing is built by either. One control flips the page — ☁ goes to the deployment view, ⌂ returns,
+the key is `v` — and the legend in the bottom right names the view that is showing and its islands;
+a legend row isolates its island as the digit does. What changes on a flip is the island a node sits
+on, the hub, the palette, the sentence in the side panel, the digit keys and the camera; the
+selection, the highlighted subtree and the sidebar are the tree's and stay, which is the point —
+click a file, press `v`, and watch where it lives. ⟲ — the `0` of the hint's `0 all` — returns the
+camera of the view that is showing to its start and clears the selection, the subtree and the
+isolated island.
+
+The deployment view is the one picture of the mapping table's right column, and the fifth place a
+cloud proper noun may be spoken (`AGENTS.md` § Pre-AWS architectural direction): an island is a row
+of that column a tracked path answers to, its name carries the primitive in words with the proper
+noun in parentheses as the table spells it, its sentences say what each object *is* there and never
+how to move it, and no island names a primitive the table does not. One island is no row: the
+repository's own documents — the contract, the overview, the skills — answer to no primitive, and
+their island says so in its name.
+
+**A view seats each top-level subtree whole.** The layout answers for crossings inside an island,
+where every parent → child edge is radial. A member whose parent is a folder on another island is
+seated as a second root at the island radius and its edge becomes a chord across the picture — a
+chord that can cross the parent's fan or graze the roots beside it. A path whose parent is the root
+is always free; a deeper path costs a chord, so a view splits a subtree only knowingly, and the
+deployment view splits none: the two snapshots stay beside the page they are served with, the two
+sub-modules with the module that serves them, and their sentences say what each is there.
 
 ## Determinism
 
