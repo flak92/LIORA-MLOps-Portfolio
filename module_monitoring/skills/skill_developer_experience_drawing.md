@@ -129,22 +129,26 @@ lives. A flip that leaves the selected primitive behind closes the panel. ⟲ �
 subtree and the isolated island. Nine islands exhaust the digit keys; a tenth row can never be an
 island.
 
-The deployment view is the one picture of the mapping table's right column, and one of the places a
-cloud proper noun may be spoken (`AGENTS.md` § Pre-AWS architectural direction). Every primitive
-drawn is a row of that column, drawn as the icon of its role — a registry, a Linux instance, a
-container, a store with the asset's database inside it, a state machine, an event rule, log streams,
-a content-delivery front, a secret — with the tracked paths that answer to a row seated beside its
-primitive; a row whose primitive is an object inside another row's — the task definition, the
-artifact objects, the console — is a tracked path seated beside that primitive, not a primitive of
-its own. A primitive's name carries the primitive in words with the proper noun in parentheses as the
-table spells it, its sentence says what the object *is* there and never how to move it, and no
-primitive names a row the table does not have. A row whose primitive has no local counterpart — the
-event rule, whose condition is code and a table today; the log streams, whose logs are files of the
-run record today; the strategy host and its brokerage secret, which have none at all — is drawn
-absent: dashed, paler, its sentence ending *absent here — described*. A row that exists on disk but
-untracked — the raw objects, the run records — is drawn solid and says so. One island is no row: the repository's own
-documents — the contract, the overview, the skills — answer to no primitive, and their island says
-so in its name.
+The deployment view is the one picture of the mapping table's column *the same responsibility
+elsewhere*, and one of the places a cloud proper noun may be spoken (`AGENTS.md` § Pre-AWS
+architectural direction). Every primitive drawn is a row of that column, drawn as the icon of its
+role — a registry, a Linux instance and, as a store, the volume beside it, a container, a store with
+the asset's database inside it, a state machine, an event rule that stands for the schedule and its
+condition state, log streams, a content-delivery front, a secret — with the tracked paths that
+answer to a row seated beside its primitive; a row whose primitive is an object inside another row's
+— the task definition, the artifact objects, the console — is a tracked path seated beside that
+primitive, not a primitive of its own. A primitive's name carries the primitive in words with the
+proper noun in parentheses as the table spells it, its sentence says what the object *is* there and
+never how to move it, and no primitive names a row the table does not have. A row whose primitive
+has no local counterpart — the schedule and condition, whose cadence is a hand typing
+`make docker-all` and whose condition is code and a table today, and whose primitive keeps the id
+`event_rule` because the id names the icon; the log streams, whose logs are files of the run record
+today; the dashboard front, which a reader outside the host would need and none does; the strategy
+host and its brokerage secret, which have none at all — is drawn absent: dashed, paler, its sentence
+ending *absent here — described*. A row whose home is on disk but untracked — the raw tree, the run
+records — is drawn solid as the copy it would have, and says so. One island is no row: the
+repository's own documents — the contract, the overview, the skills — answer to no primitive, and
+their island says so in its name.
 
 **A view seats each top-level subtree whole.** The layout answers for crossings inside an island,
 where every parent → child edge is radial. A member whose parent is a folder on another island is
@@ -158,13 +162,15 @@ sub-modules with the module that serves them, and their sentences say what each 
 guarantee neither covers nor needs it. Its arc rises in proportion to its length
 (`FLOW_LIFT_PER_LENGTH`), so a flow between neighbouring islands is a low arch and a flow between
 islands that are not neighbours in `story_order` is a high one, drawn over the fans it passes — an
-arc, not a chord. `story_order` is chosen so most flows join neighbours; the deployment view has six
-that do not: the state machine's arc to the task host, which sits above every stage by design; the
-raw store's arc to the event rule, whose input it is; the task host's arc to the ml-research task,
-because the host runs both tasks and both touch the store, and a circle gives an island two
-neighbours; the reader's read of the run objects; and the store's two arcs to the absent strategy
-host. A flow stops short of its target by `FLOW_TIP_GAP`, a hub's halo radius, so the arrowhead is
-seen.
+arc, not a chord. `story_order` is chosen so most flows join neighbours, and the task host's island
+— the one most flows touch — takes the ml-research task and the object stores as its two
+neighbours; the deployment view has seven that do not: the registry's arc to the task host, which
+pulls the image; the state machine's arc to the task host, which sits above every stage by design;
+the volume's arc back to the schedule and condition, whose input it is; the two arcs between the
+task host and the data-ingest task — the host runs it, and it writes the volume; and the two arcs to
+the reader container — the host runs it, and it reads the volume. The store's two arcs to the absent
+strategy host join neighbours, because the strategy host reads the copy and sits beside it. A flow
+stops short of its target by `FLOW_TIP_GAP`, a hub's halo radius, so the arrowhead is seen.
 
 ## Determinism
 
