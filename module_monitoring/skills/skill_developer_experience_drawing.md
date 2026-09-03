@@ -147,8 +147,8 @@ today; the dashboard front, which a reader outside the host would need and none 
 host and its brokerage secret, which have none at all — is drawn absent: dashed, paler, its sentence
 ending *absent here — described*. A row whose home is on disk but untracked — the raw tree, the run
 records — is drawn solid as the copy it would have, and says so. One island is no row: the
-repository's own documents — the contract, the overview, the skills — answer to no primitive, and
-their island says so in its name.
+repository's own documents — the contract, the overview, the review report, the skills — answer to
+no primitive, and their island says so in its name.
 
 **A view seats each top-level subtree whole.** The layout answers for crossings inside an island,
 where every parent → child edge is radial. A member whose parent is a folder on another island is

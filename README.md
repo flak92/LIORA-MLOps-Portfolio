@@ -161,7 +161,9 @@ file, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
 described lists the skills those seats imply, each with its owner, what it
 would govern and the one condition under which it is written. Four local skills
 carry one seat paragraph each, naming the primitive their object answers to and
-citing that skill for the rest.
+citing that skill for the rest. Whether each seat is the cheapest that keeps its
+boundary — what could be less, and whether it is — is
+[REPORT_pre_aws_minimalism.md](REPORT_pre_aws_minimalism.md).
 
 ## Stages
 

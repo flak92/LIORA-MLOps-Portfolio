@@ -191,11 +191,12 @@ and built nowhere.
 
 Cloud proper nouns are external vocabulary. Apart from the repository's own word
 *Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
-file stem it registers — they are spoken only where the stance is stated or a
-local object is seated: this section and § Skills absent here, described,
-`README.md` § Architectural direction, the skill's prose, the column *the same
-responsibility elsewhere* of its mapping table, and the one picture of that
-column — the deployment view of the developer-experience drawing, the
+file stem it registers, the skill's and the report's — they are spoken only
+where the stance is stated, reviewed or a local object is seated: this section
+and § Skills absent here, described, `README.md` § Architectural direction, the
+skill's prose, the column *the same responsibility elsewhere* of its mapping
+table, `REPORT_pre_aws_minimalism.md` — the seats reviewed for excess — and the
+one picture of that column — the deployment view of the developer-experience drawing, the
 `deployment` block of
 `module_monitoring/sub_module_dx/visualisation_config.json` and the page drawn
 from it, whose every primitive drawn is a row of the table and which names no

@@ -16,6 +16,7 @@
 
     "AGENTS.md": "S2",
     "README.md": "S2",
+    "REPORT_pre_aws_minimalism.md": "S2",
     "module_skills/": "S2",
 
     "module_data/": "S3",
@@ -81,7 +82,7 @@
     "default_story": "S1",
 
     "story_map": {
-      "AGENTS.md": "S1", "README.md": "S1", "module_skills/": "S1",
+      "AGENTS.md": "S1", "README.md": "S1", "REPORT_pre_aws_minimalism.md": "S1", "module_skills/": "S1",
       "Dockerfile": "S2", "requirements.txt": "S2", "image_registry": "S2",
       "docker-compose.yml": "S3", "task_host": "S3", "store_volume": "S3", "log_streams": "S3",
       "module_data/": "S4", "data_ingest_task": "S4",
@@ -208,7 +209,8 @@
       "module_skills/": "Repository-wide skills and the name register (`module_skills/glossary.md`): they travel with the code and deploy nowhere — not project code, not a primitive, and the contract of every boundary this picture draws.",
       "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its column *the same responsibility elsewhere* is these primitives.",
       "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
-      "README.md": "The overview: the domain drawing, and § Architectural direction, where this stance is stated in one paragraph."
+      "README.md": "The overview: the domain drawing, and § Architectural direction, where this stance is stated in one paragraph.",
+      "REPORT_pre_aws_minimalism.md": "The review of these seats for excess: what could be less, and whether it is; it deploys nowhere and names no primitive the table does not."
     },
 
     "camera": { "start_rot_y": 0.19, "fit_zoom": 1.25 },
