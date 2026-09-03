@@ -153,6 +153,15 @@ there is no test suite, no security layer and no guard beyond the seven the
 mathematics needs. The rule, its non-goals and the mapping table:
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
 
+The same skill seats the four things a move would name first — the host and the
+volume where every asset's folder and the other `store_*` roots live, the
+one-off task and the state machine over the stages, the asset's one database
+file, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
+described lists the skills those seats imply, each with its owner, what it
+would govern and the one condition under which it is written. Four local skills
+carry one seat paragraph each, naming the primitive their object answers to and
+citing that skill for the rest.
+
 ## Stages
 
 | Stage     | Command                | Input → Output                                              | Property                          |

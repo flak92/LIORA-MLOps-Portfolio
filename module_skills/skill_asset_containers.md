@@ -77,6 +77,13 @@ stage module reads it. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: o
 compose file, every service visible in it. Adding an asset is one line in
 `TICKERS` and three lines under `x-server`.
 
+**The seat.** The `x-service` anchor is one task definition parameterised by `ASSET`,
+each resident a service of the container runtime kept running on the one Linux container
+instance (Amazon ECS on Amazon EC2): `asset-<ticker>` is the `ASSET` override, the one
+line of `dockerfanout` a task run per stage per asset — the one edit — `.:/app` the
+volume mount, `5g` the task's memory, `init` and `user` the task definition's own keys.
+`skill_pre_aws_solution.md` § The mapping table and § The retrain runtime is a ladder.
+
 ## The server
 
 `module_monitoring/serve.py`, one file, two roles chosen by `ASSET`. Of the

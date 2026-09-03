@@ -158,11 +158,22 @@ and built nowhere.
 - **Storage is separate from compute.** Pipeline state lives at paths one
   `config.py` per module builds — the `store_*` roots and the two tracked
   snapshots — never inside a container; the one bind mount carries code and
-  state together as a local convenience, not as a contract.
+  state together as a local convenience, not as a contract — and the same
+  mount, read forward, until the image carries the code.
 - **Modules are built by ownership and lifetime.** A function sits beside the
   functions that write the same state and live as long as it does, never beside
   what happened to be written with it; every object is classified before it is
   placed.
+- **Every placement is argued, and the mapping is the test.** For every object
+  a module holds, its `README_module_<name>.md` § Design rationale writes down,
+  in one row, the answers of `module_skills/skill_self_explaining_naming.md`
+  § The naming review that place it — why here, why beside these, why this
+  boundary — and which row of the mapping table it answers to, the fourth being
+  the test of the first three. An object one of whose responsibilities answers
+  to no row, or to two, is questioned before it is committed; a file that holds
+  several responsibilities — a descriptor per store, a role per `ASSET` —
+  answers with one row each, and says so. The rows are
+  `module_skills/skill_pre_aws_solution.md` § The mapping table.
 - **Names carry the responsibility.** A name says what the object is, what it
   does and where it belongs — a service by its runtime role, a store by what it
   holds, a function by its verb from the closed list or by the quantity it is;
@@ -180,16 +191,24 @@ and built nowhere.
 
 Cloud proper nouns are external vocabulary. Apart from the repository's own word
 *Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
-file stem it registers — they are spoken only where the stance is stated: this
-section, `README.md` § Architectural direction, the skill's prose, the right
-column of its mapping table, and the one picture of that column — the deployment
-view of the developer-experience drawing, the `deployment` block of
+file stem it registers — they are spoken only where the stance is stated or a
+local object is seated: this section and § Skills absent here, described,
+`README.md` § Architectural direction, the skill's prose, the column *the same
+responsibility elsewhere* of its mapping table, and the one picture of that
+column — the deployment view of the developer-experience drawing, the
+`deployment` block of
 `module_monitoring/sub_module_dx/visualisation_config.json` and the page drawn
 from it, whose every primitive drawn is a row of the table and which names no
 primitive the table does not — together with the UI-label column of
 `module_skills/glossary.md` § Developer experience, which records the words that
-view shows. Never in a make target, a compose service, an environment variable,
-a payload key or a code comment. The non-goals, the twelve
+view shows; and, at the edge of a local rule, the one seat paragraph of
+`module_skills/skill_asset_containers.md`, `module_skills/skill_determinism.md`
+(its last bullet, the skill having no headings),
+`module_data/skills/skill_candle_canonicalisation.md` § 15 and
+`module_monitoring/skills/skill_devops_panel.md`, each naming the primitive in
+the table's words and citing the skill for the rest. Never in a make target, a
+compose service, an environment variable, a payload key, a code comment, an
+identifier, or a tracked path but the `pre_aws` stem. The non-goals, the twelve
 classes, the review of what stays local and the mapping table are
 `module_skills/skill_pre_aws_solution.md` — a cross-cutting skill of the kind
 § The default choice names, beside `skill_asset_containers.md`.
@@ -374,3 +393,23 @@ one route for its API alone, because an API is not a file; the socket it holds i
 the reason it is a service of its own rather than a role of `serve.py`.
 `sub_module_*` does not enter the directory grammar above: two occurrences are a
 coincidence, and the third one mints it or nothing does.
+
+## Skills absent here, described
+
+Skills the Pre-AWS seats imply and this tree does not hold: each placed by
+ownership as § The default choice places every skill, described today where its
+last column says, and written when its one condition holds.
+
+| skill | owner | governs | written when | described today in |
+|---|---|---|---|---|
+| `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where `.:/app` is today — every asset's folder and the other `store_*` roots at the same paths under `/app`, and what a task may leave on it | the first run whose `store_*` roots sit on a volume mounted at `/app` that is not the checkout's working tree | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
+| `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
+| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
+| `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
+| `skill_image_contents.md` | `module_skills/` | what the image carries — the code, copied by the `Dockerfile` — and what the mount carries — the `store_*` roots and nothing of the code — once `.:/app` no longer shadows the image | the two snapshots have left `module_monitoring/`, the stated prerequisite of narrowing the mount | `module_skills/skill_pre_aws_solution.md` § Docker is compute, not storage; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `Dockerfile` row |
+| `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |
+| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the two snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
+| `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — its own container beside `module_ml`, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | `module_trading/` is created — the first strategy that consumes an artifact | `module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries; `module_skills/skill_pre_aws_solution.md` § Every object is classified before it is placed, STRATEGY EXECUTION; `module_skills/skill_pre_aws_solution.md` § The mapping table, the two STRATEGY EXECUTION rows |
+| `skill_status_prefix.md` | `module_skills/` | the `status/` prefix: the two snapshots as status objects, and the five points that turn when they move — the two path constants, the directory `serve.py` serves, the two literal fetches | the first snapshot written anywhere but `module_monitoring/` | `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the two-snapshots row; `module_skills/glossary.md` § Payload structure |
+| `skill_per_asset_status.md` | `module_skills/` | one status object per asset, written by that asset's own status run, and the fold the reader does over them — never a lock, never a basket-wide writer fanned out | a status stage is fanned out for the first time | `module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_data.status` row |
+| `skill_database_promotion.md` | `module_data/skills/` | the threshold past which an asset's embedded file becomes a managed database — a second concurrent writer, or a query across assets | the first writer or query one embedded file cannot serve | `module_data/skills/skill_candle_canonicalisation.md` § 13, § 15; `module_skills/skill_pre_aws_solution.md` § The databases |

@@ -46,6 +46,13 @@ mitigated.
 docker group through `group_add`, so it reads the socket without being root; the
 Makefile measures that group the way it measures `UID` and `GID`.
 
+**The seat.** On the one Linux container instance (Amazon ECS on Amazon EC2)
+`devops` keeps the same socket, because the service that runs the tasks starts
+them through the host's own daemon; a task is a foreign container in the
+**containers on this host** table; § The guard refuses it the three verbs as any
+other project's. The console and container metrics are absent here — described.
+`../../module_skills/skill_pre_aws_solution.md` § The mapping table.
+
 ## The API
 
 The Engine is addressed at a pinned version, `v1.44` — the daemon's own declared
@@ -62,7 +69,7 @@ minimum, so upgrading the engine does not move the contract underneath the panel
 
 A daemon that does not answer is answered for: every route above returns
 **503 with no body**, the shape and the reading
-`../../module_skills/skill_asset_containers.md` § Down semantics already fixes
+`../../module_skills/skill_asset_containers.md` § The endpoint contract already fixes
 for an asset's endpoint. The page decides on the status alone and clears the
 views it can no longer vouch for, so an unreachable Engine is never rendered as
 an empty host. Having reached no cadence to poll on, it retries once the tab is

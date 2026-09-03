@@ -32,3 +32,9 @@ deterministic correctness:
 - A stage that is the only writer to a shared resource stays sequential;
   `data-ingest` stays sequential because a memory ceiling is per process and
   the sum of the concurrent ceilings is what has to fit the host.
+- **The seat.** Read forward the caps travel unchanged: `nthread=1` and
+  `OMP_NUM_THREADS=1` are the environment of the one task definition, and
+  `JOBS` is the width of the Map over `TICKERS` in the state machine (AWS Step
+  Functions) — measured as it is measured here, never a literal in the
+  definition; `skill_pre_aws_solution.md` § The Makefile is the developer
+  interface.
