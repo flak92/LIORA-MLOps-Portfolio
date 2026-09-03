@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 54c12ed \u00b7 2026-09-03 12:40:04",
+ "subtitle": "66 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 7a9b8c8 \u00b7 2026-09-03 15:57:49",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -161,6 +161,7 @@ const VIEWS = {
    "Dockerfile": "The recipe of the one image, `mlops-portfolio-1m-pipeline`: a dependency layer, built from the tree and pushed to the registry beside it; the code rides the volume until the image carries it \u2014 the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder.",
    "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
    "README.md": "The overview: the domain drawing, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
+   "REPORT_pre_aws_minimalism.md": "The review of these seats for excess: what could be less, and whether it is; it deploys nowhere and names no primitive the table does not.",
    "asset_store": "Object storage with one prefix per asset and version (Amazon S3): `artifacts/\u003cticker>/\u003cversion>/`, the version the run's execution name \u2014 the asset folder copied whole from the volume after the run: the one database file and the parquets and JSONs beside it. The copy, never the home; the strategy host reads it here.",
    "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none \u2014 the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here \u2014 described.",
    "dashboard_front": "A static front (Amazon S3 with Amazon CloudFront): the page files and the two snapshots served with no process rendering them \u2014 only when a reader outside the host appears; until then the reader container beside it serves them from the volume. Absent here \u2014 described.",
@@ -380,6 +381,7 @@ const VIEWS = {
    "Dockerfile": "S2",
    "Makefile": "S9",
    "README.md": "S1",
+   "REPORT_pre_aws_minimalism.md": "S1",
    "asset_store": "S5",
    "brokerage_secret": "S8",
    "dashboard_front": "S7",
@@ -649,6 +651,7 @@ const VIEWS = {
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
+   "REPORT_pre_aws_minimalism.md": "doc",
    "asset_store": "store",
    "brokerage_secret": "secret",
    "dashboard_front": "front",
@@ -748,6 +751,7 @@ const VIEWS = {
    "Dockerfile": "",
    "Makefile": "Entrypoint of everything \u2014 per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
    "README.md": "",
+   "REPORT_pre_aws_minimalism.md": "",
    "docker-compose.yml": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
    "module_data/": "Ingest \u2014 venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
    "module_data/README_module_data.md": "",
@@ -833,6 +837,7 @@ const VIEWS = {
    "Dockerfile": "S1",
    "Makefile": "S1",
    "README.md": "S2",
+   "REPORT_pre_aws_minimalism.md": "S2",
    "docker-compose.yml": "S1",
    "module_data/": "S3",
    "module_data/README_module_data.md": "S3",
@@ -957,6 +962,7 @@ const VIEWS = {
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
+   "REPORT_pre_aws_minimalism.md": "doc",
    "docker-compose.yml": "config",
    "module_data/": "module",
    "module_data/README_module_data.md": "doc",
@@ -1475,6 +1481,12 @@ const TREE_NODES = [
   "type": "file"
  },
  {
+  "id": "REPORT_pre_aws_minimalism.md",
+  "path": "REPORT_pre_aws_minimalism.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
   "id": "docker-compose.yml",
   "path": "docker-compose.yml",
   "role": "config",
@@ -1540,6 +1552,12 @@ const TREE_EDGES = [
   "from": "root",
   "thick": false,
   "to": "README.md",
+  "type": "tree"
+ },
+ {
+  "from": "root",
+  "thick": false,
+  "to": "REPORT_pre_aws_minimalism.md",
   "type": "tree"
  },
  {
