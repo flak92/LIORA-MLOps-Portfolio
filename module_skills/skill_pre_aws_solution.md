@@ -9,11 +9,13 @@ domain pipeline. It is not a deployment guide. The principle is `AGENTS.md`
 direction; how a name is derived is `skill_self_explaining_naming.md`. *The
 repository shows the destination, not the road*: the mapping is described here
 and built nowhere — no infrastructure code, no storage adapter, no cloud noun in
-a path. Every rule this document leans on that is already written elsewhere is
-cited by path and section, never restated; what is new here is the
-classification, the non-goals, the seats, the volume and the copy, the ladder,
-the databases, the rebuild condition, one day told forward, the mapping table
-with its verdicts, the rejected forms and the review of the tree.
+a path. *Read forward*, below, means read as that mapping would read it: the
+same object seated elsewhere, nothing moved. Every rule this document leans on
+that is already written elsewhere is cited by path and section, never restated;
+what is new here is the classification, the non-goals, the seats, the volume
+and the copy, the ladder, the databases, the rebuild condition, one day told
+forward, the mapping table with its verdicts, the rejected forms and the review
+of the tree.
 
 ## Project status
 
@@ -22,8 +24,8 @@ quant-research architecture. It is not a production trading system, not an AWS
 deployment and not a production MLOps platform. The runtime is local — a venv,
 or one `python:3.12-slim` image under docker compose, driven by a Makefile — and
 the goal is a correct dataflow with visible responsibilities. The stance is
-`AGENTS.md` § Values, *Academic, not production*; the register it is written in
-is `../module_ml/skills/methodology_ml.md` § 12.
+`AGENTS.md` § Values, *Academic, not production*; what it is and is not is
+`../module_ml/skills/methodology_ml.md` § 12.
 
 ## The minimum demonstration
 
@@ -120,7 +122,31 @@ view of the drawing draws it absent. Strategy execution, if it ever
 
 Nothing here is built, tested or guarded for the move: the chain proves itself
 by running (`AGENTS.md` § Values), and each seat proves a boundary by naming
-what it would be a rename of.
+what it would be a rename of. The seat of each thing is the cheapest that keeps
+its boundary — one host, one volume, one image, no cluster, no queue, no
+database process, no front until a reader outside the host appears — the
+*Minimalism* of `AGENTS.md` § Values applied to infrastructure, and the reason
+each row of § Rejected forms is refused.
+
+One container raises four questions, and a different service answers each:
+
+| question | layer | here today | elsewhere |
+|---|---|---|---|
+| where does the image live? | the image registry | `make docker-build` — `build: .` on the anchor, so a bare clone builds instead of reaching for a registry (`skill_asset_containers.md` § The topology) | a container image in a registry (Amazon ECR) |
+| who runs the containers, and keeps the residents running? | the container service | `docker compose` — `run --rm -T` for a one-off, `up -d` for a resident | the service that runs the tasks (Amazon ECS) |
+| on what machine does it physically run? | the compute | the developer's Linux, or a remote host reached through the tunnel (`../README.md` § Quickstart) | one Linux container instance with a durable volume, registered with the service above (Amazon EC2) |
+| who decides what runs, when, and in what order? | the work orchestration | the Makefile — `all:` and `ml-all:` the order, a hand typing `make docker-all` the when, no schedule | a state machine for the order (AWS Step Functions) and a schedule for the when (Amazon EventBridge Scheduler); no job queue |
+
+The sentence to remember: the registry stores the image, the service runs it,
+the instance hosts it, and the state machine says *now the next*.
+
+Three questions choose each layer's form, and the tree answers each:
+
+| question | answer here | what it decides |
+|---|---|---|
+| does a stage need the host's disk between runs? | yes: the database file under its whole-file lock, the raw ZIPs and the artifacts at one path, read and written through `.:/app` by every stage (`AGENTS.md` § Pre-AWS architectural direction, *Storage is separate from compute*) | a task on a host that holds a volume, never a task without a host — the instance (Amazon ECS on Amazon EC2), not the form without one (AWS Fargate) |
+| how many hosts, how many services? | one host; four services — `pipeline`, `dashboard`, `asset-<ticker>`, `devops` (`skill_asset_containers.md` § The topology) | the container service on that host, not a cluster — Amazon ECS, not Amazon EKS |
+| where does the host take the image from? | one image for every role, `mlops-portfolio-1m-pipeline`, the command and `ASSET` deciding the role (§ Docker is compute, not storage) | one registry, one image, its tag the commit it was built from (Amazon ECR) |
 
 The task host and the store volume — one Linux container instance every asset's
 runs share (Amazon ECS on Amazon EC2) and its durable disk mounted at `/app`
@@ -134,16 +160,18 @@ The service that runs the tasks (Amazon ECS on Amazon EC2), the state machine
 `xargs -P $(JOBS)`, `RUN_ID`, a hand typing `make docker-all`. The move: one
 task definition, run per stage with the command overridden and per asset with
 `ASSET=<TICKER>` overridden — the exec into a resident becoming a task run, the
-table's one edit; the stages as states, a Map over `TICKERS` as wide as `JOBS`,
-`run_id` as the execution name; the schedule judged in its own row. A second
-asset is one more iteration of the Map, never a second definition. A rename.
+one edit § The mapping table names, where a mechanism changes and not a name;
+the stages as states, a Map over `TICKERS` as wide as `JOBS`, `run_id` as the
+execution name; the schedule judged in its own row. A second asset is one more
+iteration of the Map, never a second definition. A rename.
 
-The databases — one file per asset, `<TICKER>_research_ohlcv.duckdb`, six tables
-under one whole-file lock (§ The databases). On the volume: the same file at the
-same path, the same process, nothing to edit — both descriptors,
-`artifact_dir()` and `research_ohlcv_duckdb()` in `module_data/config.py`,
-resolve unchanged — and after the run a whole copy to the asset's version prefix
-(Amazon S3). A second asset is one more file under its own lock. A rename.
+The databases — one file per asset, `<TICKER>_research_ohlcv.duckdb`, the two
+venue tables, the canonical table and its three aggregations under one
+whole-file lock (§ The databases). On the volume: the same file at the same
+path, the same process, nothing to edit — both descriptors, `artifact_dir()`
+and `research_ohlcv_duckdb()` in `module_data/config.py`, resolve unchanged —
+and after the run a whole copy to the asset's version prefix (Amazon S3). A
+second asset is one more file under its own lock. A rename.
 
 The strategy host — a separate Linux instance running QuantConnect Lean (Amazon
 EC2), reading the copy, its brokerage credentials read once at start from a
@@ -152,10 +180,19 @@ execution, when it exists, is `module_trading/`, its own container. A second
 asset is one more prefix it reads. Absent here — described.
 
 The supporting seats — the image registry (Amazon ECR), logs and metrics (Amazon
-CloudWatch) as the recorder writes them, the readers behind the tunnel — are
-their rows read forward: the one image; the recorder's files when `RECORD` is
-set; `dashboard`, `devops` and `asset-<ticker>` kept running on the task host
-behind a port-forward. A second asset is one more `asset-<ticker>`. A rename.
+CloudWatch) as the recorder writes them, the readers behind the tunnel
+(`../README.md` § Quickstart) — are their rows read forward: the one image; the
+recorder's files when `RECORD` is set; `dashboard`, `devops` and
+`asset-<ticker>` kept running on the task host behind a port-forward. A second
+asset is one more `asset-<ticker>`. A rename.
+
+Why the service on an instance and no other form: this repository agreed that a
+container is compute and never the owner of state — the `store_*` roots on a
+disk, one writer under a whole-file lock, `.:/app` the one mount — and Amazon
+ECS on Amazon EC2 is the one form in which that agreement moves as a rename (a
+host, a volume, a launcher) and not a rebuild; a task without a host, or on a
+host the provider holds, takes the disk and the socket away, and a cluster adds
+what one host does not need.
 
 ## The asset is a namespace, not infrastructure
 
@@ -223,27 +260,21 @@ the DuckDB file, the parquets, the JSONs and the raw ZIPs, under paths a
 `config.py` names. The image, `mlops-portfolio-1m-pipeline`, is one runtime
 package for every role — the command and `ASSET` decide the role, and no ticker
 is in its name. It is a dependency layer (`Dockerfile`), and the one `.:/app`
-mount carries three things: the code (the image, on the ladder's third phase),
-the state under the `store_*` roots and the two tracked snapshots (the copy's
-prefixes), and nothing scratch — kept apart by the `store_*` grammar, not by the
-runtime. Keep one mount: baking the code into the image is only worth doing
-together with narrowing the mount, because `.:/app` shadows it, and narrowing
-needs the snapshots out of `module_monitoring/` first.
+mount carries three things: the code (the image's, once the image carries the
+code — § The retrain runtime is a ladder), the state under the `store_*` roots
+and the two tracked snapshots (the copy's prefixes), and nothing scratch — kept
+apart by the `store_*` grammar, not by the runtime. Keep one mount: baking the
+code into the image is only worth doing together with narrowing the mount,
+because `.:/app` shadows it, and narrowing needs the snapshots out of
+`module_monitoring/` first.
 
 Compose services are named for their runtime role — `pipeline`, `dashboard`,
-`asset-<ticker>`, `devops` — never for a ticker, a tool or an author. Container,
-network and volume names stay compose-derived on purpose: checkouts of LIORA can
-sit side by side on one host with the same service names
-(`../module_monitoring/skills/skill_devops_panel.md` § The guard), and a fixed
-project name or a named network would merge them into one project on one
-network. No code depends on a container name; code knows `ASSET`, and every
-address is built once, in `module_monitoring/config.py`. The asset's database is
-the GOOD example of the whole stance — one embedded file, one whole-file lock,
-one writer at a time (`skill_asset_containers.md` § The server); read forward it
-is the same file on the task host's volume, copied whole to its version prefix
-after the run (§ The databases). Read forward the host is the same: one Linux
-container instance runs every asset's tasks, and an asset's files and folders
-live on its volume across runs — the prefix their copy, not their home.
+`asset-<ticker>`, `devops` (`skill_asset_containers.md` § The topology) — never
+for a ticker, a tool or an author; container, network and volume names stay
+compose-derived, never fixed, so that checkouts of LIORA can sit side by side
+on one host (`../module_monitoring/skills/skill_devops_panel.md` § The guard);
+no code depends on a container name — code knows `ASSET`, and every address is
+built once, in `module_monitoring/config.py`.
 
 ## The volume is the home, the store is the copy
 
@@ -328,25 +359,27 @@ last stage has exited.
 
 ## The retrain runtime is a ladder
 
-Three phases, none built here; a phase skipped is a redesign — B without A has
-no volume for the database file, C without B bakes a Makefile into an image.
+Three phases, none built here, each named for what it changes; a phase skipped
+is a redesign — the idiom without the lift has no volume for the database file,
+and the image carrying the code without the idiom bakes a Makefile into an
+image.
 
-- **Phase A — lift.** The task host with its store volume, this tree checked out
-  onto the volume, `docker compose` as it is, a hand typing `make docker-all` as
+- **The lift.** The task host with its store volume, this tree checked out onto
+  the volume, `docker compose` as it is, a hand typing `make docker-all` as
   here. Nothing in the compose file changes: the checkout sits on the volume, so
   `.:/app` already is the volume, and everything the Makefile assumes still
   holds.
-- **Phase B — idiom.** One task definition registered with the service that runs
-  the tasks; `.:/app` → `<volume>:/app` in the anchor's line and the one
-  `devops` respells; the one line of `dockerfanout` → a task run per stage per
-  asset, the one edit; the stages as states, the Map, the execution name; the
-  schedule starting the machine instead of a hand; PublishStores after the last
-  state; no condition state, because no predicate exists (§ The rebuild
-  condition stays separable). The Makefile stays the developer interface and
-  stops being what runs the day.
-- **Phase C — the image carries the code.** `Dockerfile` copies the tree, the
-  registry holds the image, and the mount narrows to the `store_*` roots
-  (§ Docker is compute, not storage). A run without a host is a sentence in the
+- **The idiom.** One task definition registered with the service that runs the
+  tasks; `.:/app` → `<volume>:/app` in the anchor's line and the one `devops`
+  respells; the one line of `dockerfanout` → a task run per stage per asset,
+  the one edit § The mapping table names; the stages as states, the Map, the
+  execution name; the schedule starting the machine instead of a hand;
+  PublishStores after the last state; no condition state, because no predicate
+  exists (§ The rebuild condition stays separable). The Makefile stays the
+  developer interface and stops being what runs the day.
+- **The image carries the code.** `Dockerfile` copies the tree, the registry
+  holds the image, and the mount narrows to the `store_*` roots (§ Docker is
+  compute, not storage). A run without a host is a sentence in the
   `run --rm -T pipeline` row of § The mapping table, never a phase.
 
 ## The rebuild condition stays separable
@@ -403,72 +436,76 @@ boxes and the two absent consumers.
 
 ## One day, told forward
 
-One UTC day in twelve beats; every `Never:` cites a refusal that stands.
+One UTC day, in order. Each entry says what happens locally, what happens
+elsewhere, and — `Never:` — the refusal that stands, cited where it stands.
 
-**T-1 The day closes.** The window ends at the most recent UTC midnight; a day
-is written only when `is_full_utc_day()` holds. Locally: nothing runs by itself.
-Elsewhere: the same; the schedule is the only clock. Never: a watcher, an event
-bus (`glossary.md` § Pre-AWS direction).
+1. **The day closes.** The window ends at the most recent UTC midnight; a day is
+   written only when `is_full_utc_day()` holds. Locally: nothing runs by itself.
+   Elsewhere: the same; the schedule is the only clock. Never: a watcher, an
+   event bus (`glossary.md` § Pre-AWS direction).
 
-**T-2 The schedule.** Once per `download_cadence_minutes`, a fixed offset after
-midnight UTC so that the day asked for is already full — `is_full_utc_day()` in
-`module_data/lean.py`. Locally: `make docker-all-record`, typed by hand, which
-expands `RUN_ID`. Elsewhere: the schedule starts one execution, named as
-`run_id`. Never: a scheduler (`glossary.md` § Pre-AWS direction).
+2. **The schedule.** Once per `download_cadence_minutes`, a fixed offset after
+   midnight UTC so that the day asked for is already full — `is_full_utc_day()`
+   in `module_data/lean.py`. Locally: `make docker-all-record`, typed by hand,
+   which expands `RUN_ID`. Elsewhere: the schedule starts one execution, named
+   as `run_id`. Never: a scheduler (`glossary.md` § Pre-AWS direction).
 
-**T-3 DownloadMarketData.** Two task runs of the one task definition, one per
-venue command, in one state; a day already on disk is skipped. Locally:
-`docker-data-download`. Elsewhere: the same, on the store volume. Never: a
-download fanned out per asset (`skill_asset_containers.md` § The topology).
+3. **DownloadMarketData.** Two task runs of the one task definition, one per
+   venue command, in one state; a day already on disk is skipped. Locally:
+   `docker-data-download`. Elsewhere: the same, on the store volume. Never: a
+   download fanned out per asset (`skill_asset_containers.md` § The topology).
 
-**T-4 BuildCanonicalData.** `module_data.ingest --tickers <TICKER>`. Locally:
-`dockerfanout`, width 1. Elsewhere: a Map over `TICKERS`, width 1, each a task
-run with `ASSET=<TICKER>`. Never: a database process (§ The chief antipattern).
+4. **BuildCanonicalData.** `module_data.ingest --tickers <TICKER>`. Locally:
+   `dockerfanout`, width 1. Elsewhere: a Map over `TICKERS`, width 1, each a
+   task run with `ASSET=<TICKER>`. Never: a database process (§ The chief
+   antipattern).
 
-**T-5 PublishStatus, for data.** `module_data.status` writes `data_status.json`
-once for the basket. Locally: `docker-data-status` in `pipeline`. Elsewhere: the
-same task run, no `ASSET`. Never: a resident as a requirement of a stage
-(`glossary.md` § Pre-AWS direction).
+5. **PublishStatus, for data.** `module_data.status` writes `data_status.json`
+   once for the basket. Locally: `docker-data-status` in `pipeline`. Elsewhere:
+   the same task run, no `ASSET`. Never: a resident as a requirement of a stage
+   (`glossary.md` § Pre-AWS direction).
 
-**T-6 The rebuild condition — absent.** Nothing is asked: every state below runs
-unconditionally, the rerun table of `methodology_ml.md` § 11 read by a human.
-Locally: the same. Elsewhere: a choice state would ask the predicates of § The
-rebuild condition stays separable — absent here — described. Never: a function
-that both detects new data and trains (`glossary.md` § Pre-AWS direction).
+6. **The rebuild condition — absent.** Nothing is asked: every state below runs
+   unconditionally, the rerun table of `methodology_ml.md` § 11 read by a human.
+   Locally: the same. Elsewhere: a choice state would ask the predicates of §
+   The rebuild condition stays separable — absent here — described. Never: a
+   function that both detects new data and trains (`glossary.md` § Pre-AWS
+   direction).
 
-**T-7 The research layer.** AggregateBars to EvaluateStrategy, each a Map over
-`TICKERS` as wide as `JOBS`. Locally: `dockerfanout` at `$(JOBS)`. Elsewhere: a
-task run per state per asset with `ASSET=<TICKER>`. Never: `ASSET` read by a
-stage module (`glossary.md` § Asset containers).
+7. **The research layer.** AggregateBars to EvaluateStrategy, each a Map over
+   `TICKERS` as wide as `JOBS`. Locally: `dockerfanout` at `$(JOBS)`. Elsewhere:
+   a task run per state per asset with `ASSET=<TICKER>`. Never: `ASSET` read by
+   a stage module (`glossary.md` § Asset containers).
 
-**T-8 PublishStatus for ML, then PublishStores.** `module_ml.status` writes
-`ml_status.json` and each `<TICKER>_README.md`; the run is over. Locally:
-`docker-ml-status`. Elsewhere: the same task run, then PublishStores copies the
-closed files whole to the four prefixes — absent here — described. Never:
-`s3://` in a path constant (`AGENTS.md` § Rejected vocabulary).
+8. **PublishStatus for ML, then PublishStores.** `module_ml.status` writes
+   `ml_status.json` and each `<TICKER>_README.md`; the run is over. Locally:
+   `docker-ml-status`. Elsewhere: the same task run, then PublishStores copies
+   the closed files whole to the four prefixes — absent here — described. Never:
+   `s3://` in a path constant (`AGENTS.md` § Rejected vocabulary).
 
-**T-9 Logs and metrics.** The recorder's files. Locally: with `RECORD`,
-`logs/<stage>_<docker_service>.log` and the 1 s samples in
-`store_run_records/<run_id>/`. Elsewhere: its row of § The mapping table —
-absent here — described. Never: a container number as a stage cost
-(`glossary.md` § Run record).
+9. **Logs and metrics.** The recorder's files. Locally: with `RECORD`,
+   `logs/<stage>_<docker_service>.log` and the 1 s samples in
+   `store_run_records/<run_id>/`. Elsewhere: its row of § The mapping table —
+   absent here — described. Never: a container number as a stage cost
+   (`glossary.md` § Run record).
 
-**T-10 The page, behind the tunnel.** Locally: `make on`, `127.0.0.1:8900`, the
-tunnel (`../README.md` § Quickstart). Elsewhere: `dashboard`, `devops` and
-`asset-<ticker>` kept running on the task host, a port-forward where the tunnel
-stands. Never: a published port (`glossary.md` § Asset containers).
+10. **The page, behind the tunnel.** Locally: `make on`, `127.0.0.1:8900`, the
+    tunnel (`../README.md` § Quickstart). Elsewhere: `dashboard`, `devops` and
+    `asset-<ticker>` kept running on the task host, a port-forward where the
+    tunnel stands. Never: a published port (`glossary.md` § Asset containers).
 
-**T-11 The strategy host — absent.** Locally: the Lean-exact raw tree, no
-runtime. Elsewhere: a separate Linux instance running Lean reads the raw prefix
-and `artifacts/<ticker>/<version>/` from the copy, its credentials from a
-secrets store; `module_trading/` absent here — described. Never: a module named
-for a cloud resource (`AGENTS.md` § Rejected vocabulary).
+11. **The strategy host — absent.** Locally: the Lean-exact raw tree, no
+    runtime. Elsewhere: a separate Linux instance running Lean reads the raw
+    prefix and `artifacts/<ticker>/<version>/` from the copy, its credentials
+    from a secrets store; `module_trading/` absent here — described. Never: a
+    module named for a cloud resource (`AGENTS.md` § Rejected vocabulary).
 
-**T-12 The day in the home and the copy, in no container.** Locally: the working
-tree and the page, every container exited
-(`../module_data/skills/skill_candle_canonicalisation.md` § 15). Elsewhere: the
-store volume, object storage under its four prefixes, the page. Never: a
-container as the home of an asset's state (`glossary.md` § Pre-AWS direction).
+12. **The day in the home and the copy, in no container.** Locally: the working
+    tree and the page, every container exited
+    (`../module_data/skills/skill_candle_canonicalisation.md` § 15). Elsewhere:
+    the store volume, object storage under its four prefixes, the page. Never: a
+    container as the home of an asset's state (`glossary.md` § Pre-AWS
+    direction).
 
 ## The mapping table
 
@@ -484,10 +521,10 @@ of one tree).
 
 | this repository has | responsibility | the same responsibility elsewhere | the move |
 |---|---|---|---|
-| the one image, `mlops-portfolio-1m-pipeline` | COMPUTE — the runtime every stage runs in | a container image in a registry (Amazon ECR); it carries the code only on the third phase of § The retrain runtime is a ladder | a rename |
+| the one image, `mlops-portfolio-1m-pipeline` | COMPUTE — the runtime every stage runs in | a container image in a registry (Amazon ECR); it carries the code only once the ladder reaches the phase named for it, *the image carries the code* (§ The retrain runtime is a ladder), and until then the volume carries it | a rename |
 | `docker compose run --rm -T pipeline python -m <module>.<stage>` | COMPUTE — one stage, one one-off process | one run of the one task definition, `pipeline`, with the command overridden to the stage (`RunTask`, Amazon ECS on Amazon EC2) on one Linux container instance shared by every asset's runs, the volume of the `.:/app` row mounted; the data-ingest and ml-research tasks are that definition run with a `module_data` or a `module_ml` command, never two definitions; AWS Fargate is the same task without the host, and so without the volume — a sentence here, never a phase | a rename |
 | a per-asset stage, `--tickers <TICKER>`, inside `asset-<ticker>` — the one line `dockerfanout` | COMPUTE — one stage for one asset | the same run with `ASSET=<TICKER>` overridden, one per asset — BuildCanonicalData on the data-ingest task, AggregateBars to EvaluateStrategy on the ml-research task; the resident it borrows locally is not borrowed there, and the exec into it becomes a task run — the one line where a mechanism changes and not a name | one edit |
-| one compose service per ticker under one anchor, and the residents beside it | INFRASTRUCTURE — the parameter made visible | one task definition parameterised by `ASSET`, never a new unit per asset; `dashboard`, `devops` and one `asset-<ticker>` per ticker kept running on the same instance as services of the container runtime, one per service, as they are kept running here (Amazon ECS) | a rename |
+| one compose service per ticker under one anchor, and the residents — `dashboard`, `devops`, `asset-<ticker>` — beside it | INFRASTRUCTURE — the parameter made visible | one task definition parameterised by `ASSET`, never a new unit per asset; `dashboard`, `devops` and one `asset-<ticker>` per ticker kept running on the same instance as services of the container runtime, one per service, as they are kept running here (Amazon ECS) | a rename |
 | the Makefile's `all:` and `ml-all:`, `xargs -P $(JOBS)`, `RUN_ID` | ORCHESTRATION — the explicit stage order, the width, the execution identity | a state machine whose states are the stages of § The Makefile is the developer interface, every fanned-out state a Map over `TICKERS` as wide as `JOBS`, and `run_id` as the execution name (AWS Step Functions) | a rename |
 | `.:/app` — the one bind mount of every service, the code and the `store_*` roots at one path | STORAGE — the home of state | a durable block volume mounted at `/app` by every task and service of the instance — `.:/app` read as `<volume>:/app` in the anchor's line and the one `devops` respells, every `store_*` root and both snapshots at the path its `config.py` builds today (Amazon EBS); never a network filesystem, never a task's own disk (§ The volume is the home, the store is the copy) | a rename |
 | `store_raw_1m/cryptofuture/<venue>/minute/<symbol>/YYYYMMDD_trade.zip` | STORAGE — raw, immutable, one object per UTC day | the same tree on the volume, and its copy under `raw/<venue>/<symbol>/<day>` in object storage after the run, each day object written once (Amazon S3) | a rename |
@@ -501,7 +538,7 @@ of one tree).
 | the `/containers`, `/runs` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
 | the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Linux instance (Amazon EC2) — the strategy host: a lean-backtest task, or a container that stays running and trades live, reading the raw and asset prefixes from the copy and never the volume, its brokerage credentials read from the secret below when it starts | absent here — described |
 | none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts | absent here — described |
-| `sub_module_devops` — the one socket; `sub_module_dx` | INFRASTRUCTURE — the engine's views, the repository's view | the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon; a console and a repository view, not project code — the console a sentence inside this row, no primitive of its own | a rename |
+| `sub_module_devops` — the one socket; `sub_module_dx` | INFRASTRUCTURE — the engine's views, the repository's view | the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon; the provider's console and a repository view, not project code — the console a sentence inside this row, no primitive of its own | a rename |
 | none — the copy after the run: every stage writes the working tree through `.:/app` and exits, and nothing copies | ORCHESTRATION — PublishStores, the copy after the run | a state after the last stage of a run has exited that copies each `store_*` root and the two snapshots whole to their prefixes — `raw/<venue>/<symbol>/<day>`, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — in object storage (Amazon S3), once per run, never a stage's own write, never mid-run (§ The volume is the home, the store is the copy) | absent here — described |
 
 ## Rejected forms
@@ -513,10 +550,13 @@ of one tree).
 | object storage as the first home | the reading in which the asset folder was a future storage prefix and an asset's files existed on a task's disk for one run and nothing after it — a pull and a push around every stage, an adapter, the second backend nothing has earned (§ The chief antipattern); the prefix is the copy, never the home |
 | a batch service (AWS Batch) | a queue and a job definition for stages that are already an ordered list; the state machine is the order, the service that runs the tasks is the container |
 | a run without a host first (AWS Fargate) | no host, no volume, no file — a sentence in the `run --rm -T pipeline` row of § The mapping table, never a phase (§ The retrain runtime is a ladder) |
+| a cluster for one host (Amazon EKS) | a control plane, nodes and manifests kept running for four services on one host — the *no Kubernetes* of § Non-goals, and the one rule behind them; the question *how many hosts, how many services?* of § Infrastructure seats answers one host |
+| a task on a host the provider holds (Amazon ECS Managed Instances) | no bind mount to a path on a host this project holds, and no host daemon socket — `.:/app` on every service and `/var/run/docker.sock` in `devops` (`docker-compose.yml`; `skill_asset_containers.md`, *The socket rule, and its one scope*) are both a path on the host |
+| a managed web service for the dashboard (AWS App Runner) | the page is published on loopback alone and reached through the tunnel (`../README.md` § Quickstart); a front is refused until a reader outside the host appears — the static dashboard row of § The mapping table |
+| a stage as a function run from the image on an event (AWS Lambda) | a stage reads a store and writes a store on the disk the next stage reads (`AGENTS.md` § Pre-AWS architectural direction, *Compute owns no state*, *Storage is separate from compute*); the search and the training are not short functions, and no event exists to run one on (§ The rebuild condition stays separable) |
 
-A host per asset, a database process and Kubernetes are refused where named:
-`AGENTS.md` § Pre-AWS architectural direction, § The chief antipattern, §
-Non-goals, and the one rule behind them.
+A host per asset and a database process are refused where named: `AGENTS.md`
+§ Pre-AWS architectural direction, and § The chief antipattern.
 
 ## The chief antipattern
 
@@ -546,7 +586,7 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 | `module_ml/bars.py` opens `module_data`'s database read-write; every other ML open is read-only | one stored object, two writing modules, across the storage → ML-compute line | one durable writer at a time, sequenced by `ml-all` and enforced by the whole-file lock; the three aggregation tables are a pure, idempotent function of `ohlcv_1m_canonical`; a second database is forbidden by `../module_data/skills/skill_candle_canonicalisation.md` § 13 | no — described |
 | `module_data.status` takes no `--tickers`; `module_ml.status` accepts it and folds the basket regardless | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
 | the two snapshots are written into `module_monitoring/` and tracked | status objects live under a `module_*` and are the web root at once | classify, do not move: STORAGE produced by DATA and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; their move to `status/` turns five points — the two path constants, the directory `serve.py` serves, the two literal fetches — and is the prerequisite of ever narrowing the mount; the skill that would govern it is `skill_status_prefix.md` (`AGENTS.md` § Skills absent here, described) | no — described |
-| `Dockerfile` copies no code; code and state both arrive through `.:/app` | the image is a dependency layer, not a compute artifact | said, not built: one mount is the local simplification; phase C of § The retrain runtime is a ladder is the image carrying the code and the mount carrying the state — `skill_image_contents.md` (`AGENTS.md` § Skills absent here, described) | no — described |
+| `Dockerfile` copies no code; code and state both arrive through `.:/app` | the image is a dependency layer, not a compute artifact | said, not built: one mount is the local simplification; the phase *the image carries the code* of § The retrain runtime is a ladder is the image carrying the code and the mount carrying the state alone — `skill_image_contents.md` (`AGENTS.md` § Skills absent here, described) | no — described |
 | `record.py` holds the map of every stage to the artifacts it leaves | pipeline-shape knowledge in the representation module | measurement may hold stage → artifact, never the stage order or a dependency between stages; a later condition reads this table rather than starting a second | no — described |
 | a recorded run fails if any stage failed *or* the dashboard probe failed; finalising needs `docker` and `git` on the host | two facts in one number; the run cannot be finalised elsewhere | a local lifecycle verdict — the chain ran and the page represents it; an execution record finalised off the host judges on the exit codes alone, which are already in the record — a clause of `skill_stage_state_machine.md` (`AGENTS.md` § Skills absent here, described) | no — described |
 | `module_monitoring/` is served wholesale, four routes and a proxy beside static files | one root is page, package and status store | the files and the snapshots are static objects; the routes are a reader process | no — described |

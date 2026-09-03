@@ -150,7 +150,8 @@ to, or with the documents that deploy nowhere.
 Correctness is shown by the whole chain running end to end on a small
 representative basket, `BTC` today, never by production-scale infrastructure:
 there is no test suite, no security layer and no guard beyond the seven the
-mathematics needs. The rule, its non-goals and the mapping table:
+mathematics needs (`AGENTS.md` § Values). The rule, its non-goals and the
+mapping table:
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
 
 The same skill seats the four things a move would name first — the host and the

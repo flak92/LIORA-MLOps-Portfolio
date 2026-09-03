@@ -229,11 +229,11 @@ the minute is flagged so that downstream monitoring can count it.
 
 ## 8. Scenario — a candle on both venues
 
-Both candles valid. The decision is entirely § 7: cases A, B and D keep the
-whole Binance candle, case C takes the whole Bybit candle. Whichever wins,
-`binance_valid` and `bybit_valid` are both `true` on the stored row, and
-`rel_divergence` is measured (§ 10) — the losing venue is recorded as having
-been present, never as having contributed a value.
+Both candles valid. The decision is entirely § 7: every case keeps the whole
+Binance candle but the one where only the secondary traded, which takes the
+whole Bybit candle. Whichever wins, `binance_valid` and `bybit_valid` are both
+`true` on the stored row, and `rel_divergence` is measured (§ 10) — the losing
+venue is recorded as having been present, never as having contributed a value.
 
 ## 9. Scenario — a candle on one venue
 
@@ -477,8 +477,8 @@ probe, idempotence by file presence — are `methodology_data.md` § 3.
 - **A single-venue minute has nothing to fail over to.** When only one venue is
   listed and it prints a no-trade candle, the canonical bar is that candle,
   flagged `zero_volume`; when it prints nothing, the bar is a forward fill.
-  The failover of § 7 case C needs two listed venues to have anything to choose
-  between.
+  The failover of § 7 — only the secondary traded — needs two listed venues
+  to have anything to choose between.
 - **A source switch carries the cross-venue basis.** Changing venue between two
   minutes can move the canonical close by the current Binance–Bybit basis
   without either venue having moved. The count and the largest such move are
@@ -513,10 +513,11 @@ Canonical   binance source  99.994 %
             source switches      18
 ```
 
-The 181 Bybit minutes are exactly Binance's 181 zero-volume minutes: case C of
-§ 7 firing on every one of them. That correspondence is a property of this run,
-not a rule — a future run in which Bybit also printed no trade on one of those
-minutes would move it to case D.
+The 181 Bybit minutes are exactly Binance's 181 zero-volume minutes: the case
+of § 7 where only the secondary traded, firing on every one of them. That
+correspondence is a property of this run, not a rule — a later run in which
+Bybit also printed no trade on one of those minutes would move it to the case
+where neither venue traded.
 
 ## 19. Naming
 

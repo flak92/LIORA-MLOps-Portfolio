@@ -10,7 +10,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| one chronological segment of the research window | `fold`, `fold_id` | `fold_2` … `fold_5` | `F2` … `F5` | split, period, chunk |
+| one chronological segment of the research window — `F1`, the first, is trained on and never evaluated (`../module_ml/skills/methodology_ml.md` § 6) | `fold`, `fold_id` | `fold_2` … `fold_5` | `F2` … `F5` | split, period, chunk |
 | the segment boundaries | `fold_bounds()`, `FOLD_BOUNDS_MS` | — | — | split_bounds |
 | the folds used for the data-driven selection of model hyper-parameters and the entry edge threshold | `VALIDATION_FOLD_IDS` = (2, 3, 4) | `validation` | `F2`–`F4` | test folds, CV folds, "the folds that choose every parameter" |
 | the fold that is only ever evaluated | `FINAL_HOLDOUT_FOLD_ID` = 5 | `final_holdout`, `final_holdout_fold_id` | `F5 — final holdout (out-of-sample)` | test, test set, locked test, final OOS |
@@ -294,7 +294,7 @@ sub-module and the control that opens its page.
 | the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
 | one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S5` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
 | the arc of the root's ring a story occupies — its roots at the island radius, their fans beyond | `island`, `ISLANDS`, `ISLAND_ORDER`, `ISLAND_RADIUS`, `ISLAND_GAP` | `island` (the per-node map of a view) | — | a second word for the story in the configuration; band, cluster, section |
-| the key that isolates one island | the digit of the story id — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
+| the key that isolates one island | the digit of the story id, and the digit the island's name begins with — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
 | the node at the centre of an island, per view | `hub` | `hub` | — | anchor, root of the island |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |
@@ -335,9 +335,12 @@ choice holds the rule; these are the names it uses.
 
 The names `AGENTS.md` § Pre-AWS architectural direction and
 `skill_pre_aws_solution.md` use — how the repository is drawn, not what it
-computes; the rules are there, not here. Cloud proper nouns are external
-vocabulary; the closed list of where one may be spoken is `AGENTS.md` § Pre-AWS
-architectural direction, and no identifier, key or path carries one.
+computes; the rules are there, not here. The mapping table is
+`skill_pre_aws_solution.md` § The mapping table, and *the elsewhere column*
+its column *the same responsibility elsewhere*. Cloud proper nouns are
+external vocabulary; the closed list of where one may be spoken is
+`AGENTS.md` § Pre-AWS architectural direction, and no identifier, key or path
+carries one.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
@@ -349,10 +352,12 @@ architectural direction, and no identifier, key or path carries one.
 | the resource role: the name a cloud resource would carry — `<project>-<environment>-<resource-role>`, the role the primitive id of the deployment view with `_` read as `-`, the project the head the image name already carries | — (no identifier; `mlops-portfolio-1m-pipeline` is the one name of that shape the tree holds, with no environment token) | — | — | a second list of roles; a role that is not a primitive id; `dev` or `prod` in a tracked name; a ticker in a resource name; an environment token on the image tag |
 | a state name: the state a stage would be — one per row of `skill_pre_aws_solution.md` § The Makefile is the developer interface, and PublishStores, the copy state no stage answers to; *Publish* in a state name means: write the object where its readers read it | — (a word of the elsewhere column; no identifier) | — | — | registering them one by one; a state name with "and" in it; *publish* as *make public* |
 | the store volume: the task host's durable disk mounted at `/app` — every asset's folder and the other `store_*` roots at today's paths | `.:/app` in `docker-compose.yml`, read forward as `<volume>:/app`; `store_volume`, a primitive id of the deployment view — no identifier carries it | — | — | asset volume; a volume per asset; a shared network filesystem; the volume as the copy; `data_volume` |
-| the ladder: phase A lift, phase B idiom, phase C the image carries the code — the order in which the runtime elsewhere becomes true | — (a word of `skill_pre_aws_solution.md` § The retrain runtime is a ladder; no identifier) | — | — | a phase as a branch or an environment; `dev` / `prod`; a phase built here; rung |
+| the ladder: the three phases in which the runtime elsewhere becomes true, each named for what it changes — *the lift*, *the idiom*, *the image carries the code* | — (a word of `skill_pre_aws_solution.md` § The retrain runtime is a ladder; no identifier) | — | — | a letter or a number for a phase; a phase as a branch or an environment; `dev` / `prod`; a phase built here; rung |
 | the promotion threshold: a second concurrent writer or a cross-asset query — the one condition under which a managed database replaces an asset's embedded file | — (a word of `skill_pre_aws_solution.md` § The databases; no identifier) | — | — | a database process for one writer; a threshold in rows or bytes |
 | the active version: the one `<version>` of an asset's artifacts a reader reads, chosen where the reader is | — (`<version>` is the execution name, `run_id`; no identifier) | — | — | latest, current, prod; a mark inside a file |
 | the tunnel: how a reader reaches the page on a host that is not theirs — `ssh -L 8900:127.0.0.1:8900 <host>` of `../README.md` § Quickstart; elsewhere a port-forward, the elsewhere column's word | — (a command of the README; no identifier) | — | — | a public port; a load balancer |
+| read forward: a local object read as the same responsibility elsewhere — the mapping table's column — with nothing moved | — (a phrase of the documents; no identifier) | — | — | migrated, ported, deployed, in production |
+| the move: what a local thing's seat elsewhere costs it — a rename, one edit, or absent here — described; the fourth column of the mapping table | — (a word of `skill_pre_aws_solution.md` § The mapping table; no identifier) | — | the notice's *shaped for the move* | migration, deployment, a plan, a roadmap |
 
 ## DevOps panel
 

@@ -39,7 +39,7 @@ repeal of the socket rule lives with the topology it changes,
 The containment is of the **mount**, not of the **reach**. Any client that can
 reach the dashboard's loopback origin can reach the Engine through the proxy —
 including a page on another site, because a simple cross-origin `POST` needs no
-preflight. There is no auth, no token and no origin check in v1. Stated, not
+preflight. There is no auth, no token and no origin check. Stated, not
 mitigated.
 
 `devops` runs as the host user like every other service and takes the host's
@@ -50,8 +50,8 @@ Makefile measures that group the way it measures `UID` and `GID`.
 `devops` keeps the same socket, because the service that runs the tasks starts
 them through the host's own daemon; a task is a foreign container in the
 **containers on this host** table; § The guard refuses it the three verbs as any
-other project's. The console and container metrics are absent here — described.
-`../../module_skills/skill_pre_aws_solution.md` § The mapping table.
+other project's. The provider's console and container metrics are absent here —
+described. `../../module_skills/skill_pre_aws_solution.md` § The mapping table.
 
 ## The API
 
@@ -106,7 +106,7 @@ the container already holds the state the action asks for. It carries no body �
 a 304 cannot — so the page reads the status and says the action changed nothing.
 `refused` belongs to the 403 above and to nothing else.
 
-Not in v1, each needing its own decision: `rm`, `exec`, `prune`, image
+Not offered, each needing its own decision: `rm`, `exec`, `prune`, image
 operations, compose up/down from the browser, log streaming.
 
 ## The views, and which number is the truer one

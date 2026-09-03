@@ -87,7 +87,7 @@ The four questions a reader asks, each answered in `skills/skill_candle_canonica
 - **Both venues printed a candle** — § 6 (the decision table) and § 7 (the volume cases);
 - **Only one venue printed a candle** — § 9;
 - **Neither venue printed a usable candle** — § 10 (the forward fill);
-- **Both venues printed a candle that traded nothing** — § 7, case D.
+- **Both venues printed a candle that traded nothing** — § 7, the case where neither venue traded.
 
 What makes a candle eligible at all is § 4; the two absolutes that hold across every answer are § 5.
 

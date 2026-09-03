@@ -14,7 +14,7 @@ Ownership decides location, and `AGENTS.md` § The default choice holds the rule
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this repository — subtract, don't add |
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology, the container endpoint and the scoped socket rule — the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
-| [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seats, the ladder, the non-goals, and why none of it is built |
+| [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seat paragraphs, the ladder, the non-goals, and why none of it is built |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
 

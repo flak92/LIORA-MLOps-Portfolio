@@ -39,7 +39,7 @@ way edge weight does — not a knob.
 | `default_story` | Group for paths no `story_map` entry covers. It is **set**, so a newly added file simply joins that group and the drawing still builds. Setting it to `null` would instead make an unmapped path a hard error — deliberate friction this repository does not ask for. |
 | `exclude` | Glob patterns removed before anything else. `*` and `?` never cross `/`; `**/` stands for zero or more leading segments; a trailing `/` means the directory and everything beneath it. The drawn page excludes itself here. |
 | `story_map` | Path → group id. **Longest prefix wins.** A key ending in `/` covers that directory and its subtree; any other key is an exact path. |
-| `stories` | The groups, one island each, with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the page reads a digit key as `S` plus that digit, and offers only the digits its stories answer to. |
+| `stories` | The groups, one island each, with `name` (legend and side panel), `color` (hex) and optional `hub`. Ids must be `S1`…`S9`: the page reads a digit key as `S` plus that digit, offers only the digits its stories answer to, and an island's name begins with its digit, so the legend says which key isolates it. |
 | `stories.<id>.hub` | The node — a path, or a primitive id — that group's island is built around: first on the island's arc, with the halo and the label that never fades. Optional — by default the shallowest folder in the group wins. A `hub` naming a path that is not in the drawing is an error, and so is one that `story_map` puts on another story: that island would be drawn with no centre and the other with two. |
 | `story_order` | The order the islands are laid out in, clockwise. The island count comes from this list. |
 | `core` | `name` and `color` of the repository-root node. |
@@ -162,13 +162,14 @@ sub-modules with the module that serves them, and their sentences say what each 
 guarantee neither covers nor needs it. Its arc rises in proportion to its length
 (`FLOW_LIFT_PER_LENGTH`), so a flow between neighbouring islands is a low arch and a flow between
 islands that are not neighbours in `story_order` is a high one, drawn over the fans it passes — an
-arc, not a chord. `story_order` is chosen so most flows join neighbours, and the task host's island
-— the one most flows touch — takes the ml-research task and the object stores as its two
-neighbours; the deployment view has seven that do not: the registry's arc to the task host, which
-pulls the image; the state machine's arc to the task host, which sits above every stage by design;
-the volume's arc back to the schedule and condition, whose input it is; the two arcs between the
-task host and the data-ingest task — the host runs it, and it writes the volume; and the two arcs to
-the reader container — the host runs it, and it reads the volume. The store's two arcs to the absent
+arc, not a chord. `story_order` is chosen so most flows join neighbours, and the island of the task
+host — the Linux container instance the tasks run on, the one most flows touch — takes the
+ml-research task and the object stores as its two neighbours; the deployment view has seven that do
+not: the registry's arc to the task host, which pulls the image; the state machine's arc to the task
+host, which sits above every stage by design; the volume's arc back to the schedule and condition,
+whose input it is; the two arcs between the task host and the data-ingest task — the host runs it,
+and it writes the volume; and the two arcs to the reader container — the host runs it, and it reads
+the volume. The store's two arcs to the absent
 strategy host join neighbours, because the strategy host reads the copy and sits beside it. A flow
 stops short of its target by `FLOW_TIP_GAP`, a hub's halo radius, so the arrowhead is seen.
 
