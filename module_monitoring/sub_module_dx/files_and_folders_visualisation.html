@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 6c28932 \u00b7 2026-09-02 21:07:24",
+ "subtitle": "65 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of c000229 \u00b7 2026-09-03 11:51:09",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -158,33 +158,33 @@ const VIEWS = {
   },
   "desc": {
    "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
-   "Dockerfile": "The recipe of the one image, `mlops-portfolio-1m-pipeline`: a dependency layer today, and a future image carries the code \u2014 built from the tree and pushed to the registry beside it.",
-   "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
+   "Dockerfile": "The recipe of the one image, `mlops-portfolio-1m-pipeline`: a dependency layer, built from the tree and pushed to the registry beside it; the code rides the volume until the image carries it, on the ladder's third phase.",
+   "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
    "README.md": "The overview: the domain drawing, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
-   "asset_store": "Object storage with one prefix per asset (Amazon S3): the canonical market object as one versioned object, the parquets and JSONs as artifact objects under the same prefix \u2014 `store_assets_artifacts/\u003cTICKER>/` read forward. The asset's whole namespace lives here and on no host.",
+   "asset_store": "Object storage with one prefix per asset and version (Amazon S3): `artifacts/\u003cticker>/\u003cversion>/`, the version the run's execution name \u2014 the asset folder copied whole from the volume after the run: the one database file and the parquets and JSONs beside it. The copy, never the home; the strategy host reads it here.",
    "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none \u2014 the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here \u2014 described.",
-   "dashboard_front": "Static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront): the page files and the two snapshots, served to the browser with no process rendering them; the reader container answers beside it.",
-   "data_ingest_task": "The data-ingest task (an Amazon ECS Task on the task host): one container run per stage \u2014 DownloadMarketData and PublishStatus for data once for the basket, BuildCanonicalData once per asset \u2014 that fetches the venues' public endpoints, writes the raw objects, builds the asset's canonical market object and exits, holding nothing between runs.",
-   "docker-compose.yml": "One task definition parameterised by `ASSET`, registered with the service that runs it on the host beside it \u2014 never a new unit per asset; the anchors are its local spelling, one service per ticker written out so the parameter stays visible.",
-   "event_rule": "An event rule and a condition state (Amazon EventBridge, a Step Functions choice): new raw objects \u2192 does this asset need its artifacts rebuilt? \u2192 yes: run the asset's states from BuildCanonicalData on. Today the condition is the downloaders' day-presence skip and the rerun table of `methodology_ml.md` \u00a7 11, read by a human. Absent here \u2014 described.",
-   "image_registry": "A container image in a registry (Amazon ECR): `mlops-portfolio-1m-pipeline`, the one runtime package every task runs \u2014 built from the tree, carrying the code the bind mount carries today, pulled by the task host.",
+   "dashboard_front": "A static front (Amazon S3 with Amazon CloudFront): the page files and the two snapshots served with no process rendering them \u2014 only when a reader outside the host appears; until then the reader container beside it serves them from the volume. Absent here \u2014 described.",
+   "data_ingest_task": "The data-ingest task: the one task definition run with a `module_data` command (`RunTask` with the command overridden, on the task host) \u2014 DownloadMarketData and PublishStatus for data once for the basket, BuildCanonicalData once per asset with `ASSET` overridden \u2014 that fetches the venues' public endpoints, writes the raw tree and the asset's canonical market object on the volume and exits, holding nothing between runs.",
+   "docker-compose.yml": "One task definition parameterised by `ASSET`, registered with the service that runs it on the host beside it \u2014 never a new unit per asset \u2014 and the residents \u2014 the dashboard, the panel and one `asset-\u003cticker>` per ticker \u2014 as services kept running, one per service, as they are here; the anchors are its local spelling, one service per ticker written out so the parameter stays visible, and `.:/app` is `\u003cvolume>:/app` read forward.",
+   "event_rule": "A schedule and a condition state (Amazon EventBridge Scheduler; a Step Functions choice): the schedule starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full \u2014 `is_full_utc_day()` in `module_data/lean.py`; the condition asks the volume whether this asset needs its artifacts rebuilt, and gates the states from AggregateBars on. Today the cadence is a hand typing `make docker-all`, and the condition the downloaders' day-presence skip and the rerun table of `methodology_ml.md` \u00a7 11, read by a human. Absent here \u2014 described.",
+   "image_registry": "A container image in a registry (Amazon ECR): `mlops-portfolio-1m-pipeline`, the one runtime package every task runs \u2014 built from the tree, pulled by the task host; it carries the code only on the ladder's third phase, and until then the volume carries it, as the bind mount does today.",
    "log_streams": "Log streams keyed by stage and container, and metrics (Amazon CloudWatch): every task's output and the 1 s samples `record.py` keeps in the run record today, shipped off the host. Absent here \u2014 described.",
-   "ml_research_task": "The ml-research task per `ASSET` (`RunTask` with `ASSET=BTC`, on the same host): one container run per stage from AggregateBars to EvaluateStrategy, and PublishStatus for ML once for the basket, never per asset \u2014 pulling the asset's versioned object into its own disk, writing it back whole with the artifacts beside it, and holding nothing between runs.",
-   "module_data/": "The code of the data-ingest task: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status \u2014 it travels in the image and runs in the task beside it.",
+   "ml_research_task": "The ml-research task: the same task definition run with a `module_ml` command and `ASSET` overridden (`RunTask` with `ASSET=\u003cTICKER>`, on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for ML once for the basket, never per asset \u2014 reading and writing the asset's folder on the volume, and holding nothing between runs.",
+   "module_data/": "The code of the data-ingest task: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status \u2014 it rides the volume until the image carries it, on the ladder's third phase, and runs in the task beside it.",
    "module_data/README_module_data.md": "",
-   "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects; `--tickers \u003cTICKER>` \u2014 `ASSET` at the container boundary \u2014 is the parameter an asset-scoped run takes.",
+   "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects \u2014 `research_ohlcv_duckdb()` and `artifact_dir()`, both here, both resolving unchanged on the volume, the copy's key being each path relative to `STORE_ASSETS_ARTIFACTS_DIR`; `--tickers \u003cTICKER>` \u2014 `ASSET` at the container boundary \u2014 is the parameter an asset-scoped run takes.",
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
-   "module_data/ingest.py": "The BuildCanonicalData state: reads the raw objects under a venue and symbol prefix and writes the canonical market object back whole \u2014 the storage \u2192 ML-compute line begins at its output.",
+   "module_data/ingest.py": "The BuildCanonicalData state: reads the raw tree under a venue and symbol prefix on the volume and writes the canonical market object beside it \u2014 the storage \u2192 ML-compute line begins at its output.",
    "module_data/lean.py": "The Lean-exact raw format \u2014 the whole of Lean's presence here; the strategy host would read the raw objects in this format directly.",
    "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
    "module_data/skills/methodology_data.md": "",
    "module_data/skills/skill_candle_canonicalisation.md": "",
-   "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out.",
-   "module_ml/": "The code of the ml-research task: bars, features, labels, search, model, strategy evaluation and the ML status \u2014 it travels in the image and runs in the task beside it, one `ASSET` at a time.",
+   "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out; its own prefix, `status/`, is the five points of the skill's review table.",
+   "module_ml/": "The code of the ml-research task: bars, features, labels, search, model, strategy evaluation and the ML status \u2014 it rides the volume until the image carries it, on the ladder's third phase, and runs in the task beside it, one `ASSET` at a time.",
    "module_ml/README_module_ml.md": "",
-   "module_ml/bars.py": "The AggregateBars state, and the one write across the storage \u2192 ML-compute line: the three aggregation tables are a pure function of the canonical series, written back into the object the task read.",
-   "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; a future `\u003cprefix>/\u003cticker>/\u003cversion>/` is a rename there, not a redesign here.",
+   "module_ml/bars.py": "The AggregateBars state, and the one write across the storage \u2192 ML-compute line: the three aggregation tables are a pure function of the canonical series, written into the same file on the volume the task read.",
+   "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; the copy's key is each descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR`, so a version prefix edits nothing here.",
    "module_ml/dataset.py": "",
    "module_ml/features.py": "",
    "module_ml/hpo.py": "",
@@ -193,36 +193,36 @@ const VIEWS = {
    "module_ml/model.py": "",
    "module_ml/skills/": "The research methodology travels inside the task's code: a document, not a primitive.",
    "module_ml/skills/methodology_ml.md": "",
-   "module_ml/status.py": "The PublishStatus state for ML: the basket's status object as a fold over completed asset artifacts, and each asset's README as an artifact object under its prefix.",
+   "module_ml/status.py": "The PublishStatus state for ML: the basket's status object as a fold over completed asset artifacts, and each asset's README as an artifact object under its prefix; the snapshot's own prefix, `status/`, is the same five points.",
    "module_ml/strategy.py": "",
    "module_ml/train.py": "",
    "module_ml/validation.py": "The gate of the whole system, and the same gate wherever it runs: purged walk-forward folds and the frozen final holdout are code inside the task, not a primitive.",
-   "module_monitoring/": "The static dashboard's files \u2014 the page, its scripts, the two snapshots \u2014 as static objects behind the front beside them; `serve.py`'s routes and `record.py` are the reader container's and the tasks' code.",
+   "module_monitoring/": "The page files \u2014 the page, its scripts, the two snapshots \u2014 served by the reader container beside them from the volume, the static front absent; `serve.py`'s routes are that container's code, and `record.py` the tasks'.",
    "module_monitoring/README_module_monitoring.md": "",
    "module_monitoring/asset.js": "",
    "module_monitoring/config.py": "Every address the reader knows \u2014 the internal port, the service names, the run record's paths \u2014 built once here; no code depends on a container name.",
    "module_monitoring/data.js": "",
-   "module_monitoring/data_status.json": "A status object produced by data compute and read by the page \u2014 a static object beside the page today, tracked so a fresh clone opens on real numbers; its own prefix is a handful of edits away, listed in the skill's review table.",
-   "module_monitoring/index.html": "The page: a static object; no process renders it.",
+   "module_monitoring/data_status.json": "A status object produced by data compute and read by the page \u2014 tracked beside the page today so a fresh clone opens on real numbers; its own prefix, `status/`, is the five points of the skill's review table.",
+   "module_monitoring/index.html": "The page: a file on the volume, served by the reader container as it is here; no static front serves it.",
    "module_monitoring/ml.js": "",
-   "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts \u2014 a static object beside the page today, the same handful of edits away from its own prefix.",
+   "module_monitoring/ml_status.json": "A status object produced by ML compute, a fold over completed asset artifacts \u2014 tracked beside the page today, the same five points from its own prefix.",
    "module_monitoring/page.js": "",
-   "module_monitoring/record.py": "Writes the run object from inside whichever task ran the stage; its logs and 1 s samples are the log streams and metrics on the task host's island.",
+   "module_monitoring/record.py": "Writes the run record on the volume from inside whichever task ran the stage; its logs and 1 s samples are the log streams and metrics on the task host's island.",
    "module_monitoring/run.js": "",
-   "module_monitoring/serve.py": "Three things in one file: every file it serves today is a static object behind the front, its `/containers`, `/runs` and `/devops/*` routes are the reader container that stays running, and its asset role, `/status`, is the resident container \u2014 a local mechanism with no primitive.",
+   "module_monitoring/serve.py": "Three things in one file: every file it serves is served by the reader container from the volume, its `/containers`, `/runs` and `/devops/*` routes are that container, and its asset role, `/status`, is the `asset-\u003cticker>` service beside it \u2014 a local mechanism the host keeps, with no primitive of its own.",
    "module_monitoring/skills/": "The page's conventions, this drawing's contract and the panel's travel with the code: documents, not primitives.",
    "module_monitoring/skills/skill_dashboard_conventions.md": "",
    "module_monitoring/skills/skill_developer_experience_drawing.md": "",
    "module_monitoring/skills/skill_devops_panel.md": "",
    "module_monitoring/style.css": "",
-   "module_monitoring/sub_module_devops/": "The engine's views \u2014 a console, not project code; the socket it holds is a local mechanism with no primitive of its own.",
+   "module_monitoring/sub_module_devops/": "The engine's views \u2014 a console, not project code; the socket it holds is the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon.",
    "module_monitoring/sub_module_devops/config.py": "",
    "module_monitoring/sub_module_devops/containers.js": "",
    "module_monitoring/sub_module_devops/devops.css": "",
    "module_monitoring/sub_module_devops/devops.js": "",
    "module_monitoring/sub_module_devops/index.html": "",
-   "module_monitoring/sub_module_devops/serve.py": "The one container that holds the docker socket: a console over the local engine's own inventory, a local mechanism.",
-   "module_monitoring/sub_module_dx/": "The repository's view \u2014 this drawing, a static object like the page, and not project code.",
+   "module_monitoring/sub_module_devops/serve.py": "The one container that holds the docker socket: a console over the engine's own inventory \u2014 the same socket on the instance, unchanged.",
+   "module_monitoring/sub_module_dx/": "The repository's view \u2014 this drawing, a static object beside the page and served as the page is, and not project code.",
    "module_monitoring/sub_module_dx/config.py": "",
    "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "",
    "module_monitoring/sub_module_dx/visualisation_config.json": "",
@@ -233,25 +233,44 @@ const VIEWS = {
    "module_skills/skill_agent_first_development.md": "",
    "module_skills/skill_asset_containers.md": "",
    "module_skills/skill_determinism.md": "",
-   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its right column is these primitives.",
+   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its column *the same responsibility elsewhere* is these primitives.",
    "module_skills/skill_self_explaining_naming.md": "",
    "module_skills/skill_sorting_files_naming_standard.md": "",
-   "raw_store": "Raw objects under a venue and symbol prefix (Amazon S3): one immutable object per UTC day, written Lean-exact so the strategy host could read them as they are; their presence is the rebuild condition's only input today. Here it is `store_raw_1m/`, on disk and untracked, so the development view does not hold it.",
-   "reader_container": "A container that stays running, not a static object: the `/containers`, `/runs` and `/devops/*` routes of `serve.py`, reading the run objects and reporting the containers \u2014 the one project process on this island; the console beside it is not project code.",
+   "raw_store": "Raw objects under a venue and symbol prefix (Amazon S3): `raw/\u003cvenue>/\u003csymbol>/\u003cday>`, one object per UTC day, each written once \u2014 the raw tree copied from the volume after the run, Lean-exact so the strategy host could read it as it is. Here it is `store_raw_1m/`, on disk and untracked, so the development view does not hold it.",
+   "reader_container": "The `dashboard` service kept running on the task host: the `/containers`, `/runs` and `/devops/*` routes of `serve.py`, reading the run records and the snapshots on the volume and reaching the asset services and the panel by name as here; reached from outside by port-forward, where `ssh -L` stands today, and by no public port.",
    "requirements.txt": "The image's dependency layer, resolved when the image is built and read by no task at run time.",
-   "root": "The same tracked tree, read forward: every file and folder seated beside the primitive it would run on or live in \u2014 the right column of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them, and the rows inside them seated beside them. Described and drawn, built nowhere.",
-   "run_store": "Status and run objects in object storage: `store_run_records/\u003crun_id>/`, written by `record.py` from inside whichever task ran the stage and closed by its `--finalise` on the host, read by the reader container; the two status snapshots would live here too \u2014 tracked beside the page today, so this picture seats them there. Here it is on disk and untracked.",
-   "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:` and `ml-all:` are the same order, read locally.",
-   "store_assets_artifacts/": "The local form of the asset prefixes: one folder per ticker, the tracked README and parameters two of its objects; the store beside it is this folder read forward.",
-   "store_assets_artifacts/BTC/": "The `BTC` prefix: `BTC_research_ohlcv.duckdb` as the one versioned database object \u2014 pulled into a task's own disk, one writer at a time, written back whole \u2014 with the parquets and JSONs as artifact objects keyed `BTC_\u003cartifact>` beside it.",
+   "root": "The same tracked tree, read forward: every file and folder seated beside the primitive it would run on or live in \u2014 the column *the same responsibility elsewhere* of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them. One host with a durable volume is the home of every store, object storage its copy after the run, the stages the states of one machine. Described and drawn, built nowhere.",
+   "run_store": "Run and status objects in object storage (Amazon S3): `runs/\u003crun_id>/` \u2014 the record `record.py` writes on the volume from inside whichever task ran the stage \u2014 and `status/`, the two snapshots' own prefix, both copied from the volume after the run. The reader on the host reads the home, not this copy. Here it is `store_run_records/`, on disk and untracked, and the snapshots tracked beside the page.",
+   "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus, then PublishStores \u2014 the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` \u2014 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:` and `ml-all:` are the same order, read locally.",
+   "store_assets_artifacts/": "The asset folders and their home: one folder per ticker on the volume, the tracked README and parameters two of its files; the store beside it is this folder's copy after the run, never its home.",
+   "store_assets_artifacts/BTC/": "The `BTC` folder on the volume: `BTC_research_ohlcv.duckdb` as the one embedded database \u2014 six tables under one whole-file lock, one writer at a time \u2014 copied whole to `artifacts/BTC/\u003cversion>/` after the run with the parquets and JSONs keyed `BTC_\u003cartifact>` beside it; never a database process.",
+   "store_volume": "A durable block volume mounted at `/app` by every task and service of the instance (Amazon EBS): `.:/app` read as `\u003cvolume>:/app`, so every `store_*` root and both snapshots sit at the path its `config.py` builds today, the whole-file lock holds, and no stage changes. The home of state, and of the code until the image carries it; the three stores on the island beside it are its copy, taken whole after the last stage of a run has exited, never by a stage and never mid-run.",
    "strategy_host": "A separate Linux instance running QuantConnect Lean (Amazon EC2): one strategy container \u2014 a lean-backtest task, or one that stays running and trades live \u2014 reading the raw objects in Lean's own format and the research artifacts under the asset prefix, its brokerage credentials read once from the secrets store when it starts. No Lean runtime, container or dependency exists in this repository. Absent here \u2014 described.",
-   "task_host": "One Linux container instance (Amazon ECS on Amazon EC2): the one host every asset's runs share. It pulls the image and runs the data-ingest and ml-research tasks the state machine starts, and owns no state \u2014 a task builds the asset's files and folders on its disk from the asset's prefix and writes them back whole, and nothing stays after the run. `ASSET` is a namespace, never a host of its own; AWS Fargate would be the same task without the host."
+   "task_host": "One Linux container instance (Amazon ECS on Amazon EC2): the one host every asset's runs share, its durable volume beside it. It pulls the image, runs the one task definition the state machine starts \u2014 once per stage, once per asset \u2014 and keeps the dashboard, the panel and one `asset-\u003cticker>` running as services, one per service, as the residents are kept running here, reached by port-forward and by no public port. `ASSET` is a namespace, never a host of its own; AWS Fargate would be the same task without the host, and so without the volume."
   },
   "flows": [
    {
     "from": "image_registry",
     "thick": false,
     "to": "task_host",
+    "type": "flow"
+   },
+   {
+    "from": "state_machine",
+    "thick": false,
+    "to": "task_host",
+    "type": "flow"
+   },
+   {
+    "from": "event_rule",
+    "thick": false,
+    "to": "state_machine",
+    "type": "flow"
+   },
+   {
+    "from": "store_volume",
+    "thick": false,
+    "to": "event_rule",
     "type": "flow"
    },
    {
@@ -263,29 +282,29 @@ const VIEWS = {
    {
     "from": "task_host",
     "thick": false,
+    "to": "ml_research_task",
+    "type": "flow"
+   },
+   {
+    "from": "task_host",
+    "thick": false,
+    "to": "reader_container",
+    "type": "flow"
+   },
+   {
+    "from": "task_host",
+    "thick": false,
     "to": "log_streams",
     "type": "flow"
    },
    {
     "from": "data_ingest_task",
     "thick": false,
-    "to": "raw_store",
+    "to": "store_volume",
     "type": "flow"
    },
    {
-    "from": "data_ingest_task",
-    "thick": false,
-    "to": "asset_store",
-    "type": "flow"
-   },
-   {
-    "from": "data_ingest_task",
-    "thick": false,
-    "to": "run_store",
-    "type": "flow"
-   },
-   {
-    "from": "asset_store",
+    "from": "store_volume",
     "thick": false,
     "to": "ml_research_task",
     "type": "flow"
@@ -293,13 +312,31 @@ const VIEWS = {
    {
     "from": "ml_research_task",
     "thick": false,
+    "to": "store_volume",
+    "type": "flow"
+   },
+   {
+    "from": "store_volume",
+    "thick": false,
+    "to": "raw_store",
+    "type": "flow"
+   },
+   {
+    "from": "store_volume",
+    "thick": false,
     "to": "asset_store",
     "type": "flow"
    },
    {
-    "from": "ml_research_task",
+    "from": "store_volume",
     "thick": false,
     "to": "run_store",
+    "type": "flow"
+   },
+   {
+    "from": "store_volume",
+    "thick": false,
+    "to": "reader_container",
     "type": "flow"
    },
    {
@@ -312,36 +349,6 @@ const VIEWS = {
     "from": "brokerage_secret",
     "thick": false,
     "to": "strategy_host",
-    "type": "flow"
-   },
-   {
-    "from": "event_rule",
-    "thick": false,
-    "to": "state_machine",
-    "type": "flow"
-   },
-   {
-    "from": "state_machine",
-    "thick": false,
-    "to": "task_host",
-    "type": "flow"
-   },
-   {
-    "from": "raw_store",
-    "thick": false,
-    "to": "event_rule",
-    "type": "flow"
-   },
-   {
-    "from": "task_host",
-    "thick": false,
-    "to": "ml_research_task",
-    "type": "flow"
-   },
-   {
-    "from": "run_store",
-    "thick": false,
-    "to": "reader_container",
     "type": "flow"
    },
    {
@@ -364,7 +371,7 @@ const VIEWS = {
    "S4": "data_ingest_task",
    "S5": "asset_store",
    "S6": "ml_research_task",
-   "S7": "dashboard_front",
+   "S7": "reader_container",
    "S8": "strategy_host",
    "S9": "state_machine"
   },
@@ -456,6 +463,7 @@ const VIEWS = {
    "state_machine": "S9",
    "store_assets_artifacts/": "S5",
    "store_assets_artifacts/BTC/": "S5",
+   "store_volume": "S3",
    "strategy_host": "S8",
    "task_host": "S3"
   },
@@ -470,7 +478,7 @@ const VIEWS = {
    },
    "S3": {
     "color": "#4F9259",
-    "name": "S3 \u00b7 Task host (Amazon ECS on Amazon EC2)"
+    "name": "S3 \u00b7 Task host with a durable volume (Amazon ECS on Amazon EC2)"
    },
    "S4": {
     "color": "#F2B24E",
@@ -478,7 +486,7 @@ const VIEWS = {
    },
    "S5": {
     "color": "#5BC8F2",
-    "name": "S5 \u00b7 Object storage (Amazon S3)"
+    "name": "S5 \u00b7 Object storage \u2014 the copy after the run (Amazon S3)"
    },
    "S6": {
     "color": "#E06BD8",
@@ -486,7 +494,7 @@ const VIEWS = {
    },
    "S7": {
     "color": "#96D850",
-    "name": "S7 \u00b7 Static dashboard (Amazon CloudFront)"
+    "name": "S7 \u00b7 Dashboard \u2014 a service on the task host (Amazon ECS)"
    },
    "S8": {
     "color": "#FBBBCE",
@@ -501,16 +509,16 @@ const VIEWS = {
     "name": "Repository root"
    }
   },
-  "notice": "Mapping functionalities\ninto AWS-env architecture\nin progress \u2014\nthe files and folders of this repository\nare shaped for an easier migration to AWS",
+  "notice": "Mapping functionalities\ninto AWS-env architecture\nin progress \u2014\nthe files and folders of this repository\nare shaped for the move",
   "order": [
    "S1",
    "S2",
-   "S3",
    "S4",
-   "S5",
    "S6",
-   "S7",
+   "S3",
+   "S5",
    "S8",
+   "S7",
    "S9"
   ],
   "place": {},
@@ -526,9 +534,17 @@ const VIEWS = {
    {
     "absent": false,
     "id": "task_host",
-    "name": "Task host \u2014 one Linux container instance for every asset's runs (Amazon ECS on Amazon EC2)",
+    "name": "Task host \u2014 one Linux container instance with a durable volume, for every asset's runs (Amazon ECS on Amazon EC2)",
     "path": "task_host",
     "role": "instance",
+    "type": "primitive"
+   },
+   {
+    "absent": false,
+    "id": "store_volume",
+    "name": "Store volume \u2014 every asset's folder and the other store_* roots, and the code until the image carries it (Amazon EBS)",
+    "path": "store_volume",
+    "role": "store",
     "type": "primitive"
    },
    {
@@ -542,7 +558,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "data_ingest_task",
-    "name": "data-ingest task (Amazon ECS)",
+    "name": "data-ingest task \u2014 one run of the task definition per stage (Amazon ECS)",
     "path": "data_ingest_task",
     "role": "container",
     "type": "primitive"
@@ -550,7 +566,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "asset_store",
-    "name": "Asset store \u2014 one prefix per asset in object storage (Amazon S3)",
+    "name": "Asset store \u2014 one prefix per asset and version, the copy of the asset folder (Amazon S3)",
     "path": "asset_store",
     "role": "store",
     "type": "primitive"
@@ -558,7 +574,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "raw_store",
-    "name": "Raw store \u2014 raw objects under a venue and symbol prefix (Amazon S3)",
+    "name": "Raw store \u2014 raw objects under a venue and symbol prefix, each written once (Amazon S3)",
     "path": "raw_store",
     "role": "store",
     "type": "primitive"
@@ -566,7 +582,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "run_store",
-    "name": "Run store \u2014 status and run objects in object storage",
+    "name": "Run store \u2014 run and status objects, the copy of the run records and the two snapshots (Amazon S3)",
     "path": "run_store",
     "role": "store",
     "type": "primitive"
@@ -574,15 +590,15 @@ const VIEWS = {
    {
     "absent": false,
     "id": "ml_research_task",
-    "name": "ml-research task \u2014 per ASSET (Amazon ECS)",
+    "name": "ml-research task \u2014 the same task definition per ASSET (Amazon ECS)",
     "path": "ml_research_task",
     "role": "container",
     "type": "primitive"
    },
    {
-    "absent": false,
+    "absent": true,
     "id": "dashboard_front",
-    "name": "Dashboard front \u2014 static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront)",
+    "name": "Dashboard front \u2014 a static front for a reader outside the host (Amazon S3 with Amazon CloudFront)",
     "path": "dashboard_front",
     "role": "front",
     "type": "primitive"
@@ -590,7 +606,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "reader_container",
-    "name": "Reader container \u2014 stays running, not a static object",
+    "name": "Reader container \u2014 the dashboard as a service on the task host, reached by port-forward (Amazon ECS)",
     "path": "reader_container",
     "role": "container",
     "type": "primitive"
@@ -614,7 +630,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "state_machine",
-    "name": "State machine \u2014 the stages as states (AWS Step Functions)",
+    "name": "State machine \u2014 the stages as states, a Map over the basket (AWS Step Functions)",
     "path": "state_machine",
     "role": "state_machine",
     "type": "primitive"
@@ -622,7 +638,7 @@ const VIEWS = {
    {
     "absent": true,
     "id": "event_rule",
-    "name": "Event rule \u2014 and a condition state (Amazon EventBridge, a Step Functions choice)",
+    "name": "Schedule and condition \u2014 the cadence that starts the machine, and the rebuild condition as a choice state (Amazon EventBridge Scheduler; a Step Functions choice)",
     "path": "event_rule",
     "role": "event_rule",
     "type": "primitive"
@@ -716,6 +732,7 @@ const VIEWS = {
    "state_machine": "state_machine",
    "store_assets_artifacts/": "module",
    "store_assets_artifacts/BTC/": "database",
+   "store_volume": "store",
    "strategy_host": "instance",
    "task_host": "instance"
   }
