@@ -1,5 +1,21 @@
 # Report: the seats reviewed for excess
 
+## In short
+
+The mapping is minimal against its own rule — *the seat of each thing is the
+cheapest that keeps its boundary* — and, at three cells, less than it. Elsewhere
+holds two services at the lift (the instance and its volume), five more at the
+idiom (the service that runs the tasks, the state machine, the schedule, the
+copy after the run, the log streams and metrics), one more when the image
+carries the code (the registry); three seats stand only on their condition, and
+nine forms are refused. Nothing is built for any of them. Three cells find less:
+the resident asset service, whose footprint elsewhere is an idle server's; the
+metrics half of the log row, which the non-goals would let go first; and the
+*governs* column of the absent skills, which says in one line what its cited
+section says at length. One seat, the copy after the run, is kept for a reader
+that is absent here, and the report says so. The count is § The count, the
+argument seat by seat is § Seat by seat: what could be less, and whether it is.
+
 The Pre-AWS mapping of `module_skills/skill_pre_aws_solution.md` names, for
 every local boundary, the standard primitive it would become on Amazon Web
 Services (AWS). This report reads that mapping against one question: for a
