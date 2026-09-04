@@ -57,7 +57,7 @@
 
   "descriptions": {
     "root": "The single-asset runtime as its own repository. Working path: AGENTS.md \u2192 module names \u2192 README_module_<name>.md \u2192 the module's own skills \u2192 code.",
-    "Makefile": "Entrypoint of everything \u2014 per-asset fan-out, JOBS measured from cores and memory, OMP threads pinned to 1 for determinism.",
+    "Makefile": "Entrypoint of everything \u2014 per-asset fan-out, JOBS measured from cores and memory, the host port from the ports in use, OMP threads pinned to 1 for determinism.",
     "docker-compose.yml": "One image, two anchors: what every service is, and the one command the dashboard and the assets add.",
     "module_data/": "Ingest \u2014 venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
     "module_data/ingest.py": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",

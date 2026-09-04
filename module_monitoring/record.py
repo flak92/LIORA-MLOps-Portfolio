@@ -328,7 +328,7 @@ def fetch_dashboard_ready() -> dict:
     """The readiness check that closes a run: the dashboard's own registry, then one question per
     asset through its proxy. The run is ready only when the registry and every asset answered 200;
     url and status_code stay at this level because they are what the Lifecycle tab prints."""
-    port = os.environ.get("PORT", str(config.CONTAINER_PORT))
+    port = os.environ["PORT"]
     started_at = datetime.now(tz=UTC)
     started_monotonic = time.monotonic()
     registry = fetch_dashboard_route(config.dashboard_registry_url(port))

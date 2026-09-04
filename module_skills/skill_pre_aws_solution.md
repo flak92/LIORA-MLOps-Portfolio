@@ -271,8 +271,10 @@ because `.:/app` shadows it, and narrowing needs the snapshots out of
 Compose services are named for their runtime role — `pipeline`, `dashboard`,
 `asset-<ticker>`, `devops` (`skill_asset_containers.md` § The topology) — never
 for a ticker, a tool or an author; container, network and volume names stay
-compose-derived, never fixed, so that checkouts of LIORA can sit side by side
-on one host (`../module_monitoring/skills/skill_devops_panel.md` § The guard);
+compose-derived, never fixed, and the host port is measured, never fixed
+(`skill_asset_containers.md` § The topology), so that checkouts of LIORA can
+sit side by side on one host
+(`../module_monitoring/skills/skill_devops_panel.md` § The guard);
 no code depends on a container name — code knows `ASSET`, and every address is
 built once, in `module_monitoring/config.py`.
 
@@ -489,7 +491,7 @@ elsewhere, and — `Never:` — the refusal that stands, cited where it stands.
    absent here — described. Never: a container number as a stage cost
    (`glossary.md` § Run record).
 
-10. **The page, behind the tunnel.** Locally: `make on`, `127.0.0.1:8900`, the
+10. **The page, behind the tunnel.** Locally: `make on`, the address it prints, the
     tunnel (`../README.md` § Quickstart). Elsewhere: `dashboard`, `devops` and
     `asset-<ticker>` kept running on the task host, a port-forward where the
     tunnel stands. Never: a published port (`glossary.md` § Asset containers).
@@ -592,7 +594,7 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 | `module_monitoring/` is served wholesale, four routes and a proxy beside static files | one root is page, package and status store | the files and the snapshots are static objects; the routes are a reader process | no — described |
 | no callable "does this asset need a rebuild?" exists | the condition has no home; nothing is wrongly fused | keep compute unconditional; a future predicate is the `is_` / `has_` / `requires_` question above, never a lift of the downloader's loop | no — described |
 | `docker-btc-all`, `docker-btc-lifecycle` | a ticker in a target name | detached from every document and page; retire when the basket grows, as their sunset notes say | no — described |
-| compose project, container and network names derive from the directory | none | checkouts of LIORA can sit side by side on one host with the same service names; a fixed name would merge them | no — described |
+| compose project, container and network names derive from the directory | none | checkouts of LIORA can sit side by side on one host with the same service names; a fixed name would merge them, and the host port is measured for the same reason | no — described |
 | the image is named `mlops-portfolio-1m-pipeline`, a name older than LIORA | none for the mapping: one runtime package, no ticker | kept; the name is one runtime package with no ticker, which is all the mapping needs; two checkouts that build one tag share whichever built last, so a rename is worth doing only under a tag no sibling builds | no — described |
 | `centered_rsi14` is spelled the American way | the one identifier that breaks the British spelling of the prose | a stored column, an artifact key and a feature name — a contract with files on disk that moves only with every writer and reader in one commit | no — described |
 | the drawing's `color` key is spelled the CSS way beside prose that says colour | one key against the British prose around it | the word of the CSS it feeds; fifteen keys of `visualisation_config.json`, the generator, the template and a redraw of the derived page would move together for one letter | no — described |

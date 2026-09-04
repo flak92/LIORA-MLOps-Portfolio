@@ -1,5 +1,11 @@
 PY          := .venv/bin/python
-PORT        ?= 8900
+# the host side of the dashboard's mapping, measured at invocation: the port the dashboard already publishes,
+# else the first free port from 8900 upward — another checkout of LIORA on this host may hold 8900
+PORT ?= $(shell p=$$(docker compose port dashboard 8900 2>/dev/null | cut -d: -f2); \
+                if [ -z "$$p" ]; then p=8900; while ss -Hltn "sport = :$$p" | grep -q .; do p=$$((p+1)); done; fi; \
+                echo $$p)
+# measured once per make: the mapping, the page and the finalise line ask one port
+PORT := $(PORT)
 # the docker group of this host, so the one container that holds the socket can read it without being root
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
 COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
@@ -62,9 +68,9 @@ monitoring-dx-update: ## redraw the developer-experience drawing of the tracked 
 
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
-docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers at http://127.0.0.1:$(PORT)/, then open the page
+docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
 	$(COMPOSE) up -d dashboard devops $(ASSET_SERVICE_LIST)
-	@python3 -c "import webbrowser; webbrowser.open('http://127.0.0.1:$(PORT)/')"
+	@python3 -c "import webbrowser; url = 'http://127.0.0.1:$(PORT)/'; print('dashboard at', url); webbrowser.open(url)"
 docker-down:     ## stop and remove every container
 	$(COMPOSE) down
 # the presentation switch — the one alias pair the target grammar admits (AGENTS.md § Canonical vocabulary):
@@ -102,5 +108,5 @@ docker-all-record: docker-build ## one recorded run of the whole chain, the whol
 	$(COMPOSE) up -d dashboard
 	@run_id=$(RUN_ID); \
 	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id" && \
-	 python3 -m module_monitoring.record --finalise $$run_id
+	 PORT=$(PORT) python3 -m module_monitoring.record --finalise $$run_id
 docker-btc-lifecycle: docker-all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows

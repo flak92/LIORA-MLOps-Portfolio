@@ -16,7 +16,7 @@ from pathlib import Path
 from module_data.config import REPO_ROOT
 
 # ---- the one server, its role chosen by ASSET
-CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping
+CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping, measured by the Makefile
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
 PIPELINE_SERVICE = "pipeline"            # the compose service a basket-wide stage runs in
 DEVOPS_SERVICE = "devops"                # the one compose service that holds the docker socket

@@ -53,9 +53,17 @@ store stays central and Lean-exact. The one mount carries the code and the
 the runtime, keeps them apart (`skill_pre_aws_solution.md` § Docker is compute,
 not storage). Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
-argument: the server is docker-only; `PORT` is only the host side of the
-dashboard's mapping, so a stage run with another `PORT` never recreates a
-resident. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
+argument: the server is docker-only. `PORT` is only the host side of the
+dashboard's mapping, measured at invocation, never hardcoded — the Makefile asks
+for the port the dashboard already publishes, else the first free port from 8900
+upward, because another checkout of LIORA on the same host may hold 8900
+(`skill_pre_aws_solution.md` § What stays as it is, and why, the row on compose
+names); `PORT=n` overrides it, `make on` prints the address, and no document
+states the host port as a number. The measurement is a look, not a lock: a port
+taken between the look and the bind fails the start, and the next `make on`
+looks again — stated, not mitigated. A stage run with another `PORT` never
+recreates a resident, and a checkout without the rule keeps assuming 8900 and
+fails its own start the day this one holds it. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
 fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
 `make docker-up` builds the image if needed, starts the dashboard and the

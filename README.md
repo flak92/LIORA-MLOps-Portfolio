@@ -26,7 +26,7 @@ one-line purpose. On and off — one word each, the presentation switch; from
 there everything is a click in the page:
 
 ```bash
-make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, open http://127.0.0.1:8900/  (= make docker-up)
+make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it  (= make docker-up)
 make off                   # stop and remove every container of this project  (= make docker-down)
 ```
 
@@ -45,7 +45,8 @@ make monitoring-dx-update  # redraw the developer-experience drawing after the t
 
 Three readers, three doors, all behind `make on`:
 
-- **business** — the status page at `http://127.0.0.1:8900/`: *Pipeline*, *Data
+- **business** — the status page at `http://127.0.0.1:<port>/`, the address
+  `make on` prints: *Pipeline*, *Data
   Quality*, *ML Research*, *ML Assets* and *Lifecycle*, the results and the cost
   of producing them (§ Dashboard below);
 - **developer** — the **DX** control in the top right opens the drawing of the
@@ -60,11 +61,14 @@ Three readers, three doors, all behind `make on`:
 A single stage runs by name, on the host or in its container — `make ml-features`,
 `make docker-ml-features`: every `data-<stage>` and `ml-<stage>` target has its
 `docker-` twin, and `docker-ml-all` and `docker-all` are the chains. The stage
-order is the Makefile's `all:` and `ml-all:`; every document points there. `PORT=8902 make docker-up` moves the dashboard's host
-port, `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
+order is the Makefile's `all:` and `ml-all:`; every document points there. The host port is measured
+at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
+(`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make docker-up` overrides
+it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
 a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
-`ssh -L 8900:127.0.0.1:8900 <host>`. Locally, every per-asset stage runs inside
+`ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
+Locally, every per-asset stage runs inside
 that asset's own resident container, `asset-<ticker>` — one service of
 `docker-compose.yml` per ticker of the basket, one image for all — though no stage
 depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
@@ -173,7 +177,7 @@ boundary — what could be less, and whether it is — is
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
-| dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:8900`, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
+| dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
 ## Data formats

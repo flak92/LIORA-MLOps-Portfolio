@@ -358,7 +358,10 @@ already binds that are worth steering away from on sight.
 - **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a
   second compose file, `/var/run/docker.sock` in any container other than
   `devops` — the one service whose responsibility is docker management, and
-  which publishes no port (`module_skills/skill_asset_containers.md`); `TODO`, `FIXME`,
+  which publishes no port (`module_skills/skill_asset_containers.md`); `8900` as the
+  page's address in a document, a command or a comment — the host port is measured, the
+  page's address the one `make on` prints (`module_skills/skill_asset_containers.md`
+  § The topology); `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
   generator, framework; `authority`, `single source of truth`; `one-shot` for a
   one-off; `cloud-ready`, `AWS-ready`, `cloud-native`; `s3://` in a path
