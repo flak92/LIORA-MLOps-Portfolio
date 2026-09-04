@@ -43,6 +43,17 @@ make docker-all-record     # the same chain, recorded stage by stage into store_
 make monitoring-dx-update  # redraw the developer-experience drawing after the tracked tree changes
 ```
 
+The feature-set search, outside the chain, one asset at a time:
+
+```bash
+make tmux-ml-feature-set-search ASSET=BTC   # the search detached in tmux session feature-set-btc; it outlives the terminal, resumes if rerun
+tmux attach -t feature-set-btc              # watch it; Ctrl-C stops it
+```
+
+Its proposals are the *Feature set* view and the PROPOSALS frame of *ML
+Assets*; `tmux` is a tool of the host beside `docker` and `git`, never of the
+image.
+
 Three readers, three doors, all behind `make on`:
 
 - **business** — the status page at `http://127.0.0.1:<port>/`, the address
@@ -176,6 +187,7 @@ boundary — what could be less, and whether it is — is
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
+| feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only; resumes; promotes nothing; its detached twin `make tmux-ml-feature-set-search` outlives the terminal |
 | lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
@@ -201,7 +213,7 @@ raw ZIP trees. Schema:
 - **ML Research** — the cross-section of every asset's result, and the feature
   catalogue: every definition the repository computes, its terms, the history
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
-- **ML Assets** — one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURE SET;
+- **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
 - **Lifecycle** — one recorded run end to end: what ran, in which container, as
   which PID, for how long, at what CPU and peak resident set, what bytes it moved
   and what it left on disk; then one shared timeline with a dashed rule at every

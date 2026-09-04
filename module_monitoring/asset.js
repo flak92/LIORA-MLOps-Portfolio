@@ -152,13 +152,58 @@ function buildFeatureSetFrame(asset, mlStatus) {
   return frame.frame;
 }
 
+/* what the feature-set search found: every proposal with what it adds and removes against the active set,
+   its fold results and its deflated Sharpe ratio; the delta against the active score is page arithmetic */
+function formatColumnChanges(proposal, timeframes) {
+  return timeframes.map((timeframe) =>
+    proposal.added_columns_by_timeframe[timeframe].map((name) => "+" + name + "_" + timeframe)
+      .concat(proposal.removed_columns_by_timeframe[timeframe].map((name) => "\u2212" + name + "_" + timeframe)).join(" "))
+    .filter((changes) => changes.length).join(" · ");
+}
+
+function buildProposalsFrame(asset, mlStatus) {
+  const frame = buildFrame("PROPOSALS — feature sets the search found on the validation folds; none is promoted by itself");
+  const search = asset.feature_set_search;
+  if (search === null) {
+    frame.body.appendChild(buildFootnote("no feature-set search yet — run `make ml-feature-set-search ASSET=" + asset.ticker + "`"));
+    return frame.frame;
+  }
+  const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
+  const folds = validationFolds(asset);
+  frame.body.appendChild(buildKeyValueBox([
+    ["search", search.trial_count + " trials in " + search.pass_count + " passes · " + (search.search_converged ? "converged" : "not converged")
+      + " · active score " + formatNumber(asset.strategy.selection_score_mean_sharpe, 3)],
+  ]));
+  frame.body.appendChild(buildTable(
+    ["#", "trial", "columns added / removed", ...folds.map((fold) => "Sharpe F" + fold.split("_")[1]),
+     ...folds.map((fold) => "trades F" + fold.split("_")[1]), "score", "&Delta; vs active", "&tau;", "deflated Sharpe ratio"],
+    search.proposals.map((proposal) => {
+      const delta = proposal.selection_score_mean_sharpe - asset.strategy.selection_score_mean_sharpe;
+      const deflated = proposal.deflated_sharpe_ratio;
+      return [
+        proposal.proposal, proposal.trial, formatColumnChanges(proposal, timeframes),
+        ...folds.map((fold) => formatNumber(proposal.validation[fold].sharpe, 2)),
+        ...folds.map((fold) => formatCount(proposal.validation[fold].trade_count)),
+        formatNumber(proposal.selection_score_mean_sharpe, 3),
+        (delta >= 0 ? "+" : "") + delta.toFixed(3),
+        proposal.entry_edge_threshold.toFixed(2),
+        deflated === null ? "-" : formatPercent(deflated.probability, 1),
+      ];
+    })));
+  frame.body.appendChild(buildFootnote("the score is the mean validation-fold Sharpe at the proposal's own entry edge threshold, "
+    + "under the parameters the search froze; the deflated Sharpe ratio is the probability that it beats the maximum "
+    + "expected from as many trials as cleared the trade floor. Nothing here touched the final holdout."));
+  return frame.frame;
+}
+
 function renderAsset(ticker) {
   const mlStatus = ML_STATUS;
   const host = document.getElementById("asset-detail");
   const asset = mlStatus.assets.find((candidate) => candidate.ticker === ticker);
   host.textContent = "";
   host.appendChild(buildHeaderLine(asset, mlStatus));
-  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeatureSetFrame(asset, mlStatus)]
+  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeatureSetFrame(asset, mlStatus),
+   buildProposalsFrame(asset, mlStatus)]
     .forEach((el) => host.appendChild(el));
 }
 

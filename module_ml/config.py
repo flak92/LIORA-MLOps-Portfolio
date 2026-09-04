@@ -77,6 +77,16 @@ ANNUALISATION_PERIOD_15M_BARS = 96 * 365        # crypto trades 24/7
 # timeframes whose trend sign must agree with the side before an entry is taken
 MINIMUM_AGREEING_TREND_TIMEFRAMES = 2
 
+# ---- the feature-set search: evaluated on the validation folds only, the final holdout never chooses
+FEATURE_SET_MAXIMUM_COLUMNS_PER_TIMEFRAME = 6
+FEATURE_SET_MINIMUM_COLUMNS_PER_TIMEFRAME = 1
+# a column enters the set only for this much mean validation Sharpe; a column leaves it at no worse score
+FEATURE_SET_FORWARD_ACCEPTANCE_MINIMUM_SHARPE_DELTA = 0.10
+FEATURE_SET_PROPOSAL_COUNT = 3
+FEATURE_SET_SEARCH_MOVE_FORWARD = "forward"
+FEATURE_SET_SEARCH_MOVE_BACKWARD = "backward"
+EULER_MASCHERONI_CONSTANT = 0.5772156649015329   # the expected maximum of the deflated Sharpe ratio
+
 # ---- the asset folder paths: every per-asset file carries the <TICKER>_ prefix, a time series its grid in
 # timeframe slots (module_skills/skill_sorting_files_naming_standard.md); built here and nowhere else — the
 # feature parquets by module_features/config.py
@@ -101,6 +111,10 @@ def model_evaluation_json(ticker):
 
 def strategy_evaluation_json(ticker):
     return artifact_dir(ticker) / f"{ticker}_strategy_evaluation.json"
+
+
+def feature_set_search_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_feature_set_search.json"
 
 
 def asset_readme_md(ticker):

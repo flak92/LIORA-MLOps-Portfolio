@@ -87,7 +87,8 @@ adjective (`ambiguous`) names no number.
 | rows the model is fitted on, and the events purged before them | `training_row_count`, `purged_event_count` | same | trained on / purged | n_train, n_purged |
 | rows in a prediction window | `window_row_count` | `window_row_count` | window | n_window |
 | trades a fold produced | `trade_count` | `trade_count` | trades | n_trades |
-| trials the search ran | `trial_count` | `trial_count` | trials | n_trials |
+| trials a search ran — the hyper-parameter search's, or the scored sets of the feature-set search | `trial_count` | `trial_count` | trials | n_trials |
+| passes of the feature-set search — one forward step and one backward step over the champion | `pass_count` | `pass_count` | passes | rounds (the boosting rounds' word), iterations (the Map's word) |
 
 ## Data quality (data_status.json)
 
@@ -115,12 +116,20 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 | log-loss of the weighted training class prior | `prior_logloss` | `prior_logloss` | prior log-loss (`prior LL` in a cross-section header) | baseline |
 | log-loss of the model on the evaluated block | `model_logloss` | `model_logloss` | model log-loss (`model LL` in a cross-section header) | loss |
 | information beyond the prior, `1 − model / prior` | `relative_logloss_skill` | `relative_logloss_skill` | skill (`rel. skill`, `val skill F<n>`, `mean val skill`, `holdout skill` in the tables) | accuracy, edge |
-| the search for model hyper-parameters, and the stage that runs it | HPO — `module_ml/hpo.py`, `make ml-hpo` | `hyperparameter_search_result` | search | tuning, optimisation, autoML; `HPO` spelled out mid-document after its first use |
+| the search for model hyper-parameters, and the stage that runs it | HPO — `module_ml/hpo.py`, `make ml-hpo` | `hyperparameter_search_result` | search | tuning, optimisation, autoML; `HPO` spelled out mid-document after its first use; `search` alone for the feature-set search |
+| the feature-set search — the stepwise choice of an asset's columns on the validation folds under the frozen hyper-parameters, and the stage that runs it (`../module_ml/skills/methodology_ml.md` § 4) | `module_ml/feature_set_search.py`, `make ml-feature-set-search`, its docker twin and its detached twin `tmux-ml-feature-set-search` in the tmux session `feature-set-<ticker>` (`FEATURE_SET_SEARCH_SESSION`) | `feature_set_search` (a block of ml_status.json), `<TICKER>_feature_set_search.json` | feature-set search | feature selection (as a name), optimisation, the search (HPO's word) |
+| one scored set of the feature-set search — its columns, its score, its threshold and fold results, its return moments, the pass and the move that scored it | a row of `trials` | `trials`, each `columns_by_timeframe`, `selection_score_mean_sharpe`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `validation`, `return_count`, `return_skewness`, `return_kurtosis`, `pass`, `move` | trial | candidate (as a key), step |
+| the set the search stands on — the best accepted so far, and the one the backward step reads | `champion_trial` | `champion_trial` | — | incumbent, current best |
+| the two moves of a pass — one column in for at least the acceptance margin, the least important column out at no worse score | `FEATURE_SET_SEARCH_MOVE_FORWARD`, `FEATURE_SET_SEARCH_MOVE_BACKWARD`; `FEATURE_SET_FORWARD_ACCEPTANCE_MINIMUM_SHARPE_DELTA`, `FEATURE_SET_MAXIMUM_COLUMNS_PER_TIMEFRAME`, `FEATURE_SET_MINIMUM_COLUMNS_PER_TIMEFRAME` | `move` = `forward` / `backward` | forward / backward | add / drop, greedy, step |
+| whether a pass accepted nothing — the search is over | `search_converged` | `search_converged` | converged | done, finished, stopped |
+| the sets the search proposes — the best scored sets that cleared the trade floor and differ from the active one, at most `FEATURE_SET_PROPOSAL_COUNT` | `proposals` | `proposals`, each `proposal`, `trial`, `columns_by_timeframe`, `added_columns_by_timeframe`, `removed_columns_by_timeframe`, `entry_edge_threshold`, `selection_score_mean_sharpe`, `validation`, `deflated_sharpe_ratio` | PROPOSALS | recommendations, top sets, best features |
+| the inputs a search recorded, compared by equality when it is rerun — equal, it resumes; different, it starts again — the one copy of another file's content an artifact carries, admitted as the key of that comparison | `inputs` | `inputs` with `research_window`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe` | — | fingerprint, hash, checksum |
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss (`best LL` in the search table) | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | the chosen point itself — the closed set of eight, in xgboost's own spelling because `module_ml/hpo.py` is a named boundary | the keys of `HYPERPARAMETER_SEARCH_SPACE`, `module_ml/config.py` — the one definition the search, the file and the table all derive from | `best_params`: `alpha`, `colsample_bytree`, `eta`, `lambda`, `max_depth`, `min_child_weight`, `num_boost_round`, `subsample` | depth, eta, min child, subsample, colsample, lambda, alpha, rounds — the search table's columns | a project synonym for an xgboost parameter; a second name for any of the eight; registering them one by one |
 | what the search never touches — the constants the experiment freezes before it starts | `module_features/config.py`: the research window, `WARMUP_TOP_TIMEFRAME_BARS`, the register and the catalogue with every parameter in its terms; `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER` and `ATR_WILDER_SMOOTHING_PERIOD_BARS` (the barrier's width), `LABEL_HORIZON_MINUTES`, `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md and methodology_features.md | a searched parameter among them; a value changed without a commit that says so; a feature parameter copied out of the catalogue into a named constant |
-| annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe; `selection score` for the validation mean, and `degradation` for holdout Sharpe minus the selection score — presentation arithmetic | return/risk |
+| annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe; `selection score` for the validation mean, and `degradation` for holdout Sharpe minus the selection score — presentation arithmetic; `Δ vs active` for a proposal's score minus the active set's, the same arithmetic | return/risk |
+| the deflated Sharpe ratio of a proposal (`methodology_ml.md` § 13 [14]) — the probability that its Sharpe per 15m bar beats the maximum expected from as many trials as cleared the trade floor, with the return moments of its own trial | `deflated_sharpe_ratio_block()` | `deflated_sharpe_ratio` with `probability`, `sharpe_15m`, `expected_maximum_sharpe_15m`; `null` below two trials | deflated Sharpe ratio (`DSR` after its first spelled use on a page) | PSR, haircut, a probability of a set that is not the proposal's |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
 | share of a fold's trades that ended positive | `hit_rate` | `hit_rate` | hit | win rate |
@@ -141,7 +150,7 @@ key is in this register.
 |---|---|---|
 | when the snapshot is written | `generated_at_utc` | the one timestamp of a payload |
 | the frozen experiment, once, globally | `research_window` with `start_utc`, `end_utc`, `seed` | the window and the seed, published once — no per-asset copy |
-| the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `feature_columns`, `validation_importance`, `strategy`, `artifacts` | the experiment flow, sample → search → validation → holdout → attribution → strategy, then the folder |
+| the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `feature_columns`, `validation_importance`, `feature_set_search` (`null` while no search has run; else `trial_count`, `pass_count`, `search_converged`, `proposals`), `strategy`, `artifacts` | the experiment flow, sample → search → validation → holdout → attribution → the feature-set search → strategy, then the folder |
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
 | the structural facts the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`, `catalogue` | which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads; the register, the warm-up, every catalogued definition with its terms, histories and warm-up, and the nesting of the levels — the facts of `module_features/config.py`, published here because that module measures no run state |
 | the catalogue block | `catalogue` with `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars` —, `operators`, `normaliser`, `range`, `timeframes`, `history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_history_hours`, `upper_shortest_history_hours`) | the catalogue as the register presents it — the catalogue frame of the ML Research tab reads nothing else |
@@ -179,12 +188,14 @@ The nine manifest files in `LC_COLLATE=C` listing order — the order
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `event_resolution`, `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` |
 | `<TICKER>_model_evaluation.json` | `module_ml/train.py` | `validation.fold_2..4` and `final_holdout`, each `prior_logloss`, `model_logloss`, `relative_logloss_skill`, `scored_row_count`; `validation_importance.fold_2..4`, each `gain_importance`, `mean_abs_shap_importance`, `permutation_logloss_delta_importance` per column; `feature_columns`; `class_counts`, `labels`, `segments` |
 | `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full windows of F2–F5; metrics score only the supervised subset |
+| `<TICKER>_feature_set_search.json` | `module_ml/feature_set_search.py` | `inputs`, `trials`, `champion_trial`, `pass_count`, `search_converged`, `proposals` — the search's own state, rewritten after every scored trial; present once a search has run |
 | `<TICKER>_parameters.json` | `module_ml/hpo.py` | `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`) |
 | `<TICKER>_strategy_evaluation.json` | `module_ml/strategy.py` | `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `selection_score_mean_sharpe`, `execution_cost_rate_per_trade_side`; per fold `sharpe`, `max_drawdown`, `trade_count`, `hit_rate`, `average_trade_return`, `exposure`, `exit_counts`, `final_equity`; the final holdout's `equity_curve` |
 
 Two files are tracked, `<TICKER>_README.md` and `<TICKER>_parameters.json` —
 they make a folder readable without a run; the seven others are regenerable
-from the database. Beside the manifest, outside it, `<TICKER>_research_ohlcv.duckdb`
+from the database, and the search result, when it exists, is committed by the
+owner's hand together with the `.gitignore` line that admits it. Beside the manifest, outside it, `<TICKER>_research_ohlcv.duckdb`
 holds the canonical series and its aggregations: its size moves with every
 top-up, and the README is byte-reproducible for an unchanged experiment.
 
@@ -245,7 +256,7 @@ The asset-container columns and labels are the table of
 `../module_monitoring/skills/skill_devops_panel.md`. The page's navigation: the
 tabs *Pipeline*, *Data Quality*, *ML Research*, *ML Assets*, *Lifecycle*, the two
 jumps *DX* and *DevOps*, and the ML Assets views *Labels & data*,
-*Classification*, *Strategy*, *Search*.
+*Classification*, *Strategy*, *Search*, *Feature set*.
 
 ## Run record
 

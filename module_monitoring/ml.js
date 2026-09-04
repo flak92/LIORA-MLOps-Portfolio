@@ -1,5 +1,5 @@
 /* ML Research and ML Assets tabs: one fetch of ml_status.json feeds the
-   cross-section table, the catalogue frame, the four summary views and — through
+   cross-section table, the catalogue frame, the five summary views and — through
    asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
    formatNumber and formatPercent from page.js. */
@@ -104,7 +104,7 @@ function renderCatalogue(mlStatus) {
       + " h < shortest on " + pair.upper + " " + pair.upper_shortest_history_hours + " h").join(" · ");
 }
 
-/* ---- ML Assets tab: four complementary cross-section views ---- */
+/* ---- ML Assets tab: five complementary cross-section views ---- */
 
 function renderLabels(mlStatus) {
   renderTable("cs-labels",
@@ -196,6 +196,35 @@ function renderSearch(mlStatus) {
     }));
 }
 
+/* the feature set an asset's model saw, and what the feature-set search found beside it; the delta of the best
+   proposal against the active score is page arithmetic, like degradation */
+function renderFeatureSet(mlStatus) {
+  const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
+  renderTable("cs-feature-set",
+    ["asset", ...timeframes.map((timeframe) => "columns " + timeframe), "active score", "trials", "passes", "converged",
+     "best proposal &Delta; vs active"],
+    mlStatus.assets.map((asset) => {
+      const search = asset.feature_set_search;
+      const bestProposal = search && search.proposals.length ? search.proposals[0] : null;
+      const delta = bestProposal === null ? null
+        : bestProposal.selection_score_mean_sharpe - asset.strategy.selection_score_mean_sharpe;
+      const deltaCell = document.createElement("span");
+      if (delta !== null) {
+        deltaCell.appendChild(buildMeter(100 * Math.max(0, delta)));
+        deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + delta.toFixed(2)));
+      } else deltaCell.textContent = search === null ? "no feature-set search yet" : "no proposal";
+      return [
+        buildTickerLink(asset.ticker, selectAsset),
+        ...timeframes.map((timeframe) => formatCount(asset.feature_columns.filter((column) => column.endsWith("_" + timeframe)).length)),
+        formatNumber(asset.strategy.selection_score_mean_sharpe, 2),
+        search === null ? "-" : formatCount(search.trial_count),
+        search === null ? "-" : formatCount(search.pass_count),
+        search === null ? "-" : (search.search_converged ? "yes" : "no"),
+        deltaCell,
+      ];
+    }));
+}
+
 function selectAsset(ticker) {
   document.querySelector("#asset-pills button[data-key='" + ticker + "']").click();
 }
@@ -219,6 +248,7 @@ fetch("ml_status.json", { cache: "no-store" })
     renderClassification(mlStatus);
     renderStrategy(mlStatus);
     renderSearch(mlStatus);
+    renderFeatureSet(mlStatus);
     buildAssetPills(mlStatus);
   })
   .catch((error) => {

@@ -134,6 +134,43 @@ def catalogue_block() -> dict:
     }
 
 
+def deflated_sharpe_ratio_block(block: dict | None) -> dict | None:
+    return None if block is None else {
+        "probability": config.rounded(block["probability"], 4),
+        "sharpe_15m": config.rounded(block["sharpe_15m"], 6),
+        "expected_maximum_sharpe_15m": config.rounded(block["expected_maximum_sharpe_15m"], 6),
+    }
+
+
+def proposal_block(proposal: dict) -> dict:
+    return {
+        "proposal": proposal["proposal"],
+        "trial": proposal["trial"],
+        "columns_by_timeframe": proposal["columns_by_timeframe"],
+        "added_columns_by_timeframe": proposal["added_columns_by_timeframe"],
+        "removed_columns_by_timeframe": proposal["removed_columns_by_timeframe"],
+        "entry_edge_threshold": proposal["entry_edge_threshold"],
+        "selection_score_mean_sharpe": config.rounded(proposal["selection_score_mean_sharpe"], 3),
+        "validation": {fold: {"sharpe": round(block["sharpe"], 3), "trade_count": block["trade_count"]}
+                       for fold, block in sorted(proposal["validation"].items())},
+        "deflated_sharpe_ratio": deflated_sharpe_ratio_block(proposal["deflated_sharpe_ratio"]),
+    }
+
+
+def feature_set_search_block(ticker: str) -> dict | None:
+    """The feature-set search as it last wrote itself; None while the asset has no search file."""
+    path = config.feature_set_search_json(ticker)
+    if not path.exists():
+        return None
+    search = dataset.load_json(path)
+    return {
+        "trial_count": len(search["trials"]),
+        "pass_count": search["pass_count"],
+        "search_converged": search["search_converged"],
+        "proposals": [proposal_block(proposal) for proposal in search["proposals"]],
+    }
+
+
 def artifacts_block(ticker: str) -> dict:
     """A fact of the folder, not of the experiment: it goes to the payload, never to the timestamp-free README."""
     modified = config.model_evaluation_json(ticker).stat().st_mtime
@@ -162,6 +199,7 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
         "final_holdout": final_holdout,
         "feature_columns": list(metrics["feature_columns"]),
         "validation_importance": validation_importance_block(metrics["validation_importance"]),
+        "feature_set_search": feature_set_search_block(ticker),
         "strategy": strategy_block(strategy),
         "artifacts": artifacts_block(ticker),
     }

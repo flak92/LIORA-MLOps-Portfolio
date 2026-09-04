@@ -242,7 +242,8 @@ collision — the module `module_ml/status.py` and the route `GET /status` are
 addressed by different tools and never appear in one listing.
 
 **Derived, never drafted.** A derived artifact is generated from source and
-config and never hand-edited: `<TICKER>_parameters.json`, `<TICKER>_README.md`,
+config and never hand-edited: `<TICKER>_parameters.json`,
+`<TICKER>_feature_set_search.json`, `<TICKER>_README.md`,
 the two snapshots and the developer-experience drawing
 (`module_monitoring/sub_module_dx/files_and_folders_visualisation.html`). A hand
 edit to one is a violation.
@@ -281,7 +282,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`, `docker-all`, `docker-all-record`); the presentation switch `on` / `off` is the one alias pair, of `docker-up` / `docker-down`, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `docker-ml-train`, `on` | a bare stage (`ingest`), a twin named after the tool (`docker-run`), a second switch pair (`start` / `stop`, `up` / `down`) |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin, `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`, `docker-all`, `docker-all-record`); the presentation switch `on` / `off` is the one alias pair, of `docker-up` / `docker-down`, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `docker-ml-train`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a twin named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
 | a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
@@ -326,7 +327,7 @@ argparse (`module_data/config.py`, `module_data/status.py`,
 `module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
 the drawing's template), docker compose (`Makefile`,
-`docker-compose.yml`), `urllib` (`module_monitoring/serve.py`, `module_monitoring/record.py`,
+`docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`, `module_monitoring/record.py`,
 `module_monitoring/sub_module_devops/config.py` and both downloaders), the `git` and `docker`
 command lines over `subprocess` (`module_monitoring/sub_module_dx/visualise.py`,
 `module_monitoring/record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
