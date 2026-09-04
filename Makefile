@@ -10,7 +10,10 @@ PORT := $(PORT)
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
 COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
 COMPOSE     := $(COMPOSE_ENV) docker compose
-TICKER_LIST := $(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))")
+# the basket, or the one asset ASSET=<TICKER> names on the make line — the contract's own spelling of the namespace
+# parameter; make exports it into every recipe's environment, which is harmless: RECORD is empty on host recipes and
+# the docker twins run inside containers that carry their own ASSET
+TICKER_LIST := $(if $(ASSET),$(ASSET),$(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))"))
 ASSET_SERVICE_LIST := $(addprefix asset-,$(shell echo $(TICKER_LIST) | tr A-Z a-z))
 # one process per asset with its threads pinned to 1; the width is min(cores, available GiB), at least 1
 JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
@@ -30,8 +33,8 @@ dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_S
 help:            ## list targets
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*:[^#]*##' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## / — /'
 
-all:             ## full pipeline from a fresh clone: venv, data, canonical, ML, snapshots
-	$(MAKE) setup data-download data-ingest data-status ml-all
+all:             ## full pipeline from a fresh clone: venv, data, canonical, features, ML, snapshots
+	$(MAKE) setup data-download data-ingest data-status features-all ml-all
 
 setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -44,10 +47,13 @@ data-ingest:     ## load both ZIP trees into each asset's <TICKER>_research_ohlc
 data-status:     ## data & database monitoring -> stdout + module_monitoring/data_status.json
 	$(PY) -m module_data.status
 
-ml-bars:         ## canonical 1m -> 15m/1h/4h bars, in each asset's own database
-	$(call fanout,$(PY),module_ml.bars)
-ml-features:     ## fixed hierarchical 15-column feature matrix per asset
-	$(call fanout,$(PY),module_ml.features)
+features-bars:   ## canonical 1m -> every timeframe of the register, in each asset's own database
+	$(call fanout,$(PY),module_features.bars)
+features-catalogue: ## every catalogued column on the decision grid, one parquet per timeframe per asset
+	$(call fanout,$(PY),module_features.catalogue)
+features-all:    ## the feature chain in order
+	$(MAKE) features-bars features-catalogue
+
 ml-labels:       ## triple-barrier labels on the canonical 1m path
 	$(call fanout,$(PY),module_ml.labels)
 ml-hpo:          ## Optuna TPE per asset (one process per asset, nthread=1)
@@ -58,8 +64,8 @@ ml-strategy:     ## entry edge threshold on the validation folds, final-holdout 
 	$(call fanout,$(PY),module_ml.strategy)
 ml-status:       ## aggregate ML artifacts -> module_monitoring/ml_status.json + <TICKER>_README.md
 	$(PY) -m module_ml.status
-ml-all:          ## the whole ML chain in order
-	$(MAKE) ml-bars ml-features ml-labels ml-hpo ml-train ml-strategy ml-status
+ml-all:          ## the ML chain in order
+	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
 
 # python3, not $(PY): standard library only, so it runs on a fresh clone that has
 # never seen `make setup`. Refreshed by hand — nothing refreshes it for you.
@@ -85,10 +91,13 @@ docker-data-ingest: ## the ingest stage, one asset at a time, each inside its ow
 docker-data-status: ## the data status stage inside the container -> module_monitoring/data_status.json
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status
 
-docker-ml-bars:      ## module_ml.bars, inside each asset's container
-	$(call dockerfanout,module_ml.bars,$(JOBS))
-docker-ml-features:  ## module_ml.features, inside each asset's container
-	$(call dockerfanout,module_ml.features,$(JOBS))
+docker-features-bars: ## module_features.bars, inside each asset's container
+	$(call dockerfanout,module_features.bars,$(JOBS))
+docker-features-catalogue: ## module_features.catalogue, inside each asset's container
+	$(call dockerfanout,module_features.catalogue,$(JOBS))
+docker-features-all: ## the feature chain inside the containers
+	$(MAKE) docker-features-bars docker-features-catalogue
+
 docker-ml-labels:    ## module_ml.labels, inside each asset's container
 	$(call dockerfanout,module_ml.labels,$(JOBS))
 docker-ml-hpo:       ## module_ml.hpo, inside each asset's container
@@ -99,10 +108,10 @@ docker-ml-strategy:  ## module_ml.strategy, inside each asset's container
 	$(call dockerfanout,module_ml.strategy,$(JOBS))
 docker-ml-status:    ## module_ml.status inside the container
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.status
-docker-ml-all:       ## the whole ML chain inside the containers
-	$(MAKE) docker-ml-bars docker-ml-features docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
-docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> ML -> snapshots
-	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-ml-all
+docker-ml-all:       ## the ML chain inside the containers
+	$(MAKE) docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
+docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> features -> ML -> snapshots
+	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-features-all docker-ml-all
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows
 docker-all-record: docker-build ## one recorded run of the whole chain, the whole basket in one record -> store_run_records/<run_id>/
 	$(COMPOSE) up -d dashboard

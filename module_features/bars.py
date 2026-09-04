@@ -1,5 +1,6 @@
-"""Exact UTC-aligned 15m/1h/4h aggregations of the canonical 1m series inside the research window, in each asset's
-own database — the one writer of the ML layer; every other ML stage opens the database read-only."""
+"""Exact UTC-aligned aggregations of the canonical 1m series on every timeframe of the register, inside the research
+window, in each asset's own database — the one writer of the feature layer; every stage downstream opens the database
+read-only."""
 
 from __future__ import annotations
 
@@ -34,7 +35,7 @@ ORDER BY 1;
 
 
 def main() -> int:
-    args = config.build_ticker_parser("canonical 1m -> 15m/1h/4h bars").parse_args()
+    args = config.build_ticker_parser("canonical 1m -> every timeframe of the register").parse_args()
     tickers = config.parse_tickers(args.tickers)
 
     for ticker in tickers:

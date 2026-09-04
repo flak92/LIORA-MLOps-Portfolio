@@ -47,6 +47,13 @@ def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
     return wilder_smoothing(true_range, smoothing_period_bars)
 
 
+def sma(x: np.ndarray, lookback_bars: int) -> np.ndarray:
+    """Simple moving average over the trailing lookback window."""
+    out = np.full_like(x, np.nan)
+    out[lookback_bars - 1:] = sliding_window_view(x, lookback_bars).mean(axis=1)
+    return out
+
+
 def rolling_max(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     out = np.full_like(x, np.nan)
     out[lookback_bars - 1:] = sliding_window_view(x, lookback_bars).max(axis=1)

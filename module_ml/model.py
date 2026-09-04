@@ -34,20 +34,19 @@ def suggest_params(trial) -> dict:
             for name, spec in config.HYPERPARAMETER_SEARCH_SPACE.items()}
 
 
-def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray) -> xgb.Booster:
+def fit(params: dict, x: np.ndarray, y: np.ndarray, weight: np.ndarray, feature_columns: tuple[str, ...]) -> xgb.Booster:
     xgboost_params = dict(params)
     num_boost_round = int(xgboost_params.pop("num_boost_round"))
     xgboost_params.update(config.XGBOOST_FIXED_PARAMETERS)
-    dtrain = xgb.DMatrix(x, label=to_class(y), weight=weight,
-                         feature_names=list(config.FEATURE_COLUMNS))
+    dtrain = xgb.DMatrix(x, label=to_class(y), weight=weight, feature_names=list(feature_columns))
     return xgb.train(xgboost_params, dtrain, num_boost_round=num_boost_round)
 
 
-def predict_proba(booster: xgb.Booster, x: np.ndarray) -> np.ndarray:
-    return booster.predict(xgb.DMatrix(x, feature_names=list(config.FEATURE_COLUMNS)))
+def predict_proba(booster: xgb.Booster, x: np.ndarray, feature_columns: tuple[str, ...]) -> np.ndarray:
+    return booster.predict(xgb.DMatrix(x, feature_names=list(feature_columns)))
 
 
-def gain_importance(booster: xgb.Booster) -> dict[str, float]:
+def gain_importance(booster: xgb.Booster, feature_columns: tuple[str, ...]) -> dict[str, float]:
     """Total gain per feature, zero for a feature the trees never split on."""
     score = booster.get_score(importance_type="total_gain")
-    return {column: score.get(column, 0.0) for column in config.FEATURE_COLUMNS}
+    return {column: score.get(column, 0.0) for column in feature_columns}

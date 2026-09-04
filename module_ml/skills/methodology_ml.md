@@ -1,8 +1,9 @@
 # Methodology — the research layer on the 1-minute series
 
 Per asset, independently, and all of it on one market object — the canonical
-research series: a fixed 15-column hierarchical feature matrix, a triple-barrier
-label resolved on the canonical 1-minute path, a purged walk-forward protocol
+research series: the feature catalogue of `module_features` as X — the fifteen
+columns of the default set until a promotion — a triple-barrier label resolved
+on the canonical 1-minute path, a purged walk-forward protocol
 with Optuna hyper-parameter search, a historical final out-of-sample fold, and a
 top-down gated strategy evaluation. The experiment is described by its research
 window and seed. The guards in the code are the mathematics' own — the seven
@@ -98,35 +99,23 @@ assumed). Bars are exact UTC-aligned aggregations of the canonical 1m series
 (O first, H max, L min, C last, V sum; `arg_min` / `arg_max` by timestamp for
 determinism).
 
-## 4. Features — fixed contract, 15 columns
+## 4. Features — the catalogue, and the feature set per asset
 
-| Family | Definition on the timeframe's own bars | Range | Ref. |
-|---|---|---|---|
-| `ema20_minus_ema50_over_atr14` | `(EMA20 − EMA50) / ATR14` | unbounded, dimensionless | [1][3] |
-| `centered_rsi14` | `(RSI14 − 50) / 50` | [−1, 1] | [1][7] |
-| `atr14_over_close` | `ATR14 / close` | > 0, dimensionless | [1][5] |
-| `range_position_20` | `(close − min(low,20)) / (max(high,20) − min(low,20))` | [0, 1] | [2] |
-| `log_volume_zscore_50` | z-score of `log1p(volume)` over 50 bars | dimensionless | [1][6] |
+The features are `module_features`'s: the names are
+`../../module_features/skills/skill_feature_taxonomy.md`, the definitions, their
+histories and their warm-ups `../../module_features/skills/methodology_features.md`,
+and neither is repeated here. The catalogue holds eight feature definitions on
+the timeframes of the register, twenty-two columns; every asset's parquets carry
+all of them.
 
-`log_volume_zscore_50` measures the activity of the **canonical observation process**, not
-venue-independent market activity: the sources differ in liquidity level, so a
-source switch may induce a volume-level discontinuity. Normalising per source
-would push provider knowledge back below the ingest boundary, so the limitation
-is stated rather than engineered away.
-
-Five families on 15m / 1h / 4h — **15 columns**, identical for every asset,
-**no per-asset selection** (a deliberate overfitting control). Cross-timeframe
-trend agreement is **not** a feature: the count of timeframes whose trend sign
-matches a given side is a deterministic function of columns the model already
-has, so it can only add representation, never information; the 2-of-3
-agreement lives where it is actually used, in the strategy gate. Five families
-per timeframe exceeds the four-per-timeframe multi-timeframe guideline by one:
-`log_volume_zscore_50` is volume information, not a fifth price-derived indicator.
-`rel_divergence` is a data-quality signal, never a feature [11]. Warm-up: 200
-top-timeframe bars (`WARMUP_4H_BARS`) — decision rows before `2021-02-03 08:00
-UTC` are excluded everywhere. Recursions (EMA, Wilder) run as explicit loops;
-rolling statistics use `sliding_window_view`; no NaN survives the warm-up
-(asserted).
+What the model sees is the asset's **feature set**: the definitions marked as
+the default set on every timeframe they are offered on — the fifteen columns of
+the frozen experiment, in the order it stacks them — until a promotion writes
+`<TICKER>_feature_set.json`. The set is chosen per asset, on F2–F4 only, by the
+feature-set search described below; F5 is evaluated under it and never chooses
+it. Warm-up: `WARMUP_TOP_TIMEFRAME_BARS` = 200 bars of the top timeframe —
+decision rows before `2021-02-03 08:00 UTC` are excluded everywhere; no NaN
+survives the warm-up (asserted, in `catalogue.build_catalogue`).
 
 ## 5. Labels
 
@@ -230,9 +219,9 @@ choose the scored population.
 guard, and it is about selection rather than counting: *F5 never participates
 in feature definition, hyper-parameter selection, entry-edge-threshold
 selection or strategy-rule selection.* F2–F4 carry the data-driven selection —
-the hyper-parameters and the entry edge threshold; the barrier width, the
-horizon, the cost and the feature set are frozen a priori. F5 is evaluated
-against them. Recomputing F5 deterministically — after a refactor, on another
+the hyper-parameters, the entry edge threshold and, once a set is promoted, the
+feature set; the barrier width, the horizon and the cost are frozen a priori.
+F5 is evaluated against them. Recomputing F5 deterministically — after a refactor, on another
 machine, in a later run — changes nothing, because nothing is chosen by
 looking at it. What the contract forbids is the loop: read F5, change the
 model, call the same fold out-of-sample again.
@@ -333,7 +322,7 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 ## 10. Artifacts and modules
 
 Per asset in `store_assets_artifacts/<TICKER>/`, nine files, registered file by
-file in `../../module_skills/glossary.md` § Artifacts: three per-timeframe feature parquets, the
+file in `../../module_skills/glossary.md` § Artifacts: three per-timeframe catalogue parquets, the
 label-events and out-of-sample predictions parquets on the 15m decision grid,
 two evaluation JSONs, the one parameters file and the README. Beside the
 manifest, outside it, lies the asset's own database,
@@ -353,19 +342,20 @@ is not backed by a hash gate, because a gate proves the metadata, not the
 mathematics. No booster is persisted: nothing in this repo performs inference,
 so the numbers are the product.
 
-Module layout — three runtime modules, in the order the data moves, and
+Module layout — four runtime modules, in the order the data moves, and
 `module_skills`, which carries no dataflow: `module_data` (sources → normalised
-raw 1m → one canonical DuckDB per asset) · `module_ml` (this document) ·
-`module_monitoring` (presentation of what each module measured about itself,
-and the server). Inside `module_ml`:
-`module_ml/config` (frozen constants) · `module_ml/indicators`,
-`module_ml/validation`, `module_ml/model` (pure numpy / xgboost kernels) ·
-`module_ml/dataset` (artifact IO: X/Y loading, the one parquet writer, canonical
-JSON) · `module_ml/bars` (the one writer, one file per asset) · `module_ml/features`,
+raw 1m → one canonical DuckDB per asset) · `module_features` (the bars of the
+register and the feature catalogue — `module_features/skills/`) · `module_ml`
+(this document) · `module_monitoring` (presentation of what each module measured
+about itself, and the server). Inside `module_ml`: `module_ml/config` (frozen
+constants of the research layer, re-exporting the window, the register and the
+catalogue from `module_features/config`) · `module_ml/validation`,
+`module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
+IO: X/Y loading, canonical JSON, the re-exported parquet writer) ·
 `module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,
 `module_ml/status` (CLI stages, `python -m module_ml.<stage> [--tickers …]`).
 Constant convention: **experiment-semantic constants live in
-`module_ml/config.py`; implementation
+`module_features/config.py` and `module_ml/config.py`; implementation
 constants** (chunk sizes, the equity-curve stride — daily in the artifact,
 weekly on the page: seven daily points) **may stay local to their module**. The canonical series is gated where it is read:
 `labels.load_research_1m` asserts the full 1m grid inside the research window,
@@ -375,11 +365,11 @@ per asset; the ingest stage rebuilds one asset's database at a time.
 
 Every stage takes `--tickers`, so the chain parallelises the only way an
 experiment with frozen thread caps may — **externally**, one asset per
-process. `make ml-bars / ml-features / ml-labels / ml-hpo / ml-train / ml-strategy`
-fan out `JOBS` assets at a time, where `JOBS = max(1, min(cores, available GiB))` is
-measured at each invocation rather than written down (the machine this runs on
-changes size); override with `make ml-hpo JOBS=2`. `ml-bars` fans out with
-them — one file per process;
+process. `make features-bars / features-catalogue` and `make ml-labels / ml-hpo /
+ml-train / ml-strategy` fan out `JOBS` assets at a time, where
+`JOBS = max(1, min(cores, available GiB))` is measured at each invocation rather
+than written down (the machine this runs on changes size); override with
+`make ml-hpo JOBS=2`. `features-bars` fans out with them — one file per process;
 `data-ingest` alone stays sequential, because a memory ceiling is per process
 and the sum of the concurrent ceilings is what has to fit the host.
 
@@ -393,8 +383,8 @@ stage, and most edits do not touch it:
 
 | what changed | what to rerun |
 |---|---|
-| the canonical series (`make data-ingest`) | everything, from `ml-bars` |
-| a feature definition | `ml-features ml-hpo ml-train ml-strategy ml-status` |
+| the canonical series (`make data-ingest`) | everything, from `features-bars` |
+| a feature definition of the catalogue | `features-catalogue ml-hpo ml-train ml-strategy ml-status` |
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
 | a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
@@ -422,8 +412,8 @@ moving. That is a property of a constructed market object, not a defect hidden
 by it: `source_switch_count` and `rel_divergence` are monitored per symbol
 precisely so the effect is visible and countable.
 
-Known limitations: no regime-conditional gating, no per-asset
-feature selection, no CUSUM event sampling, no meta-labelling, no fractional
+Known limitations: no regime-conditional gating, a per-asset feature set
+chosen by a stepwise search (§ 4) rather than learnt, no CUSUM event sampling, no meta-labelling, no fractional
 differentiation, fixed costs, unit position sizing. The class distribution is
 dominated by `y = 0` (the 2×ATR barrier is rarely touched within one 4H
 block) — reported per asset, not resampled.

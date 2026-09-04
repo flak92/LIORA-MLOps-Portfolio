@@ -6,8 +6,8 @@ validation, a frozen final out-of-sample holdout, and a static results dashboard
 *The repository shows the destination, not the road*.
 
 Public market observations → QuantConnect Lean-compatible raw data → one
-deterministic canonical DuckDB per asset → features and labels → purged walk-forward
-XGBoost → research strategy simulation → monitoring.
+deterministic canonical DuckDB per asset → the feature catalogue and labels →
+purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
 UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md). Each module carries its
@@ -37,7 +37,7 @@ name are the convention.
 The chain, and the pictures it leaves:
 
 ```bash
-make all                   # the whole pipeline on the host from a fresh clone: setup -> data-download -> data-ingest -> data-status -> ml-all
+make all                   # the whole pipeline on the host from a fresh clone: setup -> data-download -> data-ingest -> data-status -> features-all -> ml-all
 make docker-all            # the same chain inside the containers, download to snapshots
 make docker-all-record     # the same chain, recorded stage by stage into store_run_records/<run_id>/ — the Lifecycle tab
 make monitoring-dx-update  # redraw the developer-experience drawing after the tracked tree changes
@@ -58,10 +58,10 @@ Three readers, three doors, all behind `make on`:
   networks, volumes, bind mounts, the image and the engine's events, with
   start / stop / restart offered for this project's own containers alone.
 
-A single stage runs by name, on the host or in its container — `make ml-features`,
-`make docker-ml-features`: every `data-<stage>` and `ml-<stage>` target has its
-`docker-` twin, and `docker-ml-all` and `docker-all` are the chains. The stage
-order is the Makefile's `all:` and `ml-all:`; every document points there. The host port is measured
+A single stage runs by name, on the host or in its container — `make features-catalogue`,
+`make docker-features-catalogue`: every `data-<stage>`, `features-<stage>` and `ml-<stage>` target has its
+`docker-` twin, and `docker-features-all`, `docker-ml-all` and `docker-all` are the chains. The stage
+order is the Makefile's `all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
 (`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make docker-up` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
@@ -198,7 +198,9 @@ raw ZIP trees. Schema:
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
   zero-volume bars per provider, then canonical construction: source shares,
   switches, the largest 1m move at a switch, cross-source divergence;
-- **ML Research** — the cross-section of every asset's result;
+- **ML Research** — the cross-section of every asset's result, and the feature
+  catalogue: every definition the repository computes, its terms, the history
+  each covers on each timeframe, the warm-up it needs and the nesting of the levels;
 - **ML Assets** — one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURES;
 - **Lifecycle** — one recorded run end to end: what ran, in which container, as
   which PID, for how long, at what CPU and peak resident set, what bytes it moved
@@ -219,8 +221,11 @@ business reader:
 
 ## ML research layer
 
-`module_ml/` builds, per asset and deterministically, a fixed 15-column
-hierarchical feature matrix (15m/1h/4h) from the canonical series,
+`module_features/` builds, per asset and deterministically, the feature
+catalogue from the canonical series — eight feature definitions on the
+timeframes of the register, twenty-two columns, each name read off its terms
+([module_features/skills/skill_feature_taxonomy.md](module_features/skills/skill_feature_taxonomy.md));
+`module_ml/` takes the fifteen columns of the default set as X,
 triple-barrier labels resolved on the canonical 1-minute path, a purged
 walk-forward protocol with average-uniqueness weights and an Optuna search over
 XGBoost, a final out-of-sample fold that selects nothing, and a top-down gated

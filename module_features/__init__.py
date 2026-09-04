@@ -1,0 +1,1 @@
+"""The feature layer: the timeframe register, exact bars of the canonical series on every timeframe of it, the indicator kernels, and the feature catalogue evaluated per asset — one parquet per timeframe."""

@@ -25,8 +25,8 @@ def build_objective(xy: dict[str, np.ndarray]):
         params = model.suggest_params(trial)
         losses = []
         for (training_rows, train_weight), (scoring_rows, scoring_weight) in folds:
-            booster = model.fit(params, xy["x"][training_rows], xy["y"][training_rows], train_weight)
-            proba = model.predict_proba(booster, xy["x"][scoring_rows])
+            booster = model.fit(params, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
+            proba = model.predict_proba(booster, xy["x"][scoring_rows], xy["feature_columns"])
             losses.append(validation.multiclass_logloss(y_cls[scoring_rows], proba, scoring_weight))
         return float(np.mean(losses))
 

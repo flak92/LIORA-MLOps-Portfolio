@@ -2,7 +2,7 @@
  "assets": [
   {
    "artifacts": {
-    "model_evaluation_modified_utc": "2026-09-02 09:52:40"
+    "model_evaluation_modified_utc": "2026-09-04 23:05:15"
    },
    "final_holdout": {
     "model_logloss": 0.797182,
@@ -20,12 +20,12 @@
     "ema20_minus_ema50_over_atr14_15m": 1551.8,
     "ema20_minus_ema50_over_atr14_1h": 1231.2,
     "ema20_minus_ema50_over_atr14_4h": 2085.9,
-    "log_volume_zscore_50_15m": 17794.7,
-    "log_volume_zscore_50_1h": 5248.2,
-    "log_volume_zscore_50_4h": 1441.1,
-    "range_position_20_15m": 2526.4,
-    "range_position_20_1h": 1857.2,
-    "range_position_20_4h": 1077.7
+    "log_volume_zscore50_15m": 17794.7,
+    "log_volume_zscore50_1h": 5248.2,
+    "log_volume_zscore50_4h": 1441.1,
+    "range_position20_15m": 2526.4,
+    "range_position20_1h": 1857.2,
+    "range_position20_4h": 1077.7
    },
    "hyperparameter_search_result": {
     "best_logloss": 0.810968,
@@ -236,12 +236,355 @@
    }
   }
  ],
+ "catalogue": {
+  "definitions": [
+   {
+    "definition_in_default_set": true,
+    "feature_definition": "ema20_minus_ema50_over_atr14",
+    "history_hours_by_timeframe": {
+     "15m": 12.5,
+     "1h": 50.0,
+     "4h": 200.0
+    },
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "indicator": "ema",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 20,
+      "parameter_word": "SPAN"
+     },
+     {
+      "indicator": "ema",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 50,
+      "parameter_word": "SPAN"
+     },
+     {
+      "indicator": "atr",
+      "inputs": [
+       "high",
+       "low",
+       "close"
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 200
+   },
+   {
+    "definition_in_default_set": true,
+    "feature_definition": "centered_rsi14",
+    "history_hours_by_timeframe": {
+     "15m": 3.5,
+     "1h": 14.0,
+     "4h": 56.0
+    },
+    "normaliser": "centered",
+    "operators": [],
+    "range": "[-1, 1]",
+    "terms": [
+     {
+      "indicator": "rsi",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": true,
+    "feature_definition": "atr14_over_close",
+    "history_hours_by_timeframe": {
+     "15m": 3.5,
+     "1h": 14.0,
+     "4h": 56.0
+    },
+    "normaliser": null,
+    "operators": [
+     "over"
+    ],
+    "range": "> 0, dimensionless",
+    "terms": [
+     {
+      "indicator": "atr",
+      "inputs": [
+       "high",
+       "low",
+       "close"
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     },
+     {
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": null,
+      "parameter_word": null
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": true,
+    "feature_definition": "range_position20",
+    "history_hours_by_timeframe": {
+     "15m": 5.0,
+     "1h": 20.0,
+     "4h": 80.0
+    },
+    "normaliser": null,
+    "operators": [],
+    "range": "[0, 1]",
+    "terms": [
+     {
+      "indicator": "range_position",
+      "inputs": [
+       "close",
+       "high",
+       "low"
+      ],
+      "parameter_bars": 20,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 20
+   },
+   {
+    "definition_in_default_set": true,
+    "feature_definition": "log_volume_zscore50",
+    "history_hours_by_timeframe": {
+     "15m": 12.5,
+     "1h": 50.0,
+     "4h": 200.0
+    },
+    "normaliser": null,
+    "operators": [],
+    "range": "dimensionless",
+    "terms": [
+     {
+      "indicator": "zscore",
+      "inputs": [
+       "log_volume"
+      ],
+      "parameter_bars": 50,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 50
+   },
+   {
+    "definition_in_default_set": false,
+    "feature_definition": "zscore20",
+    "history_hours_by_timeframe": {
+     "15m": 5.0,
+     "1h": 20.0,
+     "4h": 80.0
+    },
+    "normaliser": null,
+    "operators": [],
+    "range": "dimensionless",
+    "terms": [
+     {
+      "indicator": "zscore",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 20,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 20
+   },
+   {
+    "definition_in_default_set": false,
+    "feature_definition": "close_minus_sma50_over_atr14",
+    "history_hours_by_timeframe": {
+     "15m": 12.5,
+     "1h": 50.0,
+     "4h": 200.0
+    },
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "indicator": "sma",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 50,
+      "parameter_word": "LOOKBACK"
+     },
+     {
+      "indicator": "atr",
+      "inputs": [
+       "high",
+       "low",
+       "close"
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "timeframes": [
+     "15m",
+     "1h",
+     "4h"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": false,
+    "feature_definition": "close_minus_sma200_over_atr14",
+    "history_hours_by_timeframe": {
+     "4h": 800.0
+    },
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "indicator": "sma",
+      "inputs": [
+       "close"
+      ],
+      "parameter_bars": 200,
+      "parameter_word": "LOOKBACK"
+     },
+     {
+      "indicator": "atr",
+      "inputs": [
+       "high",
+       "low",
+       "close"
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "timeframes": [
+     "4h"
+    ],
+    "warmup_bars": 200
+   }
+  ],
+  "nesting": [
+   {
+    "lower": "15m",
+    "lower_longest_history_hours": 12.5,
+    "upper": "1h",
+    "upper_shortest_history_hours": 14.0
+   },
+   {
+    "lower": "1h",
+    "lower_longest_history_hours": 50.0,
+    "upper": "4h",
+    "upper_shortest_history_hours": 56.0
+   }
+  ],
+  "timeframes": [
+   {
+    "bars_per_day": 96,
+    "duration_ms": 900000,
+    "ratio_to_lower": null,
+    "slot": "ss-15-hh-dd-MM",
+    "timeframe": "15m"
+   },
+   {
+    "bars_per_day": 24,
+    "duration_ms": 3600000,
+    "ratio_to_lower": 4,
+    "slot": "ss-mm-01-dd-MM",
+    "timeframe": "1h"
+   },
+   {
+    "bars_per_day": 6,
+    "duration_ms": 14400000,
+    "ratio_to_lower": 4,
+    "slot": "ss-mm-04-dd-MM",
+    "timeframe": "4h"
+   }
+  ],
+  "warmup": {
+   "end_utc": "2021-02-03 08:00",
+   "top_timeframe_bars": 200
+  }
+ },
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-02 09:52:43",
+ "generated_at_utc": "2026-09-04 23:05:17",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",
   "seed": 42,
   "start_utc": "2021-01-01"
- }
+ },
+ "trend_gate_feature": "ema20_minus_ema50_over_atr14_4h"
 }

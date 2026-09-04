@@ -32,6 +32,7 @@ from http import HTTPStatus
 from pathlib import Path
 
 from module_data import config as data_config
+from module_features import config as features_config
 from module_ml import config as ml_config
 
 from . import config
@@ -48,8 +49,8 @@ STAGE_OUTPUT_DESCRIPTORS = {
     "module_data.download_bybit": lambda ticker: [data_config.raw_symbol_dir(ticker, "bybit")],
     "module_data.ingest": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
     "module_data.status": lambda ticker: [data_config.MODULE_MONITORING_DATA_STATUS_JSON_PATH],
-    "module_ml.bars": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
-    "module_ml.features": lambda ticker: [ml_config.features_parquet(ticker, tf) for tf in ml_config.HIERARCHY_TIMEFRAMES],
+    "module_features.bars": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
+    "module_features.catalogue": lambda ticker: [features_config.features_parquet(ticker, tf) for tf in features_config.HIERARCHY_TIMEFRAMES],
     "module_ml.labels": lambda ticker: [ml_config.label_events_parquet(ticker)],
     "module_ml.hpo": lambda ticker: [ml_config.parameters_json(ticker)],
     "module_ml.train": lambda ticker: [ml_config.oos_predictions_parquet(ticker), ml_config.model_evaluation_json(ticker)],
@@ -62,8 +63,8 @@ STAGE_INPUT_NOTES = {
     "module_data.download_bybit": "Bybit Linear public HTTP API",
     "module_data.ingest": "both venue ZIP trees",
     "module_data.status": "the asset databases",
-    "module_ml.bars": "ohlcv_1m_canonical",
-    "module_ml.features": "ohlcv_15m/1h/4h_canonical",
+    "module_features.bars": "ohlcv_1m_canonical",
+    "module_features.catalogue": "every ohlcv_<timeframe>_canonical of the register",
     "module_ml.labels": "canonical 1m path + ohlcv_1h_canonical",
     "module_ml.hpo": "X + Y",
     "module_ml.train": "X + Y + the search result",

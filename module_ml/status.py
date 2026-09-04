@@ -4,6 +4,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+
+from module_data.lean import MINUTES_PER_DAY
+
 from . import config, dataset
 
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
@@ -82,6 +85,55 @@ def strategy_block(strategy: dict) -> dict:
     }
 
 
+def term_block(term: tuple) -> dict:
+    """One term of a catalogue definition: the bars its kernel reads, the indicator and its parameter."""
+    if len(term) == 1:
+        return {"inputs": [term[0]], "indicator": None, "parameter_word": None, "parameter_bars": None}
+    series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
+    return {"inputs": list(config.INDICATOR_FIXED_INPUTS.get(indicator, (series,))), "indicator": indicator,
+            "parameter_word": config.INDICATOR_PARAMETER_WORDS[indicator], "parameter_bars": parameter_bars}
+
+
+def catalogue_block() -> dict:
+    """The catalogue as the register presents it — the facts of module_features/config.py, published here
+    because that module measures no run state."""
+    timeframes = []
+    for lower, timeframe in zip((None,) + config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES):
+        duration_ms = config.TIMEFRAME_DURATION_MS[timeframe]
+        timeframes.append({
+            "timeframe": timeframe, "duration_ms": duration_ms,
+            "bars_per_day": MINUTES_PER_DAY * config.MILLISECONDS_PER_MINUTE // duration_ms,
+            "ratio_to_lower": None if lower is None else duration_ms // config.TIMEFRAME_DURATION_MS[lower],
+            "slot": config.TIMEFRAME_SLOT[timeframe],
+        })
+    definitions = [{
+        "feature_definition": config.feature_definition_name(definition),
+        "terms": [term_block(term) for term in definition["terms"]],
+        "operators": list(definition.get("operators", ())),
+        "normaliser": definition.get("normaliser"),
+        "range": definition["range"],
+        "timeframes": list(definition["timeframes"]),
+        "history_hours_by_timeframe": {timeframe: config.definition_history_hours(definition, timeframe)
+                                       for timeframe in definition["timeframes"]},
+        "warmup_bars": config.definition_warmup_bars(definition),
+        "definition_in_default_set": definition["definition_in_default_set"],
+    } for definition in config.FEATURE_CATALOGUE]
+    nesting = [{
+        "lower": lower, "upper": upper,
+        "lower_longest_history_hours": max(config.definition_history_hours(definition, lower)
+                                           for definition in config.FEATURE_CATALOGUE if lower in definition["timeframes"]),
+        "upper_shortest_history_hours": min(config.definition_history_hours(definition, upper)
+                                            for definition in config.FEATURE_CATALOGUE if upper in definition["timeframes"]),
+    } for lower, upper in zip(config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES[1:])]
+    warmup_end = datetime.fromtimestamp(config.WARMUP_END_MS / config.MILLISECONDS_PER_SECOND, tz=UTC)
+    return {
+        "timeframes": timeframes,
+        "warmup": {"top_timeframe_bars": config.WARMUP_TOP_TIMEFRAME_BARS, "end_utc": warmup_end.strftime("%Y-%m-%d %H:%M")},
+        "definitions": definitions,
+        "nesting": nesting,
+    }
+
+
 def artifacts_block(ticker: str) -> dict:
     """A fact of the folder, not of the experiment: it goes to the payload, never to the timestamp-free README."""
     modified = config.model_evaluation_json(ticker).stat().st_mtime
@@ -106,9 +158,9 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 # the asset folder manifest in LC_COLLATE=C listing order: (path descriptor, what it holds)
 FILE_MANIFEST = (
     (config.asset_readme_md, "this file"),
-    (lambda ticker: config.features_parquet(ticker, "15m"), "X — the five 15m family columns on the decision grid"),
-    (lambda ticker: config.features_parquet(ticker, "1h"), "X — the five 1h family columns on the decision grid"),
-    (lambda ticker: config.features_parquet(ticker, "4h"), "X — the five 4h family columns on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "15m"), "the catalogue on 15m — every definition offered on it, on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "1h"), "the catalogue on 1h — every definition offered on it, on the decision grid"),
+    (lambda ticker: config.features_parquet(ticker, "4h"), "the catalogue on 4h — every definition offered on it, on the decision grid"),
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
     (config.oos_predictions_parquet, "out-of-sample class probabilities, full windows"),
@@ -180,8 +232,8 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
                           f"{config.MINIMUM_TRADES_PER_VALIDATION_FOLD} trades in every validation fold")
 
     reproduce = " ".join(
-        f"python -m module_ml.{stage} --tickers {ticker} &&"
-        for stage in ("bars", "features", "labels", "hpo", "train", "strategy")
+        [f"python -m module_features.{stage} --tickers {ticker} &&" for stage in ("bars", "catalogue")]
+        + [f"python -m module_ml.{stage} --tickers {ticker} &&" for stage in ("labels", "hpo", "train", "strategy")]
     ) + f" python -m module_ml.status --tickers {ticker}"
 
     return f"""# {ticker} — research artifacts
@@ -192,7 +244,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {markdown_table(["file", "holds", "size"], files)}
 
-Each of the three feature parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the three catalogue parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -255,6 +307,9 @@ def main() -> int:
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
         "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
+        "trend_gate_feature": config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, config.TREND_GATE_TIMEFRAME),
+        # the facts of module_features/config.py, published here because that module measures no run state
+        "catalogue": catalogue_block(),
         "assets": assets,
     }
     out = config.MODULE_MONITORING_ML_STATUS_JSON_PATH

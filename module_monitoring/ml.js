@@ -1,6 +1,6 @@
 /* ML Research and ML Assets tabs: one fetch of ml_status.json feeds the
-   cross-section table, the four summary views and — through asset.js — the
-   per-asset panel. Classic script using appendCell, appendHeaderRow,
+   cross-section table, the catalogue frame, the four summary views and — through
+   asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
    formatNumber and formatPercent from page.js. */
 "use strict";
@@ -55,6 +55,53 @@ function renderResearch(mlStatus) {
       ];
     }));
   document.getElementById("ml-assets").hidden = false;
+}
+
+/* ---- ML Research tab: the catalogue frame — the register, every definition with its terms and histories, the nesting ---- */
+
+function formatTerm(term) {
+  if (term.indicator === null) return term.inputs[0];
+  return term.indicator + term.parameter_bars + " (" + term.parameter_word + " " + term.parameter_bars
+    + " bars of " + term.inputs.join(", ") + ")";
+}
+
+/* a history as a bar on one time scale across every timeframe, so a level's reach is compared by eye */
+function buildHistoryCell(hours, longestHours) {
+  if (hours === undefined) return "-";
+  const wrap = document.createElement("span");
+  wrap.appendChild(buildMeter((100 * hours) / longestHours));
+  wrap.appendChild(document.createTextNode(hours + " h"));
+  return wrap;
+}
+
+function renderCatalogue(mlStatus) {
+  const catalogue = mlStatus.catalogue;
+  const timeframes = catalogue.timeframes.map((entry) => entry.timeframe);
+  document.getElementById("catalogue-register").textContent =
+    catalogue.timeframes.map((entry) =>
+      entry.timeframe.padEnd(5) + (entry.duration_ms / MILLISECONDS_PER_SECOND / 60) + " min · "
+      + entry.bars_per_day + " bars per day · "
+      + (entry.ratio_to_lower === null ? "the decision timeframe" : entry.ratio_to_lower + "× the level below")
+      + " · " + entry.slot).join("\n")
+    + "\nwarm-up: " + catalogue.warmup.top_timeframe_bars + " bars of " + timeframes[timeframes.length - 1]
+    + " · first decision " + catalogue.warmup.end_utc + " UTC";
+  const longestHours = Math.max(...catalogue.definitions.flatMap((definition) =>
+    Object.values(definition.history_hours_by_timeframe)));
+  renderTable("catalogue",
+    ["definition", "terms", "range", ...timeframes.map((timeframe) => "history " + timeframe), "warm-up (bars)", "default set"],
+    catalogue.definitions.map((definition) => [
+      definition.feature_definition,
+      definition.terms.map(formatTerm).join(" · ")
+        + (definition.operators.length ? " · " + definition.operators.join(", ") : "")
+        + (definition.normaliser ? " · " + definition.normaliser : ""),
+      definition.range,
+      ...timeframes.map((timeframe) => buildHistoryCell(definition.history_hours_by_timeframe[timeframe], longestHours)),
+      formatCount(definition.warmup_bars),
+      definition.definition_in_default_set ? "yes" : "-",
+    ]));
+  document.getElementById("catalogue-nesting").textContent = "nesting — one level, one domain of time: "
+    + catalogue.nesting.map((pair) => "longest on " + pair.lower + " " + pair.lower_longest_history_hours
+      + " h < shortest on " + pair.upper + " " + pair.upper_shortest_history_hours + " h").join(" · ");
 }
 
 /* ---- ML Assets tab: four complementary cross-section views ---- */
@@ -167,6 +214,7 @@ fetch("ml_status.json", { cache: "no-store" })
 
     ML_STATUS = mlStatus;
     renderResearch(mlStatus);
+    renderCatalogue(mlStatus);
     renderLabels(mlStatus);
     renderClassification(mlStatus);
     renderStrategy(mlStatus);

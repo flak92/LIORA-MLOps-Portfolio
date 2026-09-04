@@ -1,14 +1,15 @@
-"""Shared IO for the ML layer: load_xy, write_parquet, write_json and load_json."""
+"""Shared IO for the ML layer: load_xy with the asset's feature set, load_feature_columns, build_x, write_json and
+load_json; the parquet writer is module_features' and is re-exported here for the label and prediction writers."""
 
 from __future__ import annotations
 
-import csv
 import json
-import tempfile
 from pathlib import Path
 
 import duckdb
 import numpy as np
+
+from module_features.dataset import write_parquet  # re-exported
 
 from . import config
 
@@ -40,53 +41,49 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> Path:
-    """zstd parquet from an iterable of rows via a CSV spool: numpy -> repr(float) -> read_csv round-trips float64 exactly."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
-        csv.writer(f).writerows(rows)
-        spool = Path(f.name)
-    try:
-        spec = ", ".join(f"'{name}': '{sqltype}'" for name, sqltype in columns.items())
-        con = duckdb.connect()
-        con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
-        con.execute("SET threads=1")   # float summation must not be reordered
-        con.execute(
-            f"""COPY (SELECT * FROM read_csv('{spool}', header=false, columns={{{spec}}})
-                      ORDER BY {order_by})
-                TO '{path}' (FORMAT PARQUET, COMPRESSION zstd)"""
-        )
-        con.close()
-    finally:
-        spool.unlink(missing_ok=True)
-    return path
+def load_feature_columns(ticker: str) -> dict[str, tuple[str, ...]]:
+    """The asset's feature set by timeframe — the default set of the catalogue."""
+    return dict(config.DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME)
 
 
-def load_xy(ticker: str) -> dict[str, np.ndarray]:
-    """X and Y on Y's decision grid; X may carry tail rows Y had to drop."""
+def build_x(catalogue_columns: dict[str, np.ndarray],
+            columns_by_timeframe: dict[str, tuple[str, ...]]) -> tuple[np.ndarray, tuple[str, ...]]:
+    """The model's matrix from the catalogue columns: the set's features, timeframe-major and catalogue-order
+    within — the order is what the model samples by position. Returns (x, its feature ids)."""
+    feature_columns = tuple(config.feature_id(name, timeframe)
+                            for timeframe in config.HIERARCHY_TIMEFRAMES for name in columns_by_timeframe[timeframe])
+    return np.column_stack([catalogue_columns[c] for c in feature_columns]), feature_columns
+
+
+def load_xy(ticker: str) -> dict:
+    """X and Y on Y's decision grid, with every catalogue column beside X; X may carry tail rows Y had to drop."""
     con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
-    x, decision_grids = {}, []
+    catalogue_columns, decision_grids = {}, []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         per_timeframe = con.execute(
             f"SELECT * FROM read_parquet('{config.features_parquet(ticker, timeframe)}') ORDER BY decision_ts"
         ).fetchnumpy()
-        for family in config.FEATURE_FAMILIES:
-            x[f"{family}_{timeframe}"] = per_timeframe[family]
+        for name in config.catalogue_columns(timeframe):
+            catalogue_columns[config.feature_id(name, timeframe)] = per_timeframe[name]
         decision_grids.append(per_timeframe["decision_ts"].astype(np.int64))
     label_events = con.execute(f"SELECT * FROM read_parquet('{config.label_events_parquet(ticker)}') ORDER BY decision_ts").fetchnumpy()
     con.close()
-    # the three files are joined by position, so they must share one decision grid
+    # the files are joined by position, so they must share one decision grid
     x_ts = decision_grids[0]
     assert all(np.array_equal(x_ts, grid) for grid in decision_grids[1:]), "per-timeframe feature parquets disagree on the decision grid"
     y_ts = label_events["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
+    catalogue_columns = {c: catalogue_columns[c][pos] for c in config.CATALOGUE_COLUMNS}
+    x, feature_columns = build_x(catalogue_columns, load_feature_columns(ticker))
     return {
         "decision_ts": y_ts,
         "entry_ts": label_events["entry_ts"].astype(np.int64),
-        "x": np.column_stack([x[c][pos] for c in config.FEATURE_COLUMNS]),
+        "x": x,
+        "feature_columns": feature_columns,
+        "catalogue_columns": catalogue_columns,
         "y": label_events["y"].astype(np.int8),
         "event_end_ts": label_events["event_end_ts"].astype(np.int64),
         "entry_observable": label_events["entry_observable"].astype(bool),

@@ -64,7 +64,7 @@ A filled slot beats a placeholder at the same position, so finer granularity
 always lists first; zero-padding keeps numeric order inside a slot; the fixed
 slot count keeps listings column-aligned. Two patterns, two jobs: a store has
 no siblings to order, so it takes the compact token the code and the schema
-already speak (`store_raw_1m/`, `ohlcv_1m_canonical`, `WARMUP_4H_BARS`); the
+already speak (`store_raw_1m/`, `ohlcv_1m_canonical`, `ANNUALISATION_PERIOD_15M_BARS`); the
 feature files of one asset are read as one block, so they take the slots
 (`BTC_features_ss-15-hh-dd-MM.parquet`, `…ss-mm-01-dd-MM…`, `…ss-mm-04-dd-MM…`).
 The slots govern filesystem names only: serialised schema — table names,

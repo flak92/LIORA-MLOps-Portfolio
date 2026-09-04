@@ -28,7 +28,7 @@ price traceable to the venue that printed it.
 `module_data` does not own feature engineering, labels, hyper-parameter search,
 XGBoost, strategy selection, research simulation or any trading decision. In
 this repository it does not own the 15m/1h/4h aggregations either — those
-tables live in the same database file but are written by `module_ml/bars.py`,
+tables live in the same database file but are written by `module_features/bars.py`,
 downstream of this contract (§ 12, § 13).
 
 Everything below the canonical object is source-neutral: no downstream stage
@@ -376,9 +376,9 @@ Inside it, tables — not separate database servers, not separate files:
 | `ohlcv_1m_binance` | `module_data/ingest.py` | the Binance raw tree, materialised verbatim |
 | `ohlcv_1m_bybit` | `module_data/ingest.py` | the Bybit raw tree, materialised verbatim |
 | `ohlcv_1m_canonical` | `module_data/ingest.py` | this contract's product: the full grid with provenance |
-| `ohlcv_15m_canonical` | `module_ml/bars.py` | downstream aggregation, outside this contract |
-| `ohlcv_1h_canonical` | `module_ml/bars.py` | downstream aggregation, outside this contract |
-| `ohlcv_4h_canonical` | `module_ml/bars.py` | downstream aggregation, outside this contract |
+| `ohlcv_15m_canonical` | `module_features/bars.py` | downstream aggregation, outside this contract |
+| `ohlcv_1h_canonical` | `module_features/bars.py` | downstream aggregation, outside this contract |
+| `ohlcv_4h_canonical` | `module_features/bars.py` | downstream aggregation, outside this contract |
 
 The canonical series and its aggregations live **only** in the asset's own
 database; the folder's parquets carry feature columns, not prices. For Lean
@@ -395,9 +395,9 @@ minute over both venues.
 | ingest Binance | Binance raw tree | `ohlcv_1m_binance` | relational materialisation | `module_data` |
 | ingest Bybit | Bybit raw tree | `ohlcv_1m_bybit` | relational materialisation | `module_data` |
 | canonicalisation | the two venue tables | `ohlcv_1m_canonical` | primary-failover selection | `module_data` |
-| aggregation | canonical 1m | `ohlcv_15m_canonical` | deterministic OHLC aggregation | `module_ml` |
-| aggregation | canonical 1m | `ohlcv_1h_canonical` | deterministic OHLC aggregation | `module_ml` |
-| aggregation | canonical 1m | `ohlcv_4h_canonical` | deterministic OHLC aggregation | `module_ml` |
+| aggregation | canonical 1m | `ohlcv_15m_canonical` | deterministic OHLC aggregation | `module_features` |
+| aggregation | canonical 1m | `ohlcv_1h_canonical` | deterministic OHLC aggregation | `module_features` |
+| aggregation | canonical 1m | `ohlcv_4h_canonical` | deterministic OHLC aggregation | `module_features` |
 
 Ingest is idempotent: each venue table is emptied and reloaded from the ZIP
 tree, and the canonical table is rebuilt from the two venue tables on every

@@ -17,7 +17,9 @@ from pathlib import Path
 import duckdb
 import numpy as np
 
-from . import config, dataset, indicators
+from module_features import indicators
+
+from . import config, dataset
 
 LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
 

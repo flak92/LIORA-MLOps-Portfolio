@@ -69,7 +69,7 @@ table, cited by its *responsibility* column and never repeated.
 | `skills/skill_devops_panel.md` | the DevOps panel: its views, the action allowlist and its guard, and the one socket |
 
 The compose topology and the container endpoint are a contract between the
-infrastructure and all three runtime modules, so they live in
+infrastructure and all four runtime modules, so they live in
 [../module_skills/skill_asset_containers.md](../module_skills/skill_asset_containers.md),
 not here. The rest of the repository-wide rules are indexed by
 [../module_skills/README.md](../module_skills/README.md).

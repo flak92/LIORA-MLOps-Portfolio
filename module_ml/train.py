@@ -43,8 +43,8 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
         xy["sample_valid"], oos_start, oos_end)
     prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
-    booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight)
-    window_proba = model.predict_proba(booster, xy["x"][window_rows])
+    booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
+    window_proba = model.predict_proba(booster, xy["x"][window_rows], xy["feature_columns"])
     pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
     metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
     prediction_records = [
@@ -82,7 +82,7 @@ def main() -> int:
 
         trainable = xy["sample_valid"]
         # attribution of the final-holdout booster, the one fit that saw the most history
-        gain = model.gain_importance(booster)
+        gain = model.gain_importance(booster, xy["feature_columns"])
         payload = {
             "validation": per_fold,
             "final_holdout": final_holdout,

@@ -21,20 +21,22 @@
 
     "module_data/": "S3",
 
-    "module_ml/": "S4",
-    "module_monitoring/": "S5",
-    "store_assets_artifacts/": "S4"
+    "module_features/": "S4",
+    "module_ml/": "S5",
+    "module_monitoring/": "S6",
+    "store_assets_artifacts/": "S5"
   },
 
   "stories": {
     "S1": { "name": "1 · Infrastructure",     "color": "#7D93BF", "hub": "docker-compose.yml" },
     "S2": { "name": "2 · Contract & skills",  "color": "#2BD4BD", "hub": "module_skills/" },
     "S3": { "name": "3 · Data",               "color": "#F2B24E", "hub": "module_data/" },
-    "S4": { "name": "4 · Research",           "color": "#E06BD8", "hub": "module_ml/" },
-    "S5": { "name": "5 · Monitoring",         "color": "#96D850", "hub": "module_monitoring/" }
+    "S4": { "name": "4 · Features",           "color": "#F2E14E", "hub": "module_features/" },
+    "S5": { "name": "5 · Research",           "color": "#E06BD8", "hub": "module_ml/" },
+    "S6": { "name": "6 · Monitoring",         "color": "#96D850", "hub": "module_monitoring/" }
   },
 
-  "story_order": ["S1", "S3", "S4", "S5", "S2"],
+  "story_order": ["S1", "S3", "S4", "S5", "S6", "S2"],
 
   "core": { "name": "Repository root", "color": "#EDF2FF" },
 
@@ -48,6 +50,7 @@
   "roles": {
     "Makefile": "entrypoint",
     "module_data/config.py": "config",
+    "module_features/config.py": "config",
     "module_ml/config.py": "config",
     "module_ml/validation.py": "gate",
     "module_monitoring/sub_module_dx/config.py": "config",
@@ -63,7 +66,11 @@
     "module_data/ingest.py": "Selects one venue's whole candle per minute into the asset's canonical series (primary-failover, full grid).",
     "module_data/lean.py": "The Lean-exact raw format \u2014 the one external-format boundary; the raw tree is written so a Lean backtest could read it directly.",
     "module_data/skills/": "The module's own contract: candle canonicalisation, and the acquisition methodology beside it.",
-    "module_ml/": "Research \u2014 bars, features, triple-barrier labels, purged walk-forward XGBoost.",
+    "module_features/": "Features \u2014 the bars of the timeframe register, the indicator kernels and the feature catalogue, one parquet per timeframe.",
+    "module_features/config.py": "The timeframe register, the frozen research window and the feature catalogue \u2014 the one definition every feature name, computation and history derives from.",
+    "module_features/catalogue.py": "Evaluates every catalogued feature definition on every timeframe it is offered on, by folding its terms through the operators; the finiteness assert after the warm-up is one of the seven guards.",
+    "module_features/skills/": "The module's own contract: the feature taxonomy, and the definitions equation by equation.",
+    "module_ml/": "Research \u2014 the feature set, triple-barrier labels, purged walk-forward XGBoost, the strategy simulation.",
     "module_ml/skills/": "The module's own contract: the research methodology, equation by equation.",
     "module_ml/validation.py": "Purged walk-forward splits and the frozen final holdout \u2014 the gate of the whole system.",
     "module_monitoring/": "Presentation of what the runtime modules measured, and the one server that serves it.",
@@ -87,7 +94,7 @@
       "docker-compose.yml": "S3", "task_host": "S3", "store_volume": "S3", "log_streams": "S3",
       "module_data/": "S4", "data_ingest_task": "S4",
       "store_assets_artifacts/": "S5", "asset_store": "S5", "raw_store": "S5", "run_store": "S5",
-      "module_ml/": "S6", "ml_research_task": "S6",
+      "module_features/": "S6", "module_ml/": "S6", "ml_research_task": "S6",
       "module_monitoring/": "S7", "dashboard_front": "S7", "reader_container": "S7",
       "strategy_host": "S8", "brokerage_secret": "S8",
       "Makefile": "S9", "state_machine": "S9", "event_rule": "S9"
@@ -166,7 +173,7 @@
       "data_ingest_task": "The data-ingest task: the one task definition run with a `module_data` command (`RunTask` with the command overridden, on the task host) — DownloadMarketData and PublishStatus for data once for the basket, BuildCanonicalData once per asset with `ASSET` overridden — that fetches the venues' public endpoints, writes the raw tree and the asset's canonical market object on the volume and exits, holding nothing between runs.",
       "module_data/": "The code of the data-ingest task: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status — it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder), and runs in the task beside it.",
       "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects — `research_ohlcv_duckdb()` and `artifact_dir()`, both here, both resolving unchanged on the volume, the copy's key being each path relative to `STORE_ASSETS_ARTIFACTS_DIR`; `--tickers <TICKER>` — `ASSET` at the container boundary — is the parameter an asset-scoped run takes.",
-      "module_data/ingest.py": "The BuildCanonicalData state: reads the raw tree under a venue and symbol prefix on the volume and writes the canonical market object beside it — the storage → ML-compute line begins at its output.",
+      "module_data/ingest.py": "The BuildCanonicalData state: reads the raw tree under a venue and symbol prefix on the volume and writes the canonical market object beside it — the storage → feature-compute line begins at its output.",
       "module_data/lean.py": "The Lean-exact raw format — the whole of Lean's presence here; the strategy host would read the raw objects in this format directly.",
       "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out; its move to its own prefix, `status/`, would turn five points — the two path constants, the directory `serve.py` serves, the two literal fetches — listed in `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why.",
       "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
@@ -177,9 +184,11 @@
       "store_assets_artifacts/": "The asset folders and their home: one folder per ticker on the volume, the tracked README and parameters two of its files; the store beside it is this folder's copy after the run, never its home.",
       "store_assets_artifacts/BTC/": "The `BTC` folder on the volume: `BTC_research_ohlcv.duckdb` as the one embedded database — the two venue tables, the canonical table and its three aggregations under one whole-file lock, one writer at a time — copied whole to `artifacts/BTC/<version>/` after the run with the parquets and JSONs keyed `BTC_<artifact>` beside it; never a database process.",
 
-      "ml_research_task": "The ml-research task: the same task definition run with a `module_ml` command and `ASSET` overridden (`RunTask` with `ASSET=<TICKER>`, on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for ML once for the basket, never per asset — reading and writing the asset's folder on the volume, and holding nothing between runs.",
-      "module_ml/": "The code of the ml-research task: bars, features, labels, search, model, strategy evaluation and the ML status — it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
-      "module_ml/bars.py": "The AggregateBars state, and the one write across the storage → ML-compute line: the three aggregation tables are a pure function of the canonical series, written into the same file on the volume the task read.",
+      "ml_research_task": "The ml-research task: the same task definition run with a `module_features` or a `module_ml` command and `ASSET` overridden (`RunTask` with `ASSET=<TICKER>`, on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for ML once for the basket, never per asset — reading and writing the asset's folder on the volume, and holding nothing between runs.",
+      "module_features/": "The code of the ml-research task's first two states: the bars of the register and the feature catalogue — it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
+      "module_features/config.py": "The timeframe register, the frozen research window and the feature catalogue: the constants the experiment freezes, published by the git commit and by the catalogue block of `ml_status.json`, never a primitive.",
+      "module_features/bars.py": "The AggregateBars state, and the one write across the storage → feature-compute line: the aggregation tables are a pure function of the canonical series, written into the same file on the volume the task read.",
+      "module_ml/": "The code of the ml-research task from GenerateLabels on: the feature set, labels, search, model, strategy evaluation and the ML status — it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
       "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; the copy's key is each descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR`, so a version prefix edits nothing here.",
       "module_ml/validation.py": "The gate of the whole system, and the same gate wherever it runs: purged walk-forward folds and the frozen final holdout are code inside the task, not a primitive.",
       "module_ml/status.py": "The PublishStatus state for ML: the basket's status object as a fold over completed asset artifacts, and each asset's README as an artifact object under its prefix; the snapshot's move to its own prefix, `status/`, would turn the same five points as the data snapshot's — the two path constants, the directory `serve.py` serves, the two literal fetches (`module_skills/skill_pre_aws_solution.md` § What stays as it is, and why).",
@@ -202,9 +211,9 @@
       "strategy_host": "A separate Linux instance running QuantConnect Lean (Amazon EC2): one strategy container — a lean-backtest task, or one that stays running and trades live — reading the raw objects in Lean's own format and the research artifacts under the asset prefix, its brokerage credentials read once from the secrets store when it starts. No Lean runtime, container or dependency exists in this repository. Absent here — described.",
       "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here — described.",
 
-      "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData → BuildCanonicalData → AggregateBars → GenerateFeatures → GenerateLabels → SearchHyperparameters → TrainModel → EvaluateStrategy → PublishStatus, then PublishStores — the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` — 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none — which is why its flows rise over the picture; the Makefile's `all:` and `ml-all:` are the same order, read locally.",
+      "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData → BuildCanonicalData → AggregateBars → GenerateFeatures → GenerateLabels → SearchHyperparameters → TrainModel → EvaluateStrategy → PublishStatus, then PublishStores — the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` — 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none — which is why its flows rise over the picture; the Makefile's `all:`, `features-all:` and `ml-all:` are the same order, read locally.",
       "event_rule": "A schedule and a condition state (Amazon EventBridge Scheduler; a Step Functions choice): the schedule starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full — `is_full_utc_day()` in `module_data/lean.py`; the condition asks the volume whether this asset needs its artifacts rebuilt, and gates the states from AggregateBars on. Today the cadence is a hand typing `make docker-all`, and the condition the downloaders' day-presence skip and the rerun table of `methodology_ml.md` § 11, read by a human. Absent here — described.",
-      "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules — the developer interface, never a scheduler.",
+      "Makefile": "The local spelling of the state machine beside it: `all:`, `features-all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules — the developer interface, never a scheduler.",
 
       "module_skills/": "Repository-wide skills and the name register (`module_skills/glossary.md`): they travel with the code and deploy nowhere — not project code, not a primitive, and the contract of every boundary this picture draws.",
       "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its column *the same responsibility elsewhere* is these primitives.",

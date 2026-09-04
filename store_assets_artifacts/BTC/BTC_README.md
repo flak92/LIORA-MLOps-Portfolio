@@ -7,16 +7,16 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | file | holds | size |
 | --- | --- | --- |
 | `BTC_README.md` | this file | — |
-| `BTC_features_ss-15-hh-dd-MM.parquet` | X — the five 15m family columns on the decision grid | 7,761 KB |
-| `BTC_features_ss-mm-01-dd-MM.parquet` | X — the five 1h family columns on the decision grid | 2,244 KB |
-| `BTC_features_ss-mm-04-dd-MM.parquet` | X — the five 4h family columns on the decision grid | 1,242 KB |
+| `BTC_features_ss-15-hh-dd-MM.parquet` | the catalogue on 15m — every definition offered on it, on the decision grid | 10,699 KB |
+| `BTC_features_ss-mm-01-dd-MM.parquet` | the catalogue on 1h — every definition offered on it, on the decision grid | 2,950 KB |
+| `BTC_features_ss-mm-04-dd-MM.parquet` | the catalogue on 4h — every definition offered on it, on the decision grid | 1,667 KB |
 | `BTC_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,265 KB |
 | `BTC_model_evaluation.json` | classification metrics per fold | 2 KB |
 | `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,387 KB |
 | `BTC_parameters.json` | the one parameters file: what the search chose | 371 B |
 | `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 10 KB |
 
-Each of the three feature parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the three catalogue parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Labels
 
@@ -59,7 +59,7 @@ Final-holdout exits: upper_barrier 66, lower_barrier 56, vertical 115, ambiguous
 
 ## Reproducing the ML artifacts in this folder
 
-    python -m module_ml.bars --tickers BTC && python -m module_ml.features --tickers BTC && python -m module_ml.labels --tickers BTC && python -m module_ml.hpo --tickers BTC && python -m module_ml.train --tickers BTC && python -m module_ml.strategy --tickers BTC && python -m module_ml.status --tickers BTC
+    python -m module_features.bars --tickers BTC && python -m module_features.catalogue --tickers BTC && python -m module_ml.labels --tickers BTC && python -m module_ml.hpo --tickers BTC && python -m module_ml.train --tickers BTC && python -m module_ml.strategy --tickers BTC && python -m module_ml.status --tickers BTC
 
 The OHLCV lives in `BTC_research_ohlcv.duckdb` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 

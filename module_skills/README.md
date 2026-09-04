@@ -34,6 +34,15 @@ Orientation: [../module_data/README_module_data.md](../module_data/README_module
 | [../module_data/skills/skill_candle_canonicalisation.md](../module_data/skills/skill_candle_canonicalisation.md) | candle validity, the primary-failover decision table, volume, forward fill, provenance and the canonical storage |
 | [../module_data/skills/methodology_data.md](../module_data/skills/methodology_data.md) | the venue endpoints, units and time, and the limitations of acquisition |
 
+## module_features
+
+Orientation: [../module_features/README_module_features.md](../module_features/README_module_features.md)
+
+| skill | what it governs |
+|---|---|
+| [../module_features/skills/skill_feature_taxonomy.md](../module_features/skills/skill_feature_taxonomy.md) | the timeframe register, the terms, the composition grammar, the scope nesting and the warm-up |
+| [../module_features/skills/methodology_features.md](../module_features/skills/methodology_features.md) | every catalogued feature definition, equation by equation, with its histories and citations |
+
 ## module_ml
 
 Orientation: [../module_ml/README_module_ml.md](../module_ml/README_module_ml.md)

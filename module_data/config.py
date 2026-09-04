@@ -25,11 +25,17 @@ MILLISECONDS_PER_MINUTE = 60_000
 BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE
 
+
+
+def to_utc_ms(day: str) -> int:
+    """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
+    return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
+
+
 # Window start (inclusive, UTC midnight). The window end is always the most
 # recent UTC midnight (exclusive): the pipeline only handles full UTC days.
 DATA_WINDOW_START_UTC = "2021-01-01"
-DATA_WINDOW_START_MS = int(datetime.fromisoformat(DATA_WINDOW_START_UTC)
-                           .replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
+DATA_WINDOW_START_MS = to_utc_ms(DATA_WINDOW_START_UTC)
 
 # Public keyless endpoints; both return BASE volume (e.g. BTC), not quote turnover.
 BINANCE_KLINE_URL = "https://fapi.binance.com/fapi/v1/klines"

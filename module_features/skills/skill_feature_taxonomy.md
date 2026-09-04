@@ -1,0 +1,177 @@
+# Skill: feature taxonomy — names built from their terms
+
+A feature name is derived, never invented: it is read off the computation, term by term, from the
+smallest part upward. Every number in a name is a count of bars of one timeframe, and that
+timeframe is written in the name. Nothing else is encoded — not the decision grid, not the label
+horizon, not the asset, not a category word, not a wall-clock span. *The repository shows the
+destination, not the road*: the grammar below is read off the catalogue record in
+`module_features/config.py`, and no check stands behind it.
+
+The chain, smallest part first: a series or an indicator with its one parameter (a **term**), the
+terms composed into a **feature definition**, the definition bound to a timeframe as a **feature**,
+the features an asset selects as its **feature set**, the set as the columns the model sees. The
+smallest part has one meaning; every larger structure is composed deterministically from smaller
+ones, so any column of a feature parquet can be taken apart and made to answer: what information,
+from which bars, over what history, with which parameters.
+
+## The timeframe register — one definition
+
+A timeframe token is `<integer><unit>`, unit in `m`, `h`, `d`. The register is
+`TIMEFRAME_DURATION_MS` in `module_features/config.py`; `HIERARCHY_TIMEFRAMES` is the register
+sorted ascending; `DECISION_TIMEFRAME` is its first entry; `TIMEFRAME_SLOT` maps each token to the
+file-name slot of `../../module_skills/skill_sorting_files_naming_standard.md`. Every timeframe is
+built from the canonical 1m series by `bars.py`, one loop over the register — the venue's own 4h
+candle would be the same aggregation, so an aggregate here is a native bar, not a resample.
+
+A token enters the register when its duration is an integer multiple of the decision timeframe and
+divides one UTC day, so bar boundaries land on UTC midnight (`2m`, `5m`, `30m`, `2h`, `6h`, `12h`,
+`1d` qualify; a week or a month needs an anchor the register does not carry). Adjacent entries of
+the hierarchy keep a ratio of at least three — below that two levels sample the same price movement
+(the triple-screen hierarchy, `../../module_ml/skills/methodology_ml.md` § 13 [10]). Today: `15m`,
+`1h`, `4h`, ratios 4× and 4×. A new token is one entry in the register and one slot; the bars, the
+parquets and the catalogue's offered timeframes follow from it.
+
+## Series and indicators — the terms
+
+A **series** is a column of one timeframe's bars, with no parameter: `open`, `high`, `low`,
+`close`, `volume`, `log_volume` (= log1p(volume)) — `SERIES_ATOMS`.
+
+An **indicator** is one computation over series of one timeframe with exactly one integer
+parameter, written glued to the indicator token, as the trade writes RSI14 and SMA200. The
+register is three tables of `module_features/config.py`, one fact each:
+
+| indicator | inputs | parameter word (`INDICATOR_PARAMETER_WORDS`) | warm-up it needs (`INDICATOR_WARMUP_MULTIPLES`) |
+|---|---|---|---|
+| `ema<n>` | one series, `close` by default | `SPAN` | 4·n — a recursion is finite from its first bar and settles in four spans by convention |
+| `sma<n>` | one series, `close` by default | `LOOKBACK` | n — a window is NaN inside its lookback |
+| `rsi<n>` | `close` — fixed (`INDICATOR_FIXED_INPUTS`) | `SMOOTHING_PERIOD` (Wilder) | 4·n |
+| `atr<n>` | `high`, `low`, `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4·n |
+| `zscore<n>` | one series, `close` by default | `LOOKBACK` | n |
+| `range_position<n>` | `close`, `high`, `low` — fixed | `LOOKBACK` | n |
+
+The kernel of an indicator carries the token's name in `indicators.py` (`ema`, `sma`, `rsi`,
+`atr`, `range_position`; `zscore` is `rolling_zscore`, the one kernel named for its family). The
+parameter word is the one `../../AGENTS.md` § Canonical vocabulary gives a constant — `SPAN` for
+an EMA, `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling window — and it
+names the mechanics, not the number: the number lives in the term of the catalogue record and
+nowhere else. A parameter carried by a catalogue term is the descriptor's own and is never copied
+into a named constant; a constant with a unit names a quantity the experiment fixes outside the
+catalogue (`WARMUP_TOP_TIMEFRAME_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS` of the label).
+
+A term is written in the record as `("<indicator>", <parameter_bars>)` on the default series
+`close`, `("<series>", "<indicator>", <parameter_bars>)` on another series, or `("<series>",)` for
+a bare series. Its name follows: a bare series is its token (`close`); an indicator on `close`, or
+with fixed inputs, is the token glued to its parameter (`ema20`, `atr14`, `range_position20`); an
+indicator on another series takes the series as a prefix (`log_volume_zscore50`, `volume_sma20`).
+
+## Feature definitions
+
+A **feature definition** composes terms of **one** timeframe with operators from a closed list,
+left to right:
+
+    definition = [ normaliser "_" ] term { "_" operator "_" term }
+    term       = series | [ series "_" ] indicator parameter
+    operator   = minus | over            (difference; ratio, 0 where the denominator is 0)
+    normaliser = centered                (a bounded oscillator mapped to [-1, 1]: (x − 50) / 50 for RSI)
+
+`ema20_minus_ema50_over_atr14` reads: EMA(20) minus EMA(50), over ATR(14) — three terms, one
+timeframe, two operators. `close_minus_sma50_over_atr14` reads: close minus SMA(50), over ATR(14)
+— the bare series is written, because it is a term, not the input of an indicator. A definition
+never mixes timeframes; its range is stated in its record (`range`: dimensionless, bounded, > 0).
+The operators and the normaliser are `FEATURE_DEFINITION_OPERATORS` and
+`FEATURE_DEFINITION_NORMALISERS`; `catalogue.py` evaluates a record by folding its terms through
+them and nothing else, so what the record says is what the column holds.
+
+## Features
+
+A **feature** is a definition aligned to the decision grid: `<definition>_<timeframe>`, the value
+of the definition on the last closed bar of that timeframe at the decision
+(`indicators.asof_index`). The suffix is the timeframe of **every** term in the definition. The
+decision timeframe, the alignment and the label horizon are experiment constants and never appear
+in a name.
+
+    centered_rsi14_1h                 close_minus_sma200_over_atr14_4h
+    log_volume_zscore50_15m           zscore20_15m
+
+The feature id is the column of X and the key of every importance. A feature parquet's columns
+carry no timeframe — the file name carries it, in slots
+(`../../module_skills/skill_sorting_files_naming_standard.md` § The timeframe slot standard) — so a
+stored column reads `centered_rsi14` while its importance key reads `centered_rsi14_1h`.
+
+Reserved, not written today: a cross-timeframe definition would carry a timeframe on every term
+and no suffix — `close_15m_minus_sma200_4h_over_atr14_4h` — and be composed on the decision grid
+after each term is aligned. Until one exists, cross-timeframe relations stay strategy rules
+(`../../module_ml/skills/methodology_ml.md` § 9).
+
+## The catalogue and the feature set
+
+The **catalogue** is the register of feature definitions the repository can compute, each with the
+timeframes it is offered on: `FEATURE_CATALOGUE` in `module_features/config.py`, one record per
+definition — its terms, operators and normaliser, its range, the timeframes offered, and whether it
+belongs to the default set. The catalogue is drafted (source, like the rest of `config.py`); the
+column set of a timeframe's parquet is the catalogue restricted to that timeframe
+(`catalogue_columns`). As of this commit the catalogue holds eight definitions on twenty-two
+columns; the table with histories and warm-ups is `methodology_features.md` § The catalogue.
+
+A **feature set** is one asset's selection from the catalogue, per timeframe:
+`<TICKER>_feature_set.json`, written only by the promotion stage of `module_ml` and never by hand —
+a choice, not a derivation. No file = the default set, the definitions marked
+`definition_in_default_set` on every timeframe they are offered on
+(`DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`) — the fifteen columns of the frozen experiment, in the
+order it stacks them. The order is load-bearing: the model samples columns by position, so the
+default definitions lead the catalogue in that order. How a set is searched and promoted is
+`../../module_ml/skills/methodology_ml.md` § 4.
+
+The strategy reads one definition on every timeframe whatever the set holds —
+`TREND_GATE_FEATURE_DEFINITION`, the first of the catalogue — because the hierarchy gate is a
+strategy rule, not a feature the model chose.
+
+## Scope nesting — one level, one domain of time
+
+Every parameter has a history: `bars × timeframe`. Histories are derived and shown
+(`definition_history_hours`; the catalogue block of `module_monitoring/ml_status.json`), never
+written into a name. The catalogue keeps the histories of adjacent levels nested: **the longest
+history offered on a level stays shorter than the shortest history offered on the level above.**
+A 200-bar average on 15m spans fifty hours — a 4h-domain quantity fitted with four times the
+parameters, which is how a level smuggles in another level's regime. So `sma200` is offered on
+`4h` only; `sma50` on every level. Today: 15m at most 12.5 h, 1h at least 14 h; 1h at most 50 h, 4h
+at least 56 h. The catalogue author decides what to offer; the importance tables tell what it was
+worth.
+
+## Warm-up — a literal, and what each term needs
+
+The warm-up of the research window is an experiment constant, `WARMUP_TOP_TIMEFRAME_BARS = 200`,
+in bars of the top timeframe of the register; `WARMUP_END_MS` follows from it, and the first
+decision of every asset sits there. What each term needs is derived and shown beside it —
+`term_warmup_bars`, `definition_warmup_bars`: four spans for a recursion, the lookback for a
+window — so a definition whose term needs more than the experiment grants is seen before it is
+committed. It is not asserted from the table: the one guard is the finiteness assert of
+`catalogue.build_catalogue`, which stops the stage when a value inside the research window is not
+finite. Changing the literal moves the window, the labels and every artifact, F5 included — a
+different experiment, decided by a hand and recorded by the commit.
+
+The boundary is inclusive: a window of n bars is finite from its n-th bar, `asof_index` takes the
+last bar closed at or before the decision, and the first decision falls exactly on the close of the
+200th top-timeframe bar. `sma200` on `4h` is finite from the first decision with no slack.
+
+## Migration of the frozen contract
+
+| before | after | why |
+|---|---|---|
+| `range_position_20` | `range_position20` | parameter glued to its indicator, one rule for every term |
+| `log_volume_zscore_50` | `log_volume_zscore50` | same rule; the series prefix stays |
+| `ema20_minus_ema50_over_atr14`, `centered_rsi14`, `atr14_over_close` | unchanged | already read off the grammar |
+
+A rename changes parquet column names and importance keys; the model is invariant to names, so
+the search result and the strategy report do not change by a byte.
+
+## Never
+
+`feature_3`, `f_rsi`, `rsi_14`, `sma_200` (a separated parameter), `trend_4h` (a category as a
+name — `trend`, `momentum`, `volatility`, `structure`, `activity` name what a reader thinks a
+column measures, and the importance tables say what it measured), `rsi14_240m` (a history as a
+timeframe), `sma800_15m` for a 4h quantity, `rsi14_1h_btc` (an asset in a name), `bb20` (an
+abbreviation the register does not hold — the computation is `zscore20`; the trade's label
+Bollinger %b lives in the glossary), `atom` or `molecule` as an identifier (the words of this
+skill's prose; the identifiers are `term` and `feature definition`), `palette` (the drawing's word
+for a colour set), `family` for a definition.

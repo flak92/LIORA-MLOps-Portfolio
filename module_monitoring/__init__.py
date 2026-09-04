@@ -1,1 +1,1 @@
-"""Presentation of what the two runtime modules measured about themselves, and the one server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself."""
+"""Presentation of what the three runtime modules measured about themselves, and the one server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself."""

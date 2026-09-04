@@ -17,7 +17,7 @@ confirmation; the rest of the concept column states what the name means.
 | the evaluated block of a fold, and which one a prediction belongs to | `oos`, `oos_fold_id` | `oos_fold_id` (parquet column) | out-of-sample | test block, test period |
 | dropping training events that overlap the evaluated block | `purge` — `event_end_ts <= oos_start` | — | purged | gap, buffer |
 | a forced wait after the evaluated block — **width zero here**, forward chaining needs none | — (the field's term, carried by no identifier, because there is nothing to implement) | — | — | cooldown, post-test embargo |
-| bars consumed before the first decision is allowed | `WARMUP_4H_BARS` = 200, `WARMUP_END_MS` | `warmup_excluded_decision_count` | warm-up excluded | burn-in |
+| bars consumed before the first decision is allowed — the experiment's literal, in bars of the top timeframe of the register; what each term of the catalogue needs is shown beside it, never derived into the window | `WARMUP_TOP_TIMEFRAME_BARS` = 200, `WARMUP_END_MS`; `term_warmup_bars()`, `definition_warmup_bars()` | `warmup_excluded_decision_count`; `warmup.top_timeframe_bars`, `warmup_bars` of a catalogue definition | warm-up excluded; warm-up (bars) | burn-in; `WARMUP_4H_BARS` (a timeframe token in the name lies once the register grows) |
 
 ## Market object
 
@@ -26,9 +26,10 @@ confirmation; the rest of the concept column states what the name means.
 | the external minute-bar format the raw store is byte-compatible with | Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | — (tables of the asset's own DuckDB; no copy of the series is published) | canonical dataset | fused series, index, blended price |
 | which asset a database holds | the file name, `<TICKER>_research_ohlcv.duckdb`, and nothing inside it | `symbol` — a key of data_status.json only | — | a `symbol` column in any table, a `WHERE symbol = …` predicate, a `GROUP BY symbol` |
-| the three timeframes the hierarchy reads | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | — | 15m / 1h / 4h | levels, LEVELS |
-| the timeframe a decision is taken on | `DECISION_TIMEFRAME` = "15m" | — | — | DECISION_TF |
-| how long one bar of a timeframe lasts | `TIMEFRAME_DURATION_MS` | — | — | TF_MS |
+| the timeframe register — every timeframe the repository builds from the canonical 1m series, and how long one bar of each lasts; the one definition the bars, the parquets and the catalogue's offered timeframes derive from (`../module_features/skills/skill_feature_taxonomy.md` § The timeframe register) | `TIMEFRAME_DURATION_MS`, `module_features/config.py` | `catalogue.timeframes` — `timeframe`, `duration_ms`, `bars_per_day`, `ratio_to_lower`, `slot` | 15m / 1h / 4h | TF_MS, a second list of timeframes anywhere |
+| the timeframes the hierarchy reads, the register sorted ascending | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h") | — | 15m / 1h / 4h | levels, LEVELS, a hand-written tuple |
+| the timeframe a decision is taken on, the first of the register | `DECISION_TIMEFRAME` = "15m" | — | — | DECISION_TF |
+| the file-name slot of a timeframe token | `TIMEFRAME_SLOT` | `slot` | — | a slot assembled at the point of use |
 | a data provider, above the ingest boundary only | `binance` / `bybit`, in `module_data` | `venues.*`, `binance_pct` / `bybit_pct` | Raw source | venue or exchange used below ingest |
 | which provider a canonical minute came from | `source`, `source_switch_count` | `source_switch_count`; `source` is a database column, published only as the shares `binance_pct` / `bybit_pct` / `ffill_pct` | primary / secondary / ffill | — |
 | a minute with no observed trade | `volume = 0`, `zero_volume` | `zero_volume_bars`; `zero_volume` is a database column | zero-vol | carried-forward price (true only of forward-filled minutes) |
@@ -118,7 +119,7 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss (`best LL` in the search table) | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
 | the chosen point itself — the closed set of eight, in xgboost's own spelling because `module_ml/hpo.py` is a named boundary | the keys of `HYPERPARAMETER_SEARCH_SPACE`, `module_ml/config.py` — the one definition the search, the file and the table all derive from | `best_params`: `alpha`, `colsample_bytree`, `eta`, `lambda`, `max_depth`, `min_child_weight`, `num_boost_round`, `subsample` | depth, eta, min child, subsample, colsample, lambda, alpha, rounds — the search table's columns | a project synonym for an xgboost parameter; a second name for any of the eight; registering them one by one |
-| what the search never touches — the constants the experiment freezes before it starts | `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER`, `LABEL_HORIZON_MINUTES`, the six parameters of the five feature families (`EMA_FAST_SPAN_BARS`, `EMA_SLOW_SPAN_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS`, `RSI_WILDER_SMOOTHING_PERIOD_BARS`, `RANGE_POSITION_LOOKBACK_BARS`, `LOG_VOLUME_ZSCORE_LOOKBACK_BARS`), `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md | a searched parameter among them; a value changed without a commit that says so |
+| what the search never touches — the constants the experiment freezes before it starts | `module_features/config.py`: the research window, `WARMUP_TOP_TIMEFRAME_BARS`, the register and the catalogue with every parameter in its terms; `module_ml/config.py`: `ATR_BARRIER_MULTIPLIER` and `ATR_WILDER_SMOOTHING_PERIOD_BARS` (the barrier's width), `LABEL_HORIZON_MINUTES`, `XGBOOST_FIXED_PARAMETERS`, `ANNUALISATION_PERIOD_15M_BARS`, `EXECUTION_COST_RATE_PER_TRADE_SIDE` | — (they define the experiment, so the git commit publishes them, not a payload) | the values quoted in methodology_ml.md and methodology_features.md | a searched parameter among them; a value changed without a commit that says so; a feature parameter copied out of the catalogue into a named constant |
 | annualised Sharpe of the 15m equity path | `sharpe` | `sharpe`, `selection_score_mean_sharpe` | Sharpe; `selection score` for the validation mean, and `degradation` for holdout Sharpe minus the selection score — presentation arithmetic | return/risk |
 | maximum drawdown of the 1m equity path | `max_drawdown` | `max_drawdown` | maxDD | DD |
 | share of the fold spent in a position | `exposure` | `exposure` | exposure | utilisation |
@@ -138,7 +139,8 @@ key is in this register.
 | the frozen experiment, once, globally | `research_window` with `start_utc`, `end_utc`, `seed` | the window and the seed, published once — no per-asset copy |
 | the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `gain_importance`, `strategy`, `artifacts` | the experiment flow, sample → search → validation → holdout → attribution → strategy, then the folder |
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
-| the two structural numbers the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes` | which fold is the final holdout; how many timeframes the gate needs |
+| the structural facts the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`, `catalogue` | which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads; the register, the warm-up, every catalogued definition with its terms, histories and warm-up, and the nesting of the levels — the facts of `module_features/config.py`, published here because that module measures no run state |
+| the catalogue block | `catalogue` with `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars` —, `operators`, `normaliser`, `range`, `timeframes`, `history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_history_hours`, `upper_shortest_history_hours`) | the catalogue as the register presents it — the catalogue frame of the ML Research tab reads nothing else |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
 | the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol`, derived at the report boundary from `config.symbol(ticker)`; no database column carries it | the pipeline, raw-source and canonical-construction tables |
@@ -157,7 +159,8 @@ key is in this register.
 of the same result.** One directory per ticker under `store_assets_artifacts/`;
 every file carries the `<TICKER>_` prefix, a time series carries its grid in
 timeframe slots, and paths are built only by the descriptors of
-`module_ml/config.py`; whether an asset holds its three result files is asked
+`module_features/config.py` (the feature parquets) and `module_ml/config.py`
+(the rest); whether an asset holds its three result files is asked
 once, by `is_artifact_set_complete()` beside them.
 
 The nine manifest files in `LC_COLLATE=C` listing order — the order
@@ -166,9 +169,9 @@ The nine manifest files in `LC_COLLATE=C` listing order — the order
 | file | written by | holds |
 |---|---|---|
 | `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it; no timestamp |
-| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | `module_ml/features.py` | X — `decision_ts` and the five 15m family columns on the decision grid |
-| `<TICKER>_features_ss-mm-01-dd-MM.parquet` | `module_ml/features.py` | X — `decision_ts` and the five 1h family columns |
-| `<TICKER>_features_ss-mm-04-dd-MM.parquet` | `module_ml/features.py` | X — `decision_ts` and the five 4h family columns |
+| `<TICKER>_features_ss-15-hh-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 15m — `decision_ts` and every definition offered on 15m, on the decision grid |
+| `<TICKER>_features_ss-mm-01-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 1h — `decision_ts` and every definition offered on 1h |
+| `<TICKER>_features_ss-mm-04-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 4h — `decision_ts` and every definition offered on 4h |
 | `<TICKER>_label_events_ss-15-hh-dd-MM.parquet` | `module_ml/labels.py` | Y — `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `event_resolution`, `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` |
 | `<TICKER>_model_evaluation.json` | `module_ml/train.py` | `validation.fold_2..4` and `final_holdout`, each `prior_logloss`, `model_logloss`, `relative_logloss_skill`, `scored_row_count`; `gain_importance`, `class_counts`, `labels`, `segments` |
 | `<TICKER>_oos_predictions_ss-15-hh-dd-MM.parquet` | `module_ml/train.py` | `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full windows of F2–F5; metrics score only the supervised subset |
@@ -183,13 +186,24 @@ top-up, and the README is byte-reproducible for an unchanged experiment.
 
 ## Features
 
-The five feature families — `ema20_minus_ema50_over_atr14`, `centered_rsi14`,
-`atr14_over_close`, `range_position_20`, `log_volume_zscore_50` — each on
-`_15m`, `_1h`, `_4h`; the definitions are in `../module_ml/skills/methodology_ml.md` § 4. Never
-`trend`, `momentum`, `volatility`, `structure` or `activity` as a column name —
-those name a category, not a computation. The strategy hierarchy reads the
-first family through `config.TREND_FAMILY`, so the name appears once in the
-code rather than in three string literals.
+The grammar is `../module_features/skills/skill_feature_taxonomy.md`, the definitions
+`../module_features/skills/methodology_features.md`; this register confirms the words.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| a series of one timeframe's bars, with no parameter | `SERIES_ATOMS` — `open`, `high`, `low`, `close`, `volume`, `log_volume` | `inputs` of a term | the series token | a series with a parameter |
+| an indicator — one computation with exactly one integer parameter, glued to its token; its kernel carries the token's name in `module_features/indicators.py` | `ema<n>`, `sma<n>`, `rsi<n>`, `atr<n>`, `zscore<n>`, `range_position<n>`; `INDICATOR_PARAMETER_WORDS`, `INDICATOR_WARMUP_MULTIPLES`, `INDICATOR_FIXED_INPUTS`, `INDICATOR_KERNELS` | `indicator`, `parameter_word`, `parameter_bars` of a term | the token | `rsi_14`, `sma_200`, `bb20`; `kernel` for the operating system's accounting — that is the Lifecycle tab's word |
+| a term — a series or an indicator inside a feature definition | `("ema", 20)`, `("log_volume", "zscore", 50)`, `("close",)`; `term_name()` | `terms` | terms | atom (the prose word of the skill, never an identifier) |
+| a feature definition — terms of one timeframe composed by the operators, with an optional normaliser; the timeframe-less half of a feature | one record of `FEATURE_CATALOGUE`; `feature_definition_name()`; `FEATURE_DEFINITION_OPERATORS` = (`minus`, `over`), `FEATURE_DEFINITION_NORMALISERS` = (`centered`,) | `feature_definition` | definition | molecule, family, feature family, indicator (for a composite); `trend`, `momentum`, `volatility`, `structure`, `activity` — a category, not a computation |
+| a feature — a definition aligned to the decision grid on one timeframe; the column of X and the key of an importance | `feature_id()` = `<definition>_<timeframe>` | `feature_columns`, the keys of an importance | the feature id | a column literal in a page script; a parquet column with a timeframe (the file name carries it) |
+| the feature catalogue — every definition the repository can compute, with the timeframes it is offered on; drafted, like the rest of `config.py` | `FEATURE_CATALOGUE`, `catalogue_columns()`, `CATALOGUE_COLUMNS`; the stage `features-catalogue`, `module_features/catalogue.py` | `catalogue` | CATALOGUE | palette (the drawing's word for a colour set — `paletteOf` of the template), feature list, feature store |
+| the history a parameter covers on a timeframe, `bars × timeframe` — the number the nesting rule compares | `definition_history_hours()` | `history_hours_by_timeframe` | history | span (the EMA parameter word), lookback hours |
+| the definitions an asset's model sees until a promotion — the frozen experiment's fifteen columns, in the order it stacks them | `DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`; `definition_in_default_set` of a record | `definition_in_default_set` | default set | the frozen fifteen (as a name) |
+| the definition the strategy hierarchy reads on every timeframe, set or no set | `TREND_GATE_FEATURE_DEFINITION` = the first of the catalogue, `TREND_GATE_TIMEFRAME` | `trend_gate_feature` | the gate | `TREND_FAMILY`; a column literal in `asset.js` |
+
+The strategy hierarchy reads the trend definition through `TREND_GATE_FEATURE_DEFINITION`, so
+the name appears once in the code rather than in three string literals; `centered_rsi14` keeps
+its American spelling (`skill_pre_aws_solution.md` § What stays as it is, and why).
 
 ## Asset containers
 
@@ -293,9 +307,9 @@ sub-module and the control that opens its page.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
-| one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S5` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
+| one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S6` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
 | the arc of the root's ring a story occupies — its roots at the island radius, their fans beyond | `island`, `ISLANDS`, `ISLAND_ORDER`, `ISLAND_RADIUS`, `ISLAND_GAP` | `island` (the per-node map of a view) | — | a second word for the story in the configuration; band, cluster, section |
-| the key that isolates one island | the digit of the story id, and the digit the island's name begins with — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `5`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
+| the key that isolates one island | the digit of the story id, and the digit the island's name begins with — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `6`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
 | the node at the centre of an island, per view | `hub` | `hub` | — | anchor, root of the island |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |

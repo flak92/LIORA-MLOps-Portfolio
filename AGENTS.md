@@ -30,8 +30,8 @@ conflicts with this file, the change is wrong.
   arithmetic preconditions (the full canonical grid inside the frozen research
   window, asserted per asset by `labels.load_research_1m`, and a finite,
   positive ATR at every decision, asserted beside it; the aligned decision
-  grids of the arrays `dataset.load_xy` joins by position — one guard, asserted twice, because the feature parquets agreeing with each other and X agreeing with Y are two checks; a finite feature
-  matrix after the warm-up, asserted by `features.build_x`; the download that
+  grids of the arrays `dataset.load_xy` joins by position — one guard, asserted twice, because the feature parquets agreeing with each other and X agreeing with Y are two checks; a finite
+  catalogue after the warm-up, asserted by `catalogue.build_catalogue`; the download that
   aborts on a short post-listing day, and the listing probe that aborts when a
   symbol's history starts after the window) — and beside them, not guards:
   the one-line message of a status stage with nothing to report, naming the
@@ -60,13 +60,14 @@ conflicts with this file, the change is wrong.
 ## Architecture shape
 
 `module_*` is a top-level project responsibility; `store_*` is persisted or
-generated state. Four project modules — three runtime modules, in the order
+generated state. Five project modules — four runtime modules, in the order
 the data moves through them, and one that carries no dataflow:
 
 ```
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
-module_ml/          canonical dataset → X, Y → search → model → research simulation
-module_monitoring/  presentation of what the two modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
+module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe
+module_ml/          the catalogue and the canonical path → X, Y → search → model → research simulation
+module_monitoring/  presentation of what the three modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
 module_skills/      the contract's companions: the name register (module_skills/glossary.md), the repository-wide skills, and the index of every module's own
 ```
 
@@ -77,6 +78,9 @@ the servers add — so the topology is visible in the file
 that runs it; `module_monitoring/serve.py` reaches them by service name. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
+`module_features` is that case: its input is the canonical series, its output
+one parquet per timeframe that any model could read, and nothing above it in the
+dataflow imports it.
 
 Each `module_*` is an **extractable bounded context**: its domain rules, its
 orientation and its code sit together, so it could later be lifted into its own
@@ -100,7 +104,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`module_data`,
   `module_ml`) measures its own domain state in `status.py`, and
-  `module_monitoring` presents their snapshots;
+  `module_monitoring` presents their snapshots — `module_features` publishes no
+  snapshot, because it measures no run state: its structural facts ride in
+  `ml_status.json`;
 - **taxonomic ordering — the category token comes first, so siblings sort
   together.** A listing is read by eye before it is parsed: `module_data`,
   `module_ml`, `module_monitoring`, `module_skills`, then
@@ -257,7 +263,7 @@ from its layer's grammar, never invented:
 
 | layer | grammar | in this repo | what it forbids |
 |---|---|---|---|
-| constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `RSI_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
+| constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `ATR_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
 | external I/O functions | `<verb>_<object>`, verb from the closed list `fetch_` (network), `load_` (storage → memory), `write_` (persist), `parse_` (bytes → values) | `fetch_klines`, `load_xy`, `write_parquet`, `parse_zip` | `get_`, `process_`, `handle_` |
 | conversions | `to_<representation>` | `to_class`, `to_json_safe` | ambiguous `convert` |
 | composite constructors | `build_<object>` | `build_x` | `make_stuff` |
@@ -267,18 +273,18 @@ from its layer's grammar, never invented:
 | report fragments | `<section>_block` | `sample_block`, `strategy_block`, `hyperparameter_search_result_block` | `make_sample_dict` |
 | statement constants (SQL text) | `<OBJECT>_<KIND>`, kind from the closed list `DDL`, `INSERT`, `SCAN`, `PREDICATE`, `COLUMNS` | `CANONICAL_DDL`, `BAR_INSERT`, `VENUE_SCAN`, `OHLC_INTACT_PREDICATE`, `Y_COLUMNS` | `SOURCE_SWITCHES`, `QUERY_1` |
 | conversion factors | `<UNIT>_PER_<UNIT>` | `MILLISECONDS_PER_MINUTE`, `MINUTES_PER_DAY` | `MS_MIN`, `60_000` inline |
-| module-private helpers | a leading `_` on the name its layer's grammar gives, for a helper no other module may import | `_pnl_block`, `_classification_block`, `_utc_ms` | an `_` name imported by another module |
+| module-private helpers | a leading `_` on the name its layer's grammar gives, for a helper no other module may import | `_pnl_block`, `_classification_block` | an `_` name imported by another module |
 | CLI entry | `main()` — one per stage module, returning the exit code | `main` | `run`, `cli`, `entrypoint` |
 | quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `returns_15m` | `n_min`, `off` |
 | index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
 | booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_`, `has_` or `requires_` — state, possession, obligation | `entry_observable`, `label_valid`, `is_full_utc_day()`, `is_artifact_set_complete()` | `flag`, `ok`, `check`; `should_`, `check_`, `needs_`, a bare `trigger` |
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
-| features | `<computation>[<parameter>]_<timeframe>` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position_20_15m` | `feature_3`, `f_rsi` |
+| features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`, `docker-all`, `docker-all-record`); the presentation switch `on` / `off` is the one alias pair, of `docker-up` / `docker-down`, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `docker-ml-train`, `on` | a bare stage (`ingest`), a twin named after the tool (`docker-run`), a second switch pair (`start` / `stop`, `up` / `down`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
-| a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
-| a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
+| a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
+| a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
 | JavaScript functions at file scope | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
@@ -293,8 +299,11 @@ unit; a collection whose values are quantities keeps theirs
 invented just to satisfy the schema. The parameter word follows the mechanics
 — `SPAN` for an EMA,
 `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling
-window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step.
-A compact timeframe token inside an identifier (`WARMUP_4H_BARS`, `equity_15m`,
+window, `HORIZON` for the future of a label, `INTERVAL` for a sampling step. A
+parameter carried by a term of the feature catalogue (`("ema", 20)`) is the
+descriptor's own and is never copied into a named constant: the record is the
+one place the number lives.
+A compact timeframe token inside an identifier (`ANNUALISATION_PERIOD_15M_BARS`, `equity_15m`,
 `ohlcv_15m_canonical`) is the timeframe vocabulary of code and schema; the slot
 standard governs filesystem names only.
 Domain abbreviations (ATR, RSI, EMA, OHLCV, UTC, OOS, HPO, XGBoost) stay
@@ -383,7 +392,7 @@ and module-owned alike, and restates none of them.
 `module_skills/skill_asset_containers.md` is the worked example of the cross-cutting
 boundary: one image, the `pipeline` and `asset-<ticker>` services, the Makefile
 fan-out, the ceilings and the bind mount are a contract between the
-infrastructure and all three runtime modules at once, so it belongs to none of
+infrastructure and all four runtime modules at once, so it belongs to none of
 them and stays in `module_skills/`.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
@@ -408,7 +417,7 @@ last column says, and written when its one condition holds.
 |---|---|---|---|---|
 | `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where `.:/app` is today — every asset's folder and the other `store_*` roots at the same paths under `/app`, and what a task may leave on it | the first run whose `store_*` roots sit on a volume mounted at `/app` that is not the checkout's working tree | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
 | `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
-| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
+| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
 | `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
 | `skill_image_contents.md` | `module_skills/` | what the image carries — the code, copied by the `Dockerfile` — and what the mount carries — the `store_*` roots and nothing of the code — once `.:/app` no longer shadows the image | the two snapshots have left `module_monitoring/`, the stated prerequisite of narrowing the mount | `module_skills/skill_pre_aws_solution.md` § Docker is compute, not storage; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `Dockerfile` row |
 | `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |

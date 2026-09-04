@@ -50,7 +50,8 @@ def load_simulation_inputs(ticker: str) -> dict:
     ).fetchnumpy()
     parquet_con.close()
 
-    trend = {timeframe: xy["x"][:, config.FEATURE_COLUMNS.index(f"{config.TREND_FAMILY}_{timeframe}")]
+    # the trend definition on every timeframe, read from the catalogue by name — whatever the feature set holds
+    trend = {timeframe: xy["catalogue_columns"][config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, timeframe)]
              for timeframe in config.HIERARCHY_TIMEFRAMES}
     return {"xy": xy, "close_1m": close_1m, "trend": trend, "oos_predictions": oos_predictions}
 
