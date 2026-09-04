@@ -201,7 +201,7 @@ raw ZIP trees. Schema:
 - **ML Research** — the cross-section of every asset's result, and the feature
   catalogue: every definition the repository computes, its terms, the history
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
-- **ML Assets** — one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURES;
+- **ML Assets** — one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURE SET;
 - **Lifecycle** — one recorded run end to end: what ran, in which container, as
   which PID, for how long, at what CPU and peak resident set, what bytes it moved
   and what it left on disk; then one shared timeline with a dashed rule at every

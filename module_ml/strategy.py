@@ -30,8 +30,8 @@ DECISION_BAR_MINUTES = config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME] /
 BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on the last minute of its block
 
 
-def load_simulation_inputs(ticker: str) -> dict:
-    xy = dataset.load_xy(ticker)
+def load_close_1m(ticker: str) -> np.ndarray:
+    """The canonical 1m closes over the research window — the path the backtest replays."""
     con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
@@ -42,6 +42,11 @@ def load_simulation_inputs(ticker: str) -> dict:
             ORDER BY timestamp_ms"""
     ).fetchnumpy()["close"]
     con.close()
+    return close_1m
+
+
+def load_oos_predictions(ticker: str) -> dict[str, np.ndarray]:
+    """The out-of-sample windows as train.py wrote them, fold-major and by decision."""
     parquet_con = duckdb.connect()
     parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     parquet_con.execute("SET threads=1")   # float summation must not be reordered
@@ -49,11 +54,19 @@ def load_simulation_inputs(ticker: str) -> dict:
         f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker)}') ORDER BY oos_fold_id, decision_ts"
     ).fetchnumpy()
     parquet_con.close()
+    return oos_predictions
 
-    # the trend definition on every timeframe, read from the catalogue by name — whatever the feature set holds
+
+def build_simulation_inputs(xy: dict, close_1m: np.ndarray, oos_predictions: dict[str, np.ndarray]) -> dict:
+    """The strategy's inputs: X and Y, the 1m path, the predictions, and the trend definition on every timeframe,
+    read from the catalogue by name — whatever the feature set holds."""
     trend = {timeframe: xy["catalogue_columns"][config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, timeframe)]
              for timeframe in config.HIERARCHY_TIMEFRAMES}
     return {"xy": xy, "close_1m": close_1m, "trend": trend, "oos_predictions": oos_predictions}
+
+
+def load_simulation_inputs(ticker: str) -> dict:
+    return build_simulation_inputs(dataset.load_xy(ticker), load_close_1m(ticker), load_oos_predictions(ticker))
 
 
 def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
@@ -152,6 +165,7 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     returns_15m = np.diff(equity_15m) / equity_15m[:-1]
     return {
         "equity_1m": equity_1m,
+        "returns_15m": returns_15m,
         "sharpe": validation.sharpe_annualised(returns_15m),
         "max_drawdown": validation.max_drawdown(equity_1m),  # 1m path: intra-bar drawdown is real
         "trade_count": int(trade_returns.size),
@@ -164,13 +178,53 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
 
 
 def pnl_block(result: dict) -> dict:
-    """Everything but the 1m path, which is an intermediate, not a report."""
-    return {k: v for k, v in result.items() if k != "equity_1m"}
+    """Everything but the two paths, which are intermediates, not a report."""
+    return {k: v for k, v in result.items() if k not in ("equity_1m", "returns_15m")}
 
 
 def equity_curve(equity_1m: np.ndarray) -> dict:
     idx = np.arange(0, equity_1m.size, EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES)
     return {"equity": np.round(equity_1m[idx], 6).tolist()}
+
+
+def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
+    """The entry edge threshold chosen on the validation folds — the grid point maximising the mean fold Sharpe
+    among those clearing the trade floor, ties to the smaller threshold, the grid floor when none clears it — with
+    the fold results at that point. The one selection the stage and the feature-set search both run."""
+    validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
+                       for fold_id in config.VALIDATION_FOLD_IDS}
+    validation_bounds = {fold_id: validation.fold_bounds(fold_id)
+                         for fold_id in config.VALIDATION_FOLD_IDS}
+
+    # the locals carry the names of the keys they end up as
+    entry_edge_threshold, selection_score_mean_sharpe = None, -np.inf
+    validation_by_fold, entry_edge_threshold_constraint_met = None, False
+    results_at_grid_floor = None                     # kept for the fallback below
+    for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
+        results_by_fold = {fold_id: backtest(simulation_inputs, validation_rows[fold_id], threshold,
+                                             *validation_bounds[fold_id])
+                           for fold_id in config.VALIDATION_FOLD_IDS}
+        if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:
+            results_at_grid_floor = results_by_fold
+        if any(r["trade_count"] < config.MINIMUM_TRADES_PER_VALIDATION_FOLD
+               for r in results_by_fold.values()):
+            continue
+        entry_edge_threshold_constraint_met = True
+        score = float(np.mean([r["sharpe"] for r in results_by_fold.values()]))
+        if score > selection_score_mean_sharpe:      # strict: ties keep the smaller threshold
+            entry_edge_threshold, selection_score_mean_sharpe = threshold, score
+            validation_by_fold = results_by_fold
+    if not entry_edge_threshold_constraint_met:      # deterministic fallback, reported as such
+        entry_edge_threshold = config.ENTRY_EDGE_THRESHOLD_GRID[0]
+        validation_by_fold = results_at_grid_floor
+        selection_score_mean_sharpe = float(
+            np.mean([r["sharpe"] for r in validation_by_fold.values()]))
+    return {
+        "entry_edge_threshold": entry_edge_threshold,
+        "entry_edge_threshold_constraint_met": entry_edge_threshold_constraint_met,
+        "selection_score_mean_sharpe": selection_score_mean_sharpe,
+        "validation_by_fold": validation_by_fold,
+    }
 
 
 def main() -> int:
@@ -180,34 +234,8 @@ def main() -> int:
 
     for ticker in config.parse_tickers(args.tickers):
         simulation_inputs = load_simulation_inputs(ticker)
-        validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
-                           for fold_id in config.VALIDATION_FOLD_IDS}
-        validation_bounds = {fold_id: validation.fold_bounds(fold_id)
-                             for fold_id in config.VALIDATION_FOLD_IDS}
-
-        # the locals carry the names of the keys they end up as
-        entry_edge_threshold, selection_score_mean_sharpe = None, -np.inf
-        validation_by_fold, entry_edge_threshold_constraint_met = None, False
-        results_at_grid_floor = None                     # kept for the fallback below
-        for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
-            results_by_fold = {fold_id: backtest(simulation_inputs, validation_rows[fold_id], threshold,
-                                                 *validation_bounds[fold_id])
-                               for fold_id in config.VALIDATION_FOLD_IDS}
-            if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:
-                results_at_grid_floor = results_by_fold
-            if any(r["trade_count"] < config.MINIMUM_TRADES_PER_VALIDATION_FOLD
-                   for r in results_by_fold.values()):
-                continue
-            entry_edge_threshold_constraint_met = True
-            score = float(np.mean([r["sharpe"] for r in results_by_fold.values()]))
-            if score > selection_score_mean_sharpe:      # strict: ties keep the smaller threshold
-                entry_edge_threshold, selection_score_mean_sharpe = threshold, score
-                validation_by_fold = results_by_fold
-        if not entry_edge_threshold_constraint_met:      # deterministic fallback, reported as such
-            entry_edge_threshold = config.ENTRY_EDGE_THRESHOLD_GRID[0]
-            validation_by_fold = results_at_grid_floor
-            selection_score_mean_sharpe = float(
-                np.mean([r["sharpe"] for r in validation_by_fold.values()]))
+        selection = entry_edge_threshold_selection(simulation_inputs)
+        entry_edge_threshold = selection["entry_edge_threshold"]
 
         holdout_start, holdout_end = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
         final_holdout = backtest(simulation_inputs, signals_for_fold(simulation_inputs, config.FINAL_HOLDOUT_FOLD_ID),
@@ -215,11 +243,11 @@ def main() -> int:
 
         payload = {
             "entry_edge_threshold": entry_edge_threshold,
-            "entry_edge_threshold_constraint_met": entry_edge_threshold_constraint_met,
-            "selection_score_mean_sharpe": selection_score_mean_sharpe,
+            "entry_edge_threshold_constraint_met": selection["entry_edge_threshold_constraint_met"],
+            "selection_score_mean_sharpe": selection["selection_score_mean_sharpe"],
             "execution_cost_rate_per_trade_side": config.EXECUTION_COST_RATE_PER_TRADE_SIDE,
             "validation": {f"fold_{fold_id}": pnl_block(r)
-                           for fold_id, r in validation_by_fold.items()},
+                           for fold_id, r in selection["validation_by_fold"].items()},
             "final_holdout": {**pnl_block(final_holdout),
                               "equity_curve": equity_curve(final_holdout["equity_1m"])},
         }

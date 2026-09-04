@@ -1,9 +1,9 @@
-"""XGBoost native-API wrapper: class mapping, HPO space, fit and predict.
+"""XGBoost native-API wrapper: class mapping, HPO space, fit, predict and the two importances the booster gives.
 
 Pure functions over numpy arrays (xgboost DMatrix is the only container).
 Classes {-1, 0, +1} map to {0, 1, 2} in exactly one place. Determinism:
 tree_method=hist with nthread=1 and a fixed seed; no early stopping —
-num_boost_round is a tuned hyper-parameter. `fit`, `predict_proba` and
+num_boost_round is a tuned hyper-parameter. `fit`, `predict_proba`, `pred_contribs` and
 `suggest_*` are the libraries' own vocabulary at their boundary.
 """
 
@@ -50,3 +50,11 @@ def gain_importance(booster: xgb.Booster, feature_columns: tuple[str, ...]) -> d
     """Total gain per feature, zero for a feature the trees never split on."""
     score = booster.get_score(importance_type="total_gain")
     return {column: score.get(column, 0.0) for column in feature_columns}
+
+
+def mean_abs_shap_importance(booster: xgb.Booster, x: np.ndarray, feature_columns: tuple[str, ...]) -> dict[str, float]:
+    """Mean absolute SHAP value per feature over the rows and the classes — xgboost's `pred_contribs`, in margin
+    space, the bias column dropped; unweighted, because it is a property of the fitted function, not of a population."""
+    contributions = booster.predict(xgb.DMatrix(x, feature_names=list(feature_columns)), pred_contribs=True)
+    mean_abs = np.abs(contributions[:, :, :-1]).mean(axis=(0, 1))
+    return {column: float(value) for column, value in zip(feature_columns, mean_abs)}

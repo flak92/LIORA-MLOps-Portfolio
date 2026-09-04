@@ -255,6 +255,19 @@ supervised subset of a fold
 whose maximum horizon fits inside it — the same t₀-decidable rule that governs
 strategy eligibility (§9); predictions cover the full fold.
 
+**Three importances per validation fold**, each of that fold's own booster on the
+fold's scoring rows, none of the final holdout's: `gain_importance`, XGBoost's
+total gain per column; `mean_abs_shap_importance`, the mean absolute SHAP value
+[13] per column over the rows and the three classes, in margin space and
+unweighted, because it is a property of the fitted function rather than of a
+population; `permutation_logloss_delta_importance`, Breiman's permutation
+importance [12] as the rise of the fold's uniqueness-weighted log-loss when one
+column is permuted — one permutation per fold, drawn from `SEED`, applied to
+each column in turn, so the draw depends on neither the column order nor a
+resumed run. They are results, not gates: the page shows their means over the
+validation folds, and the feature-set search reads the permutation delta to
+choose which column to drop.
+
 ## 9. Strategy
 
 ```
@@ -433,3 +446,5 @@ block) — reported per asset, not resampled.
 | [9] | Chen, T., Guestrin, C. (2016). XGBoost: a scalable tree boosting system. *KDD 2016* |
 | [10] | Elder, A. (1993). *Trading for a Living* — triple-screen multi-timeframe hierarchy |
 | [11] | Makarov, I., Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. *Journal of Financial Economics*, 135(2), 293–319 — why `rel_divergence` stays a data-quality signal |
+| [12] | Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32. doi:10.1023/A:1010933404324 — permutation importance |
+| [13] | Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., Lee, S.-I. (2020). From local explanations to global understanding with explainable AI for trees. *Nature Machine Intelligence*, 2(1), 56–67. doi:10.1038/s42256-019-0138-9 — SHAP values of a tree ensemble |

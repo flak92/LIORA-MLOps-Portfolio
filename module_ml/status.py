@@ -140,16 +140,28 @@ def artifacts_block(ticker: str) -> dict:
     return {"model_evaluation_modified_utc": datetime.fromtimestamp(modified, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")}
 
 
+# the rounding of each importance as the page shows it: gain is a sum of gains, the two others are fractions
+IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6, "permutation_logloss_delta_importance": 6}
+
+
+def validation_importance_block(validation_importance: dict) -> dict:
+    """The three importances of every validation booster, per column, rounded — the page takes their means."""
+    return {fold: {measure: {column: round(value, IMPORTANCE_ROUNDING_DIGITS[measure])
+                             for column, value in sorted(block[measure].items())}
+                   for measure in IMPORTANCE_ROUNDING_DIGITS}
+            for fold, block in sorted(validation_importance.items())}
+
+
 def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> dict:
     validation, final_holdout = classification_block(metrics)
-    gain = {k: round(v, 1) for k, v in sorted(metrics["gain_importance"].items())}
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
         "hyperparameter_search_result": hyperparameter_search_result_block(hyperparameter_search_result),
         "validation": validation,
         "final_holdout": final_holdout,
-        "gain_importance": gain,
+        "feature_columns": list(metrics["feature_columns"]),
+        "validation_importance": validation_importance_block(metrics["validation_importance"]),
         "strategy": strategy_block(strategy),
         "artifacts": artifacts_block(ticker),
     }

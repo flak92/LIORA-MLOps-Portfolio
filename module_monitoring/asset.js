@@ -107,16 +107,48 @@ function buildStrategyFrame(asset, mlStatus) {
   return frame.frame;
 }
 
-function buildFeaturesFrame(asset) {
-  const frame = buildFrame("FEATURES — XGBoost total gain");
-  const items = Object.entries(asset.gain_importance).sort((a, b) => b[1] - a[1]);
-  const max = items[0][1] || 1;
-  frame.body.appendChild(buildTable(["feature", "total gain"], items.map((kv) => {
-    const wrap = document.createElement("span");
-    wrap.appendChild(buildMeter((100 * kv[1]) / max));
-    wrap.appendChild(document.createTextNode(formatCount(Math.round(kv[1]))));
-    return [kv[0], wrap];
-  })));
+/* the three importances the payload carries per validation fold, in the order the tables show them */
+const IMPORTANCE_MEASURES = [
+  { key: "gain_importance", label: "gain", format: (value) => formatCount(Math.round(value)) },
+  { key: "mean_abs_shap_importance", label: "mean |SHAP|", format: (value) => formatNumber(value, 4) },
+  { key: "permutation_logloss_delta_importance", label: "permutation Δ log-loss", format: (value) => formatNumber(value, 5) },
+];
+
+function buildImportanceCell(value, scaleMax, format) {
+  if (value === null) return "-";
+  const wrap = document.createElement("span");
+  wrap.appendChild(buildMeter(scaleMax > 0 ? (100 * Math.max(0, value)) / scaleMax : 0));
+  wrap.appendChild(document.createTextNode(format(value)));
+  return wrap;
+}
+
+/* one table per timeframe over the catalogue: the set's columns marked, each importance the mean over the
+   validation folds of that fold's booster — page arithmetic, like the mean validation skill; a column outside
+   the set has no model to be measured on */
+function buildFeatureSetFrame(asset, mlStatus) {
+  const frame = buildFrame("FEATURE SET — the columns the model saw, and what each was worth on the validation folds");
+  const folds = Object.keys(asset.validation_importance).sort();
+  const inSet = new Set(asset.feature_columns);
+  mlStatus.catalogue.timeframes.forEach((entry) => {
+    const timeframe = entry.timeframe;
+    const rows = mlStatus.catalogue.definitions
+      .filter((definition) => definition.timeframes.includes(timeframe))
+      .map((definition) => {
+        const column = definition.feature_definition + "_" + timeframe;
+        const means = IMPORTANCE_MEASURES.map((measure) => inSet.has(column)
+          ? mean(folds.map((fold) => asset.validation_importance[fold][measure.key][column])) : null);
+        return { column: column, means: means };
+      });
+    const scale = IMPORTANCE_MEASURES.map((measure, i) => Math.max(0, ...rows.map((row) => row.means[i] === null ? 0 : row.means[i])));
+    frame.body.appendChild(buildTable(
+      ["column " + timeframe, "in set", ...IMPORTANCE_MEASURES.map((measure) => measure.label)],
+      rows.map((row) => [row.column, inSet.has(row.column) ? "✓" : "-",
+        ...row.means.map((value, i) => buildImportanceCell(value, scale[i], IMPORTANCE_MEASURES[i].format))])));
+  });
+  frame.body.appendChild(buildFootnote("each importance is the mean over folds " + folds.map((fold) => "F" + fold.split("_")[1]).join(", ")
+    + " of that fold's own booster: gain is XGBoost total gain, mean |SHAP| the mean absolute contribution in margin space, "
+    + "permutation Δ log-loss the rise of the fold's weighted log-loss when the column is permuted. "
+    + "The final holdout attributes nothing."));
   return frame.frame;
 }
 
@@ -126,7 +158,7 @@ function renderAsset(ticker) {
   const asset = mlStatus.assets.find((candidate) => candidate.ticker === ticker);
   host.textContent = "";
   host.appendChild(buildHeaderLine(asset, mlStatus));
-  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeaturesFrame(asset)]
+  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeatureSetFrame(asset, mlStatus)]
     .forEach((el) => host.appendChild(el));
 }
 
