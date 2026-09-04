@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "66 tracked files \u00b7 5 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of a6c3c85 \u00b7 2026-09-04 19:57:04",
+ "subtitle": "71 tracked files \u00b7 6 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of a885b1d \u00b7 2026-09-04 23:06:43",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -159,7 +159,7 @@ const VIEWS = {
   "desc": {
    "AGENTS.md": "The contract, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
    "Dockerfile": "The recipe of the one image, `mlops-portfolio-1m-pipeline`: a dependency layer, built from the tree and pushed to the registry beside it; the code rides the volume until the image carries it \u2014 the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder.",
-   "Makefile": "The local spelling of the state machine beside it: `all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
+   "Makefile": "The local spelling of the state machine beside it: `all:`, `features-all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stages in its container, and nothing here schedules \u2014 the developer interface, never a scheduler.",
    "README.md": "The overview: the domain drawing, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
    "REPORT_pre_aws_minimalism.md": "The review of these seats for excess: what could be less, and whether it is; it deploys nowhere and names no primitive the table does not.",
    "asset_store": "Object storage with one prefix per asset and version (Amazon S3): `artifacts/\u003cticker>/\u003cversion>/`, the version the run's execution name \u2014 the asset folder copied whole from the volume after the run: the one database file and the parquets and JSONs beside it. The copy, never the home; the strategy host reads it here.",
@@ -170,26 +170,33 @@ const VIEWS = {
    "event_rule": "A schedule and a condition state (Amazon EventBridge Scheduler; a Step Functions choice): the schedule starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full \u2014 `is_full_utc_day()` in `module_data/lean.py`; the condition asks the volume whether this asset needs its artifacts rebuilt, and gates the states from AggregateBars on. Today the cadence is a hand typing `make docker-all`, and the condition the downloaders' day-presence skip and the rerun table of `methodology_ml.md` \u00a7 11, read by a human. Absent here \u2014 described.",
    "image_registry": "A container image in a registry (Amazon ECR): `mlops-portfolio-1m-pipeline`, the one runtime package every task runs \u2014 built from the tree, pulled by the task host; it carries the code only once the ladder of `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder reaches the phase named *the image carries the code*, and until then the volume carries it, as the bind mount does today.",
    "log_streams": "Log streams keyed by stage and container, and metrics (Amazon CloudWatch): every task's output and the 1 s samples `record.py` keeps in the run record today, shipped off the host. Absent here \u2014 described.",
-   "ml_research_task": "The ml-research task: the same task definition run with a `module_ml` command and `ASSET` overridden (`RunTask` with `ASSET=\u003cTICKER>`, on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for ML once for the basket, never per asset \u2014 reading and writing the asset's folder on the volume, and holding nothing between runs.",
+   "ml_research_task": "The ml-research task: the same task definition run with a `module_features` or a `module_ml` command and `ASSET` overridden (`RunTask` with `ASSET=\u003cTICKER>`, on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for ML once for the basket, never per asset \u2014 reading and writing the asset's folder on the volume, and holding nothing between runs.",
    "module_data/": "The code of the data-ingest task: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status \u2014 it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder), and runs in the task beside it.",
    "module_data/README_module_data.md": "",
    "module_data/config.py": "`TICKERS`, the one definition of the basket, and the descriptors that name the raw and canonical objects \u2014 `research_ohlcv_duckdb()` and `artifact_dir()`, both here, both resolving unchanged on the volume, the copy's key being each path relative to `STORE_ASSETS_ARTIFACTS_DIR`; `--tickers \u003cTICKER>` \u2014 `ASSET` at the container boundary \u2014 is the parameter an asset-scoped run takes.",
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
-   "module_data/ingest.py": "The BuildCanonicalData state: reads the raw tree under a venue and symbol prefix on the volume and writes the canonical market object beside it \u2014 the storage \u2192 ML-compute line begins at its output.",
+   "module_data/ingest.py": "The BuildCanonicalData state: reads the raw tree under a venue and symbol prefix on the volume and writes the canonical market object beside it \u2014 the storage \u2192 feature-compute line begins at its output.",
    "module_data/lean.py": "The Lean-exact raw format \u2014 the whole of Lean's presence here; the strategy host would read the raw objects in this format directly.",
    "module_data/skills/": "The module's own contract travels inside the task's code: a document, not a primitive.",
    "module_data/skills/methodology_data.md": "",
    "module_data/skills/skill_candle_canonicalisation.md": "",
    "module_data/status.py": "The PublishStatus state for data: one status object for the whole basket, written by the one-off run and never fanned out; its move to its own prefix, `status/`, would turn five points \u2014 the two path constants, the directory `serve.py` serves, the two literal fetches \u2014 listed in `module_skills/skill_pre_aws_solution.md` \u00a7 What stays as it is, and why.",
-   "module_ml/": "The code of the ml-research task: bars, features, labels, search, model, strategy evaluation and the ML status \u2014 it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
+   "module_features/": "The code of the ml-research task's first two states: the bars of the register and the feature catalogue \u2014 it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
+   "module_features/README_module_features.md": "",
+   "module_features/bars.py": "The AggregateBars state, and the one write across the storage \u2192 feature-compute line: the aggregation tables are a pure function of the canonical series, written into the same file on the volume the task read.",
+   "module_features/catalogue.py": "Evaluates every catalogued feature definition on every timeframe it is offered on, by folding its terms through the operators; the finiteness assert after the warm-up is one of the seven guards.",
+   "module_features/config.py": "The timeframe register, the frozen research window and the feature catalogue: the constants the experiment freezes, published by the git commit and by the catalogue block of `ml_status.json`, never a primitive.",
+   "module_features/dataset.py": "",
+   "module_features/indicators.py": "",
+   "module_features/skills/": "The module's own contract: the feature taxonomy, and the definitions equation by equation.",
+   "module_features/skills/methodology_features.md": "",
+   "module_features/skills/skill_feature_taxonomy.md": "",
+   "module_ml/": "The code of the ml-research task from GenerateLabels on: the feature set, labels, search, model, strategy evaluation and the ML status \u2014 it rides the volume until the image carries it (the phase of that name in `module_skills/skill_pre_aws_solution.md` \u00a7 The retrain runtime is a ladder), and runs in the task beside it, one `ASSET` at a time.",
    "module_ml/README_module_ml.md": "",
-   "module_ml/bars.py": "The AggregateBars state, and the one write across the storage \u2192 ML-compute line: the three aggregation tables are a pure function of the canonical series, written into the same file on the volume the task read.",
    "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; the copy's key is each descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR`, so a version prefix edits nothing here.",
    "module_ml/dataset.py": "",
-   "module_ml/features.py": "",
    "module_ml/hpo.py": "",
-   "module_ml/indicators.py": "",
    "module_ml/labels.py": "",
    "module_ml/model.py": "",
    "module_ml/skills/": "The research methodology travels inside the task's code: a document, not a primitive.",
@@ -242,7 +249,7 @@ const VIEWS = {
    "requirements.txt": "The image's dependency layer, resolved when the image is built and read by no task at run time.",
    "root": "The same tracked tree, read forward: every file and folder seated beside the primitive it would run on or live in \u2014 the column *the same responsibility elsewhere* of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them. One host with a durable volume is the home of every store, object storage its copy after the run, the stages the states of one machine. Described and drawn, built nowhere.",
    "run_store": "Run and status objects in object storage (Amazon S3): `runs/\u003crun_id>/` \u2014 the record `record.py` writes on the volume from inside whichever task ran the stage \u2014 and `status/`, the two snapshots' own prefix, both copied from the volume after the run. The reader on the host reads the files on the volume, not this copy. Here it is `store_run_records/`, on disk and untracked, and the snapshots tracked beside the page.",
-   "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus, then PublishStores \u2014 the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` \u2014 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:` and `ml-all:` are the same order, read locally.",
+   "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 AggregateBars \u2192 GenerateFeatures \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus, then PublishStores \u2014 the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` \u2014 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:`, `features-all:` and `ml-all:` are the same order, read locally.",
    "store_assets_artifacts/": "The asset folders and their home: one folder per ticker on the volume, the tracked README and parameters two of its files; the store beside it is this folder's copy after the run, never its home.",
    "store_assets_artifacts/BTC/": "The `BTC` folder on the volume: `BTC_research_ohlcv.duckdb` as the one embedded database \u2014 the two venue tables, the canonical table and its three aggregations under one whole-file lock, one writer at a time \u2014 copied whole to `artifacts/BTC/\u003cversion>/` after the run with the parquets and JSONs keyed `BTC_\u003cartifact>` beside it; never a database process.",
    "store_volume": "A durable block volume mounted at `/app` by every task and service of the instance (Amazon EBS): `.:/app` read as `\u003cvolume>:/app`, so every `store_*` root and both snapshots sit at the path its `config.py` builds today, the whole-file lock holds, and no stage changes. The home of state, and of the code until the image carries it; the three stores on the island beside it are its copy, taken whole after the last stage of a run has exited, never by a stage and never mid-run.",
@@ -402,14 +409,21 @@ const VIEWS = {
    "module_data/skills/methodology_data.md": "S4",
    "module_data/skills/skill_candle_canonicalisation.md": "S4",
    "module_data/status.py": "S4",
+   "module_features/": "S6",
+   "module_features/README_module_features.md": "S6",
+   "module_features/bars.py": "S6",
+   "module_features/catalogue.py": "S6",
+   "module_features/config.py": "S6",
+   "module_features/dataset.py": "S6",
+   "module_features/indicators.py": "S6",
+   "module_features/skills/": "S6",
+   "module_features/skills/methodology_features.md": "S6",
+   "module_features/skills/skill_feature_taxonomy.md": "S6",
    "module_ml/": "S6",
    "module_ml/README_module_ml.md": "S6",
-   "module_ml/bars.py": "S6",
    "module_ml/config.py": "S6",
    "module_ml/dataset.py": "S6",
-   "module_ml/features.py": "S6",
    "module_ml/hpo.py": "S6",
-   "module_ml/indicators.py": "S6",
    "module_ml/labels.py": "S6",
    "module_ml/model.py": "S6",
    "module_ml/skills/": "S6",
@@ -672,14 +686,21 @@ const VIEWS = {
    "module_data/skills/methodology_data.md": "doc",
    "module_data/skills/skill_candle_canonicalisation.md": "doc",
    "module_data/status.py": "code",
+   "module_features/": "module",
+   "module_features/README_module_features.md": "doc",
+   "module_features/bars.py": "code",
+   "module_features/catalogue.py": "code",
+   "module_features/config.py": "config",
+   "module_features/dataset.py": "code",
+   "module_features/indicators.py": "code",
+   "module_features/skills/": "module",
+   "module_features/skills/methodology_features.md": "doc",
+   "module_features/skills/skill_feature_taxonomy.md": "doc",
    "module_ml/": "module",
    "module_ml/README_module_ml.md": "doc",
-   "module_ml/bars.py": "code",
    "module_ml/config.py": "config",
    "module_ml/dataset.py": "code",
-   "module_ml/features.py": "code",
    "module_ml/hpo.py": "code",
-   "module_ml/indicators.py": "code",
    "module_ml/labels.py": "code",
    "module_ml/model.py": "code",
    "module_ml/skills/": "module",
@@ -764,14 +785,21 @@ const VIEWS = {
    "module_data/skills/methodology_data.md": "",
    "module_data/skills/skill_candle_canonicalisation.md": "",
    "module_data/status.py": "",
-   "module_ml/": "Research \u2014 bars, features, triple-barrier labels, purged walk-forward XGBoost.",
+   "module_features/": "Features \u2014 the bars of the timeframe register, the indicator kernels and the feature catalogue, one parquet per timeframe.",
+   "module_features/README_module_features.md": "",
+   "module_features/bars.py": "",
+   "module_features/catalogue.py": "Evaluates every catalogued feature definition on every timeframe it is offered on, by folding its terms through the operators; the finiteness assert after the warm-up is one of the seven guards.",
+   "module_features/config.py": "The timeframe register, the frozen research window and the feature catalogue \u2014 the one definition every feature name, computation and history derives from.",
+   "module_features/dataset.py": "",
+   "module_features/indicators.py": "",
+   "module_features/skills/": "The module's own contract: the feature taxonomy, and the definitions equation by equation.",
+   "module_features/skills/methodology_features.md": "",
+   "module_features/skills/skill_feature_taxonomy.md": "",
+   "module_ml/": "Research \u2014 the feature set, triple-barrier labels, purged walk-forward XGBoost, the strategy simulation.",
    "module_ml/README_module_ml.md": "",
-   "module_ml/bars.py": "",
    "module_ml/config.py": "",
    "module_ml/dataset.py": "",
-   "module_ml/features.py": "",
    "module_ml/hpo.py": "",
-   "module_ml/indicators.py": "",
    "module_ml/labels.py": "",
    "module_ml/model.py": "",
    "module_ml/skills/": "The module's own contract: the research methodology, equation by equation.",
@@ -829,8 +857,9 @@ const VIEWS = {
    "S1": "docker-compose.yml",
    "S2": "module_skills/",
    "S3": "module_data/",
-   "S4": "module_ml/",
-   "S5": "module_monitoring/"
+   "S4": "module_features/",
+   "S5": "module_ml/",
+   "S6": "module_monitoring/"
   },
   "island": {
    "AGENTS.md": "S2",
@@ -850,52 +879,59 @@ const VIEWS = {
    "module_data/skills/methodology_data.md": "S3",
    "module_data/skills/skill_candle_canonicalisation.md": "S3",
    "module_data/status.py": "S3",
-   "module_ml/": "S4",
-   "module_ml/README_module_ml.md": "S4",
-   "module_ml/bars.py": "S4",
-   "module_ml/config.py": "S4",
-   "module_ml/dataset.py": "S4",
-   "module_ml/features.py": "S4",
-   "module_ml/hpo.py": "S4",
-   "module_ml/indicators.py": "S4",
-   "module_ml/labels.py": "S4",
-   "module_ml/model.py": "S4",
-   "module_ml/skills/": "S4",
-   "module_ml/skills/methodology_ml.md": "S4",
-   "module_ml/status.py": "S4",
-   "module_ml/strategy.py": "S4",
-   "module_ml/train.py": "S4",
-   "module_ml/validation.py": "S4",
-   "module_monitoring/": "S5",
-   "module_monitoring/README_module_monitoring.md": "S5",
-   "module_monitoring/asset.js": "S5",
-   "module_monitoring/config.py": "S5",
-   "module_monitoring/data.js": "S5",
-   "module_monitoring/data_status.json": "S5",
-   "module_monitoring/index.html": "S5",
-   "module_monitoring/ml.js": "S5",
-   "module_monitoring/ml_status.json": "S5",
-   "module_monitoring/page.js": "S5",
-   "module_monitoring/record.py": "S5",
-   "module_monitoring/run.js": "S5",
-   "module_monitoring/serve.py": "S5",
-   "module_monitoring/skills/": "S5",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "S5",
-   "module_monitoring/skills/skill_developer_experience_drawing.md": "S5",
-   "module_monitoring/skills/skill_devops_panel.md": "S5",
-   "module_monitoring/style.css": "S5",
-   "module_monitoring/sub_module_devops/": "S5",
-   "module_monitoring/sub_module_devops/config.py": "S5",
-   "module_monitoring/sub_module_devops/containers.js": "S5",
-   "module_monitoring/sub_module_devops/devops.css": "S5",
-   "module_monitoring/sub_module_devops/devops.js": "S5",
-   "module_monitoring/sub_module_devops/index.html": "S5",
-   "module_monitoring/sub_module_devops/serve.py": "S5",
-   "module_monitoring/sub_module_dx/": "S5",
-   "module_monitoring/sub_module_dx/config.py": "S5",
-   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S5",
-   "module_monitoring/sub_module_dx/visualisation_config.json": "S5",
-   "module_monitoring/sub_module_dx/visualise.py": "S5",
+   "module_features/": "S4",
+   "module_features/README_module_features.md": "S4",
+   "module_features/bars.py": "S4",
+   "module_features/catalogue.py": "S4",
+   "module_features/config.py": "S4",
+   "module_features/dataset.py": "S4",
+   "module_features/indicators.py": "S4",
+   "module_features/skills/": "S4",
+   "module_features/skills/methodology_features.md": "S4",
+   "module_features/skills/skill_feature_taxonomy.md": "S4",
+   "module_ml/": "S5",
+   "module_ml/README_module_ml.md": "S5",
+   "module_ml/config.py": "S5",
+   "module_ml/dataset.py": "S5",
+   "module_ml/hpo.py": "S5",
+   "module_ml/labels.py": "S5",
+   "module_ml/model.py": "S5",
+   "module_ml/skills/": "S5",
+   "module_ml/skills/methodology_ml.md": "S5",
+   "module_ml/status.py": "S5",
+   "module_ml/strategy.py": "S5",
+   "module_ml/train.py": "S5",
+   "module_ml/validation.py": "S5",
+   "module_monitoring/": "S6",
+   "module_monitoring/README_module_monitoring.md": "S6",
+   "module_monitoring/asset.js": "S6",
+   "module_monitoring/config.py": "S6",
+   "module_monitoring/data.js": "S6",
+   "module_monitoring/data_status.json": "S6",
+   "module_monitoring/index.html": "S6",
+   "module_monitoring/ml.js": "S6",
+   "module_monitoring/ml_status.json": "S6",
+   "module_monitoring/page.js": "S6",
+   "module_monitoring/record.py": "S6",
+   "module_monitoring/run.js": "S6",
+   "module_monitoring/serve.py": "S6",
+   "module_monitoring/skills/": "S6",
+   "module_monitoring/skills/skill_dashboard_conventions.md": "S6",
+   "module_monitoring/skills/skill_developer_experience_drawing.md": "S6",
+   "module_monitoring/skills/skill_devops_panel.md": "S6",
+   "module_monitoring/style.css": "S6",
+   "module_monitoring/sub_module_devops/": "S6",
+   "module_monitoring/sub_module_devops/config.py": "S6",
+   "module_monitoring/sub_module_devops/containers.js": "S6",
+   "module_monitoring/sub_module_devops/devops.css": "S6",
+   "module_monitoring/sub_module_devops/devops.js": "S6",
+   "module_monitoring/sub_module_devops/index.html": "S6",
+   "module_monitoring/sub_module_devops/serve.py": "S6",
+   "module_monitoring/sub_module_dx/": "S6",
+   "module_monitoring/sub_module_dx/config.py": "S6",
+   "module_monitoring/sub_module_dx/files_and_folders_visualisation_template.html": "S6",
+   "module_monitoring/sub_module_dx/visualisation_config.json": "S6",
+   "module_monitoring/sub_module_dx/visualise.py": "S6",
    "module_skills/": "S2",
    "module_skills/README.md": "S2",
    "module_skills/glossary.md": "S2",
@@ -907,8 +943,8 @@ const VIEWS = {
    "module_skills/skill_sorting_files_naming_standard.md": "S2",
    "requirements.txt": "S1",
    "root": "core",
-   "store_assets_artifacts/": "S4",
-   "store_assets_artifacts/BTC/": "S4"
+   "store_assets_artifacts/": "S5",
+   "store_assets_artifacts/BTC/": "S5"
   },
   "islands": {
    "S1": {
@@ -924,12 +960,16 @@ const VIEWS = {
     "name": "3 \u00b7 Data"
    },
    "S4": {
-    "color": "#E06BD8",
-    "name": "4 \u00b7 Research"
+    "color": "#F2E14E",
+    "name": "4 \u00b7 Features"
    },
    "S5": {
+    "color": "#E06BD8",
+    "name": "5 \u00b7 Research"
+   },
+   "S6": {
     "color": "#96D850",
-    "name": "5 \u00b7 Monitoring"
+    "name": "6 \u00b7 Monitoring"
    },
    "core": {
     "color": "#EDF2FF",
@@ -942,6 +982,7 @@ const VIEWS = {
    "S3",
    "S4",
    "S5",
+   "S6",
    "S2"
   ],
   "place": {
@@ -975,14 +1016,21 @@ const VIEWS = {
    "module_data/skills/methodology_data.md": "doc",
    "module_data/skills/skill_candle_canonicalisation.md": "doc",
    "module_data/status.py": "code",
+   "module_features/": "module",
+   "module_features/README_module_features.md": "doc",
+   "module_features/bars.py": "code",
+   "module_features/catalogue.py": "code",
+   "module_features/config.py": "config",
+   "module_features/dataset.py": "code",
+   "module_features/indicators.py": "code",
+   "module_features/skills/": "module",
+   "module_features/skills/methodology_features.md": "doc",
+   "module_features/skills/skill_feature_taxonomy.md": "doc",
    "module_ml/": "module",
    "module_ml/README_module_ml.md": "doc",
-   "module_ml/bars.py": "code",
    "module_ml/config.py": "config",
    "module_ml/dataset.py": "code",
-   "module_ml/features.py": "code",
    "module_ml/hpo.py": "code",
-   "module_ml/indicators.py": "code",
    "module_ml/labels.py": "code",
    "module_ml/model.py": "code",
    "module_ml/skills/": "module",
@@ -1115,6 +1163,66 @@ const TREE_NODES = [
   "type": "file"
  },
  {
+  "id": "module_features/",
+  "path": "module_features/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "id": "module_features/skills/",
+  "path": "module_features/skills/",
+  "role": "module",
+  "type": "folder"
+ },
+ {
+  "id": "module_features/skills/methodology_features.md",
+  "path": "module_features/skills/methodology_features.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "id": "module_features/skills/skill_feature_taxonomy.md",
+  "path": "module_features/skills/skill_feature_taxonomy.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "id": "module_features/README_module_features.md",
+  "path": "module_features/README_module_features.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
+  "id": "module_features/bars.py",
+  "path": "module_features/bars.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "id": "module_features/catalogue.py",
+  "path": "module_features/catalogue.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "id": "module_features/config.py",
+  "path": "module_features/config.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "id": "module_features/dataset.py",
+  "path": "module_features/dataset.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "id": "module_features/indicators.py",
+  "path": "module_features/indicators.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
   "id": "module_ml/",
   "path": "module_ml/",
   "role": "module",
@@ -1139,12 +1247,6 @@ const TREE_NODES = [
   "type": "file"
  },
  {
-  "id": "module_ml/bars.py",
-  "path": "module_ml/bars.py",
-  "role": "code",
-  "type": "file"
- },
- {
   "id": "module_ml/config.py",
   "path": "module_ml/config.py",
   "role": "code",
@@ -1157,20 +1259,8 @@ const TREE_NODES = [
   "type": "file"
  },
  {
-  "id": "module_ml/features.py",
-  "path": "module_ml/features.py",
-  "role": "code",
-  "type": "file"
- },
- {
   "id": "module_ml/hpo.py",
   "path": "module_ml/hpo.py",
-  "role": "code",
-  "type": "file"
- },
- {
-  "id": "module_ml/indicators.py",
-  "path": "module_ml/indicators.py",
   "role": "code",
   "type": "file"
  },
@@ -1509,6 +1599,12 @@ const TREE_EDGES = [
  {
   "from": "root",
   "thick": true,
+  "to": "module_features/",
+  "type": "tree"
+ },
+ {
+  "from": "root",
+  "thick": true,
   "to": "module_ml/",
   "type": "tree"
  },
@@ -1633,6 +1729,60 @@ const TREE_EDGES = [
   "type": "tree"
  },
  {
+  "from": "module_features/",
+  "thick": true,
+  "to": "module_features/skills/",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/README_module_features.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/bars.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/catalogue.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/config.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/dataset.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/",
+  "thick": false,
+  "to": "module_features/indicators.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/skills/",
+  "thick": false,
+  "to": "module_features/skills/methodology_features.md",
+  "type": "tree"
+ },
+ {
+  "from": "module_features/skills/",
+  "thick": false,
+  "to": "module_features/skills/skill_feature_taxonomy.md",
+  "type": "tree"
+ },
+ {
   "from": "module_ml/",
   "thick": true,
   "to": "module_ml/skills/",
@@ -1642,12 +1792,6 @@ const TREE_EDGES = [
   "from": "module_ml/",
   "thick": false,
   "to": "module_ml/README_module_ml.md",
-  "type": "tree"
- },
- {
-  "from": "module_ml/",
-  "thick": false,
-  "to": "module_ml/bars.py",
   "type": "tree"
  },
  {
@@ -1665,19 +1809,7 @@ const TREE_EDGES = [
  {
   "from": "module_ml/",
   "thick": false,
-  "to": "module_ml/features.py",
-  "type": "tree"
- },
- {
-  "from": "module_ml/",
-  "thick": false,
   "to": "module_ml/hpo.py",
-  "type": "tree"
- },
- {
-  "from": "module_ml/",
-  "thick": false,
-  "to": "module_ml/indicators.py",
   "type": "tree"
  },
  {
