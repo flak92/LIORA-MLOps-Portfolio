@@ -20,6 +20,8 @@ JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
                 if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
                 if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
+# the proposal a promotion copies, by its rank in the search result
+PROPOSAL ?= 1
 # the tmux session the detached feature-set search runs in: one per asset, named for it
 FEATURE_SET_SEARCH_SESSION = feature-set-$(shell echo $(ASSET) | tr A-Z a-z)
 # a run wraps every stage command with the recorder; empty by default, so the recipes are unchanged
@@ -70,6 +72,10 @@ ml-all:          ## the ML chain in order
 	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
 ml-feature-set-search: ## stepwise feature-set search on the validation folds under the asset's frozen parameters; resumes; promotes nothing
 	$(call fanout,$(PY),module_ml.feature_set_search)
+# a hand's decision for one asset, never fanned out: ASSET= is required, and an empty one fails in the parser
+ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset into <TICKER>_feature_set.json, then rerun its ML chain; ASSET= is required
+	$(PY) -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
+	$(MAKE) ml-all ASSET=$(ASSET)
 
 # python3, not $(PY): standard library only, so it runs on a fresh clone that has
 # never seen `make setup`. Refreshed by hand — nothing refreshes it for you.
@@ -116,6 +122,9 @@ docker-ml-all:       ## the ML chain inside the containers
 	$(MAKE) docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-ml-feature-set-search: ## module_ml.feature_set_search, inside each asset's container
 	$(call dockerfanout,module_ml.feature_set_search,$(JOBS))
+docker-ml-feature-set-promote: ## module_ml.feature_set_promote for one asset inside the container, then its ML chain inside the containers; ASSET= is required
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
+	$(MAKE) docker-ml-all ASSET=$(ASSET)
 # the detached twin: the same docker twin in a tmux session that outlives the terminal, started in this checkout,
 # one asset per session; the session ends with the search — the ledger and the page are the record
 tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required

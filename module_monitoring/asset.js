@@ -126,6 +126,10 @@ function buildImportanceCell(value, scaleMax, format) {
    the set has no model to be measured on */
 function buildFeatureSetFrame(asset, mlStatus) {
   const frame = buildFrame("FEATURE SET — the columns the model saw, and what each was worth on the validation folds");
+  frame.body.appendChild(buildKeyValueBox([
+    ["source", asset.feature_set.source === "default" ? "default — the catalogue's default set, no promoted file"
+      : "promoted — a hand's choice in the asset's feature-set file; the commit history is the record"],
+  ]));
   const folds = Object.keys(asset.validation_importance).sort();
   const inSet = new Set(asset.feature_columns);
   mlStatus.catalogue.timeframes.forEach((entry) => {

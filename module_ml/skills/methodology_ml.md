@@ -146,10 +146,15 @@ proposals are the best trials that differ from the active set, by mean skill,
 at most `FEATURE_SET_PROPOSAL_COUNT`; their strategy numbers are reported
 beside them and were never selected on — τ is chosen once, by `ml-strategy`,
 after a promotion. The skill is conditional on the frozen `best_params`, which
-were tuned for the active set; a promotion (`make ml-feature-set-promote`)
-copies a proposal into `<TICKER>_feature_set.json` and reruns the chain,
-`ml-hpo` included, so the promoted set is re-tuned, its realised result differs
-from the search's, and the next search starts from trial 1.
+were tuned for the active set; a promotion (`make ml-feature-set-promote
+ASSET=<TICKER> PROPOSAL=<n>`, one asset at a time, never fanned out) copies a
+proposal's columns into `<TICKER>_feature_set.json` — the columns and nothing
+else; the commit history is the record of every promotion — and reruns the
+chain, `ml-hpo` included, so the promoted set is re-tuned, its realised result
+differs from the search's, and the next search starts from trial 1. The same
+proposal promoted twice changes nothing. Selection overfitting is bounded and
+exposed, never absent: a move is accepted only by every fold, the catalogue is
+small, and the trial count stands on the page beside every proposal.
 
 ## 5. Labels
 
@@ -255,7 +260,8 @@ in feature definition, hyper-parameter selection, entry-edge-threshold
 selection or strategy-rule selection.* F2–F4 carry the data-driven selection —
 the hyper-parameters, the entry edge threshold and, once a set is promoted, the
 feature set; the barrier width, the horizon and the cost are frozen a priori.
-F5 is evaluated against them. Recomputing F5 deterministically — after a refactor, on another
+F5 is evaluated against them — a promotion is decided on F2–F4 before F5 is
+seen under the new set, and F5 is report-only. Recomputing F5 deterministically — after a refactor, on another
 machine, in a later run — changes nothing, because nothing is chosen by
 looking at it. What the contract forbids is the loop: read F5, change the
 model, call the same fold out-of-sample again.
@@ -363,10 +369,11 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `store_assets_artifacts/<TICKER>/`, nine files, registered file by
+Per asset in `store_assets_artifacts/<TICKER>/`, eleven files, registered file by
 file in `../../module_skills/glossary.md` § Artifacts: three per-timeframe catalogue parquets, the
 label-events and out-of-sample predictions parquets on the 15m decision grid,
-two evaluation JSONs, the one parameters file and the README. Beside the
+two evaluation JSONs, the one parameters file, the feature set and its search
+when a hand has run them, and the README. Beside the
 manifest, outside it, lies the asset's own database,
 `<TICKER>_research_ohlcv.duckdb` — the market object every stage reads. The data
 files are regenerable; `<TICKER>_parameters.json` and `<TICKER>_README.md` are
@@ -430,6 +437,7 @@ stage, and most edits do not touch it:
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
 | a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
+| the promoted feature set (`make ml-feature-set-promote`) | `ml-all` — run by the promotion itself |
 | the monitoring payload | `ml-status` |
 
 This table is the layer's rebuild condition, held in a document a reader applies

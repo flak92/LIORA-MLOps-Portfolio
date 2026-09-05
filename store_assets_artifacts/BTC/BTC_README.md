@@ -7,6 +7,8 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | file | holds | size |
 | --- | --- | --- |
 | `BTC_README.md` | this file | — |
+| `BTC_feature_set.json` | the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's | — |
+| `BTC_feature_set_search.json` | the feature-set search: every trial, the champion, the proposals | — |
 | `BTC_features_ss-15-hh-dd-MM.parquet` | the catalogue on 15m — every definition offered on it, on the decision grid | 10,699 KB |
 | `BTC_features_ss-mm-01-dd-MM.parquet` | the catalogue on 1h — every definition offered on it, on the decision grid | 2,950 KB |
 | `BTC_features_ss-mm-04-dd-MM.parquet` | the catalogue on 4h — every definition offered on it, on the decision grid | 1,667 KB |
@@ -17,6 +19,16 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 10 KB |
 
 Each of the three catalogue parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+
+## Feature set
+
+The default set of the catalogue — no promoted file. The asset's feature set by timeframe — the set every fit reads; the feature id is the column with the timeframe appended:
+
+| timeframe | columns |
+| --- | --- |
+| 15m | `ema20_minus_ema50_over_atr14`, `centered_rsi14`, `atr14_over_close`, `range_position20`, `log_volume_zscore50` |
+| 1h | `ema20_minus_ema50_over_atr14`, `centered_rsi14`, `atr14_over_close`, `range_position20`, `log_volume_zscore50` |
+| 4h | `ema20_minus_ema50_over_atr14`, `centered_rsi14`, `atr14_over_close`, `range_position20`, `log_volume_zscore50` |
 
 ## Labels
 

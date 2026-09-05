@@ -155,6 +155,13 @@ def proposal_block(proposal: dict) -> dict:
     }
 
 
+def feature_set_block(ticker: str) -> dict:
+    """Where the asset's feature set came from — the promoted file when it exists, else the default set of the
+    catalogue — and the columns it holds by timeframe."""
+    return {"source": "promoted" if config.feature_set_json(ticker).exists() else "default",
+            "columns_by_timeframe": dataset.load_feature_columns(ticker)}
+
+
 def feature_set_search_block(ticker: str) -> dict | None:
     """The feature-set search as it last wrote itself; None while the asset has no search file."""
     path = config.feature_set_search_json(ticker)
@@ -196,6 +203,7 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
         "validation": validation,
         "final_holdout": final_holdout,
         "feature_columns": list(metrics["feature_columns"]),
+        "feature_set": feature_set_block(ticker),
         "validation_importance": validation_importance_block(metrics["validation_importance"]),
         "feature_set_search": feature_set_search_block(ticker),
         "strategy": strategy_block(strategy),
@@ -206,6 +214,8 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 # the asset folder manifest in LC_COLLATE=C listing order: (path descriptor, what it holds)
 FILE_MANIFEST = (
     (config.asset_readme_md, "this file"),
+    (config.feature_set_json, "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
+    (config.feature_set_search_json, "the feature-set search: every trial, the champion, the proposals"),
     # one row per timeframe of the hierarchy: the slot standard sorts them finest first, as LC_COLLATE=C does
     *((lambda ticker, timeframe=timeframe: config.features_parquet(ticker, timeframe),
        f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
@@ -271,6 +281,17 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
                 f"{100 * block['hit_rate']:.1f}%" if block["hit_rate"] is not None else "—",
                 f"{100 * block['exposure']:.2f}%", f"{block['final_equity']:.4f}"]
 
+    feature_set = feature_set_block(ticker)
+    feature_set_rows = [[timeframe, ", ".join(f"`{column}`" for column in feature_set["columns_by_timeframe"][timeframe])
+                         or "—"] for timeframe in config.HIERARCHY_TIMEFRAMES]
+    feature_set_source = ("The default set of the catalogue — no promoted file" if feature_set["source"] == "default"
+                          else f"A promoted set — `{config.feature_set_json(ticker).name}`, a hand's choice; "
+                               f"the commit history is the record")
+    feature_set_reproduce_note = ("" if feature_set["source"] == "default" else
+                                  f"`{config.feature_set_json(ticker).name}` must lie beside this file as well — every fit "
+                                  f"reads the promoted set from it; absent, the chain reads the default set and the folder "
+                                  f"it rebuilds is another one.\n\n")
+
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
     final_holdout_strategy = strategy["final_holdout"]
     pnl_rows.append(pnl_row(f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**", final_holdout_strategy))
@@ -294,6 +315,12 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 {markdown_table(["file", "holds", "size"], files)}
 
 Each of the three catalogue parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+
+## Feature set
+
+{feature_set_source}. The asset's feature set by timeframe — the set every fit reads; the feature id is the column with the timeframe appended:
+
+{markdown_table(["timeframe", "columns"], feature_set_rows)}
 
 ## Labels
 
@@ -325,7 +352,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 
-F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
+{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """
 
 

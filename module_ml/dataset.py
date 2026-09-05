@@ -42,8 +42,13 @@ def load_json(path: Path) -> dict:
 
 
 def load_feature_columns(ticker: str) -> dict[str, tuple[str, ...]]:
-    """The asset's feature set by timeframe — the default set of the catalogue."""
-    return dict(config.DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME)
+    """The asset's feature set by timeframe: the promoted file's columns, in catalogue order, else the default set."""
+    path = config.feature_set_json(ticker)
+    if not path.exists():
+        return dict(config.DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME)
+    promoted = load_json(path)["columns_by_timeframe"]
+    return {timeframe: tuple(sorted(promoted[timeframe], key=config.catalogue_columns(timeframe).index))
+            for timeframe in config.HIERARCHY_TIMEFRAMES}
 
 
 def build_x(catalogue_values: dict[str, np.ndarray],

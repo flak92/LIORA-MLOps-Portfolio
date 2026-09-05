@@ -57,6 +57,7 @@ STAGE_OUTPUT_DESCRIPTORS = {
     "module_ml.strategy": lambda ticker: [ml_config.strategy_evaluation_json(ticker)],
     "module_ml.status": lambda ticker: [ml_config.MODULE_MONITORING_ML_STATUS_JSON_PATH, ml_config.asset_readme_md(ticker)],
     "module_ml.feature_set_search": lambda ticker: [ml_config.feature_set_search_json(ticker)],
+    "module_ml.feature_set_promote": lambda ticker: [ml_config.feature_set_json(ticker)],
 }
 
 STAGE_INPUT_NOTES = {
@@ -72,6 +73,7 @@ STAGE_INPUT_NOTES = {
     "module_ml.strategy": "out-of-sample predictions + the canonical 1m path",
     "module_ml.status": "every per-asset research artifact",
     "module_ml.feature_set_search": "X + Y + the search result + the active feature set",
+    "module_ml.feature_set_promote": "the feature-set search result",
 }
 
 

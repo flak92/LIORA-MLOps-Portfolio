@@ -324,7 +324,7 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
 (`module_ml/model.py`, `module_ml/hpo.py`), numpy (every module that computes),
 argparse (`module_data/config.py`, `module_data/status.py`,
-`module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
+`module_ml/feature_set_promote.py`, `module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
 the drawing's template), docker compose (`Makefile`,
 `docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`, `module_monitoring/record.py`,

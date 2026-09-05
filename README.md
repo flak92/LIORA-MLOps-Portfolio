@@ -51,8 +51,13 @@ tmux attach -t feature-set-btc              # watch it; Ctrl-C stops it
 ```
 
 Its proposals are the *Feature set* view and the PROPOSALS frame of *ML
-Assets*; `tmux` is a tool of the host beside `docker` and `git`, never of the
-image.
+Assets*; a hand promotes one — one asset at a time — and the chain reruns:
+
+```bash
+make ml-feature-set-promote ASSET=BTC PROPOSAL=1   # copy proposal 1's columns into BTC_feature_set.json, then ml-all for BTC
+```
+
+`tmux` is a tool of the host beside `docker` and `git`, never of the image.
 
 Three readers, three doors, all behind `make on`:
 
@@ -79,7 +84,7 @@ it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, 
 a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
-Locally, every per-asset stage runs inside
+Locally, every fanned-out per-asset stage runs inside
 that asset's own resident container, `asset-<ticker>` — one service of
 `docker-compose.yml` per ticker of the basket, one image for all — though no stage
 depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
@@ -188,6 +193,7 @@ boundary — what could be less, and whether it is — is
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
+| promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |

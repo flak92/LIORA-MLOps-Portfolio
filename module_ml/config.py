@@ -113,6 +113,10 @@ def feature_set_search_json(ticker):
     return artifact_dir(ticker) / f"{ticker}_feature_set_search.json"
 
 
+def feature_set_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_feature_set.json"
+
+
 def asset_readme_md(ticker):
     return artifact_dir(ticker) / f"{ticker}_README.md"
 

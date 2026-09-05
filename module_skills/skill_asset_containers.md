@@ -27,7 +27,7 @@ Stated, not mitigated. The panel's own contract is
 
 | service | image | role | lifetime |
 |---|---|---|---|
-| `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the basket-wide targets, the ones the Makefile does not fan out; a download stays sequential there because a venue's per-IP limit is budgeted per process | one-off |
+| `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the targets the Makefile does not fan out — the basket-wide ones, and the one-asset promotion a hand starts with `ASSET=`; a download stays sequential there because a venue's per-IP limit is budgeted per process | one-off |
 | `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
 | `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` | the same server in its asset role | resident |
 | `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
@@ -69,7 +69,8 @@ fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 `make docker-up` builds the image if needed, starts the dashboard and the
 residents, and opens the page; `make on` is its presentation alias, `make off`
 that of `make docker-down`. `make docker-all` then runs the whole chain through them,
-download to snapshots. Locally, every per-asset stage runs inside its asset's container: the
+download to snapshots. Locally, every fanned-out per-asset stage runs inside its asset's container
+(the promotion, a hand's one-off for one asset, runs in `pipeline` like `status`): the
 fan-out does an idempotent `up -d`, then `docker compose exec -T asset-<ticker>
 sh -c 'python -m module_<x>.<stage> --tickers $ASSET'` — ingest one container at
 a time, the ML stages `JOBS` at a time — so the container the tab measures is

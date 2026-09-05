@@ -355,6 +355,7 @@ passes today:
 | `ml-strategy` | EvaluateStrategy |
 | `data-status`, `ml-status` | PublishStatus |
 | `ml-feature-set-search` | SearchFeatureSet — started by a hand, outside the daily order; the same task run, detached locally in a tmux session |
+| `ml-feature-set-promote` | PromoteFeatureSet — started by a hand for one asset, outside the daily order; the states of `ml-all` follow it |
 
 A stage that needed two names, or a name with "and" in it, would be too wide.
 Read forward the visible list is that machine's definition: `all:`, `features-all:`
