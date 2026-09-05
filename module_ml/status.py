@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 
-from . import config, dataset
+from . import config, dataset, feature_set_search
 
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
@@ -162,8 +162,10 @@ def feature_set_block(ticker: str) -> dict:
             "columns_by_timeframe": dataset.load_feature_columns(ticker)}
 
 
-def feature_set_search_block(ticker: str) -> dict | None:
-    """The feature-set search as it last wrote itself; None while the asset has no search file."""
+def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_timeframe: dict) -> dict | None:
+    """The feature-set search as it last wrote itself, and whether its inputs are still the asset's — a promotion,
+    a retuning or a catalogue change makes a recorded search describe a state that has gone; None while the asset
+    has no search file."""
     path = config.feature_set_search_json(ticker)
     if not path.exists():
         return None
@@ -172,6 +174,8 @@ def feature_set_search_block(ticker: str) -> dict | None:
         "trial_count": len(search["trials"]),
         "pass_count": search["pass_count"],
         "search_converged": search["search_converged"],
+        "inputs_current": search["inputs"] == dataset.to_json_safe(
+            feature_set_search.build_search_inputs(best_params, active_columns_by_timeframe)),
         "proposals": [proposal_block(proposal) for proposal in search["proposals"]],
     }
 
@@ -196,6 +200,7 @@ def validation_importance_block(validation_importance: dict) -> dict:
 
 def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> dict:
     validation, final_holdout = classification_block(metrics)
+    feature_set = feature_set_block(ticker)
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
@@ -203,9 +208,10 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
         "validation": validation,
         "final_holdout": final_holdout,
         "feature_columns": list(metrics["feature_columns"]),
-        "feature_set": feature_set_block(ticker),
+        "feature_set": feature_set,
         "validation_importance": validation_importance_block(metrics["validation_importance"]),
-        "feature_set_search": feature_set_search_block(ticker),
+        "feature_set_search": feature_set_search_block(ticker, hyperparameter_search_result["best_params"],
+                                                       feature_set["columns_by_timeframe"]),
         "strategy": strategy_block(strategy),
         "artifacts": artifacts_block(ticker),
     }

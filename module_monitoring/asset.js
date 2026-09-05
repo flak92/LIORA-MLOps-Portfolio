@@ -171,6 +171,13 @@ function buildProposalsFrame(asset, mlStatus) {
     frame.body.appendChild(buildFootnote("no feature-set search yet — run `make ml-feature-set-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
   }
+  /* a recorded search conditioned on another set or other parameters compares against a baseline that has gone,
+     so the frame states that and shows nothing rather than a delta against the wrong set */
+  if (!search.inputs_current) {
+    frame.body.appendChild(buildFootnote("the search predates the active set or its parameters — run "
+      + "`make ml-feature-set-search ASSET=" + asset.ticker + "`"));
+    return frame.frame;
+  }
   const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
   const folds = validationFolds(asset);
   const meanValidationSkill = mean(folds.map((fold) => asset.validation[fold].relative_logloss_skill));

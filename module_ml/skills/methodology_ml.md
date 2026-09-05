@@ -141,9 +141,13 @@ set recurs and the search ends when a pass accepts nothing: `search_converged`.
 A set scored once is looked up, never fitted twice, and no booster is kept. The
 ledger of every trial is `<TICKER>_feature_set_search.json`, rewritten after
 each, so an interrupted run resumes at its next candidate and a finished run is
-read, not rewritten; its `inputs` — the window and seed, `best_params`, the
-catalogue's columns and the active set — are the one copy of other files'
-content an artifact carries, compared by equality when the stage is rerun. The
+read, not rewritten; its `inputs` — the window with its warm-up and seed,
+`best_params`, the catalogue's columns and the active set — are the one copy of
+other files' content an artifact carries, compared by equality when the stage
+is rerun and again by `ml-status`, which publishes `inputs_current`: a
+promotion, a retuning or a catalogue change leaves a recorded search describing
+a state that has gone, and the page then states that instead of comparing
+against a baseline it no longer has. The
 proposals are the sets a hand may promote: the champion the search accepted,
 move by move, then the trials no validation fold scores below the active set,
 by mean skill, ties to the smaller set — at most `FEATURE_SET_PROPOSAL_COUNT`.

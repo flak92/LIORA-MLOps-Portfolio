@@ -204,7 +204,7 @@ function renderFeatureSet(mlStatus) {
   const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
   const deltas = mlStatus.assets.map((asset) => {
     const search = asset.feature_set_search;
-    const bestProposal = search && search.proposals.length ? search.proposals[0] : null;
+    const bestProposal = search && search.inputs_current && search.proposals.length ? search.proposals[0] : null;
     return bestProposal === null ? null : bestProposal.mean_relative_logloss_skill - meanValidationSkill(asset);
   });
   const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
@@ -218,7 +218,9 @@ function renderFeatureSet(mlStatus) {
       if (delta !== null) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
         deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
-      } else deltaCell.textContent = search === null ? "no feature-set search yet" : "no proposal";
+      } else if (search === null) deltaCell.textContent = "no feature-set search yet";
+      else if (!search.inputs_current) deltaCell.textContent = "search predates the active set";
+      else deltaCell.textContent = "no proposal";
       return [
         buildTickerLink(asset.ticker, selectAsset),
         asset.feature_set.source,

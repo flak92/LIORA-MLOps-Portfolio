@@ -123,6 +123,20 @@ def write_state(ticker: str, state: dict) -> None:
     dataset.write_json(config.feature_set_search_json(ticker), state)
 
 
+def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict) -> dict:
+    """What a search is conditioned on: the frozen window with its warm-up, the parameters it holds fixed, the
+    catalogue it draws from and the set it starts at — recorded in the ledger, compared by equality on a rerun,
+    and compared again by status.py to say whether a recorded search still describes the asset."""
+    return {
+        "research_window": {"start_utc": config.RESEARCH_START_UTC, "end_utc": config.RESEARCH_END_UTC,
+                            "seed": config.SEED, "warmup_top_timeframe_bars": config.WARMUP_TOP_TIMEFRAME_BARS},
+        "best_params": best_params,
+        "catalogue_columns_by_timeframe": {timeframe: config.catalogue_columns(timeframe)
+                                           for timeframe in config.HIERARCHY_TIMEFRAMES},
+        "active_columns_by_timeframe": active_columns_by_timeframe,
+    }
+
+
 def progress_line(ticker: str, pass_number: int, move: str, column: str, champion: dict, row: dict) -> str:
     return (f"{ticker} pass {pass_number} {move} {column} skill {champion['mean_relative_logloss_skill']:+.4f} -> "
             f"{row['mean_relative_logloss_skill']:+.4f} folds {'/'.join(f'{skill:+.4f}' for skill in fold_skills(row))} "
@@ -140,13 +154,7 @@ def main() -> int:
         y_cls = model.to_class(xy["y"])
         close_1m = strategy.load_close_1m(ticker)
         active = dataset.load_feature_columns(ticker)
-        inputs = dataset.to_json_safe({
-            "research_window": {"start_utc": config.RESEARCH_START_UTC, "end_utc": config.RESEARCH_END_UTC, "seed": config.SEED},
-            "best_params": best,
-            "catalogue_columns_by_timeframe": {timeframe: config.catalogue_columns(timeframe)
-                                               for timeframe in config.HIERARCHY_TIMEFRAMES},
-            "active_columns_by_timeframe": active,
-        })
+        inputs = dataset.to_json_safe(build_search_inputs(best, active))
 
         # the state: the recorded run when its inputs are the inputs of this one, else a fresh ledger
         path = config.feature_set_search_json(ticker)
