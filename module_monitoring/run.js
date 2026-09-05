@@ -98,7 +98,7 @@ function initRun() {
     .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
     .then((runs) => {
       if (!runs.run_ids.length) {
-        meta.textContent = "no recorded run yet — run `make docker-all-record`";
+        meta.textContent = "no recorded run yet — run `make all-record`";
         return;
       }
       meta.textContent = runs.run_ids.length + " recorded run(s) · newest " + runs.run_ids[0];
@@ -109,7 +109,7 @@ function initRun() {
       });
     })
     .catch((error) => {
-      meta.textContent = "could not load /runs (" + error.message + ") — run `make docker-up`";
+      meta.textContent = "could not load /runs (" + error.message + ") — run `make on`";
       meta.className = "box err";
     });
 }

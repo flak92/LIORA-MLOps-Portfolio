@@ -73,8 +73,8 @@ module_skills/      the contract's companions: the name register (module_skills/
 
 `module_skills` never participates in runtime imports or dataflow. The asset
 containers are services of `docker-compose.yml`, one per ticker of the basket,
-written out under the two anchors — what every service is, and the one command
-the servers add — so the topology is visible in the file
+written out under the three anchors — the store contract every service reads, what
+every service is, and the one command the servers add — so the topology is visible in the file
 that runs it; `module_monitoring/serve.py` reaches them by service name. A new
 `module_<domain>` is justified only by a distinct responsibility with a stable
 input/output boundary; until then the owning module is extended.
@@ -101,8 +101,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_skills/skill_sorting_files_naming_standard.md`;
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
-  `docker-ml-<stage>` targets); each computational module (`module_data`,
+  `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>`
+  targets); each computational module (`module_data`,
   `module_features`, `module_ml`) measures its own domain state in `status.py`,
   and `module_monitoring` presents their snapshots;
 - **taxonomic ordering — the category token comes first, so siblings sort
@@ -139,8 +139,8 @@ standard equivalents on Amazon Web Services (AWS). No cloud is used and none is
 planned; the mapping is described in `module_skills/skill_pre_aws_solution.md`
 and built nowhere.
 
-- **Academic, not AWS.** The runtime is local — a venv, or one image under
-  docker compose — and the goal is a correct dataflow with visible
+- **Academic, not AWS.** The runtime is local — one image under docker
+  compose, driven by a Makefile — and the goal is a correct dataflow with visible
   responsibilities: a demonstrator, not a deployment.
 - **Every boundary decision weighs the future mapping.** Where a function lives,
   who writes a file, what a stage takes as its parameter, how a container is
@@ -187,9 +187,9 @@ and built nowhere.
   modules, lists their order and never schedules; orchestration sits above the
   stages and inside none.
 - **Docker is compute.** A container is the local counterpart of the one-off
-  container a cloud runtime would launch per stage and per asset; the resident
-  `asset-<ticker>` is how the fan-out and the panel do it locally, and no stage
-  depends on it.
+  container a cloud runtime would launch per stage and per asset; the runners
+  `data`, `features` and `ml` are how the fan-out does it locally, the resident
+  `asset-<ticker>` only reports itself, and no stage depends on it.
 - **A few assets are proof enough.** The whole chain on `BTC` demonstrates the
   architecture; scale is `ASSET=<TICKER>`, never hundreds of assets.
 
@@ -282,7 +282,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module, `docker-<module>-<stage>` for its container twin, `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets go bare (`all`, `setup`, `help`, `docker-build`, `docker-up`, `docker-down`, `docker-all`, `docker-all-record`); the presentation switch `on` / `off` is the one alias pair, of `docker-up` / `docker-down`, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `docker-ml-train`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a twin named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`) |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner; `monitoring-dx-update`, a host tool over `python3`, is the one exception — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
 | a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
@@ -391,7 +391,7 @@ ownership, and there is no second copy to drift.
 and module-owned alike, and restates none of them.
 
 `module_skills/skill_asset_containers.md` is the worked example of the cross-cutting
-boundary: one image, the `pipeline` and `asset-<ticker>` services, the Makefile
+boundary: one image, the three runner services and `asset-<ticker>`, the Makefile
 fan-out, the ceilings and the bind mount are a contract between the
 infrastructure and all four runtime modules at once, so it belongs to none of
 them and stays in `module_skills/`.
@@ -418,7 +418,7 @@ last column says, and written when its one condition holds.
 |---|---|---|---|---|
 | `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where `.:/app` is today — every asset's folder and the other `store_*` roots at the same paths under `/app`, and what a task may leave on it | the first run whose `store_*` roots sit on a volume mounted at `/app` that is not the checkout's working tree | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
 | `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
-| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
+| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `data-all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
 | `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
 | `skill_image_contents.md` | `module_skills/` | what the image carries — the code, copied by the `Dockerfile` — and what the mount carries — the `store_*` roots and nothing of the code — once `.:/app` no longer shadows the image | the three snapshots have left `module_monitoring/`, the stated prerequisite of narrowing the mount | `module_skills/skill_pre_aws_solution.md` § Docker is compute, not storage; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `Dockerfile` row |
 | `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |

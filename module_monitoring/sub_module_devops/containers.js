@@ -205,7 +205,7 @@ function initContainers() {
       renderContainers();
     })
     .catch((error) => {
-      meta.textContent = "could not load /containers (" + error.message + ") — run `make docker-up`";
+      meta.textContent = "could not load /containers (" + error.message + ") — run `make on`";
       meta.className = "box err";
     });
 }

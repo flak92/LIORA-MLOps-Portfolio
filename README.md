@@ -26,8 +26,8 @@ one-line purpose. On and off — one word each, the presentation switch; from
 there everything is a click in the page:
 
 ```bash
-make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it  (= make docker-up)
-make off                   # stop and remove every container of this project  (= make docker-down)
+make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
+make off                   # stop and remove every container of this project
 ```
 
 `on` and `off` are the one alias pair the target grammar admits ([AGENTS.md](AGENTS.md)
@@ -37,9 +37,8 @@ name are the convention.
 The chain, and the pictures it leaves:
 
 ```bash
-make all                   # the whole pipeline on the host from a fresh clone: setup -> data-download -> data-ingest -> data-status -> features-all -> ml-all
-make docker-all            # the same chain inside the containers, download to snapshots
-make docker-all-record     # the same chain, recorded stage by stage into store_run_records/<run_id>/ — the Lifecycle tab
+make all                   # the whole chain from a fresh clone, every stage in a one-off container of its module's runner: build -> data-all -> features-all -> ml-all
+make all-record            # the same chain, every stage measured from outside by record.py into store_run_records/<run_id>/ — the Lifecycle tab
 make monitoring-dx-update  # redraw the developer-experience drawing after the tracked tree changes
 ```
 
@@ -75,21 +74,20 @@ Three readers, three doors, all behind `make on`:
   networks, volumes, bind mounts, the image and the engine's events, with
   start / stop / restart offered for this project's own containers alone.
 
-A single stage runs by name, on the host or in its container — `make features-catalogue`,
-`make docker-features-catalogue`: every `data-<stage>`, `features-<stage>` and `ml-<stage>` target has its
-`docker-` twin, and `docker-features-all`, `docker-ml-all` and `docker-all` are the chains. The stage
-order is the Makefile's `all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
+A single stage runs by name in a one-off container of its module's runner — `make features-catalogue`
+is `docker compose run --rm -T features python -m module_features.catalogue --tickers <TICKER>`, one container per asset of the
+basket — and `data-all`, `features-all`, `ml-all` and `all` are the chains. The stage order is the
+Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
-(`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make docker-up` overrides
+(`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
 a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
-Locally, every fanned-out per-asset stage runs inside
-that asset's own resident container, `asset-<ticker>` — one service of
-`docker-compose.yml` per ticker of the basket, one image for all — though no stage
-depends on it: each is the one-off `python -m <module>.<stage> --tickers <TICKER>`
-the container merely hosts. Four direct dependencies and nothing else — `duckdb`
+The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
+ticker of the basket, one image for all — only serve: no stage runs inside a
+resident, and no stage depends on it — a stage is the one-off
+`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Four direct dependencies and nothing else — `duckdb`
 (storage and query), `numpy` (mathematics), `optuna` (hyper-parameter search) and
 `xgboost-cpu` (model); the CPU wheel is deliberate, because the research layer
 trains with `tree_method=hist` and `nthread=1`.
@@ -196,8 +194,8 @@ boundary — what could be less, and whether it is — is
 | status    | `make data-status`     | DuckDB → stdout + `store_status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
-| lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
-| dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
+| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
+| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
 ## Data formats

@@ -1,8 +1,14 @@
-# one image, three anchors: x-store-environment is the store contract — the four STORE_*_DIR every config.py reads,
-# one variable per store, plus the thread cap that is correctness, not a setting; x-service is what every service of
-# this file is; x-server adds the one command the dashboard and the assets share. environment: and volumes: REPLACE an
-# anchor's key rather than extend it, so a service that adds a variable merges the store map with <<: (asset-btc), and
-# a service that changes its mounts respells them (devops).
+# one image, three anchors, six services — a service is a role, not an image. x-store-environment is the store contract:
+# the four STORE_*_DIR every config.py reads, one variable per store, plus the thread cap that is correctness, not a
+# setting. x-service is what every service of this file is; x-server adds the one command the dashboard and the assets
+# share. The three runners — data, features, ml — carry no command: a stage is `docker compose run --rm <runner>
+# python -m <module>.<stage> --tickers <T>`, one one-off container per asset, and exits; the three residents serve.
+# environment: and volumes: REPLACE an anchor's key rather than extend it, so a service that adds a variable merges the
+# store map with <<: (asset-btc) and a service that changes its mounts respells them (devops). The project name is fixed:
+# liora-dashboard-1, liora-asset-btc-1, liora-devops-1 on every host — two checkouts on one host share it, so run one at
+# a time or override COMPOSE_PROJECT_NAME.
+name: liora
+
 x-store-environment: &store_environment
   STORE_RAW_1M_DIR: /store/raw_1m
   STORE_ASSETS_ARTIFACTS_DIR: /store/assets_artifacts
@@ -22,18 +28,23 @@ x-service: &service
     - ./store_assets_artifacts:/store/assets_artifacts
     - ./store_run_records:/store/run_records
     - ./store_status:/store/status
-  deploy:
-    resources:
-      limits:
-        memory: 5g
 
 x-server: &server
   <<: *service
   command: python -m module_monitoring.serve
 
 services:
-  pipeline:
+  data:
     <<: *service
+  features:
+    <<: *service
+  # the one task that needs the ceiling: HPO and XGBoost above DuckDB's 4GB memory_limit
+  ml:
+    <<: *service
+    deploy:
+      resources:
+        limits:
+          memory: 5g
 
   dashboard:
     <<: *server
@@ -46,11 +57,10 @@ services:
       <<: *store_environment
       ASSET: BTC
 
-  # the one service that holds the docker socket, and the only one: its whole responsibility is
-  # docker management and monitoring. It publishes no port — the dashboard proxies /devops/* to it.
-  # volumes: replaces the anchor's key rather than extending it, so the code mount is repeated here.
-  # it respells volumes: and keeps the code and the socket — it holds no store; its environment still carries the four
-  # store names only because module_monitoring/config.py reads them at import
+  # the one service that holds the docker socket, and the only one: its whole responsibility is docker management and
+  # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It respells volumes: and keeps the code and
+  # the socket — it holds no store; its environment still carries the four store names only because
+  # module_monitoring/config.py reads them at import.
   devops:
     <<: *service
     command: python -m module_monitoring.sub_module_devops.serve

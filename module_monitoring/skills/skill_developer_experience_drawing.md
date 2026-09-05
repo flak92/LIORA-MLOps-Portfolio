@@ -141,7 +141,7 @@ primitive, not a primitive of its own. A primitive's name carries the primitive 
 proper noun in parentheses as the table spells it, its sentence says what the object *is* there and
 never how to move it, and no primitive names a row the table does not have. A row whose primitive
 has no local counterpart — the schedule and condition, whose cadence is a hand typing
-`make docker-all` and whose condition is code and a table today, and whose primitive keeps the id
+`make all` and whose condition is code and a table today, and whose primitive keeps the id
 `event_rule` because the id names the icon; the log streams, whose logs are files of the run record
 today; the dashboard front, which a reader outside the host would need and none does; the strategy
 host and its brokerage secret, which have none at all — is drawn absent: dashed, paler, its sentence

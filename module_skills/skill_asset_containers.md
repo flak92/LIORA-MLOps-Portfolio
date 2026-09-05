@@ -1,12 +1,14 @@
 # Skill: asset containers — the topology, the endpoint, the socket
 
 The asset is the primary object; its container is how a stage is run for it
-locally, and the engine is the support layer. One image, one resident container per ticker of the basket, differing only by
-`ASSET=<TICKER>`, every service written out in `docker-compose.yml` under three anchors: `x-store-environment` is
+locally, and the engine is the support layer. One image, three runners — `data`, `features`, `ml`, one per
+module of the chain, a role and a one-off each — and one resident container per ticker of the basket, differing only by
+`ASSET=<TICKER>`; every service written out in `docker-compose.yml` under three anchors: `x-store-environment` is
 the store contract every service carries — the four `STORE_*_DIR` and the thread cap —, `x-service` is what
-every service is — `build`, `image`, `init`, `user`, the code mount and the four store mounts, the `5g` ceiling — and
+every service is — `build`, `image`, `init`, `user`, the code mount and the four store mounts — and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
-assets share, which is why the one-off build service stays outside it. The dashboard
+assets share, which is why the runners stay outside it. The project is named `liora` in the file, so a
+container is `liora-<service>-1` on every host. The dashboard
 reaches them only through its own proxy: no asset container publishes a port.
 *The repository shows the destination, not the road*: no restart policy, no healthcheck.
 
@@ -28,19 +30,20 @@ Stated, not mitigated. The panel's own contract is
 
 | service | image | role | lifetime |
 |---|---|---|---|
-| `pipeline` | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one | `run --rm -T` one-offs for the targets the Makefile does not fan out — the basket-wide ones, and the one-asset promotion a hand starts with `ASSET=`; a download stays sequential there because a venue's per-IP limit is budgeted per process | one-off |
+| `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
 | `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
-| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus `environment: {ASSET: <TICKER>, OMP_NUM_THREADS: 1}` | the same server in its asset role | resident |
+| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>` | the same server in its asset role | resident |
 | `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
-stage mid-write; under a resident it also reaps the stages `exec` leaves
-behind. `5g` sits above DuckDB's `4GB` ceiling and bounds a runaway allocation
-outside DuckDB. Every service carries it, because every service can open a
-database: `data-status` and `ml-status` do it inside the one-off, and only the
-dashboard carries the ceiling without ever opening one. `build: .` sits on the
-same anchor, so every service knows how to make the image it runs and a bare
+stage mid-write, and a one-off's PID 1 reaps whatever its stage leaves behind.
+`5g` sits above DuckDB's `4GB` ceiling and bounds a runaway allocation
+outside DuckDB; the `ml` runner alone carries it, the one task — HPO and
+XGBoost — that allocates above that ceiling; `data` and `features` open a database
+under its own `memory_limit` and allocate nothing outside it, and the residents
+compute nothing. `build: .` sits on the
+`x-service` anchor, so every service knows how to make the image it runs and a bare
 clone builds instead of reaching for a registry; the tag is one, so
 `docker images` still shows one image.
 Concurrency is bounded by `JOBS`. One mechanism only — no
@@ -58,7 +61,8 @@ not storage). Every process binds
 argument: the server is docker-only. `PORT` is only the host side of the
 dashboard's mapping, measured at invocation, never hardcoded — the Makefile asks
 for the port the dashboard already publishes, else the first free port from 8900
-upward, because another checkout of LIORA on the same host may hold 8900
+upward, because another project on the same host — or a checkout of LIORA run
+under `COMPOSE_PROJECT_NAME=` — may hold 8900
 (`skill_pre_aws_solution.md` § What stays as it is, and why, the row on compose
 names); `PORT=n` overrides it, `make on` prints the address, and no document
 states the host port as a number. The measurement is a look, not a lock: a port
@@ -68,32 +72,27 @@ recreates a resident, and a checkout without the rule keeps assuming 8900 and
 fails its own start the day this one holds it. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
 fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
-`make docker-up` builds the image if needed, starts the dashboard and the
-residents, and opens the page; `make on` is its presentation alias, `make off`
-that of `make docker-down`. `make docker-all` then runs the whole chain through them,
-download to snapshots. Locally, every fanned-out per-asset stage runs inside its asset's container
-(the promotion, a hand's one-off for one asset, runs in `pipeline` like `status`): the
-fan-out does an idempotent `up -d`, then `docker compose exec -T asset-<ticker>
-sh -c 'python -m module_<x>.<stage> --tickers $ASSET'` — ingest one container at
-a time, the ML stages `JOBS` at a time — so the container the tab measures is
-the one doing the work. The residency is the fan-out's, not the stage's: the
-command inside the quotes is the whole one-off form and runs the same outside any
-container, and that one macro line is the only place a resident is assumed for
-compute; `record.py` measures a stage from outside and knows no container. Replacing
-exec-into-resident with a one-off launch is one line and touches no stage; the
-panel would then measure a one-off instead of the resident. The direction is
-`skill_pre_aws_solution.md`. `ASSET` is read by that command line and by `serve.py`
-choosing its role; `build_ticker_parser` has no default — every launcher names
+`make on` builds the image if needed, starts the dashboard and the residents, and
+opens the page; `make off` takes everything down. `make all` runs the whole chain,
+download to snapshots, every stage in a one-off container of its module's runner:
+the `fanout` macro is `docker compose run --rm -T <runner> python -m
+module_<x>.<stage> --tickers <TICKER>` once per asset — ingest one container at a
+time, the ML stages `JOBS` at a time — and `basket` the same once for the whole
+basket. No resident is assumed for compute: a resident only serves, the panel
+measures the one-off doing the work while it runs, and `record.py` measures a
+stage from outside and knows no container. The direction is
+`skill_pre_aws_solution.md`. `ASSET` is read by `serve.py` choosing its role and by
+nothing else — the fan-out passes `--tickers <TICKER>` from `TICKER_LIST`; `build_ticker_parser` has no default — every launcher names
 the assets — and no stage module reads `ASSET`. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
 `TICKERS` and three lines under `x-server`.
 
 **The seat.** The `x-service` anchor is one task definition parameterised by `ASSET`,
 each resident a service of the container runtime kept running on the one Linux container
-instance (Amazon ECS on Amazon EC2): `asset-<ticker>` is the `ASSET` override, the one
-line of `dockerfanout` a task run per stage per asset — the one edit the mapping table
-names — `.:/app` the volume mount, `5g` the task's memory, `init` and `user` the task
-definition's own keys. `skill_pre_aws_solution.md` § The mapping table and
+instance (Amazon ECS on Amazon EC2): `asset-<ticker>` is the `ASSET` override, the
+`fanout` macro's `run --rm` already a task run per stage per asset — nothing left to
+edit — `.:/app` the volume mount, the `ml` runner's `5g` the task's memory, `init` and
+`user` the task definition's own keys. `skill_pre_aws_solution.md` § The mapping table and
 § The retrain runtime is a ladder.
 
 ## The server

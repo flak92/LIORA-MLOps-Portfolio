@@ -228,7 +228,7 @@ function renderPanel() {
     .catch((error) => {
       renderPanelCleared();
       meta.className = "box err";
-      meta.textContent = "could not load /devops/api (" + error.message + ") — run `make docker-up`";
+      meta.textContent = "could not load /devops/api (" + error.message + ") — run `make on`";
     })
     .finally(() => { PANEL_POLL_IN_FLIGHT = false; });
 }
@@ -245,7 +245,7 @@ function initPanel() {
       renderPanelCleared();
       const meta = document.getElementById("panel-meta");
       meta.className = "box err";
-      meta.textContent = "could not load /devops/api/machines (" + error.message + ") — run `make docker-up`";
+      meta.textContent = "could not load /devops/api/machines (" + error.message + ") — run `make on`";
       /* the cadence is the server's to publish, so a panel that never reached it has no interval to
          install; it retries when the tab is next looked at rather than staying dead until a reload */
       document.addEventListener("visibilitychange", function retryPanel() {

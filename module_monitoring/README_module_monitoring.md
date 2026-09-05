@@ -28,12 +28,12 @@ direction:
 
 | piece | entry | does |
 |---|---|---|
-| the server | `make docker-up` | one server, two roles by `ASSET`: the dashboard, or one asset container reporting itself |
+| the server | `make on` | one server, two roles by `ASSET`: the dashboard, or one asset container reporting itself |
 | the drawing | `make monitoring-dx-update` | redraws the tracked git tree as one self-contained page, in two views: the tree as tracked, and the same tree seated beside the primitives the Pre-AWS mapping names, drawn as icons with the flows between them |
-| the DevOps panel | `make docker-up` | `sub_module_devops`: the containers, networks and volumes, and the one container that holds the docker socket |
+| the DevOps panel | `make on` | `sub_module_devops`: the containers, networks and volumes, and the one container that holds the docker socket |
 
 The dashboard is published on the host at `127.0.0.1:<port>` — the address
-`make docker-up` prints (`../module_skills/skill_asset_containers.md` § The
+`make on` prints (`../module_skills/skill_asset_containers.md` § The
 topology) — and reaches the asset containers by compose service name. The three snapshots it reads,
 `../store_status/data_status.json`, `../store_status/features_status.json` and `../store_status/ml_status.json`,
 live in the status store beside the other stores, are served under `/store_status/<name>`, and are committed so the page opens on a fresh clone.
