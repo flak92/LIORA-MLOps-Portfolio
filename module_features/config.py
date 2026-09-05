@@ -9,6 +9,7 @@ from module_data.config import (  # re-exported
     DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, TICKERS, artifact_dir,
     build_ticker_parser, parse_tickers, research_ohlcv_duckdb, to_utc_ms,
 )
+from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
 MINUTES_PER_HOUR = 60
 HOURS_PER_DAY = 24
@@ -51,14 +52,9 @@ TIMEFRAME_SLOT = {timeframe: timeframe_slot(timeframe) for timeframe in HIERARCH
 WARMUP_TOP_TIMEFRAME_BARS = 200
 WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
 
-# ---- the indicator register: one integer parameter each, glued to the token in a name (ema20, rsi14)
+# ---- the terms: a series of the bars, or an indicator of the register with its one integer parameter glued to the
+# token in a name (ema20, rsi14); the indicators' invariants are their register records in indicators.py
 SERIES_ATOMS = ("open", "high", "low", "close", "volume", "log_volume")   # log_volume = log1p(volume)
-INDICATOR_PARAMETER_WORDS = {"ema": "SPAN", "sma": "LOOKBACK", "rsi": "SMOOTHING_PERIOD",
-                             "atr": "SMOOTHING_PERIOD", "zscore": "LOOKBACK", "range_position": "LOOKBACK"}
-# a recursion is finite from its first bar and settles in four spans by convention; a window is NaN inside its lookback
-INDICATOR_WARMUP_MULTIPLES = {"ema": 4, "sma": 1, "rsi": 4, "atr": 4, "zscore": 1, "range_position": 1}
-# an indicator absent here takes any series, close by default, and writes the series as its prefix when it is not close
-INDICATOR_FIXED_INPUTS = {"rsi": ("close",), "atr": ("high", "low", "close"), "range_position": ("close", "high", "low")}
 FEATURE_DEFINITION_OPERATORS = ("minus", "over")
 FEATURE_DEFINITION_NORMALISERS = ("centered",)
 
@@ -93,7 +89,7 @@ def term_name(term: tuple) -> str:
     if len(term) == 1:
         return term[0]
     series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
-    prefix = "" if series == "close" or indicator in INDICATOR_FIXED_INPUTS else f"{series}_"
+    prefix = "" if series == "close" or "inputs" in INDICATORS[indicator] else f"{series}_"
     return f"{prefix}{indicator}{parameter_bars}"
 
 
@@ -113,7 +109,7 @@ def feature_id(definition_name: str, timeframe: str) -> str:
 
 def term_warmup_bars(term: tuple) -> int:
     """Bars of the term's timeframe before its value is settled; a bare series needs none."""
-    return 0 if len(term) == 1 else INDICATOR_WARMUP_MULTIPLES[term[-2]] * term[-1]
+    return 0 if len(term) == 1 else INDICATORS[term[-2]]["warmup_multiple"] * term[-1]
 
 
 def definition_warmup_bars(definition: dict) -> int:

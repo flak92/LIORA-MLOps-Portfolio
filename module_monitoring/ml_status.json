@@ -942,7 +942,7 @@
   }
  },
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-05 00:08:21",
+ "generated_at_utc": "2026-09-05 00:10:12",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

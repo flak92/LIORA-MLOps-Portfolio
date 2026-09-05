@@ -1,5 +1,5 @@
 """Pure numpy indicator kernels: recursive indicators as explicit loops, rolling statistics via sliding windows;
-values inside a lookback warm-up are NaN."""
+values inside a lookback warm-up are NaN. The register at the end names each kernel's invariants once, beside it."""
 
 from __future__ import annotations
 
@@ -97,3 +97,18 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
     idx = np.searchsorted(close_ts, decision_ts, side="right") - 1
     assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
     return idx
+
+
+# the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries
+# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, and the bar columns it reads
+# when its inputs are fixed; an indicator without `inputs` takes any series, close by default. A second parameter,
+# when an indicator needs one, extends the record and the name grammar in the same commit.
+INDICATORS = {
+    "ema": {"kernel": ema, "parameter_word": "SPAN", "warmup_multiple": 4},
+    "sma": {"kernel": sma, "parameter_word": "LOOKBACK", "warmup_multiple": 1},
+    "rsi": {"kernel": rsi, "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4, "inputs": ("close",)},
+    "atr": {"kernel": atr, "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4, "inputs": ("high", "low", "close")},
+    "zscore": {"kernel": rolling_zscore, "parameter_word": "LOOKBACK", "warmup_multiple": 1},
+    "range_position": {"kernel": range_position, "parameter_word": "LOOKBACK", "warmup_multiple": 1,
+                       "inputs": ("close", "high", "low")},
+}

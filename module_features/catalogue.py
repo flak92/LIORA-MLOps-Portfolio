@@ -10,10 +10,8 @@ import numpy as np
 
 from . import config, dataset, indicators
 
-# one kernel per indicator token of the register; the series kernels cover the one series that is not a bar column
+# the series kernels cover the one series that is not a bar column; the indicators' kernels are their register records
 SERIES_KERNELS = {"log_volume": lambda bars: np.log1p(bars["volume"])}
-INDICATOR_KERNELS = {"ema": indicators.ema, "sma": indicators.sma, "rsi": indicators.rsi, "atr": indicators.atr,
-                     "zscore": indicators.rolling_zscore, "range_position": indicators.range_position}
 
 
 def load_timeframe(con: duckdb.DuckDBPyConnection, timeframe: str) -> dict[str, np.ndarray]:
@@ -32,8 +30,9 @@ def term_values(bars: dict[str, np.ndarray], term: tuple) -> np.ndarray:
     if len(term) == 1:
         return series_values(bars, term[0])
     series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
-    inputs = [bars[name] for name in config.INDICATOR_FIXED_INPUTS.get(indicator, ())] or [series_values(bars, series)]
-    return INDICATOR_KERNELS[indicator](*inputs, parameter_bars)
+    record = indicators.INDICATORS[indicator]
+    inputs = [bars[name] for name in record.get("inputs", ())] or [series_values(bars, series)]
+    return record["kernel"](*inputs, parameter_bars)
 
 
 def ratio(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:

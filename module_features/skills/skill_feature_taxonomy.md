@@ -5,7 +5,9 @@ smallest part upward. Every number in a name is a count of bars of one timeframe
 timeframe is written in the name. Nothing else is encoded — not the decision grid, not the label
 horizon, not the asset, not a category word, not a wall-clock span. *The repository shows the
 destination, not the road*: the grammar below is read off the catalogue record in
-`module_features/config.py`, and no check stands behind it.
+`module_features/config.py`, and no check stands behind it. Tunable values live in the catalogue
+record, an indicator's invariants once in its register record beside its kernel, and the evaluator
+knows nothing neither says.
 
 The chain, smallest part first: a series or an indicator with its one parameter (a **term**), the
 terms composed into a **feature definition**, the definition bound to a timeframe as a **feature**,
@@ -43,25 +45,30 @@ A **series** is a column of one timeframe's bars, with no parameter: `open`, `hi
 
 An **indicator** is one computation over series of one timeframe with exactly one integer
 parameter, written glued to the indicator token, as the trade writes RSI14 and SMA200. The
-register is three tables of `module_features/config.py`, one fact each:
+register is one record per token beside its kernel — `INDICATORS` at the end of
+`module_features/indicators.py`: the kernel, the word its parameter carries, the warm-up it needs
+in multiples of that parameter, and the bar columns it reads when its inputs are fixed:
 
-| indicator | inputs | parameter word (`INDICATOR_PARAMETER_WORDS`) | warm-up it needs (`INDICATOR_WARMUP_MULTIPLES`) |
+| indicator | `inputs` | `parameter_word` | `warmup_multiple` |
 |---|---|---|---|
-| `ema<n>` | one series, `close` by default | `SPAN` | 4·n — a recursion is finite from its first bar and settles in four spans by convention |
-| `sma<n>` | one series, `close` by default | `LOOKBACK` | n — a window is NaN inside its lookback |
-| `rsi<n>` | `close` — fixed (`INDICATOR_FIXED_INPUTS`) | `SMOOTHING_PERIOD` (Wilder) | 4·n |
-| `atr<n>` | `high`, `low`, `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4·n |
-| `zscore<n>` | one series, `close` by default | `LOOKBACK` | n |
-| `range_position<n>` | `close`, `high`, `low` — fixed | `LOOKBACK` | n |
+| `ema<n>` | any series, `close` by default | `SPAN` | 4 — a recursion is finite from its first bar and settles in four spans by convention |
+| `sma<n>` | any series, `close` by default | `LOOKBACK` | 1 — a window is NaN inside its lookback |
+| `rsi<n>` | `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 |
+| `atr<n>` | `high`, `low`, `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 |
+| `zscore<n>` | any series, `close` by default | `LOOKBACK` | 1 |
+| `range_position<n>` | `close`, `high`, `low` — fixed | `LOOKBACK` | 1 |
 
-The kernel of an indicator carries the token's name in `indicators.py` (`ema`, `sma`, `rsi`,
-`atr`, `range_position`; `zscore` is `rolling_zscore`, the one kernel named for its family). The
-parameter word is the one `../../AGENTS.md` § Canonical vocabulary gives a constant — `SPAN` for
-an EMA, `SMOOTHING_PERIOD` for a Wilder recursion, `LOOKBACK` for a real rolling window — and it
-names the mechanics, not the number: the number lives in the term of the catalogue record and
-nowhere else. A parameter carried by a catalogue term is the descriptor's own and is never copied
-into a named constant; a constant with a unit names a quantity the experiment fixes outside the
-catalogue (`WARMUP_TOP_TIMEFRAME_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS` of the label).
+The kernel carries the token's name (`ema`, `sma`, `rsi`, `atr`, `range_position`; `zscore` is
+`rolling_zscore`, the one kernel named for its family), and the record is the one place its
+invariants are written: the name grammar, the warm-up, the evaluator and the catalogue block of the
+snapshot all read it. A second parameter, when an indicator needs one, extends the record and this
+grammar in the same commit — derived names do not change. The parameter word is the one
+`../../AGENTS.md` § Canonical vocabulary gives a constant — `SPAN` for an EMA, `SMOOTHING_PERIOD`
+for a Wilder recursion, `LOOKBACK` for a real rolling window — and it names the mechanics, not the
+number: the number lives in the term of the catalogue record and nowhere else. A parameter carried
+by a catalogue term is the descriptor's own and is never copied into a named constant; a constant
+with a unit names a quantity the experiment fixes outside the catalogue
+(`WARMUP_TOP_TIMEFRAME_BARS`, `ATR_WILDER_SMOOTHING_PERIOD_BARS` of the label).
 
 A term is written in the record as `("<indicator>", <parameter_bars>)` on the default series
 `close`, `("<series>", "<indicator>", <parameter_bars>)` on another series, or `("<series>",)` for

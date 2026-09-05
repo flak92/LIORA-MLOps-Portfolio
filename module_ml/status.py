@@ -90,8 +90,9 @@ def term_block(term: tuple) -> dict:
     if len(term) == 1:
         return {"inputs": [term[0]], "indicator": None, "parameter_word": None, "parameter_bars": None}
     series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
-    return {"inputs": list(config.INDICATOR_FIXED_INPUTS.get(indicator, (series,))), "indicator": indicator,
-            "parameter_word": config.INDICATOR_PARAMETER_WORDS[indicator], "parameter_bars": parameter_bars}
+    record = config.INDICATORS[indicator]
+    return {"inputs": list(record.get("inputs", (series,))), "indicator": indicator,
+            "parameter_word": record["parameter_word"], "parameter_bars": parameter_bars}
 
 
 def catalogue_block() -> dict:
