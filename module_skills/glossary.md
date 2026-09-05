@@ -188,6 +188,45 @@ the env-named path, and the second path is a local accident, not an address.
 | the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store_status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `features_status.json`, `ml_status.json` | the page's footer names all three files | a snapshot written into `module_monitoring/` or any other module's directory |
 | the snapshot route: the dashboard serving a status object by its file name | `STORE_STATUS_ROUTE_SEGMENT`, `GET /store_status/<name>` in `serve.py`, mapped onto `store_status_file(name)` under `STORE_STATUS_DIR` | — | — | a snapshot fetched from the page's own directory, a route per snapshot |
 
+## Twice by extraction
+
+**No module of the chain imports another** — `module_monitoring` still reads the
+three configs until its recorder leaves the package. Each of the objects below
+therefore has two or more full owners, identical to the byte where a copy is a
+copy: the copy is registered here, named where it is defined on every side
+(`# twice by extraction — identical in …`), and a change to one copy is a change
+to every copy, by hand — the one named exception to `AGENTS.md` § The default
+choice, "no second copy to drift". Two rows are equal by value, not by tree: the
+units, which each module carries only where it uses them, and
+`TREND_GATE_FEATURE_DEFINITION`, derived in the feature layer and a literal in ML.
+There is no shared package: a fifth repository for a dozen lines would be a
+mechanism, and `AGENTS.md` § Architecture shape admits a new module only for a
+distinct responsibility.
+
+| object | owners | why twice |
+|---|---|---|
+| `MILLISECONDS_PER_SECOND`, `MILLISECONDS_PER_MINUTE`, `MILLISECONDS_PER_DAY` (each module the ones it uses) | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | a unit is a unit; importing one across a boundary would drag the module behind it |
+| `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`, `module_monitoring/sub_module_dx/config.py` | the same |
+| `DUCKDB_MEMORY_LIMIT` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | every connection of every module pins the same ceiling beside `threads=1` |
+| the store reads `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_STATUS_DIR` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/config.py` | the two stores every module touches, each read as `Path(os.environ[...])` where it is used |
+| the descriptors `artifact_dir()`, `research_ohlcv_duckdb()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the asset folder and the database are the store the chain touches; the path grammar is one and is spelled once per owner |
+| `DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` | the writers `module_data/config.py`, `module_ml/config.py`, and the reader `module_monitoring/config.py` | the writer names the snapshot it writes, the reader the snapshot it serves |
+| `load_json()` | `module_ml/dataset.py`, `module_monitoring/serve.py` | two readers of the same JSON files |
+| `to_utc_ms()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the window literals of two modules are turned into milliseconds by the same function |
+| `build_ticker_parser()`, `parse_tickers()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the one CLI every stage shares; `module_monitoring` runs no stage — its recorder reads `--tickers` off the command it wraps until it leaves the package |
+| `rounded()` | `module_data/config.py`, `module_ml/config.py` | the two status reports round the same way |
+| `RESEARCH_START_UTC`, `RESEARCH_END_UTC` (and their `_MS`) | `module_features/config.py` (the bars and the catalogue), `module_ml/config.py` (the labels and the folds) | the frozen window is the experiment's; each layer that bounds by it owns the literal |
+| `feature_id()` | `module_features/config.py`, `module_ml/config.py` | the grammar of `../module_features/skills/skill_feature_taxonomy.md`, two lines, restated where X's columns are named |
+| `TREND_GATE_FEATURE_DEFINITION` | `module_features/config.py` (the first record of the catalogue), `module_ml/config.py` (the same name as a literal) | the strategy reads the trend definition by name from the contract's columns |
+| `to_json_safe()`, `write_json()` | `module_features/dataset.py`, `module_ml/dataset.py` | the one canonical JSON form every published object takes — the contract, the snapshots, the artifacts |
+| `write_parquet()` | `module_features/dataset.py`, `module_ml/dataset.py` | the repr round-trip that makes a parquet byte-reproducible |
+| `wilder_smoothing()`, `atr()`, `asof_index()` | `module_features/indicators.py`, `module_ml/labels.py` | the label defines its own barrier scale, and aligns to the last closed bar the same way the catalogue does |
+
+The gate at every commit: the bodies of every pair the table marks identical
+compare equal as syntax trees, the two value-equal rows compare equal as values,
+and `git grep "from module_"` inside `module_data`, `module_features` and
+`module_ml` finds only the module itself.
+
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations

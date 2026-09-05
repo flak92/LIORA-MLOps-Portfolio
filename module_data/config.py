@@ -16,6 +16,9 @@ from pathlib import Path
 QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"
+# twice by extraction — the units, the ceiling, the store reads, their descriptors and the --tickers parser below are
+# identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md § Twice by extraction):
+# a change here is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
@@ -86,6 +89,7 @@ def parse_tickers(tickers_csv: str) -> list[str]:
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
+# twice by extraction — identical in module_ml/config.py
 def rounded(x, ndigits: int):
     """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
     return None if x is None else round(float(x), ndigits)

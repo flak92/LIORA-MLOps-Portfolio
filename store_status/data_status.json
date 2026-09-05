@@ -29,10 +29,10 @@
   "bybit_zip_count": 2070,
   "canonical_row_count": 2980800
  },
- "generated_at_utc": "2026-09-05 19:14:53",
+ "generated_at_utc": "2026-09-05 19:35:22",
  "symbols": [
   {
-   "db_bytes": 133705728,
+   "db_bytes": 128987136,
    "ffill_bars": 0,
    "real_data_pct": 100.0,
    "row_count": 2980800,

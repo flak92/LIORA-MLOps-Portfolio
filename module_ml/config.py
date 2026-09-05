@@ -7,10 +7,52 @@ different experiment, and the git commit is the record of which one ran.
 
 from __future__ import annotations
 
-from module_data.config import (  # re-exported
-    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, STORE_STATUS_DIR,
-    artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded, to_utc_ms,
-)
+import argparse
+import os
+from datetime import UTC, datetime
+from pathlib import Path
+
+# twice by extraction — identical in module_data/config.py, module_features/config.py, module_ml/config.py
+# (module_skills/glossary.md § Twice by extraction): the units, the ceiling, the two stores this module touches and their
+# descriptors, and the one CLI every stage shares; a change to one copy is a change to every copy, by hand
+MILLISECONDS_PER_SECOND = 1000
+MILLISECONDS_PER_MINUTE = 60_000
+BYTES_PER_KIBIBYTE = 1024
+DUCKDB_MEMORY_LIMIT = "4GB"
+STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
+
+
+def to_utc_ms(day: str) -> int:
+    """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
+    return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
+
+
+def artifact_dir(ticker: str) -> Path:
+    """One directory per ticker; inside it one file per artifact, named for it."""
+    return STORE_ASSETS_ARTIFACTS_DIR / ticker
+
+
+def research_ohlcv_duckdb(ticker: str) -> Path:
+    """The asset's own database — the market object's one home, resident in the asset folder."""
+    return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
+
+
+def build_ticker_parser(description: str) -> argparse.ArgumentParser:
+    """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
+    ap = argparse.ArgumentParser(description=description)
+    ap.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
+    return ap
+
+
+def parse_tickers(tickers_csv: str) -> list[str]:
+    return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
+
+
+def rounded(x, ndigits: int):
+    """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
+    return None if x is None else round(float(x), ndigits)
+
 
 SEED = 42
 

@@ -2,7 +2,7 @@
  "assets": [
   {
    "artifacts": {
-    "model_evaluation_modified_utc": "2026-09-05 19:28:18"
+    "model_evaluation_modified_utc": "2026-09-05 19:48:47"
    },
    "feature_columns": [
     "ema20_minus_ema50_over_atr14_15m",
@@ -374,7 +374,7 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-05 19:30:49",
+ "generated_at_utc": "2026-09-05 19:48:50",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

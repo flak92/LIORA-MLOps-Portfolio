@@ -415,7 +415,7 @@ constants of the research layer — the window and the folds its own, the regist
 and the grid read per asset from the feature layer's contract,
 `<TICKER>_catalogue.json`) · `module_ml/validation`,
 `module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
-IO: X/Y loading, canonical JSON, the re-exported parquet writer) ·
+IO: X/Y loading, canonical JSON, its own parquet writer — twice by extraction, identical in `module_features/dataset.py`) ·
 `module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,
 `module_ml/status` (CLI stages, `python -m module_ml.<stage> --tickers <TICKERS>`) ·
 `module_ml/feature_set_search`, `module_ml/feature_set_promote` (the two hand

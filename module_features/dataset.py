@@ -1,5 +1,5 @@
-"""The one parquet writer of the pipeline — every layer that writes a parquet writes it here — and the canonical JSON writer
-of the feature layer: the per-asset contract and the snapshot this module writes."""
+"""The parquet writer of the feature layer — twice by extraction, identical in module_ml/dataset.py — and the canonical JSON
+writer of the feature layer: the per-asset contract and the snapshot this module writes."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ import numpy as np
 from . import config
 
 
+# twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
 def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> Path:
     """zstd parquet from an iterable of rows via a CSV spool: numpy -> repr(float) -> read_csv round-trips float64 exactly."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -36,7 +37,7 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
     return path
 
 
-# twice by extraction — identical in module_ml/dataset.py: the one canonical JSON form every published object takes
+# twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
 def to_json_safe(obj):
     """numpy containers and scalars to canonical Python; a non-finite float becomes null."""
     if isinstance(obj, dict):

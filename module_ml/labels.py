@@ -17,11 +17,41 @@ from pathlib import Path
 import duckdb
 import numpy as np
 
-from module_features import indicators
-
 from . import config, dataset
 
 LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
+
+
+# twice by extraction — identical in module_features/indicators.py (module_skills/glossary.md § Twice by extraction): the
+# label defines its own barrier scale, so the Wilder kernel it reads and the alignment to the last closed bar are its own
+def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
+    """Wilder's recursive average: seeded with the SMA of the first period."""
+    out = np.full_like(x, np.nan)
+    if x.size < smoothing_period_bars:
+        return out
+    out[smoothing_period_bars - 1] = x[:smoothing_period_bars].mean()
+    for i in range(smoothing_period_bars, x.size):
+        out[i] = out[i - 1] + (x[i] - out[i - 1]) / smoothing_period_bars
+    return out
+
+
+def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
+        smoothing_period_bars: int) -> np.ndarray:
+    prev_close = np.concatenate(([close[0]], close[:-1]))
+    true_range = np.maximum(high - low,
+                            np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
+    return wilder_smoothing(true_range, smoothing_period_bars)
+
+
+def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
+               timeframe_duration_ms: int) -> np.ndarray:
+    """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says
+    such a bar exists."""
+    close_ts = timeframe_open_ts + timeframe_duration_ms
+    idx = np.searchsorted(close_ts, decision_ts, side="right") - 1
+    assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
+    return idx
+
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
@@ -124,11 +154,11 @@ def main() -> int:
         keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
 
-        barrier_atr = indicators.atr(barrier_bars["high"], barrier_bars["low"], barrier_bars["close"],
-                                     config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
-        sigma = barrier_atr[indicators.asof_index(decision_ts,
-                                                  barrier_bars["timestamp_ms"].astype(np.int64),
-                                                  config.timeframe_entry(cat, config.LABEL_BARRIER_ATR_TIMEFRAME)["duration_ms"])]
+        barrier_atr = atr(barrier_bars["high"], barrier_bars["low"], barrier_bars["close"],
+                          config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
+        sigma = barrier_atr[asof_index(decision_ts,
+                                       barrier_bars["timestamp_ms"].astype(np.int64),
+                                       config.timeframe_entry(cat, config.LABEL_BARRIER_ATR_TIMEFRAME)["duration_ms"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all(), \
             f"ATR{config.ATR_WILDER_SMOOTHING_PERIOD_BARS} of the last closed {config.LABEL_BARRIER_ATR_TIMEFRAME} bar is not finite and positive at every decision"
 

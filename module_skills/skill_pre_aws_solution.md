@@ -73,7 +73,7 @@ today:
 | STORAGE | where state lives, and the descriptors that name it | the `store_*` roots; every path descriptor of a `config.py` |
 | FEATURE | the catalogue, a pure function of the canonical series | `module_features/catalogue.py`, `module_features/indicators.py` |
 | LABEL | Y, resolved on the canonical path | `module_ml/labels.py` |
-| MODEL | the two searches, the fit, the folds, the shared IO, and the hand's copy that fixes an asset's columns | `module_ml/hpo.py`, `module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py`, `module_features/dataset.py` |
+| MODEL | the two searches, the fit, the folds, the shared IO, and the hand's copy that fixes an asset's columns | `module_ml/hpo.py`, `module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py` |
 | STRATEGY | the research evaluation of the predictions | `module_ml/strategy.py` |
 | ORCHESTRATION | ordering and launching the stages — not `orchestration_seconds` of `glossary.md` § Run record, the wall time between two stages | the Makefile |
 | MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `module_monitoring/record.py`, the page scripts |
@@ -219,7 +219,7 @@ in timeframe slots — `BTC_features_ss-15-hh-dd-MM.parquet`
 file-by-file manifest is `glossary.md` § Artifacts and is not copied here.
 Canonical storage and artifact storage share the folder today, both in
 `module_data/config.py` — `research_ohlcv_duckdb()` built on `artifact_dir()`,
-re-exported by `module_features/config.py` and `module_ml/config.py`; read forward the folder is
+copied verbatim into `module_features/config.py` and `module_ml/config.py` (`glossary.md` § Twice by extraction); read forward the folder is
 `artifacts/<ticker>/<version>/` in the copy, each key the descriptor's path
 relative to `STORE_ASSETS_ARTIFACTS_DIR`: nothing to edit, no folder move. A new
 local store is `store_<object>/`, never a bare `data/`, `artifacts/` or
