@@ -1,9 +1,10 @@
 """Top-down gated strategy on the canonical research path.
 
     directional_probability_edge = p_long - p_short;  side = sign(edge)
-    agreeing_trend_timeframe_count = #{timeframe : sign(trend_timeframe) == side}
+    agreeing_trend_timeframe_count = #{timeframe : sign(TREND_GATE_FEATURE_DEFINITION_<timeframe>) == side}
     enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral  AND  side != 0
-            AND side == sign(trend_4h)  AND  agreeing_trend_timeframe_count >= 2
+            AND side == sign(TREND_GATE_FEATURE_DEFINITION_<TREND_GATE_TIMEFRAME>)
+            AND agreeing_trend_timeframe_count >= 2
             AND entry_observable
 
 USDT-perpetual PnL at a fixed quantity, linear in price (compounding per-bar returns would misprice shorts):

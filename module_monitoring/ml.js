@@ -220,7 +220,7 @@ function renderFeatureSet(mlStatus) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
         deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
       } else if (search === null) deltaCell.textContent = "no feature-set search yet";
-      else if (!search.inputs_current) deltaCell.textContent = "search predates the active set";
+      else if (!search.inputs_current) deltaCell.textContent = "the search predates the active set or its parameters";
       else deltaCell.textContent = "no proposal";
       return [
         buildTickerLink(asset.ticker, selectAsset),

@@ -73,7 +73,7 @@ today:
 | STORAGE | where state lives, and the descriptors that name it | the `store_*` roots; every path descriptor of a `config.py` |
 | FEATURE | the catalogue, a pure function of the canonical series | `module_features/catalogue.py`, `module_features/indicators.py` |
 | LABEL | Y, resolved on the canonical path | `module_ml/labels.py` |
-| MODEL | the search, the fit, the folds, the shared IO | `module_ml/hpo.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py`, `module_features/dataset.py` |
+| MODEL | the two searches, the fit, the folds, the shared IO, and the hand's copy that fixes an asset's columns | `module_ml/hpo.py`, `module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py`, `module_features/dataset.py` |
 | STRATEGY | the research evaluation of the predictions | `module_ml/strategy.py` |
 | ORCHESTRATION | ordering and launching the stages — not `orchestration_seconds` of `glossary.md` § Run record, the wall time between two stages | the Makefile |
 | MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `module_monitoring/record.py`, the page scripts |
@@ -340,8 +340,9 @@ one seam named: the target `data-download` runs both download stages, so the
 record spells them `data-download-binance` and `data-download-bybit`.
 
 Read forward, the Makefile is a state machine whose states are the stages. The
-test of a stage's width is whether it has a one-line state name; every stage
-passes today:
+test of a stage's width is whether it has a one-line state name; every stage of
+the pipeline passes today (`monitoring-dx-update` redraws a tracked file on the
+host and never runs elsewhere, so it is a tool, not a state):
 
 | stage | the state it would be |
 |---|---|

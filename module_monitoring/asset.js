@@ -202,8 +202,8 @@ function buildProposalsFrame(asset, mlStatus) {
         formatNumber(proposal.selection_score_mean_sharpe, 2),
       ];
     })));
-  frame.body.appendChild(buildFootnote("proposal 1 is the set the search accepted, move by move; the rest are the trials "
-    + "no validation fold scores below the active set, by mean skill, under the asset's frozen parameters. The Sharpe "
+  frame.body.appendChild(buildFootnote("every proposal is a trial no validation fold scores below the active set, by "
+    + "mean skill, under the asset's frozen parameters; when a pass accepted a set, that set stands first. The Sharpe "
     + "and trade columns say what the strategy would do with each at its own entry edge threshold — τ marked ! when "
     + "its trade floor was not met — and were never selected on. Nothing here touched the final holdout."));
   return frame.frame;

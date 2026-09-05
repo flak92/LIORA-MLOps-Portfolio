@@ -65,7 +65,7 @@ addition touches.
 | an indicator | its kernel and one record in `INDICATORS` (`indicators.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
 | a derived series | one entry in `SERIES_KERNELS` (`catalogue.py`) | nothing, until a term names it | the existing parquets byte-identical |
 | an operator or a normaliser | one record in `OPERATORS` or `NORMALISERS`, beside its kernel (`catalogue.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
-| a feature definition | one record in `FEATURE_CATALOGUE` (`config.py`): its terms, the timeframes it is offered on, and `definition_in_default_set: False` | every parquet it is offered on gains a column, the catalogue frame a row, and the feature-set search's `inputs` change | the existing columns byte-identical; `ml-labels` … `ml-status` untouched; the next search starts from trial 1, and a model sees the column only after a promotion |
+| a feature definition | one record in `FEATURE_CATALOGUE` (`config.py`): its terms, the timeframes it is offered on, and `definition_in_default_set: False` | every parquet it is offered on gains a column, the catalogue frame a row, and the feature-set search's `inputs` change | the existing columns byte-identical; `ml-labels` … `ml-strategy` untouched and `ml-status` republishing the catalogue; the next search starts from trial 1, and a model sees the column only after a promotion |
 | a second parameter for an indicator | the record and the name grammar, in one commit (`skills/skill_feature_taxonomy.md` § Series and indicators) | the derived names of existing terms do not change | the existing parquets byte-identical |
 
 `definition_in_default_set: True` is a different move: it puts the column into

@@ -67,7 +67,7 @@ the data moves through them, and one that carries no dataflow:
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
 module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe
 module_ml/          the catalogue and the canonical path → X, Y → search → model → research simulation
-module_monitoring/  presentation of what the three modules measured about themselves, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
+module_monitoring/  presentation of what the two computational modules measured about themselves, and what it measures around them, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
 module_skills/      the contract's companions: the name register (module_skills/glossary.md), the repository-wide skills, and the index of every module's own
 ```
 
@@ -109,9 +109,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `ml_status.json`;
 - **taxonomic ordering — the category token comes first, so siblings sort
   together.** A listing is read by eye before it is parsed: `module_data`,
-  `module_ml`, `module_monitoring`, `module_skills`, then
+  `module_features`, `module_ml`, `module_monitoring`, `module_skills`, then
   `store_assets_artifacts`, `store_raw_1m`, `store_run_records` — two blocks,
-  not seven scattered entries. If renaming would put things of one category next to each other,
+  not eight scattered entries. If renaming would put things of one category next to each other,
   rename them;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own

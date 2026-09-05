@@ -145,7 +145,6 @@ def proposal_block(proposal: dict) -> dict:
     return {
         "proposal": proposal["proposal"],
         "trial": proposal["trial"],
-        "columns_by_timeframe": proposal["columns_by_timeframe"],
         "added_columns_by_timeframe": proposal["added_columns_by_timeframe"],
         "removed_columns_by_timeframe": proposal["removed_columns_by_timeframe"],
         "mean_relative_logloss_skill": round(proposal["mean_relative_logloss_skill"], 6),

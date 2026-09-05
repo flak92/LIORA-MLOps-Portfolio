@@ -148,9 +148,10 @@ is rerun and again by `ml-status`, which publishes `inputs_current`: a
 promotion, a retuning or a catalogue change leaves a recorded search describing
 a state that has gone, and the page then states that instead of comparing
 against a baseline it no longer has. The
-proposals are the sets a hand may promote: the champion the search accepted,
-move by move, then the trials no validation fold scores below the active set,
-by mean skill, ties to the smaller set — at most `FEATURE_SET_PROPOSAL_COUNT`.
+proposals are the sets a hand may promote: every trial no validation fold
+scores below the active set, by mean skill, ties to the smaller set, and the
+champion the search accepted, move by move, first among them when a pass
+accepted one — at most `FEATURE_SET_PROPOSAL_COUNT`.
 A set worse on any validation fold is never proposed, so the default
 `PROPOSAL=1` promotes the search's own answer. Their strategy numbers are
 reported beside them and were never selected on — τ is chosen once, by `ml-strategy`,
@@ -299,7 +300,9 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 ```
 
 `relative_logloss_skill` answers one question — does the model add information beyond knowing
-how often each class occurs? — and is **a result, not a gate**. Metrics score the
+how often each class occurs? — and is **what both searches select on**: the hyper-parameter
+search minimises the log-loss behind it (§ 7), and the feature-set search accepts a move only
+when it rises, or does not fall, on every validation fold (§ 4). Metrics score the
 supervised subset of a fold
 whose maximum horizon fits inside it — the same t₀-decidable rule that governs
 strategy eligibility (§9); predictions cover the full fold.

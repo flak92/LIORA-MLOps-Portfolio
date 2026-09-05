@@ -22,7 +22,7 @@ deterministic correctness:
 
 - Speed comes only from external parallelism: independent processes side by
   side, one asset per process, all under the same fixed `SEED` — never from
-  raising thread caps inside a worker.
+  raising thread caps inside one process.
 - Width is measured at invocation, never hardcoded — `JOBS` in the Makefile,
   `../module_ml/skills/methodology_ml.md` § 11; `JOBS=n` overrides. A literal written for one
   machine is silently wrong on every other.

@@ -25,7 +25,8 @@ own database, one table per entry of the hierarchy (`ohlcv_<timeframe>_canonical
 ## The kernels
 
 Recursions run as explicit loops; rolling statistics use `sliding_window_view`; values inside a
-window's lookback are NaN, and a recursion is finite from its first bar.
+window's lookback are NaN, the EMA recursion is finite from its first bar, and the Wilder
+recursion from its n-th.
 
     ema_t   = ema_{t-1} + α (x_t − ema_{t-1}),  α = 2 / (n + 1),  ema_0 = x_0           SPAN n
     wilder  = w_{t-1} + (x_t − w_{t-1}) / n,  seeded with the mean of the first n         SMOOTHING_PERIOD n
