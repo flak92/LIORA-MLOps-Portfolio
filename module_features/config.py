@@ -11,6 +11,7 @@ from module_data.config import (  # re-exported
 )
 
 MINUTES_PER_HOUR = 60
+HOURS_PER_DAY = 24
 MILLISECONDS_PER_HOUR = MINUTES_PER_HOUR * MILLISECONDS_PER_MINUTE
 
 # ---- frozen research window (later data top-ups do not change this experiment)
@@ -21,14 +22,31 @@ RESEARCH_END_UTC = "2026-08-26"     # exclusive
 RESEARCH_START_MS = to_utc_ms(RESEARCH_START_UTC)
 RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 
-# ---- the timeframe register: every entry is an exact aggregation of the canonical 1m series, written by bars.py;
-# a token enters when its duration is a multiple of the decision timeframe and divides a UTC day, and adjacent
-# entries keep a ratio of at least three (skills/skill_feature_taxonomy.md)
-TIMEFRAME_DURATION_MS = {"15m": 900_000, "1h": 3_600_000, "4h": 14_400_000}
-HIERARCHY_TIMEFRAMES = tuple(sorted(TIMEFRAME_DURATION_MS, key=TIMEFRAME_DURATION_MS.get))
-DECISION_TIMEFRAME = HIERARCHY_TIMEFRAMES[0]
-# the file-name slot of each token (module_skills/skill_sorting_files_naming_standard.md § The timeframe slot standard)
-TIMEFRAME_SLOT = {"15m": "ss-15-hh-dd-MM", "1h": "ss-mm-01-dd-MM", "4h": "ss-mm-04-dd-MM"}
+# ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
+# and the count the strategy's agreement reads all follow from it, so a new token is one line here and a new
+# experiment. Every entry is an exact aggregation of the canonical 1m series, written by bars.py; a token is
+# <integer><unit>, and its duration and its file-name slot derive from the token (skills/skill_feature_taxonomy.md)
+HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
+DECISION_TIMEFRAME = "15m"
+TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": HOURS_PER_DAY * MILLISECONDS_PER_HOUR}
+# the five slots of module_skills/skill_sorting_files_naming_standard.md, finest first, and the field each unit fills
+TIMEFRAME_SLOT_FIELDS = ("ss", "mm", "hh", "dd", "MM")
+TIMEFRAME_UNIT_SLOT_FIELD = {"m": 1, "h": 2, "d": 3}
+
+
+def timeframe_duration_ms(token: str) -> int:
+    return int(token[:-1]) * TIMEFRAME_UNIT_MS[token[-1]]
+
+
+def timeframe_slot(token: str) -> str:
+    """The token in the five slots: its number, zero-padded, in its unit's field; the unit letters everywhere else."""
+    fields = list(TIMEFRAME_SLOT_FIELDS)
+    fields[TIMEFRAME_UNIT_SLOT_FIELD[token[-1]]] = f"{int(token[:-1]):02d}"
+    return "-".join(fields)
+
+
+TIMEFRAME_DURATION_MS = {timeframe: timeframe_duration_ms(timeframe) for timeframe in HIERARCHY_TIMEFRAMES}
+TIMEFRAME_SLOT = {timeframe: timeframe_slot(timeframe) for timeframe in HIERARCHY_TIMEFRAMES}
 # the experiment's warm-up, in bars of the top timeframe: a term that needs more stops the evaluator
 WARMUP_TOP_TIMEFRAME_BARS = 200
 WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
@@ -102,8 +120,9 @@ def definition_warmup_bars(definition: dict) -> int:
     return max(term_warmup_bars(term) for term in definition["terms"])
 
 
-def definition_history_hours(definition: dict, timeframe: str) -> float:
-    """The longest parameter of the definition read as the history it covers on that timeframe."""
+def definition_effective_history_hours(definition: dict, timeframe: str) -> float:
+    """The longest parameter of the definition read on that timeframe: a window's history is the window, a
+    recursion's the bars carrying most of its weight — the number the nesting of the levels compares."""
     longest_parameter_bars = max((term[-1] for term in definition["terms"] if len(term) > 1), default=0)
     return longest_parameter_bars * TIMEFRAME_DURATION_MS[timeframe] / MILLISECONDS_PER_HOUR
 

@@ -109,13 +109,13 @@ def main() -> int:
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
-        bars_1h = con.execute(
-            """SELECT timestamp_ms, high, low, close FROM ohlcv_1h_canonical
-               ORDER BY timestamp_ms"""
+        barrier_bars = con.execute(
+            f"""SELECT timestamp_ms, high, low, close FROM ohlcv_{config.LABEL_BARRIER_ATR_TIMEFRAME}_canonical
+                ORDER BY timestamp_ms"""
         ).fetchnumpy()
         ts_15m = con.execute(
-            """SELECT timestamp_ms FROM ohlcv_15m_canonical
-               ORDER BY timestamp_ms"""
+            f"""SELECT timestamp_ms FROM ohlcv_{config.DECISION_TIMEFRAME}_canonical
+                ORDER BY timestamp_ms"""
         ).fetchnumpy()["timestamp_ms"].astype(np.int64)
 
         decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
@@ -123,12 +123,13 @@ def main() -> int:
         keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
 
-        atr_1h = indicators.atr(bars_1h["high"], bars_1h["low"], bars_1h["close"],
-                                config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
-        sigma = atr_1h[indicators.asof_index(decision_ts,
-                                             bars_1h["timestamp_ms"].astype(np.int64),
-                                             config.TIMEFRAME_DURATION_MS["1h"])]
-        assert np.isfinite(sigma).all() and (sigma > 0).all(), "ATR14 of the last closed 1h bar is not finite and positive at every decision"
+        barrier_atr = indicators.atr(barrier_bars["high"], barrier_bars["low"], barrier_bars["close"],
+                                     config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
+        sigma = barrier_atr[indicators.asof_index(decision_ts,
+                                                  barrier_bars["timestamp_ms"].astype(np.int64),
+                                                  config.TIMEFRAME_DURATION_MS[config.LABEL_BARRIER_ATR_TIMEFRAME])]
+        assert np.isfinite(sigma).all() and (sigma > 0).all(), \
+            f"ATR{config.ATR_WILDER_SMOOTHING_PERIOD_BARS} of the last closed {config.LABEL_BARRIER_ATR_TIMEFRAME} bar is not finite and positive at every decision"
 
         bars_1m = load_research_1m(con)
         con.close()

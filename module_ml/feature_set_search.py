@@ -51,7 +51,7 @@ def trial_result(xy: dict, y_cls: np.ndarray, best: dict, close_1m: np.ndarray,
                  columns_by_timeframe: dict) -> tuple[dict, dict, dict]:
     """Score one set: three boosters, their windows predicted, the strategy's threshold selection on the validation
     folds. Returns (the ledger row without its pass and move, the candidate xy, the boosters by fold)."""
-    x, feature_columns = dataset.build_x(xy["catalogue_columns"], columns_by_timeframe)
+    x, feature_columns = dataset.build_x(xy["catalogue_values"], columns_by_timeframe)
     xy_candidate = {**xy, "x": x, "feature_columns": feature_columns}
     prediction_records, boosters, metrics_by_fold = [], {}, {}
     for fold_id in config.VALIDATION_FOLD_IDS:

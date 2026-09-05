@@ -60,7 +60,7 @@ def load_oos_predictions(ticker: str) -> dict[str, np.ndarray]:
 def build_simulation_inputs(xy: dict, close_1m: np.ndarray, oos_predictions: dict[str, np.ndarray]) -> dict:
     """The strategy's inputs: X and Y, the 1m path, the predictions, and the trend definition on every timeframe,
     read from the catalogue by name — whatever the feature set holds."""
-    trend = {timeframe: xy["catalogue_columns"][config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, timeframe)]
+    trend = {timeframe: xy["catalogue_values"][config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, timeframe)]
              for timeframe in config.HIERARCHY_TIMEFRAMES}
     return {"xy": xy, "close_1m": close_1m, "trend": trend, "oos_predictions": oos_predictions}
 

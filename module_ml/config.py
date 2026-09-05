@@ -15,15 +15,16 @@ from module_features.config import (  # re-exported
     CATALOGUE_COLUMNS, DECISION_TIMEFRAME, DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME, FEATURE_CATALOGUE, HIERARCHY_TIMEFRAMES,
     INDICATOR_FIXED_INPUTS, INDICATOR_PARAMETER_WORDS, RESEARCH_END_MS, RESEARCH_END_UTC, RESEARCH_START_MS,
     RESEARCH_START_UTC, TIMEFRAME_DURATION_MS, TIMEFRAME_SLOT, TREND_GATE_FEATURE_DEFINITION, TREND_GATE_TIMEFRAME,
-    WARMUP_END_MS, WARMUP_TOP_TIMEFRAME_BARS, catalogue_columns, definition_history_hours, definition_warmup_bars,
-    feature_definition_name, feature_id, features_parquet,
+    WARMUP_END_MS, WARMUP_TOP_TIMEFRAME_BARS, catalogue_columns, definition_effective_history_hours,
+    definition_warmup_bars, feature_definition_name, feature_id, features_parquet,
 )
 
 SEED = 42
 
 # ---- label contract: triple barrier resolved on the 1m path
-ATR_BARRIER_MULTIPLIER = 2.0     # barriers at entry_price +- this multiple of ATR14(last closed 1h bar)
-ATR_WILDER_SMOOTHING_PERIOD_BARS = 14   # the barrier's width, on the last closed 1h bar — a label parameter, not a feature
+ATR_BARRIER_MULTIPLIER = 2.0     # barriers at entry_price +- this multiple of the ATR of the last closed barrier-timeframe bar
+LABEL_BARRIER_ATR_TIMEFRAME = "1h"      # the timeframe whose last closed bar sets the barrier width — an entry of the hierarchy
+ATR_WILDER_SMOOTHING_PERIOD_BARS = 14   # the barrier's width, in bars of that timeframe — a label parameter, not a feature
 # how an event ended; the values are load-bearing — fill_price compares the
 # resolution against the side of the position
 EVENT_RESOLUTION_LOWER_BARRIER = -1

@@ -9,7 +9,10 @@ road*: the one guard is the finiteness assert of `catalogue.build_catalogue`.
 
 ## The register
 
-| timeframe | `TIMEFRAME_DURATION_MS` | bars per UTC day | ratio to the level below | file-name slot |
+The hierarchy is the experiment's literal, `HIERARCHY_TIMEFRAMES`; the duration and the slot of
+each token are read off the token.
+
+| timeframe | `timeframe_duration_ms` | bars per UTC day | ratio to the level below | `timeframe_slot` |
 |---|---|---|---|---|
 | `15m` | 900 000 | 96 | — (the decision timeframe) | `ss-15-hh-dd-MM` |
 | `1h` | 3 600 000 | 24 | 4× | `ss-mm-01-dd-MM` |
@@ -17,7 +20,7 @@ road*: the one guard is the finiteness assert of `catalogue.build_catalogue`.
 
 Bars are exact UTC-aligned aggregations of the canonical 1m series — O first, H max, L min, C last,
 V sum; `arg_min` / `arg_max` by timestamp for determinism — written by `bars.py` into the asset's
-own database, one table per entry of the register (`ohlcv_<timeframe>_canonical`).
+own database, one table per entry of the hierarchy (`ohlcv_<timeframe>_canonical`).
 
 ## The kernels
 
@@ -38,17 +41,18 @@ window's lookback are NaN, and a recursion is finite from its first bar.
 ## The catalogue
 
 The eight feature definitions as of this commit, on the timeframes they are offered on; the
-history is the longest parameter read on that timeframe, the warm-up what the definition's terms
-need in bars of their timeframe.
+effective history is the longest parameter read on that timeframe — a window's window, a
+recursion's span or period — the warm-up what the definition's terms need in bars of their
+timeframe.
 
-| definition | on the timeframe's own bars | range | history 15m | history 1h | history 4h | offered on | warm-up (bars) | default set | ref. |
+| definition | on the timeframe's own bars | range | effective history 15m | effective history 1h | effective history 4h | offered on | warm-up (bars) | default set | ref. |
 |---|---|---|---|---|---|---|---|---|---|
 | `ema20_minus_ema50_over_atr14` | `(EMA20 − EMA50) / ATR14` | unbounded, dimensionless | 12.5 h | 50 h | 200 h | 15m, 1h, 4h | 200 | yes | [1][3] |
 | `centered_rsi14` | `(RSI14 − 50) / 50` | [−1, 1] | 3.5 h | 14 h | 56 h | 15m, 1h, 4h | 56 | yes | [1][7] |
 | `atr14_over_close` | `ATR14 / close` | > 0, dimensionless | 3.5 h | 14 h | 56 h | 15m, 1h, 4h | 56 | yes | [1][5] |
 | `range_position20` | `(close − min(low, 20)) / (max(high, 20) − min(low, 20))` | [0, 1] | 5 h | 20 h | 80 h | 15m, 1h, 4h | 20 | yes | [2] |
 | `log_volume_zscore50` | z-score of `log1p(volume)` over 50 bars | dimensionless | 12.5 h | 50 h | 200 h | 15m, 1h, 4h | 50 | yes | [1][6] |
-| `zscore20` | z-score of `close` over 20 bars — Bollinger %b as z / 2 + 0.5 | dimensionless | 5 h | 20 h | 80 h | 15m, 1h, 4h | 20 | no | [1] |
+| `zscore20` | z-score of `close` over 20 bars — the Bollinger reading: %b(20, 2σ) = zscore20 / 4 + 0.5, an affine map a tree model is invariant to, so no %b column exists | dimensionless | 5 h | 20 h | 80 h | 15m, 1h, 4h | 20 | no | [1] |
 | `close_minus_sma50_over_atr14` | `(close − SMA50) / ATR14` | unbounded, dimensionless | 12.5 h | 50 h | 200 h | 15m, 1h, 4h | 56 | no | [1][3] |
 | `close_minus_sma200_over_atr14` | `(close − SMA200) / ATR14` | unbounded, dimensionless | — | — | 800 h | 4h | 200 | no | [1][3] |
 

@@ -113,17 +113,19 @@ def catalogue_block() -> dict:
         "normaliser": definition.get("normaliser"),
         "range": definition["range"],
         "timeframes": list(definition["timeframes"]),
-        "history_hours_by_timeframe": {timeframe: config.definition_history_hours(definition, timeframe)
-                                       for timeframe in definition["timeframes"]},
+        "effective_history_hours_by_timeframe": {timeframe: config.definition_effective_history_hours(definition, timeframe)
+                                                 for timeframe in definition["timeframes"]},
         "warmup_bars": config.definition_warmup_bars(definition),
         "definition_in_default_set": definition["definition_in_default_set"],
     } for definition in config.FEATURE_CATALOGUE]
     nesting = [{
         "lower": lower, "upper": upper,
-        "lower_longest_history_hours": max(config.definition_history_hours(definition, lower)
-                                           for definition in config.FEATURE_CATALOGUE if lower in definition["timeframes"]),
-        "upper_shortest_history_hours": min(config.definition_history_hours(definition, upper)
-                                            for definition in config.FEATURE_CATALOGUE if upper in definition["timeframes"]),
+        "lower_longest_effective_history_hours": max(
+            config.definition_effective_history_hours(definition, lower)
+            for definition in config.FEATURE_CATALOGUE if lower in definition["timeframes"]),
+        "upper_shortest_effective_history_hours": min(
+            config.definition_effective_history_hours(definition, upper)
+            for definition in config.FEATURE_CATALOGUE if upper in definition["timeframes"]),
     } for lower, upper in zip(config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES[1:])]
     warmup_end = datetime.fromtimestamp(config.WARMUP_END_MS / config.MILLISECONDS_PER_SECOND, tz=UTC)
     return {
@@ -208,9 +210,10 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
 # the asset folder manifest in LC_COLLATE=C listing order: (path descriptor, what it holds)
 FILE_MANIFEST = (
     (config.asset_readme_md, "this file"),
-    (lambda ticker: config.features_parquet(ticker, "15m"), "the catalogue on 15m — every definition offered on it, on the decision grid"),
-    (lambda ticker: config.features_parquet(ticker, "1h"), "the catalogue on 1h — every definition offered on it, on the decision grid"),
-    (lambda ticker: config.features_parquet(ticker, "4h"), "the catalogue on 4h — every definition offered on it, on the decision grid"),
+    # one row per timeframe of the hierarchy: the slot standard sorts them finest first, as LC_COLLATE=C does
+    *((lambda ticker, timeframe=timeframe: config.features_parquet(ticker, timeframe),
+       f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
+      for timeframe in config.HIERARCHY_TIMEFRAMES),
     (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
     (config.model_evaluation_json, "classification metrics per fold"),
     (config.oos_predictions_parquet, "out-of-sample class probabilities, full windows"),

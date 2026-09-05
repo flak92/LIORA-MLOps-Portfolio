@@ -65,7 +65,7 @@ function formatTerm(term) {
     + " bars of " + term.inputs.join(", ") + ")";
 }
 
-/* a history as a bar on one time scale across every timeframe, so a level's reach is compared by eye */
+/* an effective history as a bar on one time scale across every timeframe, so a level's reach is compared by eye */
 function buildHistoryCell(hours, longestHours) {
   if (hours === undefined) return "-";
   const wrap = document.createElement("span");
@@ -86,22 +86,22 @@ function renderCatalogue(mlStatus) {
     + "\nwarm-up: " + catalogue.warmup.top_timeframe_bars + " bars of " + timeframes[timeframes.length - 1]
     + " · first decision " + catalogue.warmup.end_utc + " UTC";
   const longestHours = Math.max(...catalogue.definitions.flatMap((definition) =>
-    Object.values(definition.history_hours_by_timeframe)));
+    Object.values(definition.effective_history_hours_by_timeframe)));
   renderTable("catalogue",
-    ["definition", "terms", "range", ...timeframes.map((timeframe) => "history " + timeframe), "warm-up (bars)", "default set"],
+    ["definition", "terms", "range", ...timeframes.map((timeframe) => "effective history " + timeframe), "warm-up (bars)", "default set"],
     catalogue.definitions.map((definition) => [
       definition.feature_definition,
       definition.terms.map(formatTerm).join(" · ")
         + (definition.operators.length ? " · " + definition.operators.join(", ") : "")
         + (definition.normaliser ? " · " + definition.normaliser : ""),
       definition.range,
-      ...timeframes.map((timeframe) => buildHistoryCell(definition.history_hours_by_timeframe[timeframe], longestHours)),
+      ...timeframes.map((timeframe) => buildHistoryCell(definition.effective_history_hours_by_timeframe[timeframe], longestHours)),
       formatCount(definition.warmup_bars),
       definition.definition_in_default_set ? "yes" : "-",
     ]));
   document.getElementById("catalogue-nesting").textContent = "nesting — one level, one domain of time: "
-    + catalogue.nesting.map((pair) => "longest on " + pair.lower + " " + pair.lower_longest_history_hours
-      + " h < shortest on " + pair.upper + " " + pair.upper_shortest_history_hours + " h").join(" · ");
+    + catalogue.nesting.map((pair) => "longest on " + pair.lower + " " + pair.lower_longest_effective_history_hours
+      + " h < shortest on " + pair.upper + " " + pair.upper_shortest_effective_history_hours + " h").join(" · ");
 }
 
 /* ---- ML Assets tab: five complementary cross-section views ---- */

@@ -16,20 +16,25 @@ from which bars, over what history, with which parameters.
 
 ## The timeframe register — one definition
 
-A timeframe token is `<integer><unit>`, unit in `m`, `h`, `d`. The register is
-`TIMEFRAME_DURATION_MS` in `module_features/config.py`; `HIERARCHY_TIMEFRAMES` is the register
-sorted ascending; `DECISION_TIMEFRAME` is its first entry; `TIMEFRAME_SLOT` maps each token to the
-file-name slot of `../../module_skills/skill_sorting_files_naming_standard.md`. Every timeframe is
-built from the canonical 1m series by `bars.py`, one loop over the register — the venue's own 4h
-candle would be the same aggregation, so an aggregate here is a native bar, not a resample.
+A timeframe token is `<integer><unit>`, unit in `m`, `h`, `d`. The register is the experiment's
+hierarchy, a literal: `HIERARCHY_TIMEFRAMES` in `module_features/config.py`, finest first, and
+`DECISION_TIMEFRAME` beside it. Duration and slot derive from the token — `timeframe_duration_ms`
+reads the number and the unit, `timeframe_slot` writes the number, zero-padded, into its unit's
+field of the five slots of `../../module_skills/skill_sorting_files_naming_standard.md` — so
+`TIMEFRAME_DURATION_MS` and `TIMEFRAME_SLOT` are read off the hierarchy and never written by hand.
+Every timeframe is built from the canonical 1m series by `bars.py`, one loop over the hierarchy —
+the venue's own 4h candle would be the same aggregation, so an aggregate here is a native bar, not
+a resample.
 
-A token enters the register when its duration is an integer multiple of the decision timeframe and
-divides one UTC day, so bar boundaries land on UTC midnight (`2m`, `5m`, `30m`, `2h`, `6h`, `12h`,
-`1d` qualify; a week or a month needs an anchor the register does not carry). Adjacent entries of
-the hierarchy keep a ratio of at least three — below that two levels sample the same price movement
-(the triple-screen hierarchy, `../../module_ml/skills/methodology_ml.md` § 13 [10]). Today: `15m`,
-`1h`, `4h`, ratios 4× and 4×. A new token is one entry in the register and one slot; the bars, the
-parquets and the catalogue's offered timeframes follow from it.
+The hierarchy is a literal because everything that reads it is the experiment: the decision grid
+is its first entry, the trend gate's timeframe its last, the count the strategy's agreement
+compares its length. A token enters when its duration is an integer multiple of the decision
+timeframe and divides one UTC day, so bar boundaries land on UTC midnight (`2m`, `5m`, `30m`,
+`2h`, `6h`, `12h`, `1d` qualify; a week or a month needs an anchor the token does not carry).
+Adjacent entries keep a ratio of at least three — below that two levels sample the same price
+movement (the triple-screen hierarchy, `../../module_ml/skills/methodology_ml.md` § 13 [10]).
+Today: `15m`, `1h`, `4h`, ratios 4× and 4×. A new token is one line in the hierarchy and a new
+experiment; the bars, the parquets and the catalogue's offered timeframes follow from it.
 
 ## Series and indicators — the terms
 
@@ -128,10 +133,13 @@ strategy rule, not a feature the model chose.
 
 ## Scope nesting — one level, one domain of time
 
-Every parameter has a history: `bars × timeframe`. Histories are derived and shown
-(`definition_history_hours`; the catalogue block of `module_monitoring/ml_status.json`), never
-written into a name. The catalogue keeps the histories of adjacent levels nested: **the longest
-history offered on a level stays shorter than the shortest history offered on the level above.**
+Every parameter has an effective history: `bars × timeframe`. A window's effective history is the
+window; a recursion's is its span or period — the bars carrying most of the weight, about 86 % of
+an EMA's and 63 % of a Wilder's — and its settling is the warm-up. Effective histories are derived
+and shown (`definition_effective_history_hours`; the catalogue block of
+`module_monitoring/ml_status.json`), never written into a name. The catalogue keeps the effective
+histories of adjacent levels nested: **the longest effective history offered on a level stays
+shorter than the shortest offered on the level above.**
 A 200-bar average on 15m spans fifty hours — a 4h-domain quantity fitted with four times the
 parameters, which is how a level smuggles in another level's regime. So `sma200` is offered on
 `4h` only; `sma50` on every level. Today: 15m at most 12.5 h, 1h at least 14 h; 1h at most 50 h, 4h

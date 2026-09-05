@@ -2,7 +2,7 @@
  "assets": [
   {
    "artifacts": {
-    "model_evaluation_modified_utc": "2026-09-04 23:14:59"
+    "model_evaluation_modified_utc": "2026-09-05 00:03:32"
    },
    "feature_columns": [
     "ema20_minus_ema50_over_atr14_15m",
@@ -603,12 +603,12 @@
   "definitions": [
    {
     "definition_in_default_set": true,
-    "feature_definition": "ema20_minus_ema50_over_atr14",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 12.5,
      "1h": 50.0,
      "4h": 200.0
     },
+    "feature_definition": "ema20_minus_ema50_over_atr14",
     "normaliser": null,
     "operators": [
      "minus",
@@ -652,12 +652,12 @@
    },
    {
     "definition_in_default_set": true,
-    "feature_definition": "centered_rsi14",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 3.5,
      "1h": 14.0,
      "4h": 56.0
     },
+    "feature_definition": "centered_rsi14",
     "normaliser": "centered",
     "operators": [],
     "range": "[-1, 1]",
@@ -680,12 +680,12 @@
    },
    {
     "definition_in_default_set": true,
-    "feature_definition": "atr14_over_close",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 3.5,
      "1h": 14.0,
      "4h": 56.0
     },
+    "feature_definition": "atr14_over_close",
     "normaliser": null,
     "operators": [
      "over"
@@ -720,12 +720,12 @@
    },
    {
     "definition_in_default_set": true,
-    "feature_definition": "range_position20",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 5.0,
      "1h": 20.0,
      "4h": 80.0
     },
+    "feature_definition": "range_position20",
     "normaliser": null,
     "operators": [],
     "range": "[0, 1]",
@@ -750,12 +750,12 @@
    },
    {
     "definition_in_default_set": true,
-    "feature_definition": "log_volume_zscore50",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 12.5,
      "1h": 50.0,
      "4h": 200.0
     },
+    "feature_definition": "log_volume_zscore50",
     "normaliser": null,
     "operators": [],
     "range": "dimensionless",
@@ -778,12 +778,12 @@
    },
    {
     "definition_in_default_set": false,
-    "feature_definition": "zscore20",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 5.0,
      "1h": 20.0,
      "4h": 80.0
     },
+    "feature_definition": "zscore20",
     "normaliser": null,
     "operators": [],
     "range": "dimensionless",
@@ -806,12 +806,12 @@
    },
    {
     "definition_in_default_set": false,
-    "feature_definition": "close_minus_sma50_over_atr14",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "15m": 12.5,
      "1h": 50.0,
      "4h": 200.0
     },
+    "feature_definition": "close_minus_sma50_over_atr14",
     "normaliser": null,
     "operators": [
      "minus",
@@ -855,10 +855,10 @@
    },
    {
     "definition_in_default_set": false,
-    "feature_definition": "close_minus_sma200_over_atr14",
-    "history_hours_by_timeframe": {
+    "effective_history_hours_by_timeframe": {
      "4h": 800.0
     },
+    "feature_definition": "close_minus_sma200_over_atr14",
     "normaliser": null,
     "operators": [
      "minus",
@@ -902,15 +902,15 @@
   "nesting": [
    {
     "lower": "15m",
-    "lower_longest_history_hours": 12.5,
+    "lower_longest_effective_history_hours": 12.5,
     "upper": "1h",
-    "upper_shortest_history_hours": 14.0
+    "upper_shortest_effective_history_hours": 14.0
    },
    {
     "lower": "1h",
-    "lower_longest_history_hours": 50.0,
+    "lower_longest_effective_history_hours": 50.0,
     "upper": "4h",
-    "upper_shortest_history_hours": 56.0
+    "upper_shortest_effective_history_hours": 56.0
    }
   ],
   "timeframes": [
@@ -942,7 +942,7 @@
   }
  },
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-04 23:32:50",
+ "generated_at_utc": "2026-09-05 00:08:21",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

@@ -46,27 +46,28 @@ def load_feature_columns(ticker: str) -> dict[str, tuple[str, ...]]:
     return dict(config.DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME)
 
 
-def build_x(catalogue_columns: dict[str, np.ndarray],
+def build_x(catalogue_values: dict[str, np.ndarray],
             columns_by_timeframe: dict[str, tuple[str, ...]]) -> tuple[np.ndarray, tuple[str, ...]]:
-    """The model's matrix from the catalogue columns: the set's features, timeframe-major and catalogue-order
+    """The model's matrix from the catalogue's values: the set's features, timeframe-major and catalogue-order
     within — the order is what the model samples by position. Returns (x, its feature ids)."""
     feature_columns = tuple(config.feature_id(name, timeframe)
                             for timeframe in config.HIERARCHY_TIMEFRAMES for name in columns_by_timeframe[timeframe])
-    return np.column_stack([catalogue_columns[c] for c in feature_columns]), feature_columns
+    return np.column_stack([catalogue_values[c] for c in feature_columns]), feature_columns
 
 
 def load_xy(ticker: str) -> dict:
-    """X and Y on Y's decision grid, with every catalogue column beside X; X may carry tail rows Y had to drop."""
+    """X and Y on Y's decision grid, with the values of every catalogue column beside X; X may carry tail rows Y
+    had to drop."""
     con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
-    catalogue_columns, decision_grids = {}, []
+    catalogue_values, decision_grids = {}, []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         per_timeframe = con.execute(
             f"SELECT * FROM read_parquet('{config.features_parquet(ticker, timeframe)}') ORDER BY decision_ts"
         ).fetchnumpy()
         for name in config.catalogue_columns(timeframe):
-            catalogue_columns[config.feature_id(name, timeframe)] = per_timeframe[name]
+            catalogue_values[config.feature_id(name, timeframe)] = per_timeframe[name]
         decision_grids.append(per_timeframe["decision_ts"].astype(np.int64))
     label_events = con.execute(f"SELECT * FROM read_parquet('{config.label_events_parquet(ticker)}') ORDER BY decision_ts").fetchnumpy()
     con.close()
@@ -76,14 +77,14 @@ def load_xy(ticker: str) -> dict:
     y_ts = label_events["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
-    catalogue_columns = {c: catalogue_columns[c][pos] for c in config.CATALOGUE_COLUMNS}
-    x, feature_columns = build_x(catalogue_columns, load_feature_columns(ticker))
+    catalogue_values = {c: catalogue_values[c][pos] for c in config.CATALOGUE_COLUMNS}
+    x, feature_columns = build_x(catalogue_values, load_feature_columns(ticker))
     return {
         "decision_ts": y_ts,
         "entry_ts": label_events["entry_ts"].astype(np.int64),
         "x": x,
         "feature_columns": feature_columns,
-        "catalogue_columns": catalogue_columns,
+        "catalogue_values": catalogue_values,
         "y": label_events["y"].astype(np.int8),
         "event_end_ts": label_events["event_end_ts"].astype(np.int64),
         "entry_observable": label_events["entry_observable"].astype(bool),
