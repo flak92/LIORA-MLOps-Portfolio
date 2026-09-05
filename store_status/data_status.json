@@ -16,6 +16,7 @@
    "row_count": 2980800,
    "source_switch_count": 18,
    "symbol": "BTCUSDT",
+   "ticker": "BTC",
    "zero_volume_bars": 0
   }
  ],
@@ -28,14 +29,15 @@
   "bybit_zip_count": 2070,
   "canonical_row_count": 2980800
  },
- "generated_at_utc": "2026-09-05 18:41:22",
+ "generated_at_utc": "2026-09-05 18:59:12",
  "symbols": [
   {
-   "db_bytes": 124006400,
+   "db_bytes": 128987136,
    "ffill_bars": 0,
    "real_data_pct": 100.0,
    "row_count": 2980800,
-   "symbol": "BTCUSDT"
+   "symbol": "BTCUSDT",
+   "ticker": "BTC"
   }
  ],
  "venues": {
@@ -51,6 +53,7 @@
     "ohlc_violation_count": 0,
     "row_count": 2980800,
     "symbol": "BTCUSDT",
+    "ticker": "BTC",
     "zero_volume_bars": 181,
     "zip_count": 2070
    }
@@ -67,6 +70,7 @@
     "ohlc_violation_count": 0,
     "row_count": 2980800,
     "symbol": "BTCUSDT",
+    "ticker": "BTC",
     "zero_volume_bars": 92,
     "zip_count": 2070
    }

@@ -144,8 +144,9 @@ the endpoints:
 
 One uniform market — USDT-margined perpetual futures. The active basket is a
 single asset, `BTC`: one reference asset carries the whole path end to end, and the
-basket grows by extending `TICKERS` in `module_data/config.py` and adding one asset
-service per ticker under the compose anchor — the execution path itself does not change.
+basket grows by extending `TICKERS` in the `Makefile` and adding one asset service
+per ticker under the compose anchor — every stage is told its assets by
+`--tickers`, and the execution path itself does not change.
 
 The window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
 midnight. Every asset is listed on Binance USDS-M before the window start;

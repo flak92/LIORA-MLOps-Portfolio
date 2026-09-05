@@ -5,7 +5,7 @@ A run record belongs to the basket, not to one asset: one directory per run unde
 `store_run_records/`, and every container of the run appends to the same two files inside it. The
 cgroup and procfs paths are the exception AGENTS.md names and stay in `serve.py` and `record.py`,
 beside the syscalls that read them; the per-asset artifact paths stay in the configs of the modules
-that produce them.
+that produce them — this module reads the artifacts store only to list its asset folders.
 """
 
 from __future__ import annotations
@@ -37,9 +37,10 @@ SECONDS_PER_HOUR = 3600
 BYTES_PER_DISK_BLOCK = 512   # the unit rusage counts ru_inblock and ru_oublock in
 
 # ---- the run record: one directory per run of the chain, the whole basket inside it
-# the two stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
+# the three stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
 # are read where the modules that measured themselves wrote them, and served under one route prefix
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
+STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])   # the registry lists its asset folders
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"
 ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"

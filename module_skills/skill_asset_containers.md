@@ -83,8 +83,8 @@ compute; `record.py` already tolerates a container that is gone. Replacing
 exec-into-resident with a one-off launch is one line and touches no stage; the
 panel would then measure a one-off instead of the resident. The direction is
 `skill_pre_aws_solution.md`. `ASSET` is read by that command line and by `serve.py`
-choosing its role; it is never the default of `build_ticker_parser`, and no
-stage module reads it. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
+choosing its role; `build_ticker_parser` has no default — every launcher names
+the assets — and no stage module reads `ASSET`. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
 `TICKERS` and three lines under `x-server`.
 
@@ -100,9 +100,11 @@ definition's own keys. `skill_pre_aws_solution.md` § The mapping table and
 
 `module_monitoring/serve.py`, one file, two roles chosen by `ASSET`. Of the
 dashboard role's routes, two concern the asset containers: `GET /containers` —
-the registry: `generated_at_utc`, `poll_interval_seconds` and `tickers` from
-`module_data.config.TICKERS` — and `GET /containers/<TICKER>/status`, proxied to
-`http://asset-<ticker>:8900/status`. The asset role answers `GET /status`.
+the registry: `generated_at_utc`, `poll_interval_seconds` and `tickers`, the
+asset folders of `store_assets_artifacts/` — and `GET /containers/<TICKER>/status`,
+proxied to `http://asset-<ticker>:8900/status`. The asset role answers
+`GET /status`. A folder without an `asset-<ticker>` block answers 503 through the
+proxy: the compose block is what makes a listed asset reachable.
 
 The asset role never opens DuckDB: the database takes one whole-file lock per
 process, so a second opener fails at once. The endpoint reads what is already

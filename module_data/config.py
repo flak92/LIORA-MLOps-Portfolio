@@ -1,6 +1,7 @@
-"""Static configuration: the asset basket, time window, endpoints and paths — the plain values every stage reads,
-so a fresh clone reconstructs the dataset for the window from the public market APIs; beside them the
-`--tickers` parser every asset-scoped stage shares, and the null-tolerant rounding the two status reports share."""
+"""Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
+reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
+shares, and the null-tolerant rounding the two status reports share. The basket is not here: the launcher names it
+(`TICKERS` in the Makefile, one `asset-<ticker>` block in docker-compose.yml) and every stage is told its assets."""
 
 from __future__ import annotations
 
@@ -12,10 +13,6 @@ from pathlib import Path
 
 # USDT-margined perpetuals; Binance USDS-M primary, Bybit Linear failover; every asset has Binance 1m history
 # before the window start (probed before every download), Bybit joins whenever its listing starts
-# single-asset runtime: this list is the one definition the paths, the fan-out, the compose
-# services and the /containers registry derive from — scaling is extending it and adding one
-# asset service per ticker under the compose anchor, no logic changes
-TICKERS = ["BTC"]
 QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"
@@ -79,9 +76,9 @@ def research_ohlcv_duckdb(ticker: str) -> Path:
 
 
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
-    """The one CLI every asset-scoped stage shares: --tickers with the full basket default."""
+    """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
     ap = argparse.ArgumentParser(description=description)
-    ap.add_argument("--tickers", default=",".join(TICKERS), help="comma-separated subset")
+    ap.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
     return ap
 
 

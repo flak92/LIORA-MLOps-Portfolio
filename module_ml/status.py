@@ -366,20 +366,19 @@ The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this fil
 
 def main() -> int:
     args = config.build_ticker_parser("aggregate ML artifacts -> store_status/ml_status.json").parse_args()
-    # the payload folds over the whole basket whatever --tickers says; --tickers scopes the READMEs
-    readme_tickers = set(config.parse_tickers(args.tickers))
+    # the payload folds over the tickers the launcher named; every complete asset among them gets its README
+    tickers = config.parse_tickers(args.tickers)
 
     assets = []
-    for ticker in config.TICKERS:
+    for ticker in tickers:
         if not config.is_artifact_set_complete(ticker):
             continue
         hyperparameter_search_result = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]
         metrics = dataset.load_json(config.model_evaluation_json(ticker))
         strategy = dataset.load_json(config.strategy_evaluation_json(ticker))
         assets.append(asset_report(ticker, hyperparameter_search_result, metrics, strategy))
-        if ticker in readme_tickers:
-            config.asset_readme_md(ticker).write_text(asset_readme(ticker, hyperparameter_search_result, metrics, strategy),
-                                                 encoding="utf-8")
+        config.asset_readme_md(ticker).write_text(asset_readme(ticker, hyperparameter_search_result, metrics, strategy),
+                                             encoding="utf-8")
     if not assets:
         raise SystemExit("no complete artifact set found — run `make ml-all` first")
 
@@ -406,7 +405,7 @@ def main() -> int:
               f"sharpe={asset['strategy']['final_holdout']['sharpe']} "
               f"trades={asset['strategy']['final_holdout']['trade_count']}")
     print(f"wrote {out} ({out.stat().st_size / config.BYTES_PER_KIBIBYTE:.1f} KB) "
-          f"+ <TICKER>_README.md in {len(readme_tickers & {asset['ticker'] for asset in assets})} asset folders")
+          f"+ <TICKER>_README.md in {len(assets)} asset folders")
     return 0
 
 

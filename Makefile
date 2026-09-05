@@ -18,10 +18,16 @@ export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store_assets_artifacts
 export STORE_RUN_RECORDS_DIR := $(CURDIR)/store_run_records
 export STORE_STATUS_DIR := $(CURDIR)/store_status
 STORES := store_raw_1m store_assets_artifacts store_run_records store_status
-# the basket, or the one asset ASSET=<TICKER> names on the make line — the contract's own spelling of the namespace
-# parameter; make exports it into every recipe's environment, which is harmless: RECORD is empty on host recipes and
-# the docker twins run inside containers that carry their own ASSET
-TICKER_LIST := $(if $(ASSET),$(ASSET),$(shell STORE_RAW_1M_DIR='$(STORE_RAW_1M_DIR)' STORE_ASSETS_ARTIFACTS_DIR='$(STORE_ASSETS_ARTIFACTS_DIR)' STORE_RUN_RECORDS_DIR='$(STORE_RUN_RECORDS_DIR)' STORE_STATUS_DIR='$(STORE_STATUS_DIR)' python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))"))
+# the basket — the one definition; the asset-<ticker> residents of docker-compose.yml follow it, one block per ticker.
+# ASSET=<TICKER> on the make line narrows every per-asset stage to one asset; make exports ASSET into every recipe's
+# environment, which is harmless: the docker twins run inside containers that carry their own ASSET
+TICKERS     := BTC
+TICKER_LIST := $(if $(ASSET),$(ASSET),$(TICKERS))
+# the lists as one argument — --tickers takes a comma-separated value, printf/xargs take one ticker per line. The basket's
+# spelling goes to the two basket-wide snapshots, which ASSET never narrows: a snapshot of one asset would silently drop
+# the rest of the basket from the page
+TICKERS_CSV := $(shell echo $(TICKERS) | tr ' ' ,)
+TICKER_CSV  := $(shell echo $(TICKER_LIST) | tr ' ' ,)
 ASSET_SERVICE_LIST := $(addprefix asset-,$(shell echo $(TICKER_LIST) | tr A-Z a-z))
 # one process per asset with its threads pinned to 1; the width is min(cores, available GiB), at least 1
 JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
@@ -52,12 +58,12 @@ setup:           ## create .venv and install the pinned direct dependencies
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 data-download:   ## fetch Binance + Bybit 1m klines (UTC calendar-day files, idempotent)
-	$(PY) -m module_data.download_binance
-	$(PY) -m module_data.download_bybit
+	$(PY) -m module_data.download_binance --tickers $(TICKER_CSV)
+	$(PY) -m module_data.download_bybit --tickers $(TICKER_CSV)
 data-ingest:     ## load both ZIP trees into each asset's <TICKER>_research_ohlcv.duckdb and rebuild its canonical series, one asset at a time
-	$(PY) -m module_data.ingest
+	$(PY) -m module_data.ingest --tickers $(TICKER_CSV)
 data-status:     ## data & database monitoring -> stdout + store_status/data_status.json
-	$(PY) -m module_data.status
+	$(PY) -m module_data.status --tickers $(TICKERS_CSV)
 
 features-bars:   ## canonical 1m -> every timeframe of the register, in each asset's own database
 	$(call fanout,$(PY),module_features.bars)
@@ -75,7 +81,7 @@ ml-train:        ## out-of-fold predictions + final-holdout report per asset
 ml-strategy:     ## entry edge threshold on the validation folds, final-holdout PnL
 	$(call fanout,$(PY),module_ml.strategy)
 ml-status:       ## aggregate ML artifacts -> store_status/ml_status.json + <TICKER>_README.md
-	$(PY) -m module_ml.status
+	$(PY) -m module_ml.status --tickers $(TICKERS_CSV)
 ml-all:          ## the ML chain in order
 	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
 ml-feature-set-search: ## stepwise feature-set search on the validation folds under the asset's frozen parameters; resumes; promotes nothing
@@ -108,12 +114,12 @@ docker-down:     ## stop and remove every container
 on: docker-up    ## the presentation switch: the same as docker-up
 off: docker-down ## the presentation switch: the same as docker-down
 docker-data-download: ## both download stages inside the container (basket-wide, sequential)
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_binance
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_binance --tickers $(TICKER_CSV)
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit --tickers $(TICKER_CSV)
 docker-data-ingest: ## the ingest stage, one asset at a time, each inside its own container
 	$(call dockerfanout,module_data.ingest,1)
 docker-data-status: ## the data status stage inside the container -> store_status/data_status.json
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status --tickers $(TICKERS_CSV)
 
 docker-features-bars: ## module_features.bars, inside each asset's container
 	$(call dockerfanout,module_features.bars,$(JOBS))
@@ -131,7 +137,7 @@ docker-ml-train:     ## module_ml.train, inside each asset's container
 docker-ml-strategy:  ## module_ml.strategy, inside each asset's container
 	$(call dockerfanout,module_ml.strategy,$(JOBS))
 docker-ml-status:    ## module_ml.status inside the container
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.status
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.status --tickers $(TICKERS_CSV)
 docker-ml-all:       ## the ML chain inside the containers
 	$(MAKE) docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-ml-feature-set-search: ## module_ml.feature_set_search, inside each asset's container

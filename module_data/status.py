@@ -98,6 +98,7 @@ def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows
         venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
         table.append(
             {
+                "ticker": ticker,
                 "symbol": config.symbol(ticker),
                 "zip_count": zip_counts[venue][ticker],
                 "row_count": venue_row_count,
@@ -122,6 +123,7 @@ def canonical_source_block(ticker: str, canonical_row: dict) -> dict:
     """One asset's row of the canonical-construction table."""
     canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
     return {
+        "ticker": ticker,
         "symbol": config.symbol(ticker),
         "row_count": canonical_row_count,
         "last_observation_utc": to_utc_minute(canonical_row["last_timestamp_ms"]),
@@ -142,9 +144,11 @@ def canonical_source_block(ticker: str, canonical_row: dict) -> dict:
 
 
 def symbol_block(ticker: str, canonical_row: dict, db_bytes: int) -> dict:
-    """One asset's row of the pipeline table: the canonical series and the database that holds it."""
+    """One asset's row of the pipeline table: the canonical series and the database that holds it. Every row keyed by
+    symbol also carries its ticker: this module measures itself and names the asset, so no reader derives the symbol."""
     canonical_row_count, ffill_bars = canonical_row["row_count"], int(canonical_row["ffill_bars"])
     return {
+        "ticker": ticker,
         "symbol": config.symbol(ticker),
         "row_count": canonical_row_count,
         "db_bytes": db_bytes,
@@ -154,12 +158,11 @@ def symbol_block(ticker: str, canonical_row: dict, db_bytes: int) -> dict:
 
 
 def main() -> int:
-    argparse.ArgumentParser(
-        description="data & database monitoring -> stdout + store_status/data_status.json"
-    ).parse_args()
+    args = config.build_ticker_parser("data & database monitoring -> stdout + store_status/data_status.json").parse_args()
+    requested = config.parse_tickers(args.tickers)
     venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
     canonical_rows, db_bytes = {}, {}
-    for ticker in config.TICKERS:
+    for ticker in requested:
         path = config.research_ohlcv_duckdb(ticker)
         if not path.exists():
             continue
@@ -183,7 +186,7 @@ def main() -> int:
     window_end_ms = (max(row["last_timestamp_ms"] for row in canonical_rows.values())
                      + config.CANONICAL_GRID_INTERVAL_MS)
 
-    tickers = [ticker for ticker in config.TICKERS if ticker in canonical_rows]
+    tickers = [ticker for ticker in requested if ticker in canonical_rows]
     zip_counts = {
         venue: {ticker: len(lean_day_zip_paths(config.raw_symbol_dir(ticker, venue))) for ticker in tickers}
         for venue in config.SOURCE_VENUES

@@ -333,8 +333,9 @@ waits for a condition — the `JOBS` measurement decides how wide a stage runs,
 never whether. `JOBS`, `RECORD` and `RUN_ID` are the local spellings of three
 parameters that orchestration owns — width, stage instrumentation, execution
 identity — and no stage reads or derives any of them (`skill_determinism.md` for
-width). The basket crosses in as data read once, by importing `TICKERS`, never
-as a branch. One stage vocabulary holds in every layer — the Makefile,
+width). The basket crosses in as data — `--tickers` on every stage command,
+named by the launcher's `TICKERS` — never as a branch. One stage vocabulary
+holds in every layer — the Makefile,
 `stage_of()` in the recorder, the run record, the page, these documents — with
 one seam named: the target `data-download` runs both download stages, so the
 record spells them `data-download-binance` and `data-download-bybit`.
@@ -593,7 +594,7 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 | current | problem | Pre-AWS direction | change now? |
 |---|---|---|---|
 | `module_features/bars.py` opens `module_data`'s database read-write; every open downstream is read-only | one stored object, two writing modules, across the storage → feature-compute line | one durable writer at a time, sequenced by `features-all` and enforced by the whole-file lock; the aggregation tables are a pure, idempotent function of `ohlcv_1m_canonical`; a second database is forbidden by `../module_data/skills/skill_candle_canonicalisation.md` § 13 | no — described |
-| `module_data.status` takes no `--tickers`; `module_ml.status` accepts it and folds the basket regardless | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
+| every status stage takes `--tickers` and folds the assets the launcher named — the whole basket, from `pipeline` | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
 | the two snapshots are written into `store_status/` and tracked | status objects live in their own store beside the other three, never under a `module_*` | moved: STORAGE produced by DATA and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; the move turned the five points — the two path constants (`DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` under `STORE_STATUS_DIR`), the directory `serve.py` serves (its own package), the two literal fetches (under `/store_status/`) — and met the prerequisite of narrowing the mount; `skill_status_prefix.md` (`AGENTS.md` § Skills absent here, described) is thereby answered | yes — done |
 | `Dockerfile` copies no code; code and state both arrive through `.:/app` | the image is a dependency layer, not a compute artifact | said, not built: one mount is the local simplification; the phase *the image carries the code* of § The retrain runtime is a ladder is the image carrying the code and the mount carrying the state alone — `skill_image_contents.md` (`AGENTS.md` § Skills absent here, described) | no — described |
 | `record.py` holds the map of every stage to the artifacts it leaves | pipeline-shape knowledge in the representation module | measurement may hold stage → artifact, never the stage order or a dependency between stages; a later condition reads this table rather than starting a second | no — described |

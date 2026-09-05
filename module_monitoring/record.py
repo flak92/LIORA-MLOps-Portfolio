@@ -89,12 +89,8 @@ def stage_of(module: str) -> str:
 
 
 def recorded_tickers(command: list[str]) -> list[str]:
-    """The assets this stage covered: what its command was told, else the one its container is,
-    else the whole basket for a basket-wide stage in the one-off container."""
-    if "--tickers" in command:
-        return data_config.parse_tickers(command[command.index("--tickers") + 1])
-    asset = os.environ.get("ASSET")
-    return [asset] if asset else list(data_config.TICKERS)
+    """The assets this stage covered: what its command was told — every stage command carries --tickers."""
+    return data_config.parse_tickers(command[command.index("--tickers") + 1])
 
 
 def docker_service() -> str:
@@ -329,7 +325,7 @@ def fetch_dashboard_route(url: str) -> dict:
         return {"url": url, "status_code": 0, "body_bytes": 0}
 
 
-def fetch_dashboard_ready() -> dict:
+def fetch_dashboard_ready(tickers: list[str]) -> dict:
     """The readiness check that closes a run: the dashboard's own registry, then one question per
     asset through its proxy. The run is ready only when the registry and every asset answered 200;
     url and status_code stay at this level because they are what the Lifecycle tab prints."""
@@ -338,7 +334,7 @@ def fetch_dashboard_ready() -> dict:
     started_monotonic = time.monotonic()
     registry = fetch_dashboard_route(config.dashboard_registry_url(port))
     assets = [fetch_dashboard_route(config.dashboard_asset_status_url(port, ticker))
-              for ticker in data_config.TICKERS]
+              for ticker in tickers]
     return {
         "stage": "dashboard-ready",
         "url": registry["url"], "status_code": registry["status_code"], "body_bytes": registry["body_bytes"],
@@ -458,9 +454,9 @@ def write_summary(run_id: str, readiness: dict, status: str) -> dict:
     return summary
 
 
-def write_manifest(run_id: str, summary: dict) -> None:
+def write_manifest(run_id: str, summary: dict, tickers: list[str]) -> None:
     manifest = {
-        "run_id": run_id, "tickers": list(data_config.TICKERS),
+        "run_id": run_id, "tickers": tickers,
         "git_commit": shell_output(["git", "rev-parse", "HEAD"]),
         "git_commit_short": shell_output(["git", "rev-parse", "--short", "HEAD"]),
         "working_tree_clean": shell_output(["git", "status", "--porcelain"]) == "",
@@ -474,7 +470,7 @@ def write_manifest(run_id: str, summary: dict) -> None:
         "cpu_count": os.cpu_count(),
         "host_load_average": os.getloadavg(),
         "asset_containers": [container_identity(config.asset_service(ticker))
-                             for ticker in data_config.TICKERS],
+                             for ticker in tickers],
         "pipeline_container": container_identity(config.PIPELINE_SERVICE),
         "research_start_utc": ml_config.RESEARCH_START_UTC,
         "research_end_utc": ml_config.RESEARCH_END_UTC,
@@ -487,11 +483,12 @@ def write_manifest(run_id: str, summary: dict) -> None:
 
 def finalise(run_id: str) -> int:
     records = load_stage_records(run_id)
-    readiness = fetch_dashboard_ready()
+    tickers = sorted({ticker for record in records for ticker in record["tickers"]})   # the basket = what the stages were told
+    readiness = fetch_dashboard_ready(tickers)
     failed = (not records or any(record["exit_code"] != 0 for record in records)
               or readiness["exit_code"] != 0)
     summary = write_summary(run_id, readiness, "failed" if failed else "completed")
-    write_manifest(run_id, summary)
+    write_manifest(run_id, summary, tickers)
     print(f"run {run_id}: {summary['stage_count']} stages, "
           f"{summary['total_wall_seconds']}s wall, {summary['total_cpu_seconds']}s cpu "
           f"({summary['total_cpu_core_hours']} core-hours), bottleneck {summary['bottleneck_stage']}, "

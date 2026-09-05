@@ -155,11 +155,19 @@ def runs_payload() -> dict:
     return {"generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)), "run_ids": load_run_ids()}
 
 
+def load_tickers() -> list[str]:
+    """The basket as the store shows it: one folder per asset under the artifacts store, sorted — the registry never reads
+    the launcher's list and derives nothing; a fresh clone already holds the tracked residue of every asset, and a new
+    asset appears here at its first ingest."""
+    store = config.STORE_ASSETS_ARTIFACTS_DIR
+    return sorted(path.name for path in store.iterdir() if path.is_dir()) if store.exists() else []
+
+
 def registry_payload() -> dict:
     return {
         "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "poll_interval_seconds": config.CONTAINER_POLL_INTERVAL_SECONDS,
-        "tickers": data_config.TICKERS,
+        "tickers": load_tickers(),
     }
 
 
@@ -230,7 +238,7 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)
         elif len(segments) == 4 and segments[1] == "containers" and segments[3] == "status":
-            if segments[2] in data_config.TICKERS:
+            if segments[2] in load_tickers():
                 write_response(self, *fetch_asset_status(segments[2]))
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)

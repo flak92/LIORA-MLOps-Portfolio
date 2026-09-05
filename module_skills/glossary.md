@@ -158,7 +158,8 @@ key is in this register.
 | the catalogue block | `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range` —, `operators`, `normaliser`, `range`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`) | the catalogue as the register presents it — the catalogue frame of the ML Research tab reads nothing else |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
-| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows are keyed by `symbol`, derived at the report boundary from `config.symbol(ticker)`; no database column carries it | the pipeline, raw-source and canonical-construction tables |
+| the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows carry `ticker`, the asset the row measures, beside `symbol`, derived at the report boundary from `config.symbol(ticker)`; no database column carries either | the pipeline, raw-source and canonical-construction tables |
+| which asset a snapshot row is about | `ticker` — every row of the three tables | Data names the asset it measured; a reader never derives it from `symbol` |
 | the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count`; not the drawing's `flow`, an edge (§ Developer experience) |
 | the engine of the databases | `duckdb_version` | the engine that wrote every asset's database |
 | an asset's database on disk | `db_bytes` (a `symbols` row) | the size of `<TICKER>_research_ohlcv.duckdb` |
@@ -252,7 +253,8 @@ how a stage is run, never what it computes.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, by `serve.py` choosing its role, and by `record.py` for the service a stage ran in and, failing a `--tickers`, the assets it covered — never by a stage module, never the default of `build_ticker_parser` | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
+| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, by `serve.py` choosing its role, and by `record.py` for the service a stage ran in — never by a stage module, and never a substitute for the command's `--tickers`, which has no default | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
+| the basket, as the launcher defines it | `TICKERS` in the orchestration `Makefile`, one `asset-<ticker>` block per ticker under the compose anchor; `TICKER_LIST` (`ASSET` narrows it), `TICKERS_CSV` (the basket as one `--tickers` argument, for the basket-wide snapshots), `TICKER_CSV` (the make line's list as one argument) | — | — | a basket in a module's `config.py`, a second list in compose, a stage that defaults to it |
 | a compose service that is one asset's container: resident, answering `/status`, and locally the place every fanned-out per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
 | the one service that holds the docker socket, and the only one | `devops` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
@@ -270,7 +272,7 @@ dashboard, `GET /status` on an asset container.
 
 | concept | artifact key | holds |
 |---|---|---|
-| the basket, as the dashboard serves it | `tickers` | `module_data.config.TICKERS`, in order |
+| the basket, as the dashboard serves it | `tickers` | the asset folders of `store_assets_artifacts/`, sorted — what is there, never a list of its own |
 | how often the page asks | `poll_interval_seconds` | published by the server, never a literal in the page |
 | when the server of an asset container started — how long it has been up, for the tab | `started_at_utc` | one UTC string, beside the envelope's `generated_at_utc` |
 | the asset's data, as last measured | `data` with the snapshot's `generated_at_utc`, `row_count`, `last_observation_utc`, `db_bytes`, and `observation_lag_minutes`, `measurement_age_minutes`, `research_window_covered` | `null` when the snapshot has no row for the asset or the database it describes is gone, so `db_bytes` is a size and never `null`; is the market data behind, is anyone still measuring, does the grid cover the frozen window |
@@ -315,8 +317,8 @@ window: the resident server, the recorder and the stage together.
 | wall time between stages: docker exec setup and teardown | — | `orchestration_seconds` | orchestration | overhead, a hidden remainder |
 | the stage that took the longest | — | `bottleneck_stage` | bottleneck | slowest, hotspot |
 | the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` — the registry at the top level, one answer per ticker in `assets` | dashboard | healthcheck, ping; one asset's answer standing for the basket |
-| the basket one run covered | `TICKERS` | `tickers` | — | `ticker`, the first of the basket standing for it |
-| the assets one stage covered — its command's `--tickers`, else its container's `ASSET`, else the basket | `recorded_tickers()` | `tickers` — a key of `events.jsonl` | — | `ticker`; the container standing for the command's scope |
+| the basket one run covered | the `--tickers` every stage command carried, folded over the run's records | `tickers` | — | `ticker`, the first of the basket standing for it |
+| the assets one stage covered — its command's `--tickers`, which every stage command carries | `recorded_tickers()` | `tickers` — a key of `events.jsonl` | — | `ticker`; the container standing for the command's scope; a fallback to `ASSET` or to the basket |
 | the asset containers of a run, one row per ticker | `container_identity()` | `asset_containers` | — | `asset_container`, one container standing for the basket |
 | where a run's record lives | `STORE_RUN_RECORDS_DIR`, `run_dir()` | — | — | a `runtime/` folder under an asset, one run record per asset |
 

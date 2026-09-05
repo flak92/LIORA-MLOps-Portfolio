@@ -251,9 +251,11 @@ edit to one is a violation.
 **Rule-derived structure over repeated project knowledge.** When a family —
 assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
 — is governed by one definition, derive the repeated representations from it
-rather than copying the same list into several files: `TICKERS` in
-`module_data/config.py` is the one definition the paths, the fan-out and the
-`/containers` registry derive from. The limit is equally binding: no generator,
+rather than copying the same list into several files: `TICKERS` in the
+orchestration `Makefile` — the launcher — is the one definition the fan-out and
+every `--tickers` derive from; a module is told its assets and never defines
+them, and the `/containers` registry lists the asset folders the store holds.
+The limit is equally binding: no generator,
 no metaprogramming, no abstraction layer for a one-off value — and none for a
 file whose whole value is being read. `docker-compose.yml` spells its asset
 services out under its anchors, one per ticker, because a topology a reader can see beats one a

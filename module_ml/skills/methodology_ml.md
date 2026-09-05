@@ -416,7 +416,7 @@ catalogue from `module_features/config`) · `module_ml/validation`,
 `module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
 IO: X/Y loading, canonical JSON, the re-exported parquet writer) ·
 `module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,
-`module_ml/status` (CLI stages, `python -m module_ml.<stage> [--tickers …]`) ·
+`module_ml/status` (CLI stages, `python -m module_ml.<stage> --tickers <TICKERS>`) ·
 `module_ml/feature_set_search`, `module_ml/feature_set_promote` (the two hand
 stages outside the chain, `python -m module_ml.<stage> --tickers <TICKER>`, the
 promotion also `--proposal <n>`).

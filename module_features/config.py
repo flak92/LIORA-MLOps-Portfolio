@@ -6,7 +6,7 @@ git commit is the record of which one ran."""
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, TICKERS, artifact_dir,
+    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, artifact_dir,
     build_ticker_parser, parse_tickers, research_ohlcv_duckdb, to_utc_ms,
 )
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
