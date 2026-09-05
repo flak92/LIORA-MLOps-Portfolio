@@ -100,15 +100,17 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
 
 
 # the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries
-# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, and the bar columns it reads
-# when its inputs are fixed; an indicator without `inputs` takes any series, close by default. A second parameter,
-# when an indicator needs one, extends the record and the name grammar in the same commit.
+# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, the bar columns it reads
+# when its inputs are fixed, and the range it outputs when that range is bounded; an indicator without `inputs` takes
+# any series, close by default, and one without `output_range` is unbounded, so no normaliser can be written on it.
+# A second parameter, when an indicator needs one, extends the record and the name grammar in the same commit.
 INDICATORS = {
     "ema": {"kernel": ema, "parameter_word": "SPAN", "warmup_multiple": 4},
     "sma": {"kernel": sma, "parameter_word": "LOOKBACK", "warmup_multiple": 1},
-    "rsi": {"kernel": rsi, "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4, "inputs": ("close",)},
+    "rsi": {"kernel": rsi, "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4, "inputs": ("close",),
+            "output_range": (0.0, 100.0)},
     "atr": {"kernel": atr, "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4, "inputs": ("high", "low", "close")},
     "zscore": {"kernel": rolling_zscore, "parameter_word": "LOOKBACK", "warmup_multiple": 1},
     "range_position": {"kernel": range_position, "parameter_word": "LOOKBACK", "warmup_multiple": 1,
-                       "inputs": ("close", "high", "low")},
+                       "inputs": ("close", "high", "low"), "output_range": (0.0, 1.0)},
 }

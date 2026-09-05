@@ -85,13 +85,16 @@ def strategy_block(strategy: dict) -> dict:
 
 
 def term_block(term: tuple) -> dict:
-    """One term of a catalogue definition: the bars its kernel reads, the indicator and its parameter."""
+    """One term of a catalogue definition: the bars its kernel reads, the indicator with its parameter, and the range
+    it outputs when that range is bounded — the range a normaliser on this term reads."""
     if len(term) == 1:
-        return {"inputs": [term[0]], "indicator": None, "parameter_word": None, "parameter_bars": None}
+        return {"inputs": [term[0]], "indicator": None, "parameter_word": None, "parameter_bars": None,
+                "output_range": None}
     series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
     record = config.INDICATORS[indicator]
     return {"inputs": list(record.get("inputs", (series,))), "indicator": indicator,
-            "parameter_word": record["parameter_word"], "parameter_bars": parameter_bars}
+            "parameter_word": record["parameter_word"], "parameter_bars": parameter_bars,
+            "output_range": list(record["output_range"]) if "output_range" in record else None}
 
 
 def catalogue_block() -> dict:

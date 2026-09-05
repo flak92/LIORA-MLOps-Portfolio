@@ -52,11 +52,8 @@ WARMUP_TOP_TIMEFRAME_BARS = 200
 WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
 
 # ---- the terms: a series of the bars, or an indicator of the register with its one integer parameter glued to the
-# token in a name (ema20, rsi14); the indicators' invariants are their register records in indicators.py
-FEATURE_DEFINITION_OPERATORS = ("minus", "over")
-# a normaliser maps a bounded term to [-1, 1] as (value - midpoint) / half_range; its two numbers live in the record
-# and nowhere else — the evaluator reads them
-FEATURE_DEFINITION_NORMALISERS = {"centered": {"midpoint": 50.0, "half_range": 50.0}}
+# token in a name (ema20, rsi14); the indicators' invariants are their register records in indicators.py, and the
+# operators and normalisers that compose them are the registers beside their kernels in catalogue.py
 
 # ---- the feature catalogue: one record per feature definition, from which the name, the computation, the history
 # and the required warm-up derive. A term is ("<indicator>", <parameter_bars>) on the default series close,
@@ -107,9 +104,14 @@ def feature_id(definition_name: str, timeframe: str) -> str:
     return f"{definition_name}_{timeframe}"
 
 
+def term_indicator(term: tuple) -> str | None:
+    """The indicator token of a term — a bare series has none."""
+    return None if len(term) == 1 else term[-2]
+
+
 def term_warmup_bars(term: tuple) -> int:
     """Bars of the term's timeframe before its value is settled; a bare series needs none."""
-    return 0 if len(term) == 1 else INDICATORS[term[-2]]["warmup_multiple"] * term[-1]
+    return 0 if len(term) == 1 else INDICATORS[term_indicator(term)]["warmup_multiple"] * term[-1]
 
 
 def definition_warmup_bars(definition: dict) -> int:

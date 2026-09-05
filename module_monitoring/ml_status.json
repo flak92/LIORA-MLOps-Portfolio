@@ -396,6 +396,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 20,
       "parameter_word": "SPAN"
      },
@@ -404,6 +405,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 50,
       "parameter_word": "SPAN"
      },
@@ -414,6 +416,7 @@
        "low",
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
@@ -441,6 +444,10 @@
       "indicator": "rsi",
       "inputs": [
        "close"
+      ],
+      "output_range": [
+       0.0,
+       100.0
       ],
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
@@ -474,6 +481,7 @@
        "low",
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      },
@@ -482,6 +490,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": null,
       "parameter_word": null
      }
@@ -512,6 +521,10 @@
        "high",
        "low"
       ],
+      "output_range": [
+       0.0,
+       1.0
+      ],
       "parameter_bars": 20,
       "parameter_word": "LOOKBACK"
      }
@@ -540,6 +553,7 @@
       "inputs": [
        "log_volume"
       ],
+      "output_range": null,
       "parameter_bars": 50,
       "parameter_word": "LOOKBACK"
      }
@@ -568,6 +582,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 20,
       "parameter_word": "LOOKBACK"
      }
@@ -599,6 +614,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": null,
       "parameter_word": null
      },
@@ -607,6 +623,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 50,
       "parameter_word": "LOOKBACK"
      },
@@ -617,6 +634,7 @@
        "low",
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
@@ -646,6 +664,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": null,
       "parameter_word": null
      },
@@ -654,6 +673,7 @@
       "inputs": [
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 200,
       "parameter_word": "LOOKBACK"
      },
@@ -664,6 +684,7 @@
        "low",
        "close"
       ],
+      "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
@@ -717,7 +738,7 @@
   }
  },
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-05 11:26:31",
+ "generated_at_utc": "2026-09-05 12:23:19",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

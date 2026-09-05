@@ -62,7 +62,8 @@ function renderResearch(mlStatus) {
 function formatTerm(term) {
   if (term.indicator === null) return term.inputs[0];
   return term.indicator + term.parameter_bars + " (" + term.parameter_word + " " + term.parameter_bars
-    + " bars of " + term.inputs.join(", ") + ")";
+    + " bars of " + term.inputs.join(", ")
+    + (term.output_range === null ? "" : ", output " + term.output_range[0] + "–" + term.output_range[1]) + ")";
 }
 
 /* an effective history as a bar on one time scale across every timeframe, so a level's reach is compared by eye */

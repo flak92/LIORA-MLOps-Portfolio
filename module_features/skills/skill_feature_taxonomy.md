@@ -48,16 +48,17 @@ An **indicator** is one computation over series of one timeframe with exactly on
 parameter, written glued to the indicator token, as the trade writes RSI14 and SMA200. The
 register is one record per token beside its kernel — `INDICATORS` at the end of
 `module_features/indicators.py`: the kernel, the word its parameter carries, the warm-up it needs
-in multiples of that parameter, and the bar columns it reads when its inputs are fixed:
+in multiples of that parameter, the bar columns it reads when its inputs are fixed, and the range
+it outputs when that range is bounded:
 
-| indicator | `inputs` | `parameter_word` | `warmup_multiple` |
-|---|---|---|---|
-| `ema<n>` | any series, `close` by default | `SPAN` | 4 — a recursion is finite from its first bar and settles in four spans by convention |
-| `sma<n>` | any series, `close` by default | `LOOKBACK` | 1 — a window is NaN inside its lookback |
-| `rsi<n>` | `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 |
-| `atr<n>` | `high`, `low`, `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 |
-| `zscore<n>` | any series, `close` by default | `LOOKBACK` | 1 |
-| `range_position<n>` | `close`, `high`, `low` — fixed | `LOOKBACK` | 1 |
+| indicator | `inputs` | `parameter_word` | `warmup_multiple` | `output_range` |
+|---|---|---|---|---|
+| `ema<n>` | any series, `close` by default | `SPAN` | 4 — a recursion is finite from its first bar and settles in four spans by convention | — unbounded |
+| `sma<n>` | any series, `close` by default | `LOOKBACK` | 1 — a window is NaN inside its lookback | — unbounded |
+| `rsi<n>` | `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 | 0 to 100 |
+| `atr<n>` | `high`, `low`, `close` — fixed | `SMOOTHING_PERIOD` (Wilder) | 4 | — unbounded |
+| `zscore<n>` | any series, `close` by default | `LOOKBACK` | 1 | — unbounded |
+| `range_position<n>` | `close`, `high`, `low` — fixed | `LOOKBACK` | 1 | 0 to 1 |
 
 The kernel carries the token's name (`ema`, `sma`, `rsi`, `atr`, `range_position`; `zscore` is
 `rolling_zscore`, the one kernel named for its family), and the record is the one place its
@@ -85,16 +86,22 @@ left to right:
     definition = [ normaliser "_" ] term { "_" operator "_" term }
     term       = series | [ series "_" ] indicator parameter
     operator   = minus | over            (difference; ratio, 0 where the denominator is 0)
-    normaliser = centered                (a bounded oscillator mapped to [-1, 1]: (x − midpoint) / half_range,
-                                          the record's two numbers — 50 and 50 for RSI)
+    normaliser = centered                (a bounded term mapped to [-1, 1] from its indicator's own
+                                          `output_range`: (x − mid) / half, so RSI's 0 to 100 gives (x − 50) / 50)
 
 `ema20_minus_ema50_over_atr14` reads: EMA(20) minus EMA(50), over ATR(14) — three terms, one
 timeframe, two operators. `close_minus_sma50_over_atr14` reads: close minus SMA(50), over ATR(14)
 — the bare series is written, because it is a term, not the input of an indicator. A definition
 never mixes timeframes; its range is stated in its record (`range`: dimensionless, bounded, > 0).
-The operators and the normaliser are `FEATURE_DEFINITION_OPERATORS` and
-`FEATURE_DEFINITION_NORMALISERS`; `catalogue.py` evaluates a record by folding its terms through
-them and nothing else, so what the record says is what the column holds.
+The operators and the normalisers are `OPERATORS` and `NORMALISERS` in `catalogue.py`, each beside
+its kernels; `catalogue.py` evaluates a record by folding its terms through them and nothing else,
+so what the record says is what the column holds. A normaliser is written on a definition of one
+bounded term and reads that indicator's `output_range`; on an unbounded one the lookup fails, which
+is the whole check. A register of the taxonomy — the indicators, the operators, the normalisers —
+is a dict of records keyed by token, kernel first, even when the record holds one fact: the shape
+is the convention, not the fact count, so the first new invariant is a key rather than a second
+table. `SERIES_KERNELS` is not one of them: it is the dispatch table of the one series that is not
+a bar column.
 
 ## Features
 

@@ -35,23 +35,38 @@ def term_values(bars: dict[str, np.ndarray], term: tuple) -> np.ndarray:
     return record["kernel"](*inputs, parameter_bars)
 
 
+def difference(left: np.ndarray, right: np.ndarray) -> np.ndarray:
+    """`minus`: the left term less the right."""
+    return left - right
+
+
 def ratio(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
     """`over`: a ratio, 0 where the denominator is 0."""
     with np.errstate(divide="ignore", invalid="ignore"):
         return np.where(denominator == 0.0, 0.0, numerator / denominator)
 
 
-OPERATOR_KERNELS = {"minus": lambda left, right: left - right, "over": ratio}
-NORMALISER_KERNELS = {"centered": lambda value, record: (value - record["midpoint"]) / record["half_range"]}
+def centered(value: np.ndarray, low: float, high: float) -> np.ndarray:
+    """`centered`: a bounded term mapped to [-1, 1] from the output range of its own indicator."""
+    return (value - (low + high) / 2) / ((high - low) / 2)
+
+
+# the two registers of the composition grammar, each beside its kernels, in the shape of INDICATORS
+OPERATORS = {"minus": {"kernel": difference}, "over": {"kernel": ratio}}
+NORMALISERS = {"centered": {"kernel": centered}}
 
 
 def feature_definition_values(bars: dict[str, np.ndarray], definition: dict) -> np.ndarray:
-    """The definition on one timeframe's own bars: the terms folded left to right by the operators, then normalised."""
+    """The definition on one timeframe's own bars: the terms folded left to right by the operators, then normalised
+    over the output range of the one bounded indicator the normalised definition is written on."""
     value = term_values(bars, definition["terms"][0])
     for operator, term in zip(definition.get("operators", ()), definition["terms"][1:]):
-        value = OPERATOR_KERNELS[operator](value, term_values(bars, term))
+        value = OPERATORS[operator]["kernel"](value, term_values(bars, term))
     normaliser = definition.get("normaliser")
-    return NORMALISER_KERNELS[normaliser](value, config.FEATURE_DEFINITION_NORMALISERS[normaliser]) if normaliser else value
+    if not normaliser:
+        return value
+    low, high = indicators.INDICATORS[config.term_indicator(definition["terms"][0])]["output_range"]
+    return NORMALISERS[normaliser]["kernel"](value, low, high)
 
 
 def timeframe_catalogue(bars: dict[str, np.ndarray], timeframe: str) -> dict[str, np.ndarray]:
