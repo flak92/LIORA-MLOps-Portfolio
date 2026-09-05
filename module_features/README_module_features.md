@@ -51,6 +51,31 @@ store_assets_artifacts/<TICKER>/<TICKER>_features_<slot>.parquet   decision_ts a
 The manifest and what each file holds are in `../module_skills/glossary.md`
 § Artifacts.
 
+## Extending
+
+Every element of the taxonomy is one record in one register, and its name, its
+computation, its history and its warm-up are read off that record — so adding
+one is a local edit, and what it costs is known before it is made. The rules
+the names follow are `skills/skill_feature_taxonomy.md`; this is what each
+addition touches.
+
+| what you add | where, and how much | what it changes | the gate |
+|---|---|---|---|
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` (`config.py`) | a different experiment: the bars, every parquet, the labels, X and every artifact, the final holdout included | nothing stays byte-identical; the whole chain reruns |
+| an indicator | its kernel and one record in `INDICATORS` (`indicators.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
+| a derived series | one entry in `SERIES_KERNELS` (`catalogue.py`) | nothing, until a term names it | the existing parquets byte-identical |
+| an operator or a normaliser | one record in `OPERATORS` or `NORMALISERS`, beside its kernel (`catalogue.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
+| a feature definition | one record in `FEATURE_CATALOGUE` (`config.py`): its terms, the timeframes it is offered on, and `definition_in_default_set: False` | every parquet it is offered on gains a column, the catalogue frame a row, and the feature-set search's `inputs` change | the existing columns byte-identical; `ml-labels` … `ml-status` untouched; the next search starts from trial 1, and a model sees the column only after a promotion |
+| a second parameter for an indicator | the record and the name grammar, in one commit (`skills/skill_feature_taxonomy.md` § Series and indicators) | the derived names of existing terms do not change | the existing parquets byte-identical |
+
+`definition_in_default_set: True` is a different move: it puts the column into
+every asset's X, so the ML chain reruns and today's numbers move. The default
+set is the frozen experiment's; a set chosen for one asset is the feature-set
+search's and a hand's promotion
+(`../module_ml/skills/methodology_ml.md` § 4). A new asset is not an extension
+of this module at all: it is a ticker in `TICKERS` and a block under the compose
+anchor (`../README.md` § The basket), and both stages follow it without an edit.
+
 ## Design rationale
 
 Why each object of this module sits where it does — the answers of
