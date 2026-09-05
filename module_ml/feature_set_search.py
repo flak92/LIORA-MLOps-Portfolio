@@ -12,24 +12,25 @@ import numpy as np
 from . import config, dataset, model, strategy, train
 
 
-def columns_added(columns_by_timeframe: dict, active: dict) -> dict:
+# the helpers take the hierarchy from the asset's contract (xy["timeframes"]) — the ML layer holds no register of its own
+def columns_added(columns_by_timeframe: dict, active: dict, timeframes: tuple[str, ...]) -> dict:
     return {timeframe: [name for name in columns_by_timeframe[timeframe] if name not in active[timeframe]]
-            for timeframe in config.HIERARCHY_TIMEFRAMES}
+            for timeframe in timeframes}
 
 
-def columns_removed(columns_by_timeframe: dict, active: dict) -> dict:
-    return columns_added(active, columns_by_timeframe)
+def columns_removed(columns_by_timeframe: dict, active: dict, timeframes: tuple[str, ...]) -> dict:
+    return columns_added(active, columns_by_timeframe, timeframes)
 
 
-def column_count(columns_by_timeframe: dict) -> int:
-    return sum(len(columns_by_timeframe[timeframe]) for timeframe in config.HIERARCHY_TIMEFRAMES)
+def column_count(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> int:
+    return sum(len(columns_by_timeframe[timeframe]) for timeframe in timeframes)
 
 
-def with_column(columns_by_timeframe: dict, timeframe: str, name: str) -> dict:
-    """The set with one definition added on one timeframe, kept in catalogue order."""
+def with_column(columns_by_timeframe: dict, timeframe: str, name: str, catalogue_columns: list[str]) -> dict:
+    """The set with one definition added on one timeframe, kept in catalogue order — the order the contract lists."""
     kept = set(columns_by_timeframe[timeframe]) | {name}
     return {**columns_by_timeframe,
-            timeframe: tuple(column for column in config.catalogue_columns(timeframe) if column in kept)}
+            timeframe: tuple(column for column in catalogue_columns if column in kept)}
 
 
 def without_column(columns_by_timeframe: dict, timeframe: str, name: str) -> dict:
@@ -37,13 +38,13 @@ def without_column(columns_by_timeframe: dict, timeframe: str, name: str) -> dic
             timeframe: tuple(column for column in columns_by_timeframe[timeframe] if column != name)}
 
 
-def to_tuples(columns_by_timeframe: dict) -> dict:
-    return {timeframe: tuple(columns_by_timeframe[timeframe]) for timeframe in config.HIERARCHY_TIMEFRAMES}
+def to_tuples(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> dict:
+    return {timeframe: tuple(columns_by_timeframe[timeframe]) for timeframe in timeframes}
 
 
-def ledger_key(columns_by_timeframe: dict) -> tuple:
+def ledger_key(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> tuple:
     """A set as the ledger indexes it: timeframe-major, independent of how a dict was built or read back."""
-    return tuple((timeframe, tuple(columns_by_timeframe[timeframe])) for timeframe in config.HIERARCHY_TIMEFRAMES)
+    return tuple((timeframe, tuple(columns_by_timeframe[timeframe])) for timeframe in timeframes)
 
 
 def fold_skills(row: dict) -> list[float]:
@@ -61,7 +62,7 @@ def is_skill_no_worse_on_every_fold(row: dict, champion: dict) -> bool:
 def trial_result(xy: dict, y_cls: np.ndarray, best: dict, close_1m: np.ndarray, columns_by_timeframe: dict) -> dict:
     """Score one set: three boosters fitted as train.py fits them, their skill per fold, and — reported, never
     selected on — the strategy's threshold selection on their predictions."""
-    x, feature_columns = dataset.build_x(xy["catalogue_values"], columns_by_timeframe)
+    x, feature_columns = dataset.build_x(xy["catalogue_values"], columns_by_timeframe, xy["timeframes"])
     xy_candidate = {**xy, "x": x, "feature_columns": feature_columns}
     prediction_records, skill_by_fold = [], {}
     for fold_id in config.VALIDATION_FOLD_IDS:
@@ -92,23 +93,23 @@ def trial_result(xy: dict, y_cls: np.ndarray, best: dict, close_1m: np.ndarray, 
     }
 
 
-def proposals_block(trials: list[dict], active: dict, champion_trial: int) -> list[dict]:
+def proposals_block(trials: list[dict], active: dict, champion_trial: int, timeframes: tuple[str, ...]) -> list[dict]:
     """The sets a hand may promote: the champion the search accepted first, then the trials no validation fold
     scores below the active set, by mean skill. A set worse on any fold is never proposed."""
-    active = to_tuples(active)
+    active = to_tuples(active, timeframes)
     qualifiers = [(index, row) for index, row in enumerate(trials, start=1)
                   if row["columns_by_timeframe"] != active and is_skill_no_worse_on_every_fold(row, trials[0])]
     # the champion first — the set the search itself accepted, move by move — then the rest by mean skill,
     # ties to the smaller set and to the earlier trial
     ranked = sorted(qualifiers, key=lambda item: (item[0] != champion_trial,
                                                   -item[1]["mean_relative_logloss_skill"],
-                                                  column_count(item[1]["columns_by_timeframe"]), item[0]))
+                                                  column_count(item[1]["columns_by_timeframe"], timeframes), item[0]))
     return [{
         "proposal": rank,
         "trial": index,
         "columns_by_timeframe": row["columns_by_timeframe"],
-        "added_columns_by_timeframe": columns_added(row["columns_by_timeframe"], active),
-        "removed_columns_by_timeframe": columns_removed(row["columns_by_timeframe"], active),
+        "added_columns_by_timeframe": columns_added(row["columns_by_timeframe"], active, timeframes),
+        "removed_columns_by_timeframe": columns_removed(row["columns_by_timeframe"], active, timeframes),
         "mean_relative_logloss_skill": row["mean_relative_logloss_skill"],
         "validation": row["validation"],
         "entry_edge_threshold": row["entry_edge_threshold"],
@@ -117,22 +118,22 @@ def proposals_block(trials: list[dict], active: dict, champion_trial: int) -> li
     } for rank, (index, row) in enumerate(ranked[:config.FEATURE_SET_PROPOSAL_COUNT], start=1)]
 
 
-def write_state(ticker: str, state: dict) -> None:
+def write_state(ticker: str, state: dict, timeframes: tuple[str, ...]) -> None:
     state["proposals"] = proposals_block(state["trials"], state["inputs"]["active_columns_by_timeframe"],
-                                         state["champion_trial"] or 1)
+                                         state["champion_trial"] or 1, timeframes)
     dataset.write_json(config.feature_set_search_json(ticker), state)
 
 
-def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict) -> dict:
+def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, cat: dict) -> dict:
     """What a search is conditioned on: the frozen window with its warm-up, the parameters it holds fixed, the
     catalogue it draws from and the set it starts at — recorded in the ledger, compared by equality on a rerun,
     and compared again by status.py to say whether a recorded search still describes the asset."""
     return {
         "research_window": {"start_utc": config.RESEARCH_START_UTC, "end_utc": config.RESEARCH_END_UTC,
-                            "seed": config.SEED, "warmup_top_timeframe_bars": config.WARMUP_TOP_TIMEFRAME_BARS},
+                            "seed": config.SEED, "warmup_top_timeframe_bars": cat["warmup_top_timeframe_bars"]},
         "best_params": best_params,
-        "catalogue_columns_by_timeframe": {timeframe: config.catalogue_columns(timeframe)
-                                           for timeframe in config.HIERARCHY_TIMEFRAMES},
+        "catalogue_columns_by_timeframe": {timeframe: tuple(cat["columns_by_timeframe"][timeframe])
+                                           for timeframe in config.timeframes(cat)},
         "active_columns_by_timeframe": active_columns_by_timeframe,
     }
 
@@ -151,10 +152,11 @@ def main() -> int:
     for ticker in config.parse_tickers(args.tickers):
         best = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
         xy = dataset.load_xy(ticker)
+        cat, timeframes = xy["catalogue"], xy["timeframes"]
         y_cls = model.to_class(xy["y"])
         close_1m = strategy.load_close_1m(ticker)
-        active = dataset.load_feature_columns(ticker)
-        inputs = dataset.to_json_safe(build_search_inputs(best, active))
+        active = dataset.load_feature_columns(ticker, cat)
+        inputs = dataset.to_json_safe(build_search_inputs(best, active, cat))
 
         # the state: the recorded run when its inputs are the inputs of this one, else a fresh ledger
         path = config.feature_set_search_json(ticker)
@@ -164,8 +166,8 @@ def main() -> int:
         trials = state["trials"]
         ledger = {}
         for index, row in enumerate(trials, start=1):
-            row["columns_by_timeframe"] = to_tuples(row["columns_by_timeframe"])
-            ledger[ledger_key(row["columns_by_timeframe"])] = index
+            row["columns_by_timeframe"] = to_tuples(row["columns_by_timeframe"], timeframes)
+            ledger[ledger_key(row["columns_by_timeframe"], timeframes)] = index
         if state["search_converged"]:
             print(f"{ticker}: the search converged after {state['pass_count']} passes and {len(trials)} trials — "
                   f"{len(state['proposals'])} proposals in {path.name}", flush=True)
@@ -173,13 +175,13 @@ def main() -> int:
 
         def score(columns_by_timeframe: dict, move: str | None) -> int:
             """The trial index of a set: the ledger's when it was scored before, else a new trial scored now."""
-            key = ledger_key(columns_by_timeframe)
+            key = ledger_key(columns_by_timeframe, timeframes)
             if key in ledger:
                 return ledger[key]
             row = trial_result(xy, y_cls, best, close_1m, columns_by_timeframe)
             trials.append({**row, "pass": state["pass_count"] + 1 if move else 0, "move": move})
             ledger[key] = len(trials)
-            write_state(ticker, state)
+            write_state(ticker, state, timeframes)
             return len(trials)
 
         if not trials:
@@ -199,11 +201,12 @@ def main() -> int:
             # fold, and the highest mean skill among them is accepted, ties to the earlier candidate
             champion_row = trials[champion - 1]
             best_index = None
-            for timeframe in config.HIERARCHY_TIMEFRAMES:
-                for name in config.catalogue_columns(timeframe):
+            for timeframe in timeframes:
+                for name in cat["columns_by_timeframe"][timeframe]:
                     if name in champion_row["columns_by_timeframe"][timeframe]:
                         continue
-                    index = score(with_column(champion_row["columns_by_timeframe"], timeframe, name),
+                    index = score(with_column(champion_row["columns_by_timeframe"], timeframe, name,
+                                              cat["columns_by_timeframe"][timeframe]),
                                   config.FEATURE_SET_SEARCH_MOVE_FORWARD)
                     row = trials[index - 1]
                     print(progress_line(ticker, pass_number, config.FEATURE_SET_SEARCH_MOVE_FORWARD,
@@ -219,8 +222,8 @@ def main() -> int:
             # at no worse skill on every fold, and the highest mean skill among them is accepted
             champion_row = trials[champion - 1]
             best_index = None
-            if column_count(champion_row["columns_by_timeframe"]) > 1:
-                for timeframe in config.HIERARCHY_TIMEFRAMES:
+            if column_count(champion_row["columns_by_timeframe"], timeframes) > 1:
+                for timeframe in timeframes:
                     for name in champion_row["columns_by_timeframe"][timeframe]:
                         index = score(without_column(champion_row["columns_by_timeframe"], timeframe, name),
                                       config.FEATURE_SET_SEARCH_MOVE_BACKWARD)
@@ -237,12 +240,12 @@ def main() -> int:
             state["champion_trial"] = champion
             state["pass_count"] = pass_number
             state["search_converged"] = not accepted
-            write_state(ticker, state)
+            write_state(ticker, state, timeframes)
 
         champion_row = trials[champion - 1]
         print(f"{ticker} {path.name}: converged after {state['pass_count']} passes and {len(trials)} trials, "
               f"champion skill {champion_row['mean_relative_logloss_skill']:+.4f} "
-              f"({column_count(champion_row['columns_by_timeframe'])} columns), {len(state['proposals'])} proposals", flush=True)
+              f"({column_count(champion_row['columns_by_timeframe'], timeframes)} columns), {len(state['proposals'])} proposals", flush=True)
     return 0
 
 

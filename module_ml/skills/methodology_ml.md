@@ -411,8 +411,9 @@ raw 1m → one canonical DuckDB per asset) · `module_features` (the bars of the
 register and the feature catalogue — `module_features/skills/`) · `module_ml`
 (this document) · `module_monitoring` (presentation of what each module measured
 about itself, and the server). Inside `module_ml`: `module_ml/config` (frozen
-constants of the research layer, re-exporting the window, the register and the
-catalogue from `module_features/config`) · `module_ml/validation`,
+constants of the research layer — the window and the folds its own, the register
+and the grid read per asset from the feature layer's contract,
+`<TICKER>_catalogue.json`) · `module_ml/validation`,
 `module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
 IO: X/Y loading, canonical JSON, the re-exported parquet writer) ·
 `module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,

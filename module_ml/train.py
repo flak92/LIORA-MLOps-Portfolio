@@ -10,9 +10,9 @@ import numpy as np
 from . import config, dataset, model, validation
 
 
-def write_predictions(ticker: str, rows: list[tuple]) -> Path:
+def write_predictions(ticker: str, cat: dict, rows: list[tuple]) -> Path:
     return dataset.write_parquet(
-        config.oos_predictions_parquet(ticker),
+        config.oos_predictions_parquet(ticker, cat),
         {"decision_ts": "BIGINT", "oos_fold_id": "TINYINT",
          "p_short": "DOUBLE", "p_neutral": "DOUBLE", "p_long": "DOUBLE"},
         ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in rows),
@@ -92,7 +92,7 @@ def main() -> int:
         final_holdout, segments[f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"], rows, _ = fold_evaluation(
             xy, y_cls, best, config.FINAL_HOLDOUT_FOLD_ID)
         prediction_records.extend(rows)
-        write_predictions(ticker, prediction_records)
+        write_predictions(ticker, xy["catalogue"], prediction_records)
 
         trainable = xy["sample_valid"]
         payload = {
@@ -114,8 +114,8 @@ def main() -> int:
             },
             "segments": {
                 **segments,
-                "warmup_excluded_decision_count": (config.WARMUP_END_MS - config.RESEARCH_START_MS)
-                // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME],
+                "warmup_excluded_decision_count": (xy["catalogue"]["warmup_end_ms"] - config.RESEARCH_START_MS)
+                // config.timeframe_entry(xy["catalogue"], xy["catalogue"]["decision_timeframe"])["duration_ms"],
             },
         }
         dataset.write_json(config.model_evaluation_json(ticker), payload)

@@ -1,5 +1,5 @@
 """Frozen experiment configuration of the research layer — the label, fold, search and strategy constants,
-re-exporting the research window, the timeframe register and the feature catalogue from module_features/config.py.
+reading the feature layer's contract per asset from <TICKER>_catalogue.json — never that layer's configuration.
 
 Every parameter below is fixed a priori and never tuned; changing one defines a
 different experiment, and the git commit is the record of which one ran.
@@ -8,18 +8,18 @@ different experiment, and the git commit is the record of which one ran.
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, STORE_STATUS_DIR,
+    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, STORE_STATUS_DIR,
     artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded, to_utc_ms,
-)
-from module_features.config import (  # re-exported
-    CATALOGUE_COLUMNS, DECISION_TIMEFRAME, DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME, FEATURE_CATALOGUE, HIERARCHY_TIMEFRAMES,
-    INDICATORS, RESEARCH_END_MS, RESEARCH_END_UTC, RESEARCH_START_MS,
-    RESEARCH_START_UTC, TIMEFRAME_DURATION_MS, TIMEFRAME_SLOT, TREND_GATE_FEATURE_DEFINITION, TREND_GATE_TIMEFRAME,
-    WARMUP_END_MS, WARMUP_TOP_TIMEFRAME_BARS, catalogue_columns, definition_effective_history_hours,
-    definition_warmup_bars, feature_definition_name, feature_id, features_parquet,
 )
 
 SEED = 42
+
+# ---- the frozen research window — twice by extraction: identical in module_features/config.py, where it bounds the bars
+# and the catalogue, and here, where it bounds the labels and the folds; a later top-up of the data moves neither
+RESEARCH_START_UTC = "2021-01-01"   # inclusive
+RESEARCH_END_UTC = "2026-08-26"     # exclusive
+RESEARCH_START_MS = to_utc_ms(RESEARCH_START_UTC)
+RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 
 # ---- label contract: triple barrier resolved on the 1m path
 ATR_BARRIER_MULTIPLIER = 2.0     # barriers at entry_price +- this multiple of the ATR of the last closed barrier-timeframe bar
@@ -83,18 +83,62 @@ FEATURE_SET_PROPOSAL_COUNT = 3
 FEATURE_SET_SEARCH_MOVE_FORWARD = "forward"
 FEATURE_SET_SEARCH_MOVE_BACKWARD = "backward"
 
+# ---- the feature layer's contract, per asset: <TICKER>_catalogue.json, written by module_features.catalogue and read once
+# per stage by dataset.load_catalogue — carried as `cat` (xy["catalogue"]) into every helper below; a helper reads the
+# dict and builds a path, and never reads a file
+TREND_GATE_FEATURE_DEFINITION = "ema20_minus_ema50_over_atr14"   # the definition the strategy reads on every timeframe, by name, set or no set
+
+
+def catalogue_json(ticker):
+    return artifact_dir(ticker) / f"{ticker}_catalogue.json"
+
+
+def timeframes(cat: dict) -> tuple[str, ...]:
+    """The hierarchy as the contract lists it, finest first."""
+    return tuple(entry["timeframe"] for entry in cat["timeframes"])
+
+
+def timeframe_entry(cat: dict, timeframe: str) -> dict:
+    """One timeframe of the contract: its token, its file-name slot and its duration."""
+    return next(entry for entry in cat["timeframes"] if entry["timeframe"] == timeframe)
+
+
+def decision_slot(cat: dict) -> str:
+    return timeframe_entry(cat, cat["decision_timeframe"])["slot"]
+
+
+def trend_gate_timeframe(cat: dict) -> str:
+    """The top timeframe of the hierarchy — the one that vetoes a side."""
+    return timeframes(cat)[-1]
+
+
+# twice by extraction — identical in module_features/config.py: the grammar of module_features/skills/skill_feature_taxonomy.md
+def feature_id(definition_name: str, timeframe: str) -> str:
+    """The column of X and the key of an importance: the definition aligned to the decision grid on one timeframe."""
+    return f"{definition_name}_{timeframe}"
+
+
+def catalogue_feature_ids(cat: dict) -> tuple[str, ...]:
+    """Every feature id the catalogue offers, timeframe-major and catalogue-order within."""
+    return tuple(feature_id(name, timeframe) for timeframe in timeframes(cat) for name in cat["columns_by_timeframe"][timeframe])
+
+
 # ---- the asset folder paths: every per-asset file carries the <TICKER>_ prefix, a time series its grid in
-# timeframe slots (module_skills/skill_sorting_files_naming_standard.md); built here and nowhere else — the
-# feature parquets by module_features/config.py
+# timeframe slots (module_skills/skill_sorting_files_naming_standard.md), the decision slot read off the contract;
+# built here and nowhere else — the feature parquets named by the contract itself
 ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"
 
 
-def label_events_parquet(ticker):
-    return artifact_dir(ticker) / f"{ticker}_label_events_{TIMEFRAME_SLOT[DECISION_TIMEFRAME]}.parquet"
+def features_parquet(ticker, cat, timeframe):
+    return artifact_dir(ticker) / cat["parquet_by_timeframe"][timeframe]
 
 
-def oos_predictions_parquet(ticker):
-    return artifact_dir(ticker) / f"{ticker}_oos_predictions_{TIMEFRAME_SLOT[DECISION_TIMEFRAME]}.parquet"
+def label_events_parquet(ticker, cat):
+    return artifact_dir(ticker) / f"{ticker}_label_events_{decision_slot(cat)}.parquet"
+
+
+def oos_predictions_parquet(ticker, cat):
+    return artifact_dir(ticker) / f"{ticker}_oos_predictions_{decision_slot(cat)}.parquet"
 
 
 def parameters_json(ticker):

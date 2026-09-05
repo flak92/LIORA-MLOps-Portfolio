@@ -34,6 +34,7 @@ from pathlib import Path
 from module_data import config as data_config
 from module_features import config as features_config
 from module_ml import config as ml_config
+from module_ml import dataset as ml_dataset
 
 from . import config
 from .serve import load_cgroup_dir, load_host_memory_bytes, load_jsonl, load_text
@@ -44,16 +45,24 @@ LOOPBACK_INTERFACE_NAME = "lo"
 
 # what each stage leaves behind, by the module that runs it; the paths are the descriptors the
 # owning config already publishes, never assembled here
+def contract_outputs(ticker: str, build) -> list:
+    """The paths the feature layer's contract names — none before that layer wrote it, so a failed stage still records."""
+    return build(ml_dataset.load_catalogue(ticker)) if features_config.catalogue_json(ticker).exists() else []
+
+
 STAGE_OUTPUT_DESCRIPTORS = {
     "module_data.download_binance": lambda ticker: [data_config.raw_symbol_dir(ticker, "binance")],
     "module_data.download_bybit": lambda ticker: [data_config.raw_symbol_dir(ticker, "bybit")],
     "module_data.ingest": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
     "module_data.status": lambda ticker: [data_config.DATA_STATUS_JSON_PATH],
     "module_features.bars": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
-    "module_features.catalogue": lambda ticker: [features_config.features_parquet(ticker, tf) for tf in features_config.HIERARCHY_TIMEFRAMES],
-    "module_ml.labels": lambda ticker: [ml_config.label_events_parquet(ticker)],
+    "module_features.catalogue": lambda ticker: [features_config.features_parquet(ticker, tf) for tf in features_config.HIERARCHY_TIMEFRAMES]
+                                                + [features_config.catalogue_json(ticker)],
+    "module_features.status": lambda ticker: [features_config.FEATURES_STATUS_JSON_PATH],
+    "module_ml.labels": lambda ticker: contract_outputs(ticker, lambda cat: [ml_config.label_events_parquet(ticker, cat)]),
     "module_ml.hpo": lambda ticker: [ml_config.parameters_json(ticker)],
-    "module_ml.train": lambda ticker: [ml_config.oos_predictions_parquet(ticker), ml_config.model_evaluation_json(ticker)],
+    "module_ml.train": lambda ticker: contract_outputs(ticker, lambda cat: [ml_config.oos_predictions_parquet(ticker, cat)])
+                                      + [ml_config.model_evaluation_json(ticker)],
     "module_ml.strategy": lambda ticker: [ml_config.strategy_evaluation_json(ticker)],
     "module_ml.status": lambda ticker: [ml_config.ML_STATUS_JSON_PATH, ml_config.asset_readme_md(ticker)],
     "module_ml.feature_set_search": lambda ticker: [ml_config.feature_set_search_json(ticker)],
@@ -67,6 +76,7 @@ STAGE_INPUT_NOTES = {
     "module_data.status": "the asset databases",
     "module_features.bars": "ohlcv_1m_canonical",
     "module_features.catalogue": "every ohlcv_<timeframe>_canonical of the register",
+    "module_features.status": "the catalogue parquets",
     "module_ml.labels": f"canonical 1m path + ohlcv_{ml_config.LABEL_BARRIER_ATR_TIMEFRAME}_canonical",
     "module_ml.hpo": "X + Y",
     "module_ml.train": "X + Y + the search result",

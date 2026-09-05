@@ -108,7 +108,7 @@ proxy: the compose block is what makes a listed asset reachable.
 
 The asset role never opens DuckDB: the database takes one whole-file lock per
 process, so a second opener fails at once. The endpoint reads what is already
-measured — the two snapshots' rows and blocks for its symbol, and `stat` of
+measured — the data and ML snapshots' rows and blocks for its symbol, and `stat` of
 the database — and what only the container can see:
 its own cgroup (`memory.current`, `memory.peak`, `memory.max` or `MemTotal`
 when unlimited, `cpu.stat usage_usec`).

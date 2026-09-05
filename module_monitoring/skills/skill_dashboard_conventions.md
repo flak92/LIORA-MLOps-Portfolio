@@ -30,8 +30,9 @@ linter, no build step, no framework.
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold
   marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
-- The page reads two committed snapshots (`data_status.json`, `ml_status.json`)
-  into `DATA_STATUS` and `ML_STATUS` and renders everything client-side; the
+- The page reads three committed snapshots (`data_status.json`, `features_status.json`,
+  `ml_status.json`) into `DATA_STATUS`, `FEATURES_STATUS` and `ML_STATUS` and renders
+  everything client-side; the
   payload carries only fields the page reads. The DevOps panel reads the live
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through

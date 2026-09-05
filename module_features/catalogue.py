@@ -100,8 +100,8 @@ def build_catalogue(con: duckdb.DuckDBPyConnection) -> tuple[np.ndarray, dict[st
 
 
 def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.ndarray]) -> list[Path]:
-    """One parquet per timeframe: the columns the catalogue offers on it, on the decision grid. The filename carries
-    the timeframe, so the columns do not."""
+    """One parquet per timeframe — the columns the catalogue offers on it, on the decision grid; the filename carries
+    the timeframe, so the columns do not — and the asset's copy of the contract the ML layer reads."""
     written = []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         names = config.catalogue_columns(timeframe)
@@ -112,6 +112,9 @@ def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.nda
              for i in range(decision_ts.size)),
             order_by="decision_ts",
         ))
+    contract = config.catalogue_json(ticker)
+    dataset.write_json(contract, config.catalogue_contract(ticker))
+    written.append(contract)
     return written
 
 
@@ -123,9 +126,9 @@ def main() -> int:
         con.execute("SET threads=1")   # float summation must not be reordered
         decision_ts, cols = build_catalogue(con)
         con.close()
-        written = write_catalogue(ticker, decision_ts, cols)
-        print(f"{ticker} {', '.join(w.name for w in written)}: {decision_ts.size} rows x "
-              f"{'/'.join(str(len(config.catalogue_columns(t))) for t in config.HIERARCHY_TIMEFRAMES)} columns",
+        *parquets, contract = write_catalogue(ticker, decision_ts, cols)
+        print(f"{ticker} {', '.join(w.name for w in parquets)}: {decision_ts.size} rows x "
+              f"{'/'.join(str(len(config.catalogue_columns(t))) for t in config.HIERARCHY_TIMEFRAMES)} columns, + {contract.name}",
               flush=True)
     return 0
 

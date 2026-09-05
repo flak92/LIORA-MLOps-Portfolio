@@ -87,9 +87,9 @@ def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, sigma: 
     return y, t_res, event_resolution, entry_price, upper_barrier, lower_barrier, exit_reference_price
 
 
-def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
+def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
     return dataset.write_parquet(
-        config.label_events_parquet(ticker),
+        config.label_events_parquet(ticker, cat),
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
@@ -106,6 +106,7 @@ def write_y(ticker: str, cols: dict[str, np.ndarray]) -> Path:
 def main() -> int:
     args = config.build_ticker_parser("triple-barrier labels on the canonical 1m path").parse_args()
     for ticker in config.parse_tickers(args.tickers):
+        cat = dataset.load_catalogue(ticker)
         con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
@@ -114,11 +115,11 @@ def main() -> int:
                 ORDER BY timestamp_ms"""
         ).fetchnumpy()
         ts_15m = con.execute(
-            f"""SELECT timestamp_ms FROM ohlcv_{config.DECISION_TIMEFRAME}_canonical
+            f"""SELECT timestamp_ms FROM ohlcv_{cat['decision_timeframe']}_canonical
                 ORDER BY timestamp_ms"""
         ).fetchnumpy()["timestamp_ms"].astype(np.int64)
 
-        decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
+        decision_ts = ts_15m[ts_15m >= cat["warmup_end_ms"]]
         entry_ts = decision_ts + config.MILLISECONDS_PER_MINUTE
         keep = entry_ts + config.LABEL_HORIZON_MS <= config.RESEARCH_END_MS
         decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
@@ -127,7 +128,7 @@ def main() -> int:
                                      config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
         sigma = barrier_atr[indicators.asof_index(decision_ts,
                                                   barrier_bars["timestamp_ms"].astype(np.int64),
-                                                  config.TIMEFRAME_DURATION_MS[config.LABEL_BARRIER_ATR_TIMEFRAME])]
+                                                  config.timeframe_entry(cat, config.LABEL_BARRIER_ATR_TIMEFRAME)["duration_ms"])]
         assert np.isfinite(sigma).all() and (sigma > 0).all(), \
             f"ATR{config.ATR_WILDER_SMOOTHING_PERIOD_BARS} of the last closed {config.LABEL_BARRIER_ATR_TIMEFRAME} bar is not finite and positive at every decision"
 
@@ -143,7 +144,7 @@ def main() -> int:
         label_valid = event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS
         sample_valid = entry_observable & label_valid
 
-        out = write_y(ticker, {
+        out = write_y(ticker, cat, {
             "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
             "event_end_ts": event_end_ts, "entry_observable": entry_observable,
             "label_valid": label_valid,

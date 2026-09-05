@@ -1,5 +1,6 @@
-/* ML Research and ML Assets tabs: one fetch of store_status/ml_status.json feeds the
-   cross-section table, the catalogue frame, the five summary views and — through
+/* ML Research and ML Assets tabs: two fetches — store_status/ml_status.json and
+   store_status/features_status.json (the catalogue frame) — feed the cross-section
+   table, the catalogue frame, the five summary views and — through
    asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
    formatNumber and formatPercent from page.js. */
@@ -7,6 +8,7 @@
 
 const CLASS_NAMES = ["short", "neutral", "long"];
 let ML_STATUS = null;
+let FEATURES_STATUS = null;
 
 function buildTable(headers, rows) {
   const table = document.createElement("table");
@@ -75,8 +77,8 @@ function buildHistoryCell(hours, longestHours) {
   return wrap;
 }
 
-function renderCatalogue(mlStatus) {
-  const catalogue = mlStatus.catalogue;
+function renderCatalogue(featuresStatus) {
+  const catalogue = featuresStatus.catalogue;
   const timeframes = catalogue.timeframes.map((entry) => entry.timeframe);
   document.getElementById("catalogue-register").textContent =
     catalogue.timeframes.map((entry) =>
@@ -85,7 +87,10 @@ function renderCatalogue(mlStatus) {
       + (entry.timeframe === catalogue.decision_timeframe ? "the decision timeframe" : entry.ratio_to_lower + "× the level below")
       + " · " + entry.slot).join("\n")
     + "\nwarm-up: " + catalogue.warmup.top_timeframe_bars + " bars of " + timeframes[timeframes.length - 1]
-    + " · first decision " + catalogue.warmup.end_utc + " UTC";
+    + " · first decision " + catalogue.warmup.end_utc + " UTC"
+    + "\nrows on the decision grid: " + featuresStatus.assets.map((asset) =>
+      asset.ticker + " " + timeframes.map((timeframe) => asset.row_count_by_timeframe[timeframe].toLocaleString("en-US")).join(" / ")).join(", ")
+    + (featuresStatus.assets.length ? "" : "no asset catalogued yet");
   const longestHours = Math.max(...catalogue.definitions.flatMap((definition) =>
     Object.values(definition.effective_history_hours_by_timeframe)));
   renderTable("catalogue",
@@ -201,7 +206,7 @@ function renderSearch(mlStatus) {
    beside it; the delta of the best proposal's mean validation skill against the asset's is page arithmetic, like
    the mean validation skill */
 function renderFeatureSet(mlStatus) {
-  const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
+  const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
   const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
   const deltas = mlStatus.assets.map((asset) => {
     const search = asset.feature_set_search;
@@ -241,9 +246,11 @@ function selectAsset(ticker) {
 
 /* ---- load ---- */
 
-fetch("/store_status/ml_status.json", { cache: "no-store" })
-  .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
-  .then((mlStatus) => {
+const loadSnapshot = (name) => fetch("/store_status/" + name, { cache: "no-store" })
+  .then((response) => { if (!response.ok) throw new Error(name + " HTTP " + response.status); return response.json(); });
+
+Promise.all([loadSnapshot("ml_status.json"), loadSnapshot("features_status.json")])
+  .then(([mlStatus, featuresStatus]) => {
     const envelope =
       "research window: [" + mlStatus.research_window.start_utc + " .. " + mlStatus.research_window.end_utc + ") UTC\n" +
       "seed:            " + mlStatus.research_window.seed + "\n" +
@@ -252,8 +259,9 @@ fetch("/store_status/ml_status.json", { cache: "no-store" })
     document.getElementById("asset-meta").textContent = envelope;
 
     ML_STATUS = mlStatus;
+    FEATURES_STATUS = featuresStatus;
     renderResearch(mlStatus);
-    renderCatalogue(mlStatus);
+    renderCatalogue(featuresStatus);
     renderLabels(mlStatus);
     renderClassification(mlStatus);
     renderStrategy(mlStatus);
@@ -264,7 +272,7 @@ fetch("/store_status/ml_status.json", { cache: "no-store" })
   .catch((error) => {
     ["ml-meta", "asset-meta"].forEach((id) => {
       const box = document.getElementById(id);
-      box.textContent = "could not load store_status/ml_status.json (" + error.message + ") — run `make ml-status`";
+      box.textContent = "could not load the ML snapshots (" + error.message + ") — run `make features-status` and `make ml-status`";
       box.className = "box err";
     });
   });

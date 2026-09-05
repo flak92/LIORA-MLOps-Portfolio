@@ -13,16 +13,18 @@ def main() -> int:
     parser.add_argument("--proposal", type=int, default=1, help="the proposal's rank in the feature-set search result")
     args = parser.parse_args()
     for ticker in config.parse_tickers(args.tickers):
+        cat = dataset.load_catalogue(ticker)
+        timeframes = config.timeframes(cat)
         # the proposals by their rank, so a rank the search result does not hold fails on the lookup itself
         proposals = {row["proposal"]: row for row in dataset.load_json(config.feature_set_search_json(ticker))["proposals"]}
-        columns_by_timeframe = feature_set_search.to_tuples(proposals[args.proposal]["columns_by_timeframe"])
-        active = dataset.load_feature_columns(ticker)
+        columns_by_timeframe = feature_set_search.to_tuples(proposals[args.proposal]["columns_by_timeframe"], timeframes)
+        active = dataset.load_feature_columns(ticker, cat)
         if columns_by_timeframe == active:
             print(f"{ticker} feature set unchanged — proposal {args.proposal} is the active set", flush=True)
             continue
         path = config.feature_set_json(ticker)
-        added = feature_set_search.column_count(feature_set_search.columns_added(columns_by_timeframe, active))
-        removed = feature_set_search.column_count(feature_set_search.columns_removed(columns_by_timeframe, active))
+        added = feature_set_search.column_count(feature_set_search.columns_added(columns_by_timeframe, active, timeframes), timeframes)
+        removed = feature_set_search.column_count(feature_set_search.columns_removed(columns_by_timeframe, active, timeframes), timeframes)
         dataset.write_json(path, {"columns_by_timeframe": columns_by_timeframe})
         print(f"{ticker} {path.name} <- proposal {args.proposal} (+{added} -{removed} columns); ml-all follows", flush=True)
     return 0

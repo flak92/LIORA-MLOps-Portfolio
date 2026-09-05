@@ -67,10 +67,12 @@ data-status:     ## data & database monitoring -> stdout + store_status/data_sta
 
 features-bars:   ## canonical 1m -> every timeframe of the register, in each asset's own database
 	$(call fanout,$(PY),module_features.bars)
-features-catalogue: ## every catalogued column on the decision grid, one parquet per timeframe per asset
+features-catalogue: ## every catalogued column on the decision grid, one parquet per timeframe per asset, and <TICKER>_catalogue.json — the contract the ML layer reads
 	$(call fanout,$(PY),module_features.catalogue)
+features-status: ## features_status.json -> store_status: the catalogue's facts and each asset's row counts
+	$(PY) -m module_features.status --tickers $(TICKER_CSV)
 features-all:    ## the feature chain in order
-	$(MAKE) features-bars features-catalogue
+	$(MAKE) features-bars features-catalogue features-status
 
 ml-labels:       ## triple-barrier labels on the canonical 1m path
 	$(call fanout,$(PY),module_ml.labels)
@@ -101,7 +103,7 @@ monitoring-dx-update: ## redraw the developer-experience drawing of the tracked 
 # compose target joins the line below
 $(STORES):
 	@mkdir -p $@
-docker-build docker-up docker-data-download docker-data-ingest docker-data-status docker-features-bars docker-features-catalogue docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status docker-ml-feature-set-search docker-ml-feature-set-promote docker-all-record: | $(STORES)
+docker-build docker-up docker-data-download docker-data-ingest docker-data-status docker-features-bars docker-features-catalogue docker-features-status docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status docker-ml-feature-set-search docker-ml-feature-set-promote docker-all-record: | $(STORES)
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
 docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
@@ -125,8 +127,10 @@ docker-features-bars: ## module_features.bars, inside each asset's container
 	$(call dockerfanout,module_features.bars,$(JOBS))
 docker-features-catalogue: ## module_features.catalogue, inside each asset's container
 	$(call dockerfanout,module_features.catalogue,$(JOBS))
+docker-features-status: ## the features status stage inside the container -> store_status/features_status.json
+	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_features.status --tickers $(TICKER_CSV)
 docker-features-all: ## the feature chain inside the containers
-	$(MAKE) docker-features-bars docker-features-catalogue
+	$(MAKE) docker-features-bars docker-features-catalogue docker-features-status
 
 docker-ml-labels:    ## module_ml.labels, inside each asset's container
 	$(call dockerfanout,module_ml.labels,$(JOBS))

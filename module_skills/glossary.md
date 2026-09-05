@@ -145,7 +145,7 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 
 ## Payload structure
 
-The container and envelope keys of the two snapshots, so that every published
+The container and envelope keys of the three snapshots, so that every published
 key is in this register.
 
 | concept | artifact key | holds |
@@ -154,12 +154,13 @@ key is in this register.
 | the frozen experiment, once, globally | `research_window` with `start_utc`, `end_utc`, `seed` | the window and the seed, published once — no per-asset copy |
 | the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `feature_columns`, `feature_set` (`source`, `columns_by_timeframe`), `validation_importance`, `feature_set_search` (`null` while no search has run; else `trial_count`, `pass_count`, `search_converged`, `inputs_current`, `proposals`), `strategy`, `artifacts` | the experiment flow, sample → search → validation → holdout → attribution → the feature-set search → strategy, then the folder |
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
-| the structural facts the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`, `catalogue` | which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads; the register, the warm-up, every catalogued definition with its terms, histories and warm-up, and the nesting of the levels — the facts of `module_features/config.py`, published here because that module measures no run state |
-| the catalogue block | `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range` —, `operators`, `normaliser`, `range`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`) | the catalogue as the register presents it — the catalogue frame of the ML Research tab reads nothing else |
+| the structural facts the page needs beside the assets | `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature` | which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads |
+| the feature layer's snapshot | `features_status.json`: `generated_at_utc`, `catalogue`, `assets` (per asset `ticker`, `row_count_by_timeframe`) | the catalogue as the register presents it, and the one run-state fact the feature layer has per asset — the rows of its three parquets, the last line of the register box; written by `module_features/status.py` |
+| the catalogue block — of `features_status.json` | `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range` —, `operators`, `normaliser`, `range`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`) | the catalogue as the register presents it — the catalogue frame of the ML Research tab reads nothing else |
 | how the trades of a fold ended | `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous` | counts, named by `event_resolution` |
 | the final-holdout equity path | `equity_curve` with `equity` | weekly-sampled values only; the last value is `final_equity` |
 | the three tables of data_status.json | `symbols`, `venues` (one list per venue), `canonical_source` — lists whose rows carry `ticker`, the asset the row measures, beside `symbol`, derived at the report boundary from `config.symbol(ticker)`; no database column carries either | the pipeline, raw-source and canonical-construction tables |
-| which asset a snapshot row is about | `ticker` — every row of the three tables | Data names the asset it measured; a reader never derives it from `symbol` |
+| which asset a snapshot row is about | `ticker` — every row of the three tables, and of the feature snapshot's `assets` | the module names the asset it measured; a reader never derives it from `symbol` |
 | the flow totals | `flow` | one `<venue>_zip_count` and `<venue>_row_count` per venue, plus `canonical_row_count`; not the drawing's `flow`, an edge (§ Developer experience) |
 | the engine of the databases | `duckdb_version` | the engine that wrote every asset's database |
 | an asset's database on disk | `db_bytes` (a `symbols` row) | the size of `<TICKER>_research_ohlcv.duckdb` |
@@ -184,7 +185,7 @@ the env-named path, and the second path is a local accident, not an address.
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the store contract: one environment variable per store, naming the directory that store is | `STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`; on the host `$(CURDIR)/store_<content>`, in a container `/store/<content>` | — | — | a path derived from `__file__` two levels up (`REPO_ROOT`), a store named by a literal at the point of use, a second name for the same directory |
-| the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store_status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `ml_status.json` | the page's footer names both files | a snapshot written into `module_monitoring/` or any other module's directory |
+| the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store_status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `features_status.json`, `ml_status.json` | the page's footer names all three files | a snapshot written into `module_monitoring/` or any other module's directory |
 | the snapshot route: the dashboard serving a status object by its file name | `STORE_STATUS_ROUTE_SEGMENT`, `GET /store_status/<name>` in `serve.py`, mapped onto `store_status_file(name)` under `STORE_STATUS_DIR` | — | — | a snapshot fetched from the page's own directory, a route per snapshot |
 
 ## Artifacts
@@ -193,7 +194,7 @@ the env-named path, and the second path is a local accident, not an address.
 of the same result.** One directory per ticker under `store_assets_artifacts/`;
 every file carries the `<TICKER>_` prefix, a time series carries its grid in
 timeframe slots, and paths are built only by the descriptors of
-`module_features/config.py` (the feature parquets) and `module_ml/config.py`
+`module_features/config.py` (the feature parquets and the contract beside them) and `module_ml/config.py`
 (the rest); whether an asset holds its three result files is asked
 once, by `is_artifact_set_complete()` beside them.
 
@@ -221,8 +222,10 @@ folder readable, and reproducible, without a run, because the parameters are
 tuned for the set they were searched under. The eight others are regenerable —
 the seven the chain rebuilds from the database, and the search result a hand
 reruns. Beside the manifest, outside it, `<TICKER>_research_ohlcv.duckdb`
-holds the canonical series and its aggregations: its size moves with every
-top-up, and the README is byte-reproducible for an unchanged experiment.
+holds the canonical series and its aggregations — its size moves with every
+top-up, and the README is byte-reproducible for an unchanged experiment — and
+`<TICKER>_catalogue.json`, the feature layer's contract (§ Features), which
+joins the manifest when the experiment is next re-baselined.
 
 ## Features
 
@@ -236,11 +239,12 @@ The grammar is `../module_features/skills/skill_feature_taxonomy.md`, the defini
 | a term — a series or an indicator inside a feature definition | `("ema", 20)`, `("log_volume", "zscore", 50)`, `("close",)`; `term_name()` | `terms` | terms | atom (the prose word of the skill, never an identifier) |
 | a feature definition — terms of one timeframe composed by the operators, with an optional normaliser; the timeframe-less half of a feature | one record of `FEATURE_CATALOGUE`; `feature_definition_name()`; `OPERATORS` = {`minus`, `over`} and `NORMALISERS` = {`centered`}, one record per token beside its kernel in `module_features/catalogue.py` | `feature_definition` | definition | molecule, family, feature family, indicator (for a composite); `trend`, `momentum`, `volatility`, `structure`, `activity` — a category, not a computation |
 | a feature — a definition aligned to the decision grid on one timeframe; the column of X and the key of an importance | `feature_id()` = `<definition>_<timeframe>` | `feature_columns`, the keys of an importance | the feature id | a column literal in a page script; a parquet column with a timeframe (the file name carries it) |
-| the feature catalogue — every definition the repository can compute, with the timeframes it is offered on; drafted, like the rest of `config.py` | `FEATURE_CATALOGUE`, `catalogue_columns()`, `CATALOGUE_COLUMNS`; the stage `features-catalogue`, `module_features/catalogue.py` | `catalogue` | CATALOGUE | palette (the drawing's word for a colour set — `paletteOf` of the template), feature list, feature store |
+| the feature catalogue — every definition the repository can compute, with the timeframes it is offered on; drafted, like the rest of `config.py` | `FEATURE_CATALOGUE`, `catalogue_columns()`, `CATALOGUE_COLUMNS`; the stage `features-catalogue`, `module_features/catalogue.py` | `catalogue` (of `features_status.json`); `<TICKER>_catalogue.json` | CATALOGUE | palette (the drawing's word for a colour set — `paletteOf` of the template), feature list, feature store |
+| the feature layer's contract, per asset — what the ML layer reads instead of this module's configuration | `catalogue_contract()`, `catalogue_json()` in `module_features/config.py`; read once per stage by `load_catalogue()` of `module_ml/dataset.py` and carried as `cat`, the helpers of `module_ml/config.py` reading the dict and building paths from it | `<TICKER>_catalogue.json`: `decision_timeframe`, `timeframes` (`timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` | — | an import of `module_features` from `module_ml`; a token or a slot parsed in the ML layer; a second read of the file inside one stage; a path built from the slot grammar outside `module_features` |
 | the effective history a parameter covers on a timeframe, `bars × timeframe` — a window's window, a recursion's span or period, the bars carrying most of its weight — the number the nesting rule compares | `definition_effective_history_hours()` | `effective_history_hours_by_timeframe`; `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours` of `nesting` | effective history | history (bare — a recursion has no window), span (the EMA parameter word), lookback hours |
 | the trade's Bollinger reading of `zscore20` — %b(20, 2σ) = zscore20 / 4 + 0.5, an affine map a tree model is invariant to; no %b column exists | — | — | Bollinger %b, in the definitions table | `bb20`, `%b` as a column, `z / 2 + 0.5` |
 | the definitions an asset's model sees until a promotion — the frozen experiment's fifteen columns, in the order it stacks them | `DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`; `definition_in_default_set` of a record | `definition_in_default_set` | default set | the frozen fifteen (as a name) |
-| the definition the strategy hierarchy reads on every timeframe, set or no set | `TREND_GATE_FEATURE_DEFINITION` = the first of the catalogue, `TREND_GATE_TIMEFRAME` | `trend_gate_feature` | the gate | `TREND_FAMILY`; a column literal in `asset.js` |
+| the definition the strategy hierarchy reads on every timeframe, set or no set | `TREND_GATE_FEATURE_DEFINITION` = the first of the catalogue in `module_features/config.py`, and the same name as a literal in `module_ml/config.py` (twice by extraction); the gate's timeframe is the top of the contract's hierarchy, `trend_gate_timeframe(cat)` (`TREND_GATE_TIMEFRAME` in the feature layer) | `trend_gate_feature` | the gate | `TREND_FAMILY`; a column literal in `asset.js` |
 
 The strategy hierarchy reads the trend definition through `TREND_GATE_FEATURE_DEFINITION`, so
 the name appears once in the code rather than in three string literals; `centered_rsi14` keeps

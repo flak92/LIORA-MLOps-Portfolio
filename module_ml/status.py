@@ -84,62 +84,6 @@ def strategy_block(strategy: dict) -> dict:
     }
 
 
-def term_block(term: tuple) -> dict:
-    """One term of a catalogue definition: the bars its kernel reads, the indicator with its parameter, and the range
-    it outputs when that range is bounded — the range a normaliser on this term reads."""
-    if len(term) == 1:
-        return {"inputs": [term[0]], "indicator": None, "parameter_word": None, "parameter_bars": None,
-                "output_range": None}
-    series, indicator, parameter_bars = ("close",) + term if len(term) == 2 else term
-    record = config.INDICATORS[indicator]
-    return {"inputs": list(record.get("inputs", (series,))), "indicator": indicator,
-            "parameter_word": record["parameter_word"], "parameter_bars": parameter_bars,
-            "output_range": list(record["output_range"]) if "output_range" in record else None}
-
-
-def catalogue_block() -> dict:
-    """The catalogue as the register presents it — the facts of module_features/config.py, published here
-    because that module measures no run state."""
-    timeframes = []
-    for lower, timeframe in zip((None,) + config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES):
-        duration_ms = config.TIMEFRAME_DURATION_MS[timeframe]
-        timeframes.append({
-            "timeframe": timeframe, "duration_ms": duration_ms,
-            "bars_per_day": config.MILLISECONDS_PER_DAY // duration_ms,
-            "ratio_to_lower": None if lower is None else duration_ms // config.TIMEFRAME_DURATION_MS[lower],
-            "slot": config.TIMEFRAME_SLOT[timeframe],
-        })
-    definitions = [{
-        "feature_definition": config.feature_definition_name(definition),
-        "terms": [term_block(term) for term in definition["terms"]],
-        "operators": list(definition.get("operators", ())),
-        "normaliser": definition.get("normaliser"),
-        "range": definition["range"],
-        "timeframes": list(definition["timeframes"]),
-        "effective_history_hours_by_timeframe": {timeframe: config.definition_effective_history_hours(definition, timeframe)
-                                                 for timeframe in definition["timeframes"]},
-        "warmup_bars": config.definition_warmup_bars(definition),
-        "definition_in_default_set": definition["definition_in_default_set"],
-    } for definition in config.FEATURE_CATALOGUE]
-    nesting = [{
-        "lower": lower, "upper": upper,
-        "lower_longest_effective_history_hours": max(
-            config.definition_effective_history_hours(definition, lower)
-            for definition in config.FEATURE_CATALOGUE if lower in definition["timeframes"]),
-        "upper_shortest_effective_history_hours": min(
-            config.definition_effective_history_hours(definition, upper)
-            for definition in config.FEATURE_CATALOGUE if upper in definition["timeframes"]),
-    } for lower, upper in zip(config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES[1:])]
-    warmup_end = datetime.fromtimestamp(config.WARMUP_END_MS / config.MILLISECONDS_PER_SECOND, tz=UTC)
-    return {
-        "decision_timeframe": config.DECISION_TIMEFRAME,
-        "timeframes": timeframes,
-        "warmup": {"top_timeframe_bars": config.WARMUP_TOP_TIMEFRAME_BARS, "end_utc": warmup_end.strftime("%Y-%m-%d %H:%M")},
-        "definitions": definitions,
-        "nesting": nesting,
-    }
-
-
 def proposal_block(proposal: dict) -> dict:
     """One proposal as the page reads it: the model's skill it was chosen on, then what the strategy would do."""
     return {
@@ -157,14 +101,14 @@ def proposal_block(proposal: dict) -> dict:
     }
 
 
-def feature_set_block(ticker: str) -> dict:
+def feature_set_block(ticker: str, cat: dict) -> dict:
     """Where the asset's feature set came from — the promoted file when it exists, else the default set of the
     catalogue — and the columns it holds by timeframe."""
     return {"source": "promoted" if config.feature_set_json(ticker).exists() else "default",
-            "columns_by_timeframe": dataset.load_feature_columns(ticker)}
+            "columns_by_timeframe": dataset.load_feature_columns(ticker, cat)}
 
 
-def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_timeframe: dict) -> dict | None:
+def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_timeframe: dict, cat: dict) -> dict | None:
     """The feature-set search as it last wrote itself, and whether its inputs are still the asset's — a promotion,
     a retuning or a catalogue change makes a recorded search describe a state that has gone; None while the asset
     has no search file."""
@@ -177,7 +121,7 @@ def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_t
         "pass_count": search["pass_count"],
         "search_converged": search["search_converged"],
         "inputs_current": search["inputs"] == dataset.to_json_safe(
-            feature_set_search.build_search_inputs(best_params, active_columns_by_timeframe)),
+            feature_set_search.build_search_inputs(best_params, active_columns_by_timeframe, cat)),
         "proposals": [proposal_block(proposal) for proposal in search["proposals"]],
     }
 
@@ -200,9 +144,9 @@ def validation_importance_block(validation_importance: dict) -> dict:
             for fold, block in sorted(validation_importance.items())}
 
 
-def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> dict:
+def asset_report(ticker: str, cat: dict, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> dict:
     validation, final_holdout = classification_block(metrics)
-    feature_set = feature_set_block(ticker)
+    feature_set = feature_set_block(ticker, cat)
     return {
         "ticker": ticker,
         "sample": sample_block(metrics),
@@ -213,27 +157,27 @@ def asset_report(ticker: str, hyperparameter_search_result: dict, metrics: dict,
         "feature_set": feature_set,
         "validation_importance": validation_importance_block(metrics["validation_importance"]),
         "feature_set_search": feature_set_search_block(ticker, hyperparameter_search_result["best_params"],
-                                                       feature_set["columns_by_timeframe"]),
+                                                       feature_set["columns_by_timeframe"], cat),
         "strategy": strategy_block(strategy),
         "artifacts": artifacts_block(ticker),
     }
 
 
-# the asset folder manifest in LC_COLLATE=C listing order: (path descriptor, what it holds)
-FILE_MANIFEST = (
-    (config.asset_readme_md, "this file"),
-    (config.feature_set_json, "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
-    (config.feature_set_search_json, "the feature-set search: every trial, the champion, the proposals"),
-    # one row per timeframe of the hierarchy: the slot standard sorts them finest first, as LC_COLLATE=C does
-    *((lambda ticker, timeframe=timeframe: config.features_parquet(ticker, timeframe),
-       f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
-      for timeframe in config.HIERARCHY_TIMEFRAMES),
-    (config.label_events_parquet, "Y — triple-barrier outcome and the event prices"),
-    (config.model_evaluation_json, "classification metrics per fold"),
-    (config.oos_predictions_parquet, "out-of-sample class probabilities, full windows"),
-    (config.parameters_json, "the one parameters file: what the search chose"),
-    (config.strategy_evaluation_json, "threshold, PnL and the equity curve"),
-)
+def file_manifest(ticker: str, cat: dict) -> list[tuple]:
+    """The asset folder manifest in LC_COLLATE=C listing order: (path, what it holds) — one row per timeframe of the
+    hierarchy for the catalogue parquets, which the slot standard sorts finest first, as LC_COLLATE=C does."""
+    return [
+        (config.asset_readme_md(ticker), "this file"),
+        (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
+        (config.feature_set_search_json(ticker), "the feature-set search: every trial, the champion, the proposals"),
+        *((config.features_parquet(ticker, cat, timeframe), f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
+          for timeframe in config.timeframes(cat)),
+        (config.label_events_parquet(ticker, cat), "Y — triple-barrier outcome and the event prices"),
+        (config.model_evaluation_json(ticker), "classification metrics per fold"),
+        (config.oos_predictions_parquet(ticker, cat), "out-of-sample class probabilities, full windows"),
+        (config.parameters_json(ticker), "the one parameters file: what the search chose"),
+        (config.strategy_evaluation_json(ticker), "threshold, PnL and the equity curve"),
+    ]
 
 
 def load_file_size_text(path):
@@ -251,7 +195,7 @@ def markdown_table(headers, rows):
     return "\n".join([markdown_table_row(headers), markdown_table_row(["---"] * len(headers))] + [markdown_table_row(r) for r in rows])
 
 
-def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> str:
+def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> str:
     """What this folder holds and what came out of it — no timestamp, by design."""
     labels, counts = metrics["labels"], metrics["class_counts"]
     supervised = counts["short"] + counts["neutral"] + counts["long"]
@@ -260,10 +204,9 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
     best_params = hyperparameter_search_result["best_params"]
 
     files = []
-    for descriptor, note in FILE_MANIFEST:
-        path = descriptor(ticker)
+    for path, note in file_manifest(ticker, cat):
         # this file's own size would be self-referential: writing it changes it
-        size = "—" if descriptor is config.asset_readme_md else load_file_size_text(path)
+        size = "—" if path == config.asset_readme_md(ticker) else load_file_size_text(path)
         files.append([f"`{path.name}`", note, size])
 
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
@@ -289,9 +232,9 @@ def asset_readme(ticker: str, hyperparameter_search_result: dict, metrics: dict,
                 f"{100 * block['hit_rate']:.1f}%" if block["hit_rate"] is not None else "—",
                 f"{100 * block['exposure']:.2f}%", f"{block['final_equity']:.4f}"]
 
-    feature_set = feature_set_block(ticker)
+    feature_set = feature_set_block(ticker, cat)
     feature_set_rows = [[timeframe, ", ".join(f"`{column}`" for column in feature_set["columns_by_timeframe"][timeframe])
-                         or "—"] for timeframe in config.HIERARCHY_TIMEFRAMES]
+                         or "—"] for timeframe in config.timeframes(cat)]
     feature_set_source = ("The default set of the catalogue — no promoted file" if feature_set["source"] == "default"
                           else f"A promoted set — `{config.feature_set_json(ticker).name}`, a hand's choice; "
                                f"the commit history is the record")
@@ -322,7 +265,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {markdown_table(["file", "holds", "size"], files)}
 
-Each of the three catalogue parquets carries {config.LABEL_HORIZON_MS // config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME]} rows more than `{config.label_events_parquet(ticker).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the three catalogue parquets carries {config.LABEL_HORIZON_MS // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.label_events_parquet(ticker, cat).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Feature set
 
@@ -348,7 +291,7 @@ Search: {hyperparameter_search_result['trial_count']} Optuna trials, best log-lo
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.HIERARCHY_TIMEFRAMES)} timeframes agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.timeframes(cat))} timeframes agreeing.
 
 {markdown_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 
@@ -369,15 +312,20 @@ def main() -> int:
     # the payload folds over the tickers the launcher named; every complete asset among them gets its README
     tickers = config.parse_tickers(args.tickers)
 
-    assets = []
+    assets, envelope_contract = [], None
     for ticker in tickers:
         if not config.is_artifact_set_complete(ticker):
             continue
+        if not config.catalogue_json(ticker).exists():   # artifacts from before the contract, or a hand's deletion
+            print(f"{ticker}: no {config.catalogue_json(ticker).name} — run `make features-catalogue`", flush=True)
+            continue
+        cat = dataset.load_catalogue(ticker)
+        envelope_contract = envelope_contract or cat
         hyperparameter_search_result = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]
         metrics = dataset.load_json(config.model_evaluation_json(ticker))
         strategy = dataset.load_json(config.strategy_evaluation_json(ticker))
-        assets.append(asset_report(ticker, hyperparameter_search_result, metrics, strategy))
-        config.asset_readme_md(ticker).write_text(asset_readme(ticker, hyperparameter_search_result, metrics, strategy),
+        assets.append(asset_report(ticker, cat, hyperparameter_search_result, metrics, strategy))
+        config.asset_readme_md(ticker).write_text(asset_readme(ticker, cat, hyperparameter_search_result, metrics, strategy),
                                              encoding="utf-8")
     if not assets:
         raise SystemExit("no complete artifact set found — run `make ml-all` first")
@@ -390,9 +338,8 @@ def main() -> int:
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
         "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,
-        "trend_gate_feature": config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, config.TREND_GATE_TIMEFRAME),
-        # the facts of module_features/config.py, published here because that module measures no run state
-        "catalogue": catalogue_block(),
+        # one asset's contract stands for the basket's envelope: one feature configuration wrote them all
+        "trend_gate_feature": config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, config.trend_gate_timeframe(envelope_contract)),
         "assets": assets,
     }
     out = config.ML_STATUS_JSON_PATH

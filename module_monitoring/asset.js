@@ -1,6 +1,6 @@
 /* ML Assets tab: the per-asset panel. Classic script — uses buildMeter, buildFrame,
    buildKeyValueBox, buildFootnote, formatCount, formatNumber and formatPercent from page.js,
-   and buildTable, buildShareCell, validationFolds, CLASS_NAMES and ML_STATUS from ml.js. */
+   and buildTable, buildShareCell, validationFolds, CLASS_NAMES, ML_STATUS and FEATURES_STATUS from ml.js. */
 "use strict";
 
 /* single-series line with a dashed reference level; no legend needed, the
@@ -88,7 +88,7 @@ function buildStrategyFrame(asset, mlStatus) {
   const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
   frame.body.appendChild(buildKeyValueBox([
     ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
-    ["gate", "side = sign(" + mlStatus.trend_gate_feature + ") and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of " + mlStatus.catalogue.timeframes.length + " timeframes agree"],
+    ["gate", "side = sign(" + mlStatus.trend_gate_feature + ") and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of " + FEATURES_STATUS.catalogue.timeframes.length + " timeframes agree"],
     ["cost per side", formatPercent(asset.strategy.execution_cost_rate_per_trade_side, 2)
       + "  (execution-cost-adjusted, excluding funding)"],
   ]));
@@ -132,9 +132,9 @@ function buildFeatureSetFrame(asset, mlStatus) {
   ]));
   const folds = Object.keys(asset.validation_importance).sort();
   const inSet = new Set(asset.feature_columns);
-  mlStatus.catalogue.timeframes.forEach((entry) => {
+  FEATURES_STATUS.catalogue.timeframes.forEach((entry) => {
     const timeframe = entry.timeframe;
-    const rows = mlStatus.catalogue.definitions
+    const rows = FEATURES_STATUS.catalogue.definitions
       .filter((definition) => definition.timeframes.includes(timeframe))
       .map((definition) => {
         const column = definition.feature_definition + "_" + timeframe;
@@ -178,7 +178,7 @@ function buildProposalsFrame(asset, mlStatus) {
       + "`make ml-feature-set-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
   }
-  const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
+  const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
   const folds = validationFolds(asset);
   const meanValidationSkill = mean(folds.map((fold) => asset.validation[fold].relative_logloss_skill));
   frame.body.appendChild(buildKeyValueBox([

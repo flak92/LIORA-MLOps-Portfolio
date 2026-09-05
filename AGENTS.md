@@ -65,9 +65,9 @@ the data moves through them, and one that carries no dataflow:
 
 ```
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
-module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe
+module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/          the catalogue and the canonical path → X, Y → search → model → research simulation
-module_monitoring/  presentation of what the two computational modules measured about themselves, and what it measures around them, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
+module_monitoring/  presentation of what the three computational modules measured about themselves, and what it measures around them, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
 module_skills/      the contract's companions: the name register (module_skills/glossary.md), the repository-wide skills, and the index of every module's own
 ```
 
@@ -103,10 +103,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - analogous names for analogous objects (`download_binance.py` ↔
   `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>` ↔
   `docker-ml-<stage>` targets); each computational module (`module_data`,
-  `module_ml`) measures its own domain state in `status.py`, and
-  `module_monitoring` presents their snapshots — `module_features` publishes no
-  snapshot, because it measures no run state: its structural facts ride in
-  `ml_status.json`;
+  `module_features`, `module_ml`) measures its own domain state in `status.py`,
+  and `module_monitoring` presents their snapshots;
 - **taxonomic ordering — the category token comes first, so siblings sort
   together.** A listing is read by eye before it is parsed: `module_data`,
   `module_features`, `module_ml`, `module_monitoring`, `module_skills`, then
@@ -118,9 +116,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
   `module_monitoring/serve.py` and `module_monitoring/record.py` for the cgroup
   and procfs paths of their boundary)
-  — and the browser, which has no config module and fetches its two snapshots
-  (`data_status.json`, `ml_status.json`) and the container, run and `/devops/api/*`
-  routes by literal
+  — and the browser, which has no config module and fetches its three snapshots
+  (`data_status.json`, `features_status.json`, `ml_status.json`) under
+  `/store_status/` and the container, run and `/devops/api/*` routes by literal
   name; one asset is one folder,
   `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
@@ -162,7 +160,7 @@ and built nowhere.
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
   no resident peer.
 - **Storage is separate from compute.** Pipeline state lives at paths one
-  `config.py` per module builds — the `store_*` roots and the two tracked
+  `config.py` per module builds — the `store_*` roots and the three tracked
   snapshots — never inside a container; the one bind mount carries code and
   state together as a local convenience, not as a contract — and the same
   mount, read forward, until the image carries the code.
@@ -243,8 +241,8 @@ addressed by different tools and never appear in one listing.
 
 **Derived, never drafted.** A derived artifact is generated from source and
 config and never hand-edited: `<TICKER>_parameters.json`,
-`<TICKER>_feature_set_search.json`, `<TICKER>_README.md`,
-the two snapshots and the developer-experience drawing
+`<TICKER>_feature_set_search.json`, `<TICKER>_README.md`, `<TICKER>_catalogue.json`,
+the three snapshots and the developer-experience drawing
 (`module_monitoring/sub_module_dx/files_and_folders_visualisation.html`). A hand
 edit to one is a violation.
 
@@ -422,10 +420,10 @@ last column says, and written when its one condition holds.
 | `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
 | `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
 | `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
-| `skill_image_contents.md` | `module_skills/` | what the image carries — the code, copied by the `Dockerfile` — and what the mount carries — the `store_*` roots and nothing of the code — once `.:/app` no longer shadows the image | the two snapshots have left `module_monitoring/`, the stated prerequisite of narrowing the mount | `module_skills/skill_pre_aws_solution.md` § Docker is compute, not storage; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `Dockerfile` row |
+| `skill_image_contents.md` | `module_skills/` | what the image carries — the code, copied by the `Dockerfile` — and what the mount carries — the `store_*` roots and nothing of the code — once `.:/app` no longer shadows the image | the three snapshots have left `module_monitoring/`, the stated prerequisite of narrowing the mount | `module_skills/skill_pre_aws_solution.md` § Docker is compute, not storage; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `Dockerfile` row |
 | `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |
-| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the two snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel of `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
+| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the three snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel of `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
 | `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — its own container beside `module_ml`, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | `module_trading/` is created — the first strategy that consumes an artifact | `module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries; `module_skills/skill_pre_aws_solution.md` § Every object is classified before it is placed, STRATEGY EXECUTION; `module_skills/skill_pre_aws_solution.md` § The mapping table, the two STRATEGY EXECUTION rows |
-| `skill_status_prefix.md` | `module_skills/` | the `status/` prefix: the two snapshots as status objects, and the five points that turn when they move — the two path constants, the directory `serve.py` serves, the two literal fetches | the first snapshot written anywhere but `module_monitoring/` | `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the two-snapshots row; `module_skills/glossary.md` § Payload structure |
+| `skill_status_prefix.md` | `module_skills/` | the `status/` prefix: the three snapshots as status objects, and the five points that turned when they moved — the path constants, the directory `serve.py` serves, the literal fetches | the first snapshot written anywhere but `module_monitoring/` | `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the status-store row; `module_skills/glossary.md` § Payload structure |
 | `skill_per_asset_status.md` | `module_skills/` | one status object per asset, written by that asset's own status run, and the fold the reader does over them — never a lock, never a basket-wide writer fanned out | a status stage is fanned out for the first time | `module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_data.status` row |
 | `skill_database_promotion.md` | `module_data/skills/` | the threshold past which an asset's embedded file becomes a managed database — a second concurrent writer, or a query across assets | the first writer or query one embedded file cannot serve | `module_data/skills/skill_candle_canonicalisation.md` § 13, § 15; `module_skills/skill_pre_aws_solution.md` § The databases |

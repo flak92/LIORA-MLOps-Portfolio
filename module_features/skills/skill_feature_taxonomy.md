@@ -153,7 +153,7 @@ Every parameter has an effective history: `bars × timeframe`. A window's effect
 window; a recursion's is its span or period — the bars carrying most of the weight, about 86 % of
 an EMA's and 63 % of a Wilder's — and its settling is the warm-up. Effective histories are derived
 and shown (`definition_effective_history_hours`; the catalogue block of
-`store_status/ml_status.json`), never written into a name. The catalogue keeps the effective
+`store_status/features_status.json`), never written into a name. The catalogue keeps the effective
 histories of adjacent levels nested: **the longest effective history offered on a level stays
 shorter than the shortest offered on the level above.**
 A 200-bar average on 15m spans fifty hours — a 4h-domain quantity fitted with four times the

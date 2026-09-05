@@ -27,8 +27,6 @@ import numpy as np
 from . import config, dataset, validation
 
 EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES = 1440    # one equity point per day for the dashboard curve
-DECISION_BAR_MINUTES = config.TIMEFRAME_DURATION_MS[config.DECISION_TIMEFRAME] // config.MILLISECONDS_PER_MINUTE
-BAR_CLOSE_OFFSET_MINUTES = DECISION_BAR_MINUTES - 1   # a decision bar closes on the last minute of its block
 
 
 def load_close_1m(ticker: str) -> np.ndarray:
@@ -46,13 +44,13 @@ def load_close_1m(ticker: str) -> np.ndarray:
     return close_1m
 
 
-def load_oos_predictions(ticker: str) -> dict[str, np.ndarray]:
+def load_oos_predictions(ticker: str, cat: dict) -> dict[str, np.ndarray]:
     """The out-of-sample windows as train.py wrote them, fold-major and by decision."""
     parquet_con = duckdb.connect()
     parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     parquet_con.execute("SET threads=1")   # float summation must not be reordered
     oos_predictions = parquet_con.execute(
-        f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker)}') ORDER BY oos_fold_id, decision_ts"
+        f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker, cat)}') ORDER BY oos_fold_id, decision_ts"
     ).fetchnumpy()
     parquet_con.close()
     return oos_predictions
@@ -62,12 +60,13 @@ def build_simulation_inputs(xy: dict, close_1m: np.ndarray, oos_predictions: dic
     """The strategy's inputs: X and Y, the 1m path, the predictions, and the trend definition on every timeframe,
     read from the catalogue by name — whatever the feature set holds."""
     trend = {timeframe: xy["catalogue_values"][config.feature_id(config.TREND_GATE_FEATURE_DEFINITION, timeframe)]
-             for timeframe in config.HIERARCHY_TIMEFRAMES}
+             for timeframe in xy["timeframes"]}
     return {"xy": xy, "close_1m": close_1m, "trend": trend, "oos_predictions": oos_predictions}
 
 
 def load_simulation_inputs(ticker: str) -> dict:
-    return build_simulation_inputs(dataset.load_xy(ticker), load_close_1m(ticker), load_oos_predictions(ticker))
+    xy = dataset.load_xy(ticker)
+    return build_simulation_inputs(xy, load_close_1m(ticker), load_oos_predictions(ticker, xy["catalogue"]))
 
 
 def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
@@ -83,11 +82,11 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     side = np.sign(directional_probability_edge)
     agreeing_trend_timeframe_count = sum(
         (np.sign(simulation_inputs["trend"][timeframe][pos]) == side).astype(np.int64)
-        for timeframe in config.HIERARCHY_TIMEFRAMES)
+        for timeframe in xy["timeframes"])
     gate_open = (
         (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
-        & (side == np.sign(simulation_inputs["trend"][config.TREND_GATE_TIMEFRAME][pos]))
+        & (side == np.sign(simulation_inputs["trend"][config.trend_gate_timeframe(xy["catalogue"])][pos]))
         & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     return {
@@ -117,6 +116,9 @@ def fill_price(side: float, event_resolution: int, upper_barrier: float,
 def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float,
              fold_start_ms: int, fold_end_ms: int) -> dict:
     """Single-position state machine producing one continuous equity path."""
+    cat = simulation_inputs["xy"]["catalogue"]
+    decision_bar_minutes = config.timeframe_entry(cat, cat["decision_timeframe"])["duration_ms"] // config.MILLISECONDS_PER_MINUTE
+    bar_close_offset_minutes = decision_bar_minutes - 1   # a decision bar closes on the last minute of its block
     c = config.EXECUTION_COST_RATE_PER_TRADE_SIDE
     fold_start_minute = (fold_start_ms - config.RESEARCH_START_MS) // config.MILLISECONDS_PER_MINUTE
     fold_minute_count = (fold_end_ms - fold_start_ms) // config.MILLISECONDS_PER_MINUTE
@@ -162,7 +164,7 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     trade_returns = np.asarray(trades)
     # the same path sampled at bar closes, starting from the capital itself:
     # without E0 the first 15 minutes of the fold produce no return at all
-    equity_15m = np.concatenate(([1.0], equity_1m[BAR_CLOSE_OFFSET_MINUTES::DECISION_BAR_MINUTES]))
+    equity_15m = np.concatenate(([1.0], equity_1m[bar_close_offset_minutes::decision_bar_minutes]))
     returns_15m = np.diff(equity_15m) / equity_15m[:-1]
     return {
         "equity_1m": equity_1m,

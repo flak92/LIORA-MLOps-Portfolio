@@ -6,7 +6,7 @@ git commit is the record of which one ran."""
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, artifact_dir,
+    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, STORE_STATUS_DIR, artifact_dir,
     build_ticker_parser, parse_tickers, research_ohlcv_duckdb, to_utc_ms,
 )
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
@@ -147,3 +147,28 @@ TREND_GATE_TIMEFRAME = HIERARCHY_TIMEFRAMES[-1]                                 
 def features_parquet(ticker: str, timeframe: str):
     """One parquet per timeframe, its grid in timeframe slots; built here and nowhere else."""
     return artifact_dir(ticker) / f"{ticker}_features_{TIMEFRAME_SLOT[timeframe]}.parquet"
+
+
+FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts
+
+
+def catalogue_json(ticker: str):
+    """The asset's copy of the feature layer's contract — what the ML layer reads instead of this module."""
+    return artifact_dir(ticker) / f"{ticker}_catalogue.json"
+
+
+def catalogue_contract(ticker: str) -> dict:
+    """The catalogue as the ML layer needs it, per asset: the decision grid, the hierarchy with each timeframe's slot and
+    duration, the warm-up, the columns offered per timeframe in catalogue order, the default set, and the parquet each
+    timeframe's columns live in — so ML parses no token, builds no path from this module's grammar and imports nothing."""
+    return {
+        "decision_timeframe": DECISION_TIMEFRAME,
+        "timeframes": [{"timeframe": timeframe, "slot": TIMEFRAME_SLOT[timeframe], "duration_ms": TIMEFRAME_DURATION_MS[timeframe]}
+                       for timeframe in HIERARCHY_TIMEFRAMES],
+        "warmup_top_timeframe_bars": WARMUP_TOP_TIMEFRAME_BARS,
+        "warmup_end_ms": WARMUP_END_MS,
+        "columns_by_timeframe": {timeframe: list(catalogue_columns(timeframe)) for timeframe in HIERARCHY_TIMEFRAMES},
+        "default_columns_by_timeframe": {timeframe: list(DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME[timeframe])
+                                         for timeframe in HIERARCHY_TIMEFRAMES},
+        "parquet_by_timeframe": {timeframe: features_parquet(ticker, timeframe).name for timeframe in HIERARCHY_TIMEFRAMES},
+    }
