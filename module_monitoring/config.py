@@ -25,7 +25,7 @@ PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine e
 
 # ---- the units the endpoint converts with
 MICROSECONDS_PER_SECOND = 1_000_000
-# twice by extraction — identical in module_data/config.py, module_ml/config.py, module_monitoring/sub_module_dx/config.py
+# twice by extraction — identical in module_data/config.py, module_ml/config.py, sub_module_dx/config.py
 # (module_skills/glossary.md § Twice by extraction)
 BYTES_PER_KIBIBYTE = 1024
 

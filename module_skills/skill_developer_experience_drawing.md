@@ -5,16 +5,19 @@ destination, not the road*: the page is redrawn by hand and by nothing else, and
 how old it is, is the provenance stamp in its subtitle.
 
 ```
-make monitoring-dx-update      redraw the page from the tree as it is now
+make dx-update                 redraw the page from the tree as it is now
 ```
 
 That is the whole idea. There is no automation of any kind behind it.
 
 Open it from the dashboard: the **DX** control in the top right corner of the status page, or
-directly at `/sub_module_dx/files_and_folders_visualisation.html`. The dashboard already serves this
-directory, so nothing in `serve.py` changes.
+directly at `/sub_module_dx/files_and_folders_visualisation.html`. The drawing is the repository's —
+`sub_module_dx/` at the root, because its subject is the whole tracked tree and no module owns that —
+and `docker-compose.yml` mounts it read-only below the dashboard's web root, so nothing in `serve.py`
+changes and `module_monitoring` holds no code of it.
 
-Nodes are the files and folders `git ls-files` reports and, in the deployment view, the primitives
+Nodes are the files and folders `git ls-files --recurse-submodules` reports — a submodule's files as
+its own; an uninitialised submodule is an error naming the fix — and, in the deployment view, the primitives
 the mapping table names; edges are parent → child and, between primitives, the flows the view
 declares — nothing else. Standard library plus the `git` binary — there is nothing to install. The
 page holds two views of that one tree, flipped by one control: the tree's nodes and edges are the
@@ -48,7 +51,7 @@ way edge weight does — not a knob.
 | `roles` | Path → role, overriding the extension default. A role picks the glyph and the word the side panel shows; `artifact` draws the halo and diamond, `database` the cylinder. A view may layer its own `roles` over the top level's, entry by entry: `database` is the deployment view's role for the aggregate folder. |
 | `descriptions` | Path → the sentence the side panel shows. Optional everywhere: a node without one gets an empty line, and a description left behind by a deleted file is dropped rather than reported. |
 | `camera` | `start_rot_y`, `start_rot_x` (radians), `fit_width` (viewport width at which the drawing fits) and `fit_zoom` (the zoom it is fitted at — a view with a wider ring asks for more). |
-| `deployment` | Optional. The deployment view: a second placement of the same tree, seated beside the primitives `../../module_skills/skill_pre_aws_solution.md` § The mapping table names. It holds only the keys that place and word — `default_story`, `story_map`, `stories`, `story_order`, `core`, `place`, `roles`, `descriptions`, `camera`, `primitives`, `flows`, `notice` — each meaning what it means in this table and checked by the same key sets, the error naming the block; any other key here is an error. `exclude`, `aggregate` and `header` define the tree and are shared. Absent, the page has one view and no view control. |
+| `deployment` | Optional. The deployment view: a second placement of the same tree, seated beside the primitives `skill_pre_aws_solution.md` § The mapping table names. It holds only the keys that place and word — `default_story`, `story_map`, `stories`, `story_order`, `core`, `place`, `roles`, `descriptions`, `camera`, `primitives`, `flows`, `notice` — each meaning what it means in this table and checked by the same key sets, the error naming the block; any other key here is an error. `exclude`, `aggregate` and `header` define the tree and are shared. Absent, the page has one view and no view control. |
 | `deployment.<key>` | The same key, for the deployment view. A key the block leaves out is the top level's; `roles`, `descriptions` and `camera` layer over the top level's entry by entry, so the block says only the roles, the sentences and the camera that change, and every other key it names replaces the top level's whole. Its `camera` is scanned for its own layout. |
 | `primitives` | Id → `role`, `name`, optional `absent`. A primitive is a node a view declares for a row of the mapping table no tracked path is. It joins the view's nodes beside the tree, so `story_map` may name its id (exact match), a story may make it its `hub`, `place` may seat it and `descriptions` may give it a sentence; an unmapped id joins `default_story` like a path. `role` picks the icon from one closed set — registry, instance, container, store, database, state_machine, event_rule, log_streams, front, secret — and an unknown role is an error naming it. `absent: true` draws a dashed outline for a primitive nothing local answers to. An island seats its hub first, then its primitives in the order listed, then its tracked roots. The name's head — before the dash or the parenthesis — is the canvas label, so it is short; the rest is the panel's. The development view declares none. |
 | `notice` | The words a view shows in the top right, in red capitals, one line per newline — what the picture is, in the presenter's words; empty shows nothing. The development view has none; the deployment view says its mapping is in progress, and that the tree is shaped for the move. |
@@ -142,21 +145,22 @@ proper noun in parentheses as the table spells it, its sentence says what the ob
 never how to move it, and no primitive names a row the table does not have. A row whose primitive
 has no local counterpart — the schedule and condition, whose cadence is a hand typing
 `make all` and whose condition is code and a table today, and whose primitive keeps the id
-`event_rule` because the id names the icon; the log streams, whose logs are files of the run record
-today; the dashboard front, which a reader outside the host would need and none does; the strategy
+`event_rule` because the id names the icon; the log streams, whose logs today are the terminal's, the
+run record keeping only a stage's time, exit code and store diff; the dashboard front, which a reader outside the host would need and none does; the strategy
 host and its brokerage secret, which have none at all — is drawn absent: dashed, paler, its sentence
 ending *absent here — described*. A row whose home is on disk but untracked — the raw tree, the run
 records — is drawn solid as the copy it would have, and says so. One island is no row: the
-repository's own documents — the contract, the overview, the review report, the skills — answer to
-no primitive, and their island says so in its name.
+repository's own documents — the contract, the overview, the review report, the skills — and the
+drawing itself answer to no primitive, and their island says so in its name.
 
 **A view seats each top-level subtree whole.** The layout answers for crossings inside an island,
 where every parent → child edge is radial. A member whose parent is a folder on another island is
 seated as a second root at the island radius and its edge becomes a chord across the picture — a
 chord that can cross the parent's fan or graze the roots beside it. A path whose parent is the root
 is always free; a deeper path costs a chord, so a view splits a subtree only knowingly, and the
-deployment view splits none: the three snapshots sit in `store_status/` and are served under `/store_status/`, the two
-sub-modules with the module that serves them, and their sentences say what each is there.
+deployment view splits none: the three snapshots sit in `store_status/` and are served under `/store_status/`,
+`sub_module_devops/` with the module that serves it, `sub_module_dx/` on the repository's own island as a top-level
+subtree seated whole, and their sentences say what each is there.
 
 **A flow rises with its length.** A flow is not a tree edge: it splits no subtree, and the crossing
 guarantee neither covers nor needs it. Its arc rises in proportion to its length
@@ -175,7 +179,7 @@ stops short of its target by `FLOW_TIP_GAP`, a hub's halo radius, so the arrowhe
 
 ## Determinism
 
-Same commit, same bytes. Paths come from `git ls-files -z` in git's byte order; children sort folders
+Same commit, same bytes. Paths come from `git ls-files -z --recurse-submodules` in git's byte order; children sort folders
 first, then by byte; every emitted literal is JSON with sorted keys and ASCII escapes; the file is
 written with `\n` endings; and the only date in the output is a committer date.
 

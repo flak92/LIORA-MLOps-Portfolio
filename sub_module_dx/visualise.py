@@ -1,13 +1,13 @@
 """Draw the tracked git tree into files_and_folders_visualisation.html, beside this file.
 
 The picture is not a drawing of the repository; it is the repository. Nodes are
-the files and folders `git ls-files` reports and, in a view, the primitives it
+the files and folders `git ls-files --recurse-submodules` reports and, in a view, the primitives it
 declares beside them; edges are parent -> child, and the flows a view draws
 between its primitives; the whole structure is spliced into the one marked
 region of files_and_folders_visualisation_template.html. Everything outside that region is
 hand-written rendering code this module never touches.
 
-    git ls-files
+    git ls-files --recurse-submodules
       -> exclude globs
       -> tree, folders inferred from the paths
       -> aggregate rules collapse a matching folder into a single node
@@ -27,8 +27,8 @@ children by folders-then-name, JSON by key, and the only date in the output is
 the committer date of a commit — never the moment the drawing was made.
 
 Standard library only, plus the git binary, so it runs on a bare clone with no
-virtual environment — which is also why it imports nothing from module_data or
-module_ml. The page is refreshed by hand, with `make monitoring-dx-update`;
+virtual environment — which is also why it imports nothing from any module.
+The page is refreshed by hand, with `make dx-update`;
 nothing refreshes it automatically, so the provenance stamp in the subtitle is
 what tells a reader how old the drawing is.
 """
@@ -65,12 +65,21 @@ def _git(*args: str) -> str:
 
 
 def load_tracked_paths() -> list[str]:
-    """Every tracked path, in git's own byte order.
+    """Every tracked path, in git's own byte order — a submodule's files as its own.
 
     -z rather than plain output: git quotes and escapes unusual names otherwise,
-    and a quoted path would enter the tree as a different file.
+    and a quoted path would enter the tree as a different file. --recurse-submodules,
+    because a superproject's own listing shows a submodule as one gitlink and not as
+    its files; an uninitialised submodule would then draw as an empty folder, so it
+    is an error naming the fix instead.
     """
-    raw = _git("ls-files", "-z")
+    for line in _git("submodule", "status", "--recursive").splitlines():
+        if line.startswith("-"):
+            raise VisualisationError(
+                f"submodule {line.split()[1]} is not initialised, so its files cannot be drawn.\n"
+                f"  fix: git submodule update --init"
+            )
+    raw = _git("ls-files", "-z", "--recurse-submodules")
     paths = [p for p in raw.split("\0") if p]
     return sorted(paths, key=lambda p: p.encode("utf-8"))
 
@@ -518,7 +527,7 @@ def build_structure_block(meta: dict, views: dict, view_order: list,
                           nodes: list, edges: list) -> str:
     lines = [
         f"{config.STRUCTURE_BEGIN_MARKER} - written by "
-        f"module_monitoring/sub_module_dx/visualise.py, do not edit by hand */",
+        f"sub_module_dx/visualise.py, do not edit by hand */",
         _literal("META", meta),
         _literal("VIEWS", views),
         _literal("VIEW_ORDER", view_order),   # a list, because sorted keys would put deployment first

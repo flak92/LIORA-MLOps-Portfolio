@@ -31,7 +31,7 @@ Stated, not mitigated. The panel's own contract is
 | service | image | role | lifetime |
 |---|---|---|---|
 | `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
-| `dashboard` | the `x-server` anchor, plus `ports:` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
+| `dashboard` | the `x-server` anchor, plus `ports:` and a respelled `volumes:` — the anchor's five mounts and the repository's drawing read-only below its web root, `./sub_module_dx:/app/module_monitoring/sub_module_dx:ro` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
 | `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>` | the same server in its asset role | resident |
 | `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
 
@@ -49,10 +49,11 @@ clone builds instead of reaching for a registry; the tag is one, so
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Every container keeps the `.:/app`
-bind mount and the four `/store/<content>` mounts — `devops` respells `.:/app` beside the socket,
-dropping the store mounts it never reads, because a service's `volumes:` replaces the anchor's
-key rather than extending it, and takes the host's docker group through `group_add` so it
-reads the socket without being root; the raw store stays central and Lean-exact. The code
+bind mount and the four `/store/<content>` mounts — because a service's `volumes:` replaces the anchor's
+key rather than extending it, `devops` respells `.:/app` beside the socket, dropping the store mounts it
+never reads, and takes the host's docker group through `group_add` so it reads the socket without being
+root, and `dashboard` respells the five to add the repository's drawing read-only below its web root; the
+raw store stays central and Lean-exact. The code
 mount still shadows the `store_*` roots at `/app/store_<content>` — the local simplification
 until the mount is narrowed; the store contract is the env-named path, and the `store_*`
 grammar, not the runtime, keeps code and state apart (`skill_pre_aws_solution.md` § Docker is compute,

@@ -22,10 +22,11 @@ stem), a tool's brand as a name, and any routing the old name suggested —
 nothing of Portainer or Traefik is inside: no reverse proxy, no third-party
 management UI.
 
-It is nested rather than promoted for the reason the drawing is: the dashboard
-serves its own directory, so the panel's page needs no route. It is the second
-`sub_module_*` in this tree, and two is still a coincidence — the third mints
-the convention or nothing does.
+It is nested rather than promoted because the dashboard serves its own
+directory, so the panel's page needs no route; the drawing, the other
+`sub_module_*`, sits at the repository root because its subject is the whole
+tree, and reaches the same browser through a read-only bind mount. Two is still
+a coincidence — the third mints the convention or nothing does.
 
 ## The one socket, and what containment means
 

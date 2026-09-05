@@ -206,7 +206,7 @@ distinct responsibility.
 | object | owners | why twice |
 |---|---|---|
 | `MILLISECONDS_PER_SECOND`, `MILLISECONDS_PER_MINUTE`, `MILLISECONDS_PER_DAY` (each module the ones it uses) | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | a unit is a unit; importing one across a boundary would drag the module behind it |
-| `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`, `module_monitoring/config.py`, `module_monitoring/sub_module_dx/config.py` | the same |
+| `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`, `module_monitoring/config.py`, `sub_module_dx/config.py` | the same |
 | `DUCKDB_MEMORY_LIMIT` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | every connection of every module pins the same ceiling beside `threads=1` |
 | the store reads `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_STATUS_DIR` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/config.py` | the two stores every module touches, each read as `Path(os.environ[...])` where it is used |
 | the descriptors `artifact_dir()`, `research_ohlcv_duckdb()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the asset folder and the database are the store the chain touches; the path grammar is one and is spelled once per owner |
@@ -369,10 +369,10 @@ sub-module and the control that opens its page.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the tracked tree drawn as one self-contained page | `module_monitoring/sub_module_dx/visualise.py` | `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
-| one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S6` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
+| the tracked tree drawn as one self-contained page | `sub_module_dx/visualise.py` | `sub_module_dx/files_and_folders_visualisation.html` | Files and Folders | diagram, chart, map |
+| one group of paths the configuration declares, and the id a digit key answers to | story | `stories`, `story_map`, `story_order`, `default_story` | the story ids of the active view — `S1` … `S7` as tracked, `S1` … `S9` on the primitives | group, cluster, section |
 | the arc of the root's ring a story occupies — its roots at the island radius, their fans beyond | `island`, `ISLANDS`, `ISLAND_ORDER`, `ISLAND_RADIUS`, `ISLAND_GAP` | `island` (the per-node map of a view) | — | a second word for the story in the configuration; band, cluster, section |
-| the key that isolates one island | the digit of the story id, and the digit the island's name begins with — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `6`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
+| the key that isolates one island | the digit of the story id, and the digit the island's name begins with — the page reads `S` plus the digit, and offers only the digits the active view's stories answer to; a legend row does the same by click | — | `1` … `7`, `1` … `9` in the deployment view | a story id that is not `S` plus a digit; a key offered for an island that does not exist |
 | the node at the centre of an island, per view | `hub` | `hub` | — | anchor, root of the island |
 | a folder collapsed to a single node | `aggregate` | `aggregate` | the folder's own name | rollup, summary node |
 | the disc a node and everything beneath it occupy, and the fan, ring and island spacing derived from it | `extentOf`, `ringRadiusOf`, `fanAround` | — | — | padding, margin, bounding box |
@@ -390,10 +390,10 @@ sub-module and the control that opens its page.
 | a role a view gives a path for itself — the aggregate folder a `database` on the primitives, an `artifact` as tracked | `roles` in the `deployment` block | `deployment.roles` | the word the panel shows in that view | a second `aggregate`; a role that changes the tree |
 | the notice: the words a view shows in the top right, in red capitals — what the picture is, in the presenter's words | `notice` | `notice` (per view) | *Mapping functionalities into AWS-env architecture in progress — the files and folders of this repository are shaped for the move* on the deployment view | banner, watermark, disclaimer, badge; a notice on a view that has nothing to say |
 
-The drawing is redrawn by hand with `make monitoring-dx-update` and by nothing else. It is a derived
+The drawing is redrawn by hand with `make dx-update` and by nothing else. It is a derived
 artifact under *Derived, never drafted*: a hand edit to it is a violation, and the provenance stamp
 is what says how old it is — a committer date, written in UTC like every other time this repository
-prints. `../module_monitoring/skills/skill_developer_experience_drawing.md` holds the configuration surface key by key.
+prints. `skill_developer_experience_drawing.md`, beside this register, holds the configuration surface key by key.
 
 ## Documentation ownership
 
@@ -430,7 +430,7 @@ carries one.
 | the seat: the one paragraph of a local skill, or one bullet where the skill has no headings, that names the primitive its object answers to, in the mapping table's words with the proper noun in parentheses as the table spells it, and cites the skill for the rest | — (a word of four documents: `skill_asset_containers.md`, `skill_determinism.md`, `../module_data/skills/skill_candle_canonicalisation.md` § 15, `../module_monitoring/skills/skill_devops_panel.md`) | — | — | a second seat in one skill; a seat that restates a row or a ladder; a seat in a `README_module_<name>.md`, whose form is the design rationale; `target`, `cloud note`, `mapping section` |
 | the resource role: the name a cloud resource would carry — `<project>-<environment>-<resource-role>`, the role the primitive id of the deployment view with `_` read as `-`, the project the head the image name already carries | — (no identifier; `mlops-portfolio-1m-pipeline` is the one name of that shape the tree holds, with no environment token) | — | — | a second list of roles; a role that is not a primitive id; `dev` or `prod` in a tracked name; a ticker in a resource name; an environment token on the image tag |
 | a state name: the state a stage would be — one per row of `skill_pre_aws_solution.md` § The Makefile is the developer interface, and PublishStores, the copy state no stage answers to; *Publish* in a state name means: write the object where its readers read it | — (a word of the elsewhere column; no identifier) | — | — | registering them one by one; a state name with "and" in it; *publish* as *make public* |
-| the store volume: the task host's durable disk mounted at `/app` — every asset's folder and the other `store_*` roots at today's paths | `.:/app` in `docker-compose.yml`, read forward as `<volume>:/app`; `store_volume`, a primitive id of the deployment view — no identifier carries it | — | — | asset volume; a volume per asset; a shared network filesystem; the volume as the copy; `data_volume` |
+| the store volume: the task host's durable disk — the code at `/app` and the four stores at `/store/<content>`, each at the path its `STORE_*_DIR` names | `.:/app` and the four `./store_<content>` mounts in `docker-compose.yml`, read forward as `<volume>:/app` and `<volume>/<content>:/store/<content>`; `store_volume`, a primitive id of the deployment view — no identifier carries it | — | — | asset volume; a volume per asset; a shared network filesystem; the volume as the copy; `data_volume` |
 | the ladder: the three phases in which the runtime elsewhere becomes true, each named for what it changes — *the lift*, *the idiom*, *the image carries the code* | — (a word of `skill_pre_aws_solution.md` § The retrain runtime is a ladder; no identifier) | — | — | a letter or a number for a phase; a phase as a branch or an environment; `dev` / `prod`; a phase built here; rung |
 | the promotion threshold: a second concurrent writer or a cross-asset query — the one condition under which a managed database replaces an asset's embedded file | — (a word of `skill_pre_aws_solution.md` § The databases; no identifier) | — | — | a database process for one writer; a threshold in rows or bytes |
 | the active version: the one `<version>` of an asset's artifacts a reader reads, chosen where the reader is | — (`<version>` is the execution name, `run_id`; no identifier) | — | — | latest, current, prod; a mark inside a file |

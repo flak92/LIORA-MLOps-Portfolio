@@ -1,8 +1,8 @@
 """Paths and defaults for the developer-experience drawing — the only place this sub-module builds a path.
 
-It imports nothing from module_data or module_ml. Those are the runtime pipeline
-and pull duckdb, numpy and xgboost with them; this one is standard library plus
-the git binary, so it runs on a bare clone with no virtual environment.
+It imports nothing from any module. Those are the runtime pipeline and pull
+duckdb, numpy and xgboost with them; this one is standard library plus the git
+binary, so it runs on a bare clone with no virtual environment.
 
 The defaults below are what the drawing uses when visualisation_config.json says
 nothing. Every one of them is overridable from that file, and the file wins: an
@@ -20,18 +20,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# three hops, not two: this sub-module sits one level below the module that holds
-# it, and a wrong root does not raise — it silently draws a subtree instead of the
+# two hops: this sub-module sits at the repository root, beside the modules it draws,
+# and a wrong root does not raise — it silently draws a subtree instead of the
 # repository
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 SUB_MODULE_DX_DIR = Path(__file__).resolve().parent
 VISUALISATION_CONFIG_JSON_PATH = SUB_MODULE_DX_DIR / "visualisation_config.json"
 VISUALISATION_TEMPLATE_HTML_PATH = SUB_MODULE_DX_DIR / "files_and_folders_visualisation_template.html"
 FILES_AND_FOLDERS_VISUALISATION_HTML_PATH = SUB_MODULE_DX_DIR / "files_and_folders_visualisation.html"
 
-MAKE_TARGET = "monitoring-dx-update"
-BYTES_PER_KIBIBYTE = 1024   # declared here too: this sub-module imports nothing from module_data
+MAKE_TARGET = "dx-update"
+BYTES_PER_KIBIBYTE = 1024   # declared here too: this sub-module imports nothing from any module
 
 # the one region of the template this sub-module writes; everything outside it is
 # hand-written rendering code and is never touched

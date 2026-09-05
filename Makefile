@@ -61,6 +61,12 @@ build: | $(STORES) ## the image every service runs
 # compose target joins the line below
 $(STORES):
 	@mkdir -p $@
+# the drawing's mountpoint below the dashboard's web root, for the same reason: nested inside the .:/app bind, Docker
+# would create it on the host as root
+DX_MOUNTPOINT := module_monitoring/sub_module_dx
+$(DX_MOUNTPOINT):
+	@mkdir -p $@
+on: | $(DX_MOUNTPOINT)
 data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status ml-feature-set-search ml-feature-set-promote on all-record: | $(STORES)
 
 data-download:   ## raw 1m candles of both venues into store_raw_1m — one process per venue, a venue's rate limit being per process
@@ -123,6 +129,6 @@ all-record: build ## one recorded run of the whole chain, every stage measured f
 btc-lifecycle: all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows
 
 # python3, standard library only: runs on a fresh clone that has never built an image. Refreshed by hand — nothing
-# refreshes it for you.
-monitoring-dx-update: ## redraw the developer-experience drawing of the tracked tree
-	python3 -m module_monitoring.sub_module_dx.visualise
+# refreshes it for you; `python3 -m sub_module_dx.visualise --check` asks whether the committed page is fresh
+dx-update:       ## redraw the developer-experience drawing of the tracked tree -> sub_module_dx/files_and_folders_visualisation.html
+	python3 -m sub_module_dx.visualise

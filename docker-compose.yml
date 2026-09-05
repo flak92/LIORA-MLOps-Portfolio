@@ -4,7 +4,7 @@
 # share. The three runners — data, features, ml — carry no command: a stage is `docker compose run --rm <runner>
 # python -m <module>.<stage> --tickers <T>`, one one-off container per asset, and exits; the three residents serve.
 # environment: and volumes: REPLACE an anchor's key rather than extend it, so a service that adds a variable merges the
-# store map with <<: (asset-btc) and a service that changes its mounts respells them (devops). The project name is fixed:
+# store map with <<: (asset-btc) and a service that changes its mounts respells them (dashboard, devops). The project name is fixed:
 # liora-dashboard-1, liora-asset-btc-1, liora-devops-1 on every host — two checkouts on one host share it, so run one at
 # a time or override COMPOSE_PROJECT_NAME.
 name: liora
@@ -46,10 +46,19 @@ services:
         limits:
           memory: 5g
 
+  # the dashboard respells volumes: to seat the repository's drawing, sub_module_dx/, below its web root read-only — the
+  # DX jump of the page keeps its URL, and module_monitoring holds no code of the drawing
   dashboard:
     <<: *server
     ports:
       - "127.0.0.1:${PORT:-8900}:8900"
+    volumes:
+      - .:/app
+      - ./store_raw_1m:/store/raw_1m
+      - ./store_assets_artifacts:/store/assets_artifacts
+      - ./store_run_records:/store/run_records
+      - ./store_status:/store/status
+      - ./sub_module_dx:/app/module_monitoring/sub_module_dx:ro
 
   asset-btc:
     <<: *server

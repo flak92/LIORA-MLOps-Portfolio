@@ -202,7 +202,7 @@ skill's prose, the column *the same responsibility elsewhere* of its mapping
 table, `REPORT_pre_aws_minimalism.md` — the seats reviewed for excess — and the
 one picture of that column — the deployment view of the developer-experience drawing, the
 `deployment` block of
-`module_monitoring/sub_module_dx/visualisation_config.json` and the page drawn
+`sub_module_dx/visualisation_config.json` and the page drawn
 from it, whose every primitive drawn is a row of the table and which names no
 primitive the table does not — together with the UI-label column of
 `module_skills/glossary.md` § Developer experience, which records the words that
@@ -243,7 +243,7 @@ addressed by different tools and never appear in one listing.
 config and never hand-edited: `<TICKER>_parameters.json`,
 `<TICKER>_feature_set_search.json`, `<TICKER>_README.md`, `<TICKER>_catalogue.json`,
 the three snapshots and the developer-experience drawing
-(`module_monitoring/sub_module_dx/files_and_folders_visualisation.html`). A hand
+(`sub_module_dx/files_and_folders_visualisation.html`). A hand
 edit to one is a violation.
 
 **Rule-derived structure over repeated project knowledge.** When a family —
@@ -282,7 +282,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner; `monitoring-dx-update`, a host tool over `python3`, is the one exception — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`) |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`, `dx-update`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`) |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots |
 | a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both |
 | a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
@@ -324,12 +324,12 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
 (`module_ml/model.py`, `module_ml/hpo.py`), numpy (every module that computes),
 argparse (`module_data/config.py`, `module_data/status.py`,
-`module_ml/feature_set_promote.py`, `module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
+`module_ml/feature_set_promote.py`, `sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
 the drawing's template), docker compose (`Makefile`,
 `docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`,
 `module_monitoring/sub_module_devops/config.py` and both downloaders), the `git`
-command line over `subprocess` (`module_monitoring/sub_module_dx/visualise.py`) and a stage's
+command line over `subprocess` (`sub_module_dx/visualise.py`) and a stage's
 command line over `subprocess` (`record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
 cgroup v2 and procfs (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its
 unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four stores
@@ -397,16 +397,20 @@ infrastructure and all four runtime modules at once, so it belongs to none of
 them and stays in `module_skills/`.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
-the module that owns it, with its own `config.py`, its own `main()` and no
-dataflow of its own. It exists twice, both inside `module_monitoring`: the
-developer-experience drawing in `sub_module_dx/`, and the DevOps panel in
-`sub_module_devops/`. Both are nested rather than promoted because the
+the owner of its subject, with its own `config.py`, its own `main()` and no
+dataflow of its own. It exists twice. The DevOps panel is
+`module_monitoring/sub_module_devops/`, nested rather than promoted because the
 dashboard serves its own directory — a top-level module would have to be given a
-route, and each page reaches the browser as a static file instead. The panel adds
-one route for its API alone, because an API is not a file; the socket it holds is
-the reason it is a service of its own rather than a role of `serve.py`.
-`sub_module_*` does not enter the directory grammar above: two occurrences are a
-coincidence, and the third one mints it or nothing does.
+route, and the page reaches the browser as a static file instead; the panel adds
+one route for its API alone, because an API is not a file, and the socket it holds
+is the reason it is a service of its own rather than a role of `serve.py`. The
+developer-experience drawing is `sub_module_dx/` at the repository root, because
+its subject is the whole tracked tree and no module owns that; the dashboard
+serves its page as a static file through the read-only bind mount
+`docker-compose.yml` seats below its web root, so the drawing costs no route
+either and `module_monitoring` holds no code of it. `sub_module_*` does not enter
+the directory grammar above: two occurrences are a coincidence, and the third one
+mints it or nothing does.
 
 ## Skills absent here, described
 

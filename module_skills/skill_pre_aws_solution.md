@@ -78,7 +78,7 @@ today:
 | ORCHESTRATION | ordering and launching the stages — the wall time between two stages is nobody's number, not the record's | the Makefile |
 | MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_features/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `record.py`, the page scripts |
 | STRATEGY EXECUTION | taking research artifacts and market data into a running strategy | absent here — described: `module_trading/`, its own container on the strategy host (§ Infrastructure seats) |
-| INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/`, `module_monitoring/sub_module_dx/` |
+| INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/`, `sub_module_dx/` |
 
 Group by who writes the state and how long it lives — never by "written
 together", "same library", "same author" or "convenient". A name that does not
@@ -345,7 +345,7 @@ target, `data-download`, once.
 
 Read forward, the Makefile is a state machine whose states are the stages. The
 test of a stage's width is whether it has a one-line state name; every stage of
-the pipeline passes today (`monitoring-dx-update` redraws a tracked file on the
+the pipeline passes today (`dx-update` redraws a tracked file on the
 host and never runs elsewhere, so it is a tool, not a state):
 
 | stage | the state it would be |
@@ -532,7 +532,7 @@ path in the elsewhere column is a proposal for a local directory. Where a cloud
 proper noun is spoken is the closed list of `AGENTS.md` § Pre-AWS architectural
 direction; a row whose move is absent here — described has no local counterpart,
 and its primitive, if it has one, is drawn absent
-(`../module_monitoring/skills/skill_developer_experience_drawing.md` § Two views
+(`skill_developer_experience_drawing.md` § Two views
 of one tree).
 
 | this repository has | responsibility | the same responsibility elsewhere | the move |
@@ -542,7 +542,7 @@ of one tree).
 | a per-asset stage, `--tickers <TICKER>`, one one-off container of its runner per asset — the `fanout` macro | COMPUTE — one stage for one asset | the same run with `--tickers <TICKER>` overridden, one per asset — BuildCanonicalData on the data-ingest task, AggregateBars to EvaluateStrategy on the ml-research task, whether the command is a `module_features` or a `module_ml` one; already a task run per stage per asset, no resident borrowed | a rename |
 | one compose service per ticker under one anchor, and the residents — `dashboard`, `devops`, `asset-<ticker>` — beside it | INFRASTRUCTURE — the parameter made visible | one task definition parameterised by `--tickers`, never a new unit per asset; `dashboard`, `devops` and one `asset-<ticker>` per ticker kept running on the same instance as services of the container runtime, one per service, as they are kept running here (Amazon ECS) | a rename |
 | the Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`, `xargs -P $(JOBS)`, `RUN_ID` | ORCHESTRATION — the explicit stage order, the width, the execution identity | a state machine whose states are the stages of § The Makefile is the developer interface, every fanned-out state a Map over `TICKERS` as wide as `JOBS`, and `run_id` as the execution name (AWS Step Functions) | a rename |
-| `.:/app` — the one bind mount of every service, the code and the `store_*` roots at one path | STORAGE — the home of state | a durable block volume mounted at `/app` by every task and service of the instance — `.:/app` read as `<volume>:/app` in the anchor's line and the one `devops` respells, every `store_*` root and all three snapshots at the path its `config.py` builds today (Amazon EBS); never a network filesystem, never a task's own disk (§ The volume is the home, the store is the copy) | a rename |
+| `.:/app` — the one bind mount of every service, the code and the `store_*` roots at one path | STORAGE — the home of state | a durable block volume mounted at `/app` by every task and service of the instance — `.:/app` read as `<volume>:/app` in the anchor's line and the two services that respell it (`dashboard`, `devops`), the four `./store_<content>` mounts read as `<volume>/<content>:/store/<content>`, every store at the path its `STORE_*_DIR` names today (Amazon EBS); never a network filesystem, never a task's own disk (§ The volume is the home, the store is the copy) | a rename |
 | `store_raw_1m/cryptofuture/<venue>/minute/<symbol>/YYYYMMDD_trade.zip` | STORAGE — raw, immutable, one object per UTC day | the same tree on the volume, and its copy under `raw/<venue>/<symbol>/<day>` in object storage after the run, each day object written once (Amazon S3) | a rename |
 | `store_assets_artifacts/<TICKER>/` | STORAGE — one prefix per asset | the same folder on the volume, and its copy under `artifacts/<ticker>/<version>/` in object storage after the run, the version the execution name, each key the descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR` (Amazon S3) — nothing to edit in either descriptor | a rename |
 | `<TICKER>_research_ohlcv.duckdb` | STORAGE — the canonical market object, one writer at a time | the same embedded file on the volume, opened by the same process under the same whole-file lock, copied whole to the asset's version prefix after the run — never a database process, never a shared network filesystem; a managed database (Amazon RDS) only past the threshold of § The databases | a rename |
@@ -551,7 +551,7 @@ of one tree).
 | `store_status/data_status.json`, `store_status/features_status.json`, `store_status/ml_status.json`, `store_run_records/<run_id>/` | STORAGE — status and run objects | the run record under `runs/<run_id>/` and the three snapshots under `status/`, copied from the store after the run, the page reading them from the status store as here — `store_status/` is already that prefix, read forward; the move off `module_monitoring/` turned the five points § What stays as it is, and why names, and answered the question `skill_status_prefix.md` asked (`AGENTS.md` § Skills absent here, described) | a rename |
 | a stage's stdout, left in the terminal; no resource sampling at all | MONITORING — logs and resource metrics | log streams keyed by stage and metrics (Amazon CloudWatch) — no local counterpart: the run record holds time, exit code and store difference and nothing else | absent here — described |
 | the page files of `module_monitoring/`; the three snapshots are STORAGE (the row above) and reach the page through the `/store_status/<name>` route | MONITORING — the static dashboard | served by the reader service of the row below from the volume; static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) only when a reader outside the host appears — the front absent | absent here — described |
-| the `/containers`, `/runs` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
+| the `/containers`, `/runs`, `/store_status/<name>` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
 | the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Linux instance (Amazon EC2) — the strategy host: a lean-backtest task, or a container that stays running and trades live, reading the raw and asset prefixes from the copy and never the volume, its brokerage credentials read from the secret below when it starts | absent here — described |
 | none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts | absent here — described |
 | `sub_module_devops` — the one socket; `sub_module_dx` | INFRASTRUCTURE — the engine's views, the repository's view | the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon; the provider's console and a repository view, not project code — the console a sentence inside this row, no primitive of its own | a rename |
