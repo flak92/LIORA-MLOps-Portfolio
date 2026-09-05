@@ -34,7 +34,7 @@ compares its length. A token enters when its duration is an integer multiple of 
 timeframe and divides one UTC day, so bar boundaries land on UTC midnight (`2m`, `5m`, `30m`,
 `2h`, `6h`, `12h`, `1d` qualify; a week or a month needs an anchor the token does not carry).
 Adjacent entries keep a ratio of at least three — below that two levels sample the same price
-movement (the triple-screen hierarchy, `../../module_ml/skills/methodology_ml.md` § 13 [10]).
+movement (the triple-screen hierarchy, `module_ml/skills/methodology_ml.md` § 13 [10]).
 Today: `15m`, `1h`, `4h`, ratios 4× and 4×. A new token is one line in the hierarchy and a new
 experiment; the bars, the parquets and the catalogue's offered timeframes follow from it.
 
@@ -122,7 +122,7 @@ stored column reads `centered_rsi14` while its importance key reads `centered_rs
 Reserved, not written today: a cross-timeframe definition would carry a timeframe on every term
 and no suffix — `close_15m_minus_sma200_4h_over_atr14_4h` — and be composed on the decision grid
 after each term is aligned. Until one exists, cross-timeframe relations stay strategy rules
-(`../../module_ml/skills/methodology_ml.md` § 9).
+(`module_ml/skills/methodology_ml.md` § 9).
 
 ## The catalogue and the feature set
 
@@ -141,7 +141,7 @@ a choice, not a derivation, and tracked, because the asset's parameters are tune
 (`DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`) — the fifteen columns of the frozen experiment, in the
 order it stacks them. The order is load-bearing: the model samples columns by position, so the
 default definitions lead the catalogue in that order. How a set is searched and promoted is
-`../../module_ml/skills/methodology_ml.md` § 4.
+`module_ml/skills/methodology_ml.md` § 4.
 
 The strategy reads one definition on every timeframe whatever the set holds —
 `TREND_GATE_FEATURE_DEFINITION`, the first of the catalogue — because the hierarchy gate is a

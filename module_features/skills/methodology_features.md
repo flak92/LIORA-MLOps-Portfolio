@@ -4,7 +4,7 @@ Per asset, independently, on the one market object the research layer studies: e
 canonical 1m series on every timeframe of the register, and the feature catalogue evaluated on each
 of them, aligned to the decision grid. The names are `skill_feature_taxonomy.md`; the definitions
 are here, equation by equation; the search that chooses a set from them is
-`../../module_ml/skills/methodology_ml.md` § 4. *The repository shows the destination, not the
+`module_ml/skills/methodology_ml.md` § 4. *The repository shows the destination, not the
 road*: the one guard is the finiteness assert of `catalogue.build_catalogue`.
 
 ## The register
@@ -74,4 +74,4 @@ function of columns the model already has, so it can only add representation, ne
 the 2-of-3 agreement lives where it is used, in the strategy gate.
 
 The keys in the last column are the reference list of
-`../../module_ml/skills/methodology_ml.md` § 13 — one list for the research layer.
+`module_ml/skills/methodology_ml.md` § 13 — one list for the research layer.

@@ -1,11 +1,14 @@
 # Skill: asset containers — the topology, the endpoint, the socket
 
 The asset is the primary object; its container is how a stage is run for it
-locally, and the engine is the support layer. One image, three runners — `data`, `features`, `ml`, one per
-module of the chain, a role and a one-off each — and one resident container per ticker of the basket, differing only by
+locally, and the engine is the support layer. Four images, one per module repository — `liora-module-<domain>`,
+built from `./<9NN>-module_<domain>` alone —; three runners — `data`, `features`, `ml`, one per
+module of the chain, a role and a one-off each, each in its module's image — and one resident container per ticker
+of the basket, in the monitoring module's image, differing only by
 `ASSET=<TICKER>`; every service written out in `docker-compose.yml` under three anchors: `x-store-environment` is
 the store contract every service carries — the four `STORE_*_DIR` and the thread cap —, `x-service` is what
-every service is — `build`, `image`, `init`, `user`, the code mount and the four store mounts — and
+every service is — `init`, `user`, the store environment and the four store mounts, each service adding its module's
+`build` and `image` — and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
 assets share, which is why the runners stay outside it. The project is named `liora` in the file, so a
 container is `liora-<service>-1` on every host. The dashboard
@@ -24,16 +27,16 @@ that publishes no port. What it does not contain is **reach** — the dashboard
 proxies `/devops/*` to it, so anything that can reach the dashboard's loopback
 origin can reach the Engine through it, a browser tab on another site included.
 Stated, not mitigated. The panel's own contract is
-`../module_monitoring/skills/skill_devops_panel.md`.
+`module_monitoring/skills/skill_devops_panel.md`.
 
 ## The topology
 
 | service | image | role | lifetime |
 |---|---|---|---|
-| `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor and nothing else — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
-| `dashboard` | the `x-server` anchor, plus `ports:` and a respelled `volumes:` — the anchor's five mounts and the repository's drawing read-only below its web root, `./sub_module_dx:/app/module_monitoring/sub_module_dx:ro` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
-| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>` | the same server in its asset role | resident |
-| `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the two mounts | the DevOps panel's server: the one container that holds the docker socket | resident |
+| `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor plus the module's `build: ./<9NN>-module_<domain>` and `image: liora-module-<domain>` — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
+| `dashboard` | the `x-server` anchor with the monitoring module's `build:` and `image:`, plus `ports:` and a respelled `volumes:` — the anchor's four store mounts and the repository's drawing read-only below its web root, `./sub_module_dx:/app/module_monitoring/sub_module_dx:ro` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
+| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor with the monitoring module's `image:`, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>` | the same server in its asset role | resident |
+| `devops` | the `x-service` anchor with the monitoring module's `image:`, plus its own `command:`, `group_add:` and the one mount, the socket | the DevOps panel's server: the one container that holds the docker socket | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
@@ -42,21 +45,20 @@ stage mid-write, and a one-off's PID 1 reaps whatever its stage leaves behind.
 outside DuckDB; the `ml` runner alone carries it, the one task — HPO and
 XGBoost — that allocates above that ceiling; `data` and `features` open a database
 under its own `memory_limit` and allocate nothing outside it, and the residents
-compute nothing. `build: .` sits on the
-`x-service` anchor, so every service knows how to make the image it runs and a bare
-clone builds instead of reaching for a registry; the tag is one, so
-`docker images` still shows one image.
+compute nothing. `build: ./<9NN>-module_<domain>` and `image: liora-module-<domain>` sit on
+each module's runner and on `dashboard`; `asset-<ticker>` and `devops` name the image `dashboard` builds, so a
+bare recursive clone builds instead of reaching for a registry; `docker images` shows four, and each
+`Dockerfile` copies its package onto `python:3.12-slim` with the module's own pins.
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
-because a failure is reported, not hidden. Every container keeps the `.:/app`
-bind mount and the four `/store/<content>` mounts — because a service's `volumes:` replaces the anchor's
-key rather than extending it, `devops` respells `.:/app` beside the socket, dropping the store mounts it
-never reads, and takes the host's docker group through `group_add` so it reads the socket without being
-root, and `dashboard` respells the five to add the repository's drawing read-only below its web root; the
-raw store stays central and Lean-exact. The code
-mount still shadows the `store_*` roots at `/app/store_<content>` — the local simplification
-until the mount is narrowed; the store contract is the env-named path, and the `store_*`
-grammar, not the runtime, keeps code and state apart (`skill_pre_aws_solution.md` § Docker is compute,
+because a failure is reported, not hidden. Every container carries the four
+`/store/<content>` mounts and no code mount: the image carries its module's package under `/app`, and
+the stores are the one thing a container reaches on the host. Because a service's `volumes:` replaces
+the anchor's key rather than extending it, `devops` respells it to the socket alone, dropping the store
+mounts it never reads, and takes the host's docker group through `group_add` so it reads the socket
+without being root, and `dashboard` respells the four to add the repository's drawing read-only below
+its web root; the raw store stays central and Lean-exact. The store contract is the env-named path,
+and code and state never share a mount (`skill_pre_aws_solution.md` § Docker is compute,
 not storage). Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
 argument: the server is docker-only. `PORT` is only the host side of the
@@ -73,7 +75,7 @@ recreates a resident, and a checkout without the rule keeps assuming 8900 and
 fails its own start the day this one holds it. Every container runs as the host user — `user: ${UID:-1000}:${GID:-1000}`,
 fed by the Makefile's `COMPOSE_ENV` — so nothing it writes is root-owned.
 
-`make on` builds the image if needed, starts the dashboard and the residents, and
+`make on` builds the images if needed, starts the dashboard and the residents, and
 opens the page; `make off` takes everything down. `make all` runs the whole chain,
 download to snapshots, every stage in a one-off container of its module's runner:
 the `fanout` macro is `docker compose run --rm -T <runner> python -m
@@ -86,14 +88,15 @@ stage from outside and knows no container. The direction is
 nothing else — the fan-out passes `--tickers <TICKER>` from `TICKER_LIST`; `build_ticker_parser` has no default — every launcher names
 the assets — and no stage module reads `ASSET`. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
-`TICKERS` and three lines under `x-server`.
+`TICKERS` and one `asset-<ticker>` block under `x-server`, both in Orchestration; nothing
+changes in a module repository.
 
-**The seat.** The `x-service` anchor is one task definition parameterised by `ASSET`,
+**The seat.** The `x-service` anchor is one task definition parameterised by `--tickers`,
 each resident a service of the container runtime kept running on the one Linux container
-instance (Amazon ECS on Amazon EC2): `asset-<ticker>` is the `ASSET` override, the
+instance (Amazon ECS on Amazon EC2): `asset-<ticker>` is the resident's `ASSET` override, the
 `fanout` macro's `run --rm` already a task run per stage per asset — nothing left to
-edit — `.:/app` the volume mount, the `ml` runner's `5g` the task's memory, `init` and
-`user` the task definition's own keys. `skill_pre_aws_solution.md` § The mapping table and
+edit — the four store mounts the volume, each module's image the task's image, the `ml` runner's
+`5g` the task's memory, `init` and `user` the task definition's own keys. `skill_pre_aws_solution.md` § The mapping table and
 § The retrain runtime is a ladder.
 
 ## The server
@@ -138,6 +141,6 @@ socket timeout — stated, not mitigated.
 
 The asset containers are presented by the DevOps panel, not by a tab of the
 status page: its columns, its badges and its poll are
-`../module_monitoring/skills/skill_devops_panel.md`. What belongs here is what
+`module_monitoring/skills/skill_devops_panel.md`. What belongs here is what
 the containers themselves owe it — the endpoint contract and the down semantics
 above.

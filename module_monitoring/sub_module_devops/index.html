@@ -58,8 +58,8 @@
     <thead></thead>
     <tbody></tbody>
   </table>
-  <p class="foot">the repository is bind-mounted into every service at <code>/app</code>; the docker socket is mounted
-    into <code>devops</code> and into no other container.</p>
+  <p class="foot">each service runs its module's image, the four stores mounted at <code>/store/&lt;content&gt;</code> on every service but
+    <code>devops</code>, which carries the docker socket alone — mounted into no other container.</p>
 
   <h2>image</h2>
   <div id="image" class="box">&hellip;</div>

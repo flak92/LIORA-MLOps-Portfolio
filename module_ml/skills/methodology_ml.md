@@ -67,7 +67,7 @@ X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 Features and target therefore describe the same canonical research object by
 construction, and nothing here simulates trading on a named exchange: it
 simulates a strategy on a canonical market model, with the costs stated.
-`../../module_data/skills/skill_candle_canonicalisation.md` § 5 and § 6 carry the construction rule and why verbatim candles
+`module_data/skills/skill_candle_canonicalisation.md` § 5 and § 6 carry the construction rule and why verbatim candles
 beat an average.
 
 ## 3. Time semantics
@@ -103,8 +103,8 @@ determinism).
 ## 4. Features — the catalogue, and the feature set per asset
 
 The features are `module_features`'s: the names are
-`../../module_features/skills/skill_feature_taxonomy.md`, the definitions, their
-histories and their warm-ups `../../module_features/skills/methodology_features.md`,
+`module_features/skills/skill_feature_taxonomy.md`, the definitions, their
+histories and their warm-ups `module_features/skills/methodology_features.md`,
 and neither is repeated here. The catalogue holds eight feature definitions on
 the timeframes of the register, twenty-two columns; every asset's parquets carry
 all of them.
@@ -180,7 +180,7 @@ gives `y = +1`, whose low touches `lower_barrier` gives `y = −1`, neither give
 minute, so both hit conditions are gated on `volume > 0`. Whether such a minute
 is a provider candle that printed nothing or a synthesised continuity row is a
 provenance question, answered in the canonical table and in
-`../../module_data/skills/skill_candle_canonicalisation.md`,
+`module_data/skills/skill_candle_canonicalisation.md`,
 not here:
 
 ```

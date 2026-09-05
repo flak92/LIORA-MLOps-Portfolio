@@ -1,7 +1,8 @@
 # LIORA — 1m Crypto Research Pipeline
 
 **Deterministic multi-venue OHLCV research pipeline with purged walk-forward
-validation, a frozen final out-of-sample holdout, and a static results dashboard.**
+validation, a frozen final out-of-sample holdout, and a static results dashboard
+— five repositories, one `make all`.**
 
 *The repository shows the destination, not the road*.
 
@@ -9,35 +10,43 @@ Public market observations → QuantConnect Lean-compatible raw data → one
 deterministic canonical DuckDB per asset → the feature catalogue and labels →
 purged walk-forward XGBoost → research strategy simulation → monitoring.
 
+This is `LIORA-MLOps-Portfolio-Orchestration`, the repository that runs the
+project. The four modules of the chain are four repositories, pinned here as git
+submodules, and this one holds what none of them owns: the Makefile and the
+compose file that run them, the recorder, the developer-experience drawing, the
+four stores, and the canon of rules every module carries a read-only copy of.
 The governing contract — minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID,
-UCAS, pipeline-first — lives in [AGENTS.md](AGENTS.md). Each module carries its
-own rules in its `skills/` and its front door in `README_module_<name>.md`; the
-naming register and the rules that cross modules are in
-[module_skills/](module_skills/), indexed by
-[module_skills/README.md](module_skills/README.md).
-The working path through the repo is `AGENTS.md → module names →
-README_module_<name>.md → the module's own skills → code`; this README is the
-general overview.
+UCAS, pipeline-first, and what holds five repositories together — is
+[AGENTS.md](AGENTS.md). Each module carries its own rules in its `skills/` and
+its front door in `README_module_<name>.md`; the naming register and the rules
+that cross modules are in [module_skills/](module_skills/), indexed by
+[module_skills/README.md](module_skills/README.md). The working path through
+the project is `AGENTS.md → module names → README_module_<name>.md → the
+module's own skills → code`; this README is the general overview.
 
 ## Quickstart
 
-Everything runs through the Makefile; `make help` lists every target with its
-one-line purpose. On and off — one word each, the presentation switch; from
-there everything is a click in the page:
-
 ```bash
-make on                    # build the image, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
+git clone --recurse-submodules https://github.com/flak92/LIORA-MLOps-Portfolio-Orchestration.git
+cd LIORA-MLOps-Portfolio-Orchestration
+make all                   # the whole chain from a fresh clone, every stage in a one-off container of its module's runner: build -> data-all -> features-all -> ml-all
+make on                    # build the images if needed, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
 make off                   # stop and remove every container of this project
+make help                  # every target with its one-line purpose
 ```
 
-`on` and `off` are the one alias pair the target grammar admits ([AGENTS.md](AGENTS.md)
-§ Canonical vocabulary): two words for a presenter to remember; the targets they
-name are the convention.
+Clone whole, never `--depth`: the drawing refuses a shallow clone, because its
+provenance stamp cannot be trusted at a graft. `git`, `docker`, `make` and
+Python 3 — standard library only, for `record.py`, the drawing and the opener
+`make on` prints through — are the whole requirement of the host; `tmux` joins
+them for the detached search.
+Everything runs through the Makefile. `on` and `off` are the one alias pair the
+target grammar admits ([AGENTS.md](AGENTS.md) § Canonical vocabulary): two words
+for a presenter to remember; the targets they name are the convention.
 
 The chain, and the pictures it leaves:
 
 ```bash
-make all                   # the whole chain from a fresh clone, every stage in a one-off container of its module's runner: build -> data-all -> features-all -> ml-all
 make all-record            # the same chain, every stage measured from outside by record.py into store_run_records/<run_id>/ — the Lifecycle tab
 make dx-update             # redraw the developer-experience drawing after the tracked tree changes
 ```
@@ -57,7 +66,7 @@ Assets*; a hand promotes one — one asset at a time — and the chain reruns:
 make ml-feature-set-promote ASSET=BTC PROPOSAL=1   # copy proposal 1's columns into BTC_feature_set.json, then ml-all for BTC
 ```
 
-`tmux` is a tool of the host beside `docker` and `git`, never of the image.
+`tmux` is a tool of the host beside `docker` and `git`, never of an image.
 
 Three readers, three doors, all behind `make on`:
 
@@ -85,12 +94,12 @@ a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
-ticker of the basket, one image for all — only serve: no stage runs inside a
+ticker of the basket, the monitoring image for all — only serve: no stage runs inside a
 resident, and no stage depends on it — a stage is the one-off
-`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Four direct dependencies and nothing else — `duckdb`
-(storage and query), `numpy` (mathematics), `optuna` (hyper-parameter search) and
-`xgboost-cpu` (model); the CPU wheel is deliberate, because the research layer
-trains with `tree_method=hist` and `nthread=1`.
+`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Four direct dependencies across
+the four module repositories and nothing else — `duckdb` (storage and query: data, features, ml), `numpy` (mathematics:
+features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu` (model: ml); `module_monitoring` is standard
+library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
 
 ```
                  ┌── market source A ──┐
@@ -125,6 +134,158 @@ MARKET DATA ─────┤                     ├──► NORMALISED RAW 1
 Providers deliver observations; the canonical database defines the research
 object. Everything below it describes the method, not the data provider.
 
+## The repositories
+
+| role | repository | in the workspace | image |
+|---|---|---|---|
+| orchestration — this one | `LIORA-MLOps-Portfolio-Orchestration` | the root | — |
+| data | [LIORA-MLOps-Portfolio-module-data](https://github.com/flak92/LIORA-MLOps-Portfolio-module-data) | `901-module_data/` | `liora-module-data` |
+| features | [LIORA-MLOps-Portfolio-module-features](https://github.com/flak92/LIORA-MLOps-Portfolio-module-features) | `902-module_features/` | `liora-module-features` |
+| ml | [LIORA-MLOps-Portfolio-module-ml](https://github.com/flak92/LIORA-MLOps-Portfolio-module-ml) | `903-module_ml/` | `liora-module-ml` |
+| monitoring | [LIORA-MLOps-Portfolio-module-monitoring](https://github.com/flak92/LIORA-MLOps-Portfolio-module-monitoring) | `904-module_monitoring/` | `liora-module-monitoring` |
+| the baseline | [LIORA-MLOps-Portfolio](https://github.com/flak92/LIORA-MLOps-Portfolio) at the tag `monorepo-baseline` — the monorepo the five were cut from; its `main` ends with the boundary refactor the split was cut from (`monorepo-split-ready`) and a banner naming this repository | — | — |
+
+The number is the module's position in the chain at the time it was seated; a
+new module takes the next free number and nothing is ever renumbered. GitHub
+names follow one grammar, `LIORA-MLOps-Portfolio-<Role>`; the numbers exist only
+as local paths, in `.gitmodules`. Each module repository holds its package at its
+root — `901-module_data/module_data/` in the workspace — beside its own
+`Dockerfile`, `requirements.txt`, `Makefile` (a venv, for the module alone),
+`README.md`, and read-only copies of `AGENTS.md` and `module_skills/` stamped by
+`module_skills/distributed_from.md` (§ Skills). A path written `module_<domain>/…`
+in the contract or in a skill names the package wherever it is checked out; this
+README, which lives only here, writes workspace paths.
+
+## The stores
+
+| store | variable | in a container | tracked |
+|---|---|---|---|
+| `store_raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
+| `store_assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
+| `store_run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
+| `store_status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
+
+The store is the boundary between compute and state (`module_skills/glossary.md`
+§ Stores). Every stage reads and writes only these four and learns where they
+are from its environment — the Makefile exports the host paths, the compose file
+sets the container paths — and no module writes into another's tree. The images
+carry code and nothing of the state; the mounts carry the state and nothing of
+the code.
+
+## The chain
+
+`data-all → features-all → ml-all`, each `<module>-<stage>` a one-off container of
+its module's runner, `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>`
+— the `fanout` macro once per asset of `TICKERS`, `JOBS` wide, the `basket` macro
+once for the whole basket (the three status stages and the download). `ASSET=<TICKER>`
+on the make line narrows every per-asset stage to one asset and never a
+basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
+`record.py`, which lists the four stores before and after and writes
+`store_run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
+`liora-devops-1` and `liora-asset-<ticker>-1`: the compose project is named
+`liora` in the file, so two checkouts of the project on one host share the name —
+run one at a time, or set `COMPOSE_PROJECT_NAME`.
+
+| Stage     | Command                | Input → Output                                              | Property                          |
+|-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
+| download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete; one process per venue for the whole basket |
+| ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
+| status    | `make data-status`     | DuckDB → stdout + `store_status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
+| catalogue | `make features-catalogue` | the bars → one feature parquet per timeframe and `<TICKER>_catalogue.json`, the contract the ML layer reads | deterministic; the existing columns byte-identical after an extension |
+| features status | `make features-status` | the parquets → `store_status/features_status.json` | read-only; the catalogue's facts and each asset's row counts |
+| feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
+| promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
+| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
+| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `904-module_monitoring/module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
+| drawing   | `make dx-update` | `git ls-files --recurse-submodules` → `sub_module_dx/files_and_folders_visualisation.html` | the tracked tree of the whole workspace as one self-contained page, redrawn by hand and by nothing else; this repository's own, mounted read-only below the dashboard's web root and opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
+
+## Extending
+
+| to add | change | where |
+|---|---|---|
+| an asset | one ticker in `TICKERS` and one `asset-<ticker>` block in `docker-compose.yml`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
+| a stage of a module | the stage in its module repository and one line in that module's `Makefile`; one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `<9NN>-module_<domain>/`, then here |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `902-module_features/module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | the features repository |
+| a feature | one record of `FEATURE_CATALOGUE` in the same file (`902-module_features/module_features/README_module_features.md` § Extending) | the features repository |
+| a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`901-module_data/module_data/README_module_data.md`) | the data repository |
+| a module | a repository `LIORA-MLOps-Portfolio-module-<domain>`, seated here as the next free `<9NN>-module_<domain>/` with a runner service and an image `liora-module-<domain>`; nothing is renumbered | a new repository, then here |
+
+## Working in a module
+
+Every submodule sits on `main`, never on a detached HEAD; the workspace pins a
+commit, and moving the pin is a commit of this repository that says why.
+
+```bash
+git submodule update --init --merge && git submodule foreach 'git switch -q main'   # after every clone or checkout of this repository
+cd 903-module_ml && git switch main && git pull --ff-only                            # the module's own repository, on its own branch
+# … edit, then commit and push there …
+cd .. && make build ml-all ASSET=BTC                                                 # the chain sees the working tree of the submodule
+git add 903-module_ml && git commit -m "Pin module-ml at $(git -C 903-module_ml rev-parse --short HEAD): <why>" && git push
+git pull --ff-only && git submodule update --merge                                   # take someone else's pins without a detached HEAD
+```
+
+`git submodule foreach 'git symbolic-ref -q HEAD >/dev/null || echo "$name DETACHED"'`
+prints nothing when every module is on its branch. A module repository also
+runs alone, outside any workspace: `make setup` makes its venv, and
+`make <module>-<stage> ASSET=<TICKER>` runs one stage against the four
+`STORE_*_DIR` its Makefile is pointed at (one level up by default); `docker build`
+in it makes its image from its tree alone.
+
+## Skills
+
+`AGENTS.md` and `module_skills/` here are the canon. Every module repository
+carries a read-only copy of both, so that a module read alone still carries the
+rules it answers to, stamped by `module_skills/distributed_from.md` with the
+commit of this repository it was taken from. A module's own skills live only in
+its repository, under `module_<domain>/skills/`, and the index
+`module_skills/README.md` links to all of them by absolute URL.
+
+```bash
+make skills-status       # silent and 0 when every copy equals the canon; prints the drifted copies otherwise
+make skills-distribute   # overwrite every copy from the canon and rewrite the stamps — then commit in each module repository, and pin here
+```
+
+A change to a rule is made here, distributed, committed in each module
+repository as *Take the distributed rules from LIORA-MLOps-Portfolio-Orchestration@<commit>*,
+and pinned here; a copy is never edited by hand (`AGENTS.md` § The default
+choice).
+
+## Parity
+
+The split changed no number. The proof, repeatable on any host:
+
+1. a fresh `git clone --recurse-submodules` of this repository, and a frozen copy
+   of the raw store hardlinked into `store_raw_1m/` — the downloaders never
+   overwrite an existing ZIP;
+2. `make build data-ingest data-status features-all ml-all` — the chain without
+   `data-download`, whose window ends at today's UTC midnight and would move the
+   data snapshot; the download is run separately, its gate an exit code of 0;
+3. the nine BTC artifacts — three feature parquets, the label events, the
+   parameters, the out-of-fold predictions, the model and strategy evaluations,
+   the asset README — byte-identical to the monorepo's at `monorepo-baseline`;
+   `BTC_catalogue.json`, the one new file, identical between two runs;
+4. the three snapshots identical after dropping `generated_at_utc`,
+   `assets[].artifacts.model_evaluation_modified_utc` in `ml_status.json` (a file
+   time) and `symbols[].db_bytes` in `data_status.json` (a file size that follows
+   the file's history, not its data).
+
+Both sides run in containers from the same pins; `SEED`, `nthread=1`,
+`OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make
+the bytes equal (`module_skills/skill_determinism.md`). The comparison script and
+the reference md5 lists live outside every repository.
+
+## Developer-experience drawing
+
+`make dx-update` redraws `sub_module_dx/files_and_folders_visualisation.html`
+from `git ls-files --recurse-submodules` — every file of every module repository
+as its own, an uninitialised submodule an error naming the fix — in two views:
+the tree as tracked, and the same tree seated beside the primitives the Pre-AWS
+mapping names. `python3 -m sub_module_dx.visualise --check` says whether the
+committed page is fresh; the page is committed alone, after the commit it draws,
+so its provenance stamp names that commit. The dashboard serves it below its web
+root through a read-only bind mount; the drawing's contract is
+`module_skills/skill_developer_experience_drawing.md`.
+
 ## One canonical series from two venues
 
 Every market feed has missing minutes. Per minute the highest-priority valid
@@ -134,17 +295,17 @@ on both venues is a canonical gap, forward-filled with the previous close and
 zero volume. Downstream code reads one continuous `t,O,H,L,C,V` series whose
 every printed price existed on a real market. The rule, the provenance and the
 schema:
-[module_data/skills/skill_candle_canonicalisation.md](module_data/skills/skill_candle_canonicalisation.md);
+`901-module_data/module_data/skills/skill_candle_canonicalisation.md`;
 the endpoints:
-[module_data/skills/methodology_data.md](module_data/skills/methodology_data.md).
+`901-module_data/module_data/skills/methodology_data.md`.
 
 ## The basket
 
 One uniform market — USDT-margined perpetual futures. The active basket is a
 single asset, `BTC`: one reference asset carries the whole path end to end, and the
 basket grows by extending `TICKERS` in the `Makefile` and adding one asset service
-per ticker under the compose anchor — every stage is told its assets by
-`--tickers`, and the execution path itself does not change.
+per ticker in `docker-compose.yml` — every stage is told its assets by
+`--tickers`, and no module repository changes.
 
 The window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
 midnight. Every asset is listed on Binance USDS-M before the window start;
@@ -157,21 +318,20 @@ grid.
 LIORA is an academic, local MLOps research system, not an AWS deployment. Its
 module, storage and container boundaries are drawn as a Pre-AWS architecture on
 purpose: every local implementation is the smallest that works — one DuckDB file
-per asset, Parquet and JSON in the asset's folder, one image, a Makefile — and
-the responsibilities are cut so that a later move onto standard cloud primitives
-(an object store, a container runtime, a stage orchestrator) would replace the
-local storage, the local Docker execution and the local stage order without
-redrawing the domain pipeline. No cloud infrastructure exists here and none is
-planned; the mapping is described, not built. It is also drawn: the deployment
-view of the developer-experience drawing, one control on the **DX** page, draws
-the primitives of the mapping table as icons with the flows between them, and
-seats every tracked file and folder beside the one its responsibility answers
-to, or with the documents that deploy nowhere.
-Correctness is shown by the whole chain running end to end on a small
-representative basket, `BTC` today, never by production-scale infrastructure:
-there is no test suite, no security layer and no guard beyond the seven the
-mathematics needs (`AGENTS.md` § Values). The rule, its non-goals and the
-mapping table:
+per asset, Parquet and JSON in the asset's folder, one image per module, a
+Makefile — and the responsibilities are cut so that a later move onto standard
+cloud primitives (an object store, a container runtime, a stage orchestrator)
+would replace the local storage, the local Docker execution and the local stage
+order without redrawing the domain pipeline. No cloud infrastructure exists here
+and none is planned; the mapping is described, not built. It is also drawn: the
+deployment view of the developer-experience drawing, one control on the **DX**
+page, draws the primitives of the mapping table as icons with the flows between
+them, and seats every tracked file and folder beside the one its responsibility
+answers to, or with the documents that deploy nowhere. Correctness is shown by
+the whole chain running end to end on a small representative basket, `BTC`
+today, never by production-scale infrastructure: there is no test suite, no
+security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
+§ Values). The rule, its non-goals, the mapping table and what the split added:
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
 
 The same skill seats the four things a move would name first — the host and the
@@ -185,19 +345,6 @@ citing that skill for the rest. Whether each seat is the cheapest that keeps its
 boundary — what could be less, and whether it is — is
 [REPORT_pre_aws_minimalism.md](REPORT_pre_aws_minimalism.md).
 
-## Stages
-
-| Stage     | Command                | Input → Output                                              | Property                          |
-|-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
-| ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
-| status    | `make data-status`     | DuckDB → stdout + `store_status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
-| feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
-| promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
-| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
-| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
-| drawing   | `make dx-update` | `git ls-files --recurse-submodules` → `sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; the repository's own, mounted read-only below the dashboard's web root and opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
-
 ## Data formats
 
 Raw ZIPs are the Lean `cryptofuture` minute format, one tree per venue,
@@ -207,7 +354,7 @@ base-asset volume. The canonical series and its 15m/1h/4h aggregations live only
 in `store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
 folder's parquets are feature columns, not prices. For Lean backtests use the
 raw ZIP trees. Schema:
-[module_data/skills/skill_candle_canonicalisation.md](module_data/skills/skill_candle_canonicalisation.md)
+`901-module_data/module_data/skills/skill_candle_canonicalisation.md`
 § 11 and § 13.
 
 ## Dashboard
@@ -238,16 +385,17 @@ business reader:
 
 ## ML research layer
 
-`module_features/` builds, per asset and deterministically, the feature
+`902-module_features/` builds, per asset and deterministically, the feature
 catalogue from the canonical series — eight feature definitions on the
 timeframes of the register, twenty-two columns, each name read off its terms
-([module_features/skills/skill_feature_taxonomy.md](module_features/skills/skill_feature_taxonomy.md));
-`module_ml/` takes the fifteen columns of the default set as X until a promotion,
-triple-barrier labels resolved on the canonical 1-minute path, a purged
-walk-forward protocol with average-uniqueness weights and an Optuna search over
-XGBoost, a final out-of-sample fold that selects nothing, and a top-down gated
-strategy with explicit costs. The decision is taken at a 15m close and filled
-one minute later. Every per-asset stage runs `JOBS` assets in parallel, one
-process each, thread caps at one. Every asset folder describes itself in
-`<TICKER>_README.md`. Full methodology:
-[module_ml/skills/methodology_ml.md](module_ml/skills/methodology_ml.md).
+(`902-module_features/module_features/skills/skill_feature_taxonomy.md`)
+— and writes the contract, `<TICKER>_catalogue.json`, that names them to the next
+layer; `903-module_ml/` takes the fifteen columns of the default set as X until a
+promotion, triple-barrier labels resolved on the canonical 1-minute path, a
+purged walk-forward protocol with average-uniqueness weights and an Optuna
+search over XGBoost, a final out-of-sample fold that selects nothing, and a
+top-down gated strategy with explicit costs. The decision is taken at a 15m
+close and filled one minute later. Every per-asset stage runs `JOBS` assets in
+parallel, one process each, thread caps at one. Every asset folder describes
+itself in `<TICKER>_README.md`. Full methodology:
+`903-module_ml/module_ml/skills/methodology_ml.md`.

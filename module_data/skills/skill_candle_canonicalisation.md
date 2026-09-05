@@ -417,11 +417,12 @@ There is
 Python process in a container → mounted filesystem → .duckdb file
 ```
 
-One bind mount carries the whole repository, so the path is a prefix swap:
+The store is mounted by name — `STORE_ASSETS_ARTIFACTS_DIR` on either side — so the path is a
+prefix swap:
 
 | host | container |
 |---|---|
-| `store_assets_artifacts/BTC/BTC_research_ohlcv.duckdb` | `/app/store_assets_artifacts/BTC/BTC_research_ohlcv.duckdb` |
+| `store_assets_artifacts/BTC/BTC_research_ohlcv.duckdb` | `/store/assets_artifacts/BTC/BTC_research_ohlcv.duckdb` |
 
 Docker may start the process, give it a filesystem, cap its memory, cap its
 CPU and set its permissions. Docker may not define candle validity, the
@@ -430,8 +431,8 @@ Those belong to this document, and they hold identically when the same stage is
 run outside a container.
 
 **The seat.** On the one Linux container instance (Amazon ECS on Amazon EC2) the
-file sits at the same path under `/app`, on the volume mounted where `.:/app` is
-today; the whole-file lock holds because that volume is a block device, not a
+file sits at the same path under `/store`, on the volume mounted where the four
+`./store_<content>` mounts are today; the whole-file lock holds because that volume is a block device, not a
 network filesystem. After the run the file is copied whole to the asset's prefix
 in object storage (Amazon S3) — a copy, never a mount. The promotion threshold
 is `../../module_skills/skill_pre_aws_solution.md` § The databases.
