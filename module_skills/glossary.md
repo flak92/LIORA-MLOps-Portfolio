@@ -168,6 +168,24 @@ key is in this register.
 | day files a venue's tree holds | `zip_count` | one per UTC calendar day — `zips` on the page |
 | the longest run of flat no-trade minutes | `longest_flat_run_minutes` | a duration, in minutes — `flat run (min)` on the page |
 
+## Stores
+
+**The store is the boundary between compute and state.** Every stage reads and
+writes only the four stores, and learns where they are from the environment:
+one variable per store, set by the launcher (the Makefile on the host, the
+compose file inside a container) and read by each `config.py` as
+`Path(os.environ[...])` — a missing variable is the interpreter's own
+`KeyError`, not a guard. A module reads only the stores it touches, and no
+module writes into another module's source tree. Until the mount is narrowed,
+`.:/app` also exposes each store at `/app/store_<content>`: the store contract is
+the env-named path, and the second path is a local accident, not an address.
+
+| concept | code | artifact key | UI label | never |
+|---|---|---|---|---|
+| the store contract: one environment variable per store, naming the directory that store is | `STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`; on the host `$(CURDIR)/store_<content>`, in a container `/store/<content>` | — | — | a path derived from `__file__` two levels up (`REPO_ROOT`), a store named by a literal at the point of use, a second name for the same directory |
+| the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store_status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `ml_status.json` | the page's footer names both files | a snapshot written into `module_monitoring/` or any other module's directory |
+| the snapshot route: the dashboard serving a status object by its file name | `STORE_STATUS_ROUTE_SEGMENT`, `GET /store_status/<name>` in `serve.py`, mapped onto `store_status_file(name)` under `STORE_STATUS_DIR` | — | — | a snapshot fetched from the page's own directory, a route per snapshot |
+
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations

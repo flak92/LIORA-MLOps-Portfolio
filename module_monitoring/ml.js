@@ -1,4 +1,4 @@
-/* ML Research and ML Assets tabs: one fetch of ml_status.json feeds the
+/* ML Research and ML Assets tabs: one fetch of store_status/ml_status.json feeds the
    cross-section table, the catalogue frame, the five summary views and — through
    asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
@@ -241,7 +241,7 @@ function selectAsset(ticker) {
 
 /* ---- load ---- */
 
-fetch("ml_status.json", { cache: "no-store" })
+fetch("/store_status/ml_status.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
   .then((mlStatus) => {
     const envelope =
@@ -264,7 +264,7 @@ fetch("ml_status.json", { cache: "no-store" })
   .catch((error) => {
     ["ml-meta", "asset-meta"].forEach((id) => {
       const box = document.getElementById(id);
-      box.textContent = "could not load ml_status.json (" + error.message + ") — run `make ml-status`";
+      box.textContent = "could not load store_status/ml_status.json (" + error.message + ") — run `make ml-status`";
       box.className = "box err";
     });
   });

@@ -19,7 +19,7 @@ function renderRawSource(tableId, venueRows) {
 DATA_STATUS_LOADED.then((status) => {
   if (status instanceof Error) {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load data_status.json (" + status.message + ") — run `make data-status`";
+    meta.textContent = "could not load store_status/data_status.json (" + status.message + ") — run `make data-status`";
     meta.className = "box err";
     return;
   }

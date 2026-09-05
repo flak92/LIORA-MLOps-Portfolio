@@ -398,7 +398,7 @@ carries **only what it computed** — no provenance envelope, no hashes. The
 settings a run used are `module_ml/config.py` at the commit that ran it — the
 commit is the record, and the parameters file carries only what the search
 chose. The experiment is identified once, globally, in
-`module_monitoring/ml_status.json`: research window and seed.
+`store_status/ml_status.json`: research window and seed.
 Library versions are pinned once, in `requirements.txt`. Runs are reproducible
 by construction — fixed seed, `nthread = 1`, pinned versions — and that claim
 is not backed by a hash gate, because a gate proves the metadata, not the

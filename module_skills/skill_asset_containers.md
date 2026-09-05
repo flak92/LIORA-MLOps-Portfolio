@@ -2,8 +2,9 @@
 
 The asset is the primary object; its container is how a stage is run for it
 locally, and the engine is the support layer. One image, one resident container per ticker of the basket, differing only by
-`ASSET=<TICKER>`, every service written out in `docker-compose.yml` under two anchors: `x-service` is what
-every service is — `build`, `image`, `init`, `user`, the bind mount, the `5g` ceiling — and
+`ASSET=<TICKER>`, every service written out in `docker-compose.yml` under three anchors: `x-store-environment` is
+the store contract every service carries — the four `STORE_*_DIR` and the thread cap —, `x-service` is what
+every service is — `build`, `image`, `init`, `user`, the code mount and the four store mounts, the `5g` ceiling — and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
 assets share, which is why the one-off build service stays outside it. The dashboard
 reaches them only through its own proxy: no asset container publishes a port.
@@ -45,12 +46,13 @@ clone builds instead of reaching for a registry; the tag is one, so
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Every container keeps the `.:/app`
-bind mount — `devops` respells `.:/app` beside the socket because a service's
-`volumes:` replaces the anchor's key rather than extending it, and takes the host's
-docker group through `group_add` so it reads the socket without being root; the raw
-store stays central and Lean-exact. The one mount carries the code and the
-`store_*` roots together — the local simplification; the `store_*` grammar, not
-the runtime, keeps them apart (`skill_pre_aws_solution.md` § Docker is compute,
+bind mount and the four `/store/<content>` mounts — `devops` respells `.:/app` beside the socket,
+dropping the store mounts it never reads, because a service's `volumes:` replaces the anchor's
+key rather than extending it, and takes the host's docker group through `group_add` so it
+reads the socket without being root; the raw store stays central and Lean-exact. The code
+mount still shadows the `store_*` roots at `/app/store_<content>` — the local simplification
+until the mount is narrowed; the store contract is the env-named path, and the `store_*`
+grammar, not the runtime, keeps code and state apart (`skill_pre_aws_solution.md` § Docker is compute,
 not storage). Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
 argument: the server is docker-only. `PORT` is only the host side of the

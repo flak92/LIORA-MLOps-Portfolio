@@ -10,10 +10,9 @@ that produce them.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
-
-from module_data.config import REPO_ROOT
 
 # ---- the one server, its role chosen by ASSET
 CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping, measured by the Makefile
@@ -38,7 +37,19 @@ SECONDS_PER_HOUR = 3600
 BYTES_PER_DISK_BLOCK = 512   # the unit rusage counts ru_inblock and ru_oublock in
 
 # ---- the run record: one directory per run of the chain, the whole basket inside it
-STORE_RUN_RECORDS_DIR = REPO_ROOT / "store_run_records"
+# the two stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
+# are read where the modules that measured themselves wrote them, and served under one route prefix
+STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
+STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
+DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"
+ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"
+STORE_STATUS_ROUTE_SEGMENT = "store_status"          # the dashboard route /store_status/<name>: a snapshot served by its file name
+MODULE_MONITORING_DIR = Path(__file__).resolve().parent   # the static page: this module's own directory is the web root
+
+
+def store_status_file(name: str) -> Path:
+    """One snapshot of the status store by its file name — the object the route /store_status/<name> serves."""
+    return STORE_STATUS_DIR / name
 
 
 def run_dir(run_id: str) -> Path:

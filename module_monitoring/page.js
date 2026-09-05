@@ -145,7 +145,7 @@ initPills(document);
 /* The data snapshot both pages read, fetched once. Root-relative, because the panel is served
    from a subdirectory. It resolves to the status or to the Error, never rejecting: a page that
    needs only the cadence must not fail on a snapshot another page renders. */
-const DATA_STATUS_LOADED = fetch("/data_status.json", { cache: "no-store" })
+const DATA_STATUS_LOADED = fetch("/store_status/data_status.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
   .then((status) => { DATA_STATUS = status; return status; })
   .catch((error) => error);

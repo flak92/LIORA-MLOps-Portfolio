@@ -155,7 +155,7 @@ where every parent → child edge is radial. A member whose parent is a folder o
 seated as a second root at the island radius and its edge becomes a chord across the picture — a
 chord that can cross the parent's fan or graze the roots beside it. A path whose parent is the root
 is always free; a deeper path costs a chord, so a view splits a subtree only knowingly, and the
-deployment view splits none: the two snapshots stay beside the page they are served with, the two
+deployment view splits none: the two snapshots sit in `store_status/` and are served under `/store_status/`, the two
 sub-modules with the module that serves them, and their sentences say what each is there.
 
 **A flow rises with its length.** A flow is not a tree edge: it splits no subtree, and the crossing

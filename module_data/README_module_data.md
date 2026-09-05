@@ -45,7 +45,7 @@ Three stages, in order. Each is idempotent and each has a container twin.
 |---|---|---|---|
 | download | `make data-download` | `make docker-data-download` | both venues' 1m klines → Lean day ZIPs; skips a day whose ZIP exists |
 | ingest | `make data-ingest` | `make docker-data-ingest` | both ZIP trees → the asset's DuckDB, then rebuilds the canonical series |
-| status | `make data-status` | `make docker-data-status` | read-only scans → stdout tables + `module_monitoring/data_status.json` |
+| status | `make data-status` | `make docker-data-status` | read-only scans → stdout tables + `store_status/data_status.json` |
 
 Every stage module exposes `main()` and shares one CLI, so a single asset can be
 addressed directly:
@@ -53,6 +53,9 @@ addressed directly:
 ```
 python -m module_data.ingest --tickers BTC
 ```
+
+In a shell no launcher set up, export the four `STORE_*_DIR` first — `make` and compose do it for
+you (`../module_skills/glossary.md` § Stores).
 
 `module_data.status` is the exception: it takes no `--tickers` and always
 reports the whole basket.
@@ -70,7 +73,7 @@ store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb
     ├── ohlcv_1h_canonical    written by module_features/bars.py
     └── ohlcv_4h_canonical    written by module_features/bars.py
 
-module_monitoring/data_status.json   the status snapshot the dashboard reads
+store_status/data_status.json   the status snapshot the dashboard reads
 ```
 
 One asset is one database file; the file names the asset and no table inside
@@ -118,8 +121,8 @@ table, cited by its *responsibility* column and never repeated.
 | `lean.py` | The module's one external-format boundary (`../AGENTS.md` § Canonical vocabulary): the day-ZIP and CSV names, `is_full_utc_day()`, `write_lean_zip()` and `lean_day_zip_paths()`. | Both downloaders, `ingest.py` and `status.py` import it, and it imports `config.py` alone. | It names only the file inside the venue folder `config.py` builds — the reader that wants this format is seated by `../module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries — so the raw days keep the same names under the same tree on whatever disk holds `store_raw_1m/`. | STRATEGY EXECUTION — absent |
 | `download_binance.py` + `download_bybit.py` | SOURCE — the two files of the download stage (§ Stages), each fetching one venue's klines over a keyless public API and writing them as the day ZIPs `lean.py` names (their docstrings). | Twins that differ in the endpoint they speak, both importing `config.py` and `lean.py`, and `ingest.py` reads the trees they leave. | Each writes one ZIP per full UTC day and skips a day whose ZIP exists (§ Stages), so a rerun against the same tree on any disk mounted at `/app` writes only the days that are missing. | STORAGE — raw, immutable, one object per UTC day |
 | `ingest.py` | INGEST and CANONICAL in one stage: it writes the two venue tables and the canonical table of one asset's database file (§ What it reads and writes). | It imports `config.py` and `lean.py`, reads the ZIP trees the downloaders wrote and writes the table `../module_features/bars.py` reads. | It runs one asset at a time inside `asset-<ticker>` through the one `dockerfanout` line (`../module_skills/skill_asset_containers.md` § The topology), and the file it writes stays at the path `research_ohlcv_duckdb()` builds, under the same whole-file lock, whatever disk holds it. | COMPUTE — one stage for one asset |
-| `status.py` | The stage that measures this module's own state — read-only scans of every asset's database, published as one snapshot for the basket (§ What the status stage measures) — placed by `../AGENTS.md` § Architecture shape. | It imports `config.py` and `lean.py`, scans the databases `ingest.py` wrote and counts the ZIPs the downloaders left, and writes `../module_monitoring/data_status.json` for `page.js` to fetch. | It takes no `--tickers` and runs only in the one-off `pipeline` (§ Stages; `../module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism), writing the snapshot at the one path `MODULE_MONITORING_DATA_STATUS_JSON_PATH` builds. | COMPUTE — one stage, one one-off process |
-| `__init__.py` | The package that makes `python -m module_data.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the two venues, the Lean ZIPs and the one database per asset, and imports nothing. | The same `python -m module_data.<stage> --tickers <TICKER>` runs in the venv, in `pipeline` and in `asset-<ticker>` (§ Stages), the command `docker compose run --rm -T pipeline` carries unchanged. | COMPUTE — one stage, one one-off process |
+| `status.py` | The stage that measures this module's own state — read-only scans of every asset's database, published as one snapshot for the basket (§ What the status stage measures) — placed by `../AGENTS.md` § Architecture shape. | It imports `config.py` and `lean.py`, scans the databases `ingest.py` wrote and counts the ZIPs the downloaders left, and writes `../store_status/data_status.json` for `page.js` to fetch. | It takes no `--tickers` and runs only in the one-off `pipeline` (§ Stages; `../module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism), writing the snapshot at the one path `DATA_STATUS_JSON_PATH` builds, under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
+| `__init__.py` | The package that makes `python -m module_data.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the two venues, the Lean ZIPs and the one database per asset, and imports nothing. | The same `python -m module_data.<stage> --tickers <TICKER>` runs in the venv under `make`, in `pipeline` and in `asset-<ticker>` (§ Stages) — each launcher setting the four `STORE_*_DIR` — the command `docker compose run --rm -T pipeline` carries unchanged. | COMPUTE — one stage, one one-off process |
 | the module's documents — `README_module_data.md` and `skills/` | This orientation and the normative documents of `skills/`, filed by ownership (`../AGENTS.md` § The default choice). | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_data/` that no process reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the task's code, seated beside its module |
 
 ## Its normative skills

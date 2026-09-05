@@ -499,7 +499,7 @@ probe, idempotence by file presence — are `methodology_data.md` § 3.
 
 **Example only — an observed run, not an invariant.** These are the numbers of
 one BTC run of the window as it stood when this was read, from
-`module_monitoring/data_status.json`. Nothing in the system may be coded
+`store_status/data_status.json`. Nothing in the system may be coded
 against them.
 
 ```

@@ -10,10 +10,18 @@ PORT := $(PORT)
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
 COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
 COMPOSE     := $(COMPOSE_ENV) docker compose
+# the four stores of this checkout, one variable per store — the store contract every config.py reads; facts, not settings:
+# docker-compose.yml mounts ./store_<content> by the same names, so the host venv family sees the host paths through these
+# exports while every container sees /store/<content> in its own environment
+export STORE_RAW_1M_DIR := $(CURDIR)/store_raw_1m
+export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store_assets_artifacts
+export STORE_RUN_RECORDS_DIR := $(CURDIR)/store_run_records
+export STORE_STATUS_DIR := $(CURDIR)/store_status
+STORES := store_raw_1m store_assets_artifacts store_run_records store_status
 # the basket, or the one asset ASSET=<TICKER> names on the make line — the contract's own spelling of the namespace
 # parameter; make exports it into every recipe's environment, which is harmless: RECORD is empty on host recipes and
 # the docker twins run inside containers that carry their own ASSET
-TICKER_LIST := $(if $(ASSET),$(ASSET),$(shell python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))"))
+TICKER_LIST := $(if $(ASSET),$(ASSET),$(shell STORE_RAW_1M_DIR='$(STORE_RAW_1M_DIR)' STORE_ASSETS_ARTIFACTS_DIR='$(STORE_ASSETS_ARTIFACTS_DIR)' STORE_RUN_RECORDS_DIR='$(STORE_RUN_RECORDS_DIR)' STORE_STATUS_DIR='$(STORE_STATUS_DIR)' python3 -c "from module_data.config import TICKERS; print(' '.join(TICKERS))"))
 ASSET_SERVICE_LIST := $(addprefix asset-,$(shell echo $(TICKER_LIST) | tr A-Z a-z))
 # one process per asset with its threads pinned to 1; the width is min(cores, available GiB), at least 1
 JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
@@ -48,7 +56,7 @@ data-download:   ## fetch Binance + Bybit 1m klines (UTC calendar-day files, ide
 	$(PY) -m module_data.download_bybit
 data-ingest:     ## load both ZIP trees into each asset's <TICKER>_research_ohlcv.duckdb and rebuild its canonical series, one asset at a time
 	$(PY) -m module_data.ingest
-data-status:     ## data & database monitoring -> stdout + module_monitoring/data_status.json
+data-status:     ## data & database monitoring -> stdout + store_status/data_status.json
 	$(PY) -m module_data.status
 
 features-bars:   ## canonical 1m -> every timeframe of the register, in each asset's own database
@@ -66,7 +74,7 @@ ml-train:        ## out-of-fold predictions + final-holdout report per asset
 	$(call fanout,$(PY),module_ml.train)
 ml-strategy:     ## entry edge threshold on the validation folds, final-holdout PnL
 	$(call fanout,$(PY),module_ml.strategy)
-ml-status:       ## aggregate ML artifacts -> module_monitoring/ml_status.json + <TICKER>_README.md
+ml-status:       ## aggregate ML artifacts -> store_status/ml_status.json + <TICKER>_README.md
 	$(PY) -m module_ml.status
 ml-all:          ## the ML chain in order
 	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
@@ -82,6 +90,12 @@ ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset i
 monitoring-dx-update: ## redraw the developer-experience drawing of the tracked tree
 	python3 -m module_monitoring.sub_module_dx.visualise
 
+# a bind-mounted store must exist before compose mounts it: Docker would create a missing source directory as root, and the
+# ${UID}:${GID} container could not write it — order-only, so a store's contents never make a target stale; every new
+# compose target joins the line below
+$(STORES):
+	@mkdir -p $@
+docker-build docker-up docker-data-download docker-data-ingest docker-data-status docker-features-bars docker-features-catalogue docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status docker-ml-feature-set-search docker-ml-feature-set-promote docker-all-record: | $(STORES)
 docker-build:    ## build the one image every service runs
 	$(COMPOSE) build pipeline
 docker-up: docker-build ## start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
@@ -98,7 +112,7 @@ docker-data-download: ## both download stages inside the container (basket-wide,
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit
 docker-data-ingest: ## the ingest stage, one asset at a time, each inside its own container
 	$(call dockerfanout,module_data.ingest,1)
-docker-data-status: ## the data status stage inside the container -> module_monitoring/data_status.json
+docker-data-status: ## the data status stage inside the container -> store_status/data_status.json
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status
 
 docker-features-bars: ## module_features.bars, inside each asset's container

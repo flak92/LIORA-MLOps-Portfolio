@@ -48,14 +48,14 @@ STAGE_OUTPUT_DESCRIPTORS = {
     "module_data.download_binance": lambda ticker: [data_config.raw_symbol_dir(ticker, "binance")],
     "module_data.download_bybit": lambda ticker: [data_config.raw_symbol_dir(ticker, "bybit")],
     "module_data.ingest": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
-    "module_data.status": lambda ticker: [data_config.MODULE_MONITORING_DATA_STATUS_JSON_PATH],
+    "module_data.status": lambda ticker: [data_config.DATA_STATUS_JSON_PATH],
     "module_features.bars": lambda ticker: [data_config.research_ohlcv_duckdb(ticker)],
     "module_features.catalogue": lambda ticker: [features_config.features_parquet(ticker, tf) for tf in features_config.HIERARCHY_TIMEFRAMES],
     "module_ml.labels": lambda ticker: [ml_config.label_events_parquet(ticker)],
     "module_ml.hpo": lambda ticker: [ml_config.parameters_json(ticker)],
     "module_ml.train": lambda ticker: [ml_config.oos_predictions_parquet(ticker), ml_config.model_evaluation_json(ticker)],
     "module_ml.strategy": lambda ticker: [ml_config.strategy_evaluation_json(ticker)],
-    "module_ml.status": lambda ticker: [ml_config.MODULE_MONITORING_ML_STATUS_JSON_PATH, ml_config.asset_readme_md(ticker)],
+    "module_ml.status": lambda ticker: [ml_config.ML_STATUS_JSON_PATH, ml_config.asset_readme_md(ticker)],
     "module_ml.feature_set_search": lambda ticker: [ml_config.feature_set_search_json(ticker)],
     "module_ml.feature_set_promote": lambda ticker: [ml_config.feature_set_json(ticker)],
 }
@@ -175,16 +175,16 @@ def output_block(module: str, tickers: list[str]) -> list[dict]:
     for path in [path for ticker in tickers for path in descriptor(ticker)]:
         if path.is_dir():
             files = sorted(path.glob("*"))
-            written.append({"path": str(path.relative_to(data_config.REPO_ROOT)),
+            written.append({"path": str(path),
                             "file_count": len(files),
                             "size_bytes": sum(f.stat().st_size for f in files),
                             "mtime_ns": max((f.stat().st_mtime_ns for f in files), default=None)})
         elif path.exists():
             stat = path.stat()
-            written.append({"path": str(path.relative_to(data_config.REPO_ROOT)),
+            written.append({"path": str(path),
                             "size_bytes": stat.st_size, "mtime_ns": stat.st_mtime_ns})
         else:
-            written.append({"path": str(path.relative_to(data_config.REPO_ROOT)),
+            written.append({"path": str(path),
                             "size_bytes": None, "mtime_ns": None})
     return written
 
@@ -496,7 +496,7 @@ def finalise(run_id: str) -> int:
           f"{summary['total_wall_seconds']}s wall, {summary['total_cpu_seconds']}s cpu "
           f"({summary['total_cpu_core_hours']} core-hours), bottleneck {summary['bottleneck_stage']}, "
           f"dashboard HTTP {readiness['status_code']} -> {summary['status']}", flush=True)
-    print(f"wrote {config.summary_json(run_id).relative_to(data_config.REPO_ROOT)}", flush=True)
+    print(f"wrote {config.summary_json(run_id)}", flush=True)
     return 0 if not failed else 1
 
 

@@ -5,11 +5,10 @@ so a fresh clone reconstructs the dataset for the window from the public market 
 from __future__ import annotations
 
 import argparse
+import os
 
 from datetime import UTC, datetime
 from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # USDT-margined perpetuals; Binance USDS-M primary, Bybit Linear failover; every asset has Binance 1m history
 # before the window start (probed before every download), Bybit joins whenever its listing starts
@@ -50,12 +49,14 @@ USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
-STORE_RAW_1M_DIR = REPO_ROOT / "store_raw_1m"
+# the stores of the assembled workspace arrive as environment, one variable per store — the store contract every
+# config.py reads; a module reads only the stores it touches, and a missing variable is the interpreter's own KeyError
+STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 # DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism
 DUCKDB_MEMORY_LIMIT = "4GB"
-STORE_ASSETS_ARTIFACTS_DIR = REPO_ROOT / "store_assets_artifacts"
-MODULE_MONITORING_DIR = REPO_ROOT / "module_monitoring"
-MODULE_MONITORING_DATA_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "data_status.json"
+STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
+DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"   # the snapshot this module writes; the dashboard reads it there
 
 
 def symbol(ticker: str) -> str:

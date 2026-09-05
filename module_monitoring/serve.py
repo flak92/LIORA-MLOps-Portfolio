@@ -1,6 +1,7 @@
 """The one server of module_monitoring, its role chosen by ASSET.
 
-    dashboard role (ASSET unset)   the static page; GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
+    dashboard role (ASSET unset)   the static page; GET /store_status/<name>, one snapshot as the module that measured itself wrote it;
+                                   GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
                                    GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
                                    GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket
     asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its snapshot rows, its database size, its own cgroup
@@ -206,8 +207,8 @@ class AssetStatusHandler(BaseHTTPRequestHandler):
         if self.path != "/status":
             write_response(self, HTTPStatus.NOT_FOUND)
             return
-        data_status = load_json(data_config.MODULE_MONITORING_DATA_STATUS_JSON_PATH)
-        ml_status = load_json(ml_config.MODULE_MONITORING_ML_STATUS_JSON_PATH)
+        data_status = load_json(config.DATA_STATUS_JSON_PATH)
+        ml_status = load_json(config.ML_STATUS_JSON_PATH)
         write_response(self, HTTPStatus.OK, to_json_bytes(status_payload(self.server, data_status, ml_status)))
 
 
@@ -233,6 +234,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
                 write_response(self, *fetch_asset_status(segments[2]))
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)
+        elif len(segments) == 3 and segments[1] == config.STORE_STATUS_ROUTE_SEGMENT:
+            snapshot = config.store_status_file(segments[2])   # one path segment: the file name of a snapshot in the status store
+            if snapshot.is_file():
+                write_response(self, HTTPStatus.OK, snapshot.read_bytes())
+            else:
+                write_response(self, HTTPStatus.NOT_FOUND)
         else:
             super().do_GET()
 
@@ -248,7 +255,7 @@ class StatusServer(ThreadingHTTPServer):
 
     def __init__(self, ticker: str | None):
         handler = (AssetStatusHandler if ticker
-                   else functools.partial(DashboardHandler, directory=str(data_config.MODULE_MONITORING_DIR)))
+                   else functools.partial(DashboardHandler, directory=str(config.MODULE_MONITORING_DIR)))
         super().__init__((config.BIND_ADDRESS, config.CONTAINER_PORT), handler)
         self.ticker = ticker
         self.started_at_utc = config.to_utc_text(datetime.now(tz=UTC))

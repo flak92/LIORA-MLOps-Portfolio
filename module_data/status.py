@@ -1,4 +1,4 @@
-"""Data-layer quality report: stdout tables + module_monitoring/data_status.json, one sequential process over the
+"""Data-layer quality report: stdout tables + store_status/data_status.json, one sequential process over the
 asset databases; every alias a scan publishes is the key it becomes."""
 
 from __future__ import annotations
@@ -155,7 +155,7 @@ def symbol_block(ticker: str, canonical_row: dict, db_bytes: int) -> dict:
 
 def main() -> int:
     argparse.ArgumentParser(
-        description="data & database monitoring -> stdout + module_monitoring/data_status.json"
+        description="data & database monitoring -> stdout + store_status/data_status.json"
     ).parse_args()
     venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
     canonical_rows, db_bytes = {}, {}
@@ -209,7 +209,7 @@ def main() -> int:
         "venues": venues,
         "canonical_source": canonical,
     }
-    status_path = config.MODULE_MONITORING_DATA_STATUS_JSON_PATH
+    status_path = config.DATA_STATUS_JSON_PATH
     status_path.write_text(json.dumps(status, sort_keys=True, indent=1) + "\n", encoding="utf-8")
 
     flow = status["flow"]
@@ -237,7 +237,7 @@ def main() -> int:
               f"{canonical_row['max_abs_return_1m'] if canonical_row['max_abs_return_1m'] is not None else '-':>12} "
               f"{canonical_row['relative_divergence_p99'] if canonical_row['relative_divergence_p99'] is not None else '-':>19} "
               f"{canonical_row['relative_divergence_max'] if canonical_row['relative_divergence_max'] is not None else '-':>19}")
-    print(f"wrote {status_path.relative_to(config.REPO_ROOT)}")
+    print(f"wrote {status_path}")
     return 0
 
 

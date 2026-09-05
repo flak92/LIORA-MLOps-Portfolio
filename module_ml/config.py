@@ -8,7 +8,7 @@ different experiment, and the git commit is the record of which one ran.
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, MODULE_MONITORING_DIR,
+    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, STORE_STATUS_DIR,
     TICKERS, artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded, to_utc_ms,
 )
 from module_features.config import (  # re-exported
@@ -86,7 +86,7 @@ FEATURE_SET_SEARCH_MOVE_BACKWARD = "backward"
 # ---- the asset folder paths: every per-asset file carries the <TICKER>_ prefix, a time series its grid in
 # timeframe slots (module_skills/skill_sorting_files_naming_standard.md); built here and nowhere else — the
 # feature parquets by module_features/config.py
-MODULE_MONITORING_ML_STATUS_JSON_PATH = MODULE_MONITORING_DIR / "ml_status.json"
+ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"
 
 
 def label_events_parquet(ticker):
