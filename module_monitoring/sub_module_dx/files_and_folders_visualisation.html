@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "72 tracked files \u00b7 6 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 307a69d \u00b7 2026-09-05 01:43:03",
+ "subtitle": "73 tracked files \u00b7 6 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 0fa6589 \u00b7 2026-09-05 02:15:54",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -196,6 +196,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "",
    "module_ml/config.py": "The descriptors that name every artifact object under the asset prefix, built on `artifact_dir()` of `module_data/config.py` and consumed by descriptor everywhere; the copy's key is each descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR`, so a version prefix edits nothing here.",
    "module_ml/dataset.py": "",
+   "module_ml/feature_set_promote.py": "",
    "module_ml/feature_set_search.py": "",
    "module_ml/hpo.py": "",
    "module_ml/labels.py": "",
@@ -424,6 +425,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "S6",
    "module_ml/config.py": "S6",
    "module_ml/dataset.py": "S6",
+   "module_ml/feature_set_promote.py": "S6",
    "module_ml/feature_set_search.py": "S6",
    "module_ml/hpo.py": "S6",
    "module_ml/labels.py": "S6",
@@ -702,6 +704,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "doc",
    "module_ml/config.py": "config",
    "module_ml/dataset.py": "code",
+   "module_ml/feature_set_promote.py": "code",
    "module_ml/feature_set_search.py": "code",
    "module_ml/hpo.py": "code",
    "module_ml/labels.py": "code",
@@ -802,6 +805,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "",
    "module_ml/config.py": "",
    "module_ml/dataset.py": "",
+   "module_ml/feature_set_promote.py": "",
    "module_ml/feature_set_search.py": "",
    "module_ml/hpo.py": "",
    "module_ml/labels.py": "",
@@ -897,6 +901,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "S5",
    "module_ml/config.py": "S5",
    "module_ml/dataset.py": "S5",
+   "module_ml/feature_set_promote.py": "S5",
    "module_ml/feature_set_search.py": "S5",
    "module_ml/hpo.py": "S5",
    "module_ml/labels.py": "S5",
@@ -1035,6 +1040,7 @@ const VIEWS = {
    "module_ml/README_module_ml.md": "doc",
    "module_ml/config.py": "config",
    "module_ml/dataset.py": "code",
+   "module_ml/feature_set_promote.py": "code",
    "module_ml/feature_set_search.py": "code",
    "module_ml/hpo.py": "code",
    "module_ml/labels.py": "code",
@@ -1261,6 +1267,12 @@ const TREE_NODES = [
  {
   "id": "module_ml/dataset.py",
   "path": "module_ml/dataset.py",
+  "role": "code",
+  "type": "file"
+ },
+ {
+  "id": "module_ml/feature_set_promote.py",
+  "path": "module_ml/feature_set_promote.py",
   "role": "code",
   "type": "file"
  },
@@ -1816,6 +1828,12 @@ const TREE_EDGES = [
   "from": "module_ml/",
   "thick": false,
   "to": "module_ml/dataset.py",
+  "type": "tree"
+ },
+ {
+  "from": "module_ml/",
+  "thick": false,
+  "to": "module_ml/feature_set_promote.py",
   "type": "tree"
  },
  {
