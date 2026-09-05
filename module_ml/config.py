@@ -213,6 +213,5 @@ ARTIFACT_SET_DESCRIPTORS = (parameters_json, model_evaluation_json, strategy_eva
 
 
 def is_artifact_set_complete(ticker: str) -> bool:
-    """Whether the folder holds all three — the one question status.py and the endpoint ask;
-    completeness, never freshness."""
+    """Whether the folder holds all three — the one question status.py asks; completeness, never freshness."""
     return all(descriptor(ticker).exists() for descriptor in ARTIFACT_SET_DESCRIPTORS)

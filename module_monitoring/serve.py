@@ -4,7 +4,8 @@
                                    GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
                                    GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
                                    GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket
-    asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its snapshot rows, its database size, its own cgroup
+    asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its rows of the snapshots, the size of the database
+                                   in its folder, its own cgroup — served as it lies there; this module imports no other
 """
 
 from __future__ import annotations
@@ -19,9 +20,6 @@ from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-
-from module_data import config as data_config
-from module_ml import config as ml_config
 
 from . import config
 
@@ -53,42 +51,42 @@ def load_cgroup_dir() -> Path:
 
 def load_host_memory_bytes() -> int:
     """MemTotal, the first line of /proc/meminfo — the ceiling when the cgroup sets none."""
-    return int(load_text(HOST_MEMORY_PROC_PATH).split()[1]) * data_config.BYTES_PER_KIBIBYTE
+    return int(load_text(HOST_MEMORY_PROC_PATH).split()[1]) * config.BYTES_PER_KIBIBYTE
 
 
-def snapshot_row(rows: list[dict], symbol: str) -> dict | None:
-    return next((row for row in rows if row["symbol"] == symbol), None)
+def snapshot_row(rows: list[dict], ticker: str) -> dict | None:
+    """The row of the asset — every row of the data snapshot names its ticker, so nothing is derived here."""
+    return next((row for row in rows if row["ticker"] == ticker), None)
 
 
-def data_block(ticker: str, data_status: dict) -> dict | None:
+def data_block(ticker: str, data_status: dict, ml_status: dict) -> dict | None:
     """The asset's rows of the data snapshot with the two ages the tab judges them by; None while the snapshot
-    has no row for it, or the folder no longer holds the database those rows describe."""
-    symbol = data_config.symbol(ticker)
-    symbol_row = snapshot_row(data_status["symbols"], symbol)
-    canonical_row = snapshot_row(data_status["canonical_source"], symbol)
-    database = data_config.research_ohlcv_duckdb(ticker)
-    if symbol_row is None or canonical_row is None or not database.exists():
+    has no row for it, or the folder holds no database for those rows. The research window comes from the ML
+    snapshot — the endpoint reads what the modules published and computes nothing of its own."""
+    symbol_row = snapshot_row(data_status["symbols"], ticker)
+    canonical_row = snapshot_row(data_status["canonical_source"], ticker)
+    databases = config.asset_databases(ticker)
+    if symbol_row is None or canonical_row is None or not databases:
         return None
     last_observation = config.to_utc_datetime(canonical_row["last_observation_utc"])
-    research_end = config.to_utc_datetime(ml_config.RESEARCH_END_UTC)
+    research_window = ml_status["research_window"]
+    research_end = config.to_utc_datetime(research_window["end_utc"])
     return {
         "generated_at_utc": data_status["generated_at_utc"],
         "row_count": symbol_row["row_count"],
         "last_observation_utc": canonical_row["last_observation_utc"],
         "observation_lag_minutes": minutes_since(last_observation),
         "measurement_age_minutes": minutes_since(config.to_utc_datetime(data_status["generated_at_utc"])),
-        "db_bytes": database.stat().st_size,
+        "db_bytes": sum(database.stat().st_size for database in databases),
         # the grid has no holes, so its two ends decide coverage of the half-open research window
-        "research_window_covered": (data_config.DATA_WINDOW_START_UTC <= ml_config.RESEARCH_START_UTC
+        "research_window_covered": (config.to_utc_datetime(data_status["window_start_utc"]) <= config.to_utc_datetime(research_window["start_utc"])
                                     and last_observation >= research_end - timedelta(minutes=1)),
     }
 
 
 def artifacts_block(ticker: str, ml_status: dict) -> dict | None:
-    """The folder's facts the tab shows; None while the ML snapshot has no block for the asset, or the
-    folder no longer holds the artifact set that block describes."""
-    if not ml_config.is_artifact_set_complete(ticker):
-        return None
+    """The folder's facts the tab shows; None while the ML snapshot has no block for the asset — the snapshot
+    folds only the assets whose artifact set was complete when it was written, and that is what is served."""
     for asset in ml_status["assets"]:
         if asset["ticker"] == ticker:
             return {**asset["artifacts"],
@@ -115,7 +113,7 @@ def status_payload(server: StatusServer, data_status: dict, ml_status: dict) -> 
         "ticker": server.ticker,
         "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
         "started_at_utc": server.started_at_utc,
-        "data": data_block(server.ticker, data_status),
+        "data": data_block(server.ticker, data_status, ml_status),
         "artifacts": artifacts_block(server.ticker, ml_status),
         "footprint": footprint_block(),
     }
@@ -127,27 +125,15 @@ def load_run_ids() -> list[str]:
     return sorted((path.name for path in records.iterdir() if path.is_dir()), reverse=True) if records.exists() else []
 
 
-def load_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-
-
 def run_payload(run_id: str) -> dict:
-    """One recorded run as the page reads it: what ran, what it cost, and the container-wide series.
-    The samples are ordered by their own timestamp because every container of the run appended to one
-    file, and the file holds arrival order."""
-    manifest_path, summary_path = config.manifest_json(run_id), config.summary_json(run_id)
-    samples = sorted(load_jsonl(config.resources_jsonl(run_id)), key=lambda sample: sample["timestamp_utc"])
-    stride = max(1, -(-len(samples) // config.RUN_SAMPLE_POINT_LIMIT))
+    """One recorded run as the page reads it: every stage record the recorder left in the run's directory, in the
+    order the stages started."""
+    records = (load_json(path) for path in config.run_dir(run_id).glob("*.json"))
+    stages = sorted((record for record in records if "started_at_utc" in record), key=lambda record: record["started_at_utc"])
     return {
         "run_id": run_id,
         "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
-        "manifest": load_json(manifest_path) if manifest_path.exists() else None,
-        "summary": load_json(summary_path) if summary_path.exists() else None,
-        "sample_count": len(samples),
-        "sample_stride": stride,
-        "samples": samples[::stride],
+        "stages": stages,
     }
 
 

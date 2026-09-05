@@ -1,15 +1,10 @@
-/* Lifecycle tab: one recorded run read from /runs and /runs/<run_id> — the run header, the stage
-   table and one shared timeline. Classic script; uses the shared toolkit from page.js and buildTable
-   from ml.js. The page collects nothing: every number below was measured by the stage that produced
-   it. */
+/* Lifecycle tab: one recorded run read from /runs and /runs/<run_id> — the run header, the stage table
+   and what each stage wrote to the four stores. Classic script; uses the shared toolkit from page.js and
+   buildTable from ml.js. The page collects nothing: every number below was measured from outside the stage
+   by record.py of the repository — when it started, how it exited, what it added, changed and removed. */
 "use strict";
 
-const TIMELINE_WIDTH = 700;
-const TIMELINE_HEIGHT = 100;
-const BYTES_PER_SECOND_LABEL = "/s";
-const HTTP_OK = 200;
-
-/* the endpoint writes UTC as "YYYY-MM-DD HH:MM:SS" */
+/* the recorder writes UTC as "YYYY-MM-DD HH:MM:SS" */
 function secondsSinceEpoch(utcText) {
   const [day, clock] = utcText.split(" ");
   const [year, month, dayOfMonth] = day.split("-").map(Number);
@@ -23,179 +18,73 @@ function formatSeconds(seconds) {
   return Math.floor(seconds / SECONDS_PER_MINUTE) + "m " + Math.round(seconds % SECONDS_PER_MINUTE) + "s";
 }
 
-/* every container of a run appends to one file, so a series is only a series inside one of them */
-function samplesByService(samples) {
-  const byService = {};
-  samples.forEach((sample) => {
-    byService[sample.docker_service] = byService[sample.docker_service] || [];
-    byService[sample.docker_service].push(sample);
-  });
-  return byService;
-}
-
-/* a counter series becomes a rate; a counter that fell is a container restarted, not a rate */
-function buildRateSeries(samples, key) {
-  const points = [];
-  for (let i = 1; i < samples.length; i++) {
-    const previous = samples[i - 1];
-    const sample = samples[i];
-    const span = secondsSinceEpoch(sample.timestamp_utc) - secondsSinceEpoch(previous.timestamp_utc);
-    if (span <= 0) continue;
-    const rise = key(sample) - key(previous);
-    if (rise < 0) continue;
-    points.push({ at: secondsSinceEpoch(sample.timestamp_utc), value: rise / span });
-  }
-  return points;
-}
-
-function buildLevelSeries(samples, key) {
-  return samples.map((sample) => ({ at: secondsSinceEpoch(sample.timestamp_utc), value: key(sample) || 0 }));
-}
-
-/* one polyline per container on the run's shared time axis, with a dashed rule at every stage start */
-function buildTimeline(seriesByService, boundaries, startAt, endAt) {
-  const NS = "http://www.w3.org/2000/svg";
-  const span = Math.max(1, endAt - startAt);
-  const peak = Math.max(1e-9, ...Object.values(seriesByService).flat().map((point) => point.value));
-  const x = (at) => (TIMELINE_WIDTH * (at - startAt)) / span;
-  const y = (value) => TIMELINE_HEIGHT - (value / peak) * TIMELINE_HEIGHT;
-
-  const svg = document.createElementNS(NS, "svg");
-  svg.setAttribute("viewBox", "0 0 " + TIMELINE_WIDTH + " " + TIMELINE_HEIGHT);
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("class", "timeline");
-  boundaries.forEach((boundary) => {
-    const rule = document.createElementNS(NS, "line");
-    rule.setAttribute("x1", x(boundary.at));
-    rule.setAttribute("x2", x(boundary.at));
-    rule.setAttribute("y1", 0);
-    rule.setAttribute("y2", TIMELINE_HEIGHT);
-    rule.setAttribute("class", "timeline__boundary");
-    const tip = document.createElementNS(NS, "title");
-    tip.textContent = boundary.stage;
-    rule.appendChild(tip);
-    svg.appendChild(rule);
-  });
-  Object.keys(seriesByService).sort().forEach((service) => {
-    const line = document.createElementNS(NS, "polyline");
-    line.setAttribute("class", "timeline__series");
-    line.setAttribute("points", seriesByService[service]
-      .map((point) => x(point.at).toFixed(1) + "," + y(point.value).toFixed(1)).join(" "));
-    const tip = document.createElementNS(NS, "title");
-    tip.textContent = service;
-    line.appendChild(tip);
-    svg.appendChild(line);
-  });
-  return svg;
-}
-
-function appendTimeline(body, caption, seriesByService, boundaries, startAt, endAt) {
-  const label = document.createElement("p");
-  label.className = "timeline__caption";
-  const points = Object.values(seriesByService).flat();
-  const peak = points.length ? Math.max(...points.map((point) => point.value)) : 0;
-  label.textContent = caption + "  ·  peak " + (points.length ? peak : "-");
-  body.appendChild(label);
-  body.appendChild(buildTimeline(seriesByService, boundaries, startAt, endAt));
+/* what a stage wrote: the bytes of every file it added or changed */
+function bytesWritten(stage) {
+  return stage.store_diff.added.concat(stage.store_diff.changed)
+    .reduce((total, entry) => total + entry.size_bytes, 0);
 }
 
 function buildRunHeader(record) {
-  const manifest = record.manifest;
-  const summary = record.summary;
+  const stages = record.stages;
+  const first = stages[0];
+  const last = stages[stages.length - 1];
+  const failed = stages.filter((stage) => stage.exit_code !== 0);
+  const wallSeconds = secondsSinceEpoch(last.ended_at_utc) - secondsSinceEpoch(first.started_at_utc);
+  const stageSeconds = stages.reduce((total, stage) => total + stage.duration_seconds, 0);
   return buildKeyValueBox([
     ["run", record.run_id],
-    ["commit", (manifest.git_commit_short || "-") + (manifest.working_tree_clean ? "" : "  (working tree dirty)")],
-    ["start / end", manifest.started_at_utc + "  ->  " + manifest.finished_at_utc + " UTC"],
-    ["total time", formatSeconds(summary.total_wall_seconds) + "  (stages " + formatSeconds(summary.total_stage_seconds)
-      + ", orchestration " + formatSeconds(summary.orchestration_seconds) + ")"],
-    ["total CPU", formatSeconds(summary.total_cpu_seconds) + "  (" + summary.total_cpu_core_hours + " core-hours)"],
-    ["peak resident set of a stage", formatBytes(summary.global_memory_peak_bytes)],
-    ["bottleneck", summary.bottleneck_stage],
-    ["exit code", manifest.exit_code + "  (" + summary.status + ")"
-      + (summary.failed_stage ? "  failed at " + summary.failed_stage : "")],
-    ["dashboard", "HTTP " + summary.dashboard_ready.status_code + "  " + summary.dashboard_ready.url
-      + "  ·  assets " + summary.dashboard_ready.assets.filter((asset) => asset.status_code === HTTP_OK).length
-      + "/" + summary.dashboard_ready.assets.length],
-    ["host", manifest.kernel + "  ·  " + manifest.cpu_count + " cpus  ·  sampled every "
-      + manifest.sample_interval_seconds + "s"],
+    ["start / end", first.started_at_utc + "  ->  " + last.ended_at_utc + " UTC"],
+    ["total time", formatSeconds(wallSeconds) + "  (stages " + formatSeconds(stageSeconds) + ")"],
+    ["stages", stages.length + (failed.length
+      ? "  ·  failed at " + failed.map((stage) => stage.stage).join(", ")
+      : "  ·  every exit code 0")],
+    ["written", formatBytes(stages.reduce((total, stage) => total + bytesWritten(stage), 0)) + " across the four stores"],
   ]);
 }
 
-function renderRunStages(body, summary) {
+function renderRunStages(body, stages) {
   body.appendChild(buildTable(
-    ["stage", "container", "pid", "time", "CPU", "CPU share", "peak resident set", "read", "write",
-     "net in (container)", "net out (container)", "samples", "exit"],
-    summary.stages.map((stage) => {
-      const share = document.createElement("span");
-      share.appendChild(buildMeter(100 * (stage.cpu_share || 0)));
-      share.appendChild(document.createTextNode(formatPercent(stage.cpu_share, 0)));
-      return [
-        stage.stage, stage.docker_service, stage.pid,
-        formatSeconds(stage.wall_seconds), formatSeconds(stage.cpu_seconds), share,
-        formatBytes(stage.memory_peak_bytes),
-        formatBytes(stage.read_chars), formatBytes(stage.write_chars),
-        formatBytes(stage.container_network_received_bytes_delta),
-        formatBytes(stage.container_network_transmitted_bytes_delta),
-        formatCount(stage.sample_count),
-        [stage.exit_code, stage.exit_code !== 0],
-      ];
-    })));
+    ["stage", "start", "time", "exit", "added", "changed", "removed", "bytes written"],
+    stages.map((stage) => [
+      stage.stage, stage.started_at_utc, formatSeconds(stage.duration_seconds),
+      [stage.exit_code, stage.exit_code !== 0],
+      formatCount(stage.store_diff.added.length), formatCount(stage.store_diff.changed.length),
+      formatCount(stage.store_diff.removed.length), formatBytes(bytesWritten(stage)),
+    ])));
 }
 
-function renderRunOutputs(body, summary) {
+/* every file a stage touched, by store: the record of what the run left behind */
+function renderRunStores(body, stages) {
   const rows = [];
-  summary.stages.forEach((stage) => {
-    (stage.output || []).forEach((output) => {
-      rows.push([stage.stage, stage.input || "-", output.path,
-                 output.size_bytes === null ? "absent" : formatBytes(output.size_bytes)]);
+  stages.forEach((stage) => {
+    ["added", "changed", "removed"].forEach((state) => {
+      stage.store_diff[state].forEach((entry) => {
+        rows.push([stage.stage, entry.store, entry.path, state,
+                   state === "removed" ? "-" : formatBytes(entry.size_bytes)]);
+      });
     });
   });
-  body.appendChild(buildTable(["stage", "input", "output", "size"], rows));
-}
-
-/* one axis per metric, one polyline per container, so two containers running in parallel are two lines */
-function renderRunTimelines(body, record) {
-  const samples = record.samples;
-  if (!samples.length) {
-    body.appendChild(buildFootnote("no samples: every stage of this run was shorter than one sample interval."));
+  if (!rows.length) {
+    body.appendChild(buildFootnote("no stage of this run wrote a file."));
     return;
   }
-  const startAt = secondsSinceEpoch(record.summary.first_stage_start_utc);
-  const endAt = secondsSinceEpoch(record.summary.last_stage_end_utc);
-  const boundaries = record.summary.stages.map((stage) => ({ stage: stage.stage, at: secondsSinceEpoch(stage.start_utc) }));
-  const byService = samplesByService(samples);
-  const rates = (key) => Object.fromEntries(Object.entries(byService)
-    .map(([service, own]) => [service, buildRateSeries(own, key)]));
-  const levels = (key) => Object.fromEntries(Object.entries(byService)
-    .map(([service, own]) => [service, buildLevelSeries(own, key)]));
-  appendTimeline(body, "CPU — container seconds per second",
-    rates((sample) => sample.container_cpu_usage_seconds), boundaries, startAt, endAt);
-  appendTimeline(body, "resident set of the stage process (bytes)",
-    levels((sample) => sample.process_memory_resident_bytes), boundaries, startAt, endAt);
-  appendTimeline(body, "disk — container block bytes" + BYTES_PER_SECOND_LABEL,
-    rates((sample) => sample.container_disk_read_bytes + sample.container_disk_write_bytes),
-    boundaries, startAt, endAt);
-  appendTimeline(body, "network — container bytes" + BYTES_PER_SECOND_LABEL,
-    rates((sample) => sample.container_network_received_bytes + sample.container_network_transmitted_bytes),
-    boundaries, startAt, endAt);
+  body.appendChild(buildTable(["stage", "store", "path", "state", "size"], rows));
 }
 
 function renderRun(record) {
   const host = document.getElementById("run-detail");
   host.textContent = "";
-  if (!record.manifest || !record.summary) {
-    host.appendChild(buildFootnote("run " + record.run_id + " has no summary — it was never finalised."));
+  if (!record.stages.length) {
+    host.appendChild(buildFootnote("run " + record.run_id + " recorded no stage."));
     return;
   }
   const header = buildFrame("RUN — " + record.run_id);
   header.body.appendChild(buildRunHeader(record));
-  const stages = buildFrame("STAGES — what ran, in which container, at what cost");
-  renderRunStages(stages.body, record.summary);
-  const outputs = buildFrame("INPUTS AND OUTPUTS — what each stage read and what it left behind");
-  renderRunOutputs(outputs.body, record.summary);
-  const timeline = buildFrame("TIMELINE — one axis, dashed rules at the stage boundaries");
-  renderRunTimelines(timeline.body, record);
-  [header, stages, outputs, timeline].forEach((frame) => host.appendChild(frame.frame));
+  const stages = buildFrame("STAGES — what ran, how long, how it ended, what it wrote");
+  renderRunStages(stages.body, record.stages);
+  const stores = buildFrame("STORES — every file a stage added, changed or removed");
+  renderRunStores(stores.body, record.stages);
+  [header, stages, stores].forEach((frame) => host.appendChild(frame.frame));
 }
 
 function fetchRunRecord(runId) {
@@ -215,7 +104,7 @@ function initRun() {
       meta.textContent = runs.run_ids.length + " recorded run(s) · newest " + runs.run_ids[0];
       return fetchRunRecord(runs.run_ids[0]).then((record) => {
         meta.textContent = runs.run_ids.length + " recorded run(s) · showing " + record.run_id
-          + " · " + formatCount(record.sample_count) + " samples, stride " + record.sample_stride;
+          + " · " + record.stages.length + " stages";
         renderRun(record);
       });
     })

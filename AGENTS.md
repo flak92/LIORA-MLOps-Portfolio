@@ -67,7 +67,7 @@ the data moves through them, and one that carries no dataflow:
 module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
 module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/          the catalogue and the canonical path → X, Y → search → model → research simulation
-module_monitoring/  presentation of what the three computational modules measured about themselves, and what it measures around them, and the server that serves it — in an asset container, the container reporting itself; around a stage, the stage reporting itself
+module_monitoring/  presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
 module_skills/      the contract's companions: the name register (module_skills/glossary.md), the repository-wide skills, and the index of every module's own
 ```
 
@@ -114,8 +114,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
-  `module_monitoring/serve.py` and `module_monitoring/record.py` for the cgroup
-  and procfs paths of their boundary)
+  `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
+  `record.py` for the four stores it lists)
   — and the browser, which has no config module and fetches its three snapshots
   (`data_status.json`, `features_status.json`, `ml_status.json`) under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal
@@ -327,13 +327,13 @@ argparse (`module_data/config.py`, `module_data/status.py`,
 `module_ml/feature_set_promote.py`, `module_monitoring/sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
 the drawing's template), docker compose (`Makefile`,
-`docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`, `module_monitoring/record.py`,
-`module_monitoring/sub_module_devops/config.py` and both downloaders), the `git` and `docker`
-command lines over `subprocess` (`module_monitoring/sub_module_dx/visualise.py`,
-`module_monitoring/record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
-cgroup v2 and procfs (`module_monitoring/serve.py`, `module_monitoring/record.py`), `socket` and the Docker Engine API over its
-unix socket (`module_monitoring/sub_module_devops/`), and `posix_spawn`, `wait4` rusage and the
-per-process procfs of a wrapped stage (`module_monitoring/record.py`). A
+`docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`,
+`module_monitoring/sub_module_devops/config.py` and both downloaders), the `git`
+command line over `subprocess` (`module_monitoring/sub_module_dx/visualise.py`) and a stage's
+command line over `subprocess` (`record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
+cgroup v2 and procfs (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its
+unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four stores
+(`record.py`). A
 boundary is an exception the conventions name, not an inconsistency they
 tolerate.
 

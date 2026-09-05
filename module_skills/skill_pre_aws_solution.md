@@ -75,8 +75,8 @@ today:
 | LABEL | Y, resolved on the canonical path | `module_ml/labels.py` |
 | MODEL | the two searches, the fit, the folds, the shared IO, and the hand's copy that fixes an asset's columns | `module_ml/hpo.py`, `module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py` |
 | STRATEGY | the research evaluation of the predictions | `module_ml/strategy.py` |
-| ORCHESTRATION | ordering and launching the stages — not `orchestration_seconds` of `glossary.md` § Run record, the wall time between two stages | the Makefile |
-| MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `module_monitoring/record.py`, the page scripts |
+| ORCHESTRATION | ordering and launching the stages — the wall time between two stages is nobody's number, not the record's | the Makefile |
+| MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_features/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `record.py`, the page scripts |
 | STRATEGY EXECUTION | taking research artifacts and market data into a running strategy | absent here — described: `module_trading/`, its own container on the strategy host (§ Infrastructure seats) |
 | INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/`, `module_monitoring/sub_module_dx/` |
 
@@ -184,9 +184,9 @@ execution, when it exists, is `module_trading/`, its own container. A second
 asset is one more prefix it reads. Absent here — described.
 
 The supporting seats — the image registry (Amazon ECR), logs and metrics (Amazon
-CloudWatch) as the recorder writes them, the readers behind the tunnel
-(`../README.md` § Quickstart) — are their rows read forward: the one image; the
-recorder's files when `RECORD` is set; `dashboard`, `devops` and
+CloudWatch), the readers behind the tunnel (`../README.md` § Quickstart) — are
+their rows read forward: the one image; the run records `record.py` leaves, one
+file per stage; `dashboard`, `devops` and
 `asset-<ticker>` kept running on the task host behind a port-forward. A second
 asset is one more `asset-<ticker>`. A rename.
 
@@ -310,7 +310,7 @@ no stage module reads `ASSET` — it belongs to the container, to `serve.py`
 choosing its role and to the recorder; no stage holds state between invocations,
 binds a port or assumes a resident peer. The residency assumption for compute
 lives in one macro line, `dockerfanout` in the Makefile, and nowhere else, and
-`record.py` already tolerates a container that is gone. Read forward that one
+`record.py` measures from outside and knows no container. Read forward that one
 line is a task run with an `ASSET=<TICKER>` override on the one task definition,
 and no stage notices. Two stages are the reduce over the basket rather than
 asset-scoped stages: `module_data.status` and `module_ml.status` each write one
@@ -330,15 +330,15 @@ The Makefile is the local developer interface and never a scheduler. A stage is
 the grammar table); the order is the visible list in `all:`, `features-all:` and
 `ml-all:` (`../README.md` § Quickstart); no recipe branches on state, retries, sleeps or
 waits for a condition — the `JOBS` measurement decides how wide a stage runs,
-never whether. `JOBS`, `RECORD` and `RUN_ID` are the local spellings of three
-parameters that orchestration owns — width, stage instrumentation, execution
+never whether. `JOBS`, `CHAIN_STAGES` and `RUN_ID` are the local spellings of three
+parameters that orchestration owns — width, what runs and is measured, execution
 identity — and no stage reads or derives any of them (`skill_determinism.md` for
 width). The basket crosses in as data — `--tickers` on every stage command,
 named by the launcher's `TICKERS` — never as a branch. One stage vocabulary
-holds in every layer — the Makefile,
-`stage_of()` in the recorder, the run record, the page, these documents — with
-one seam named: the target `data-download` runs both download stages, so the
-record spells them `data-download-binance` and `data-download-bybit`.
+holds in every layer — the Makefile, the stage name `record.py` takes from the
+make target, the run record, the page, these documents — with one seam named:
+the target `data-download` runs both download stages, and the record spells the
+target, `data-download`, once.
 
 Read forward, the Makefile is a state machine whose states are the stages. The
 test of a stage's width is whether it has a one-line state name; every stage of
@@ -426,9 +426,9 @@ than a redesign is one descriptor per artifact, built in one `config.py` and
 consumed by descriptor everywhere, the recorder included. The `<version>` is the
 execution name, `run_id`, and the active version — the one a reader reads — is
 chosen where the reader is, never marked inside a file. A per-asset view of a
-run is a subdivision inside one record — `run_id`, then the `tickers` field, the
-service name, the manifest row and the log-name half — never one record per
-asset. The run record's root-relative paths are the local form of object keys,
+run is a subdivision inside one record — `run_id`, then the stage, then the store
+paths of `store_diff`, whose `<TICKER>/` prefix is the asset — never one record
+per asset. The run record's root-relative paths are the local form of object keys,
 and its directory listing the local form of listing a prefix.
 
 ## The dependency picture
@@ -496,11 +496,11 @@ elsewhere, and — `Never:` — the refusal that stands, cited where it stands.
    the closed files whole to the four prefixes — absent here — described. Never:
    `s3://` in a path constant (`AGENTS.md` § Rejected vocabulary).
 
-9. **Logs and metrics.** The recorder's files. Locally: with `RECORD`,
-   `logs/<stage>_<docker_service>.log` and the 1 s samples in
-   `store_run_records/<run_id>/`. Elsewhere: its row of § The mapping table —
-   absent here — described. Never: a container number as a stage cost
-   (`glossary.md` § Run record).
+9. **Logs and metrics.** Absent locally: a stage's output goes to the terminal,
+   and the run record holds no stream and no sample — `store_run_records/<run_id>/<stage>.json`
+   is time, exit code and store difference. Elsewhere: its row of § The mapping
+   table — absent here — described. Never: a resource number a stage did not
+   leave in a store (`glossary.md` § Run record).
 
 10. **The page, behind the tunnel.** Locally: `make on`, the address it prints, the
     tunnel (`../README.md` § Quickstart). Elsewhere: `dashboard`, `devops` and
@@ -546,7 +546,7 @@ of one tree).
 | the parquets and JSONs of the asset folder | STORAGE — research artifacts | artifact objects under the same version prefix | a rename |
 | a hand typing `make docker-all`, `download_cadence_minutes` of `data_status.json` being the only cadence the tree names; the downloaders' day-presence skip and the rerun table of `../module_ml/skills/methodology_ml.md` § 11, read by a human | ORCHESTRATION — the cadence and the rebuild condition, not yet code | a schedule that starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full — `is_full_utc_day()` in `module_data/lean.py` (Amazon EventBridge Scheduler), and a condition state between BuildCanonicalData and AggregateBars that reads the volume and launches nothing (a Step Functions choice) — both absent, one primitive of the deployment view | absent here — described |
 | `store_status/data_status.json`, `store_status/features_status.json`, `store_status/ml_status.json`, `store_run_records/<run_id>/` | STORAGE — status and run objects | the run record under `runs/<run_id>/` and the three snapshots under `status/`, copied from the store after the run, the page reading them from the status store as here — `store_status/` is already that prefix, read forward; the move off `module_monitoring/` turned the five points § What stays as it is, and why names, and answered the question `skill_status_prefix.md` asked (`AGENTS.md` § Skills absent here, described) | a rename |
-| `logs/<stage>_<docker_service>.log` and the 1 s cgroup samples of a run | MONITORING — logs and resource metrics | log streams keyed by stage and container, and metrics (Amazon CloudWatch) — the recorder's files, written only when `RECORD` is set, are their described counterpart | absent here — described |
+| a stage's stdout, left in the terminal; no resource sampling at all | MONITORING — logs and resource metrics | log streams keyed by stage and metrics (Amazon CloudWatch) — no local counterpart: the run record holds time, exit code and store difference and nothing else | absent here — described |
 | the page files of `module_monitoring/`; the three snapshots are STORAGE (the row above) and reach the page through the `/store_status/<name>` route | MONITORING — the static dashboard | served by the reader service of the row below from the volume; static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) only when a reader outside the host appears — the front absent | absent here — described |
 | the `/containers`, `/runs` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
 | the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Linux instance (Amazon EC2) — the strategy host: a lean-backtest task, or a container that stays running and trades live, reading the raw and asset prefixes from the copy and never the volume, its brokerage credentials read from the secret below when it starts | absent here — described |
@@ -600,8 +600,8 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 | every status stage takes `--tickers` and folds the assets the launcher named — the whole basket, from `pipeline` | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
 | the three snapshots are written into `store_status/` and tracked | status objects live in their own store beside the other three, never under a `module_*` | moved: STORAGE produced by DATA, FEATURE and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; the move turned the five points — the path constants (`DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` under `STORE_STATUS_DIR`), the directory `serve.py` serves (its own package), the literal fetches (under `/store_status/`) — and met the prerequisite of narrowing the mount; the third snapshot arrived by the same route; `skill_status_prefix.md` (`AGENTS.md` § Skills absent here, described) is thereby answered | yes — done |
 | `Dockerfile` copies no code; code and state both arrive through `.:/app` | the image is a dependency layer, not a compute artifact | said, not built: one mount is the local simplification; the phase *the image carries the code* of § The retrain runtime is a ladder is the image carrying the code and the mount carrying the state alone — `skill_image_contents.md` (`AGENTS.md` § Skills absent here, described) | no — described |
-| `record.py` holds the map of every stage to the artifacts it leaves | pipeline-shape knowledge in the representation module | measurement may hold stage → artifact, never the stage order or a dependency between stages; a later condition reads this table rather than starting a second | no — described |
-| a recorded run fails if any stage failed *or* the dashboard probe failed; finalising needs `docker` and `git` on the host | two facts in one number; the run cannot be finalised elsewhere | a local lifecycle verdict — the chain ran and the page represents it; an execution record finalised off the host judges on the exit codes alone, which are already in the record — a clause of `skill_stage_state_machine.md` (`AGENTS.md` § Skills absent here, described) | no — described |
+| `record.py` measures a stage from outside — its time, its exit code, and the difference of the four stores | no stage → artifact map anywhere: what a stage wrote is read off the store, so measurement knows no module | the recorder is the repository's, beside the Makefile that runs the stages, and lists exactly what a task scheduler records about a task; the stage order stays the Makefile's | yes — done |
+| a recorded run stops at the first stage that exits non-zero and keeps that stage's record | the verdict is the exit codes, which are in the record | the same judgement an execution record makes anywhere: no probe, no finaliser, nothing that needs `docker` or `git` on the host — a clause of `skill_stage_state_machine.md` (`AGENTS.md` § Skills absent here, described) | yes — done |
 | `module_monitoring/` is served wholesale, five routes and a proxy beside static files | one root is page and package; the status store is reached through one route | the page files are static objects of the package, the snapshots static objects of another store; the routes are a reader process | no — described |
 | no callable "does this asset need a rebuild?" exists | the condition has no home; nothing is wrongly fused | keep compute unconditional; a future predicate is the `is_` / `has_` / `requires_` question above, never a lift of the downloader's loop | no — described |
 | `docker-btc-all`, `docker-btc-lifecycle` | a ticker in a target name | detached from every document and page; retire when the basket grows, as their sunset notes say | no — described |

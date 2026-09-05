@@ -1,11 +1,11 @@
-"""Static configuration of module_monitoring: the run record's paths, the server's addresses and the
-cadences — the one place this module builds a path or a URL.
+"""Static configuration of module_monitoring: the run record's directory, the snapshots' paths, the server's addresses
+and the cadences — the one place this module builds a path or a URL.
 
-A run record belongs to the basket, not to one asset: one directory per run under
-`store_run_records/`, and every container of the run appends to the same two files inside it. The
-cgroup and procfs paths are the exception AGENTS.md names and stay in `serve.py` and `record.py`,
-beside the syscalls that read them; the per-asset artifact paths stay in the configs of the modules
-that produce them — this module reads the artifacts store only to list its asset folders.
+A run record belongs to the basket, not to one asset: one directory per run under the run-records store, one file per
+stage, written from outside every container by the repository's `record.py` and read here. The cgroup and procfs paths
+are the exception AGENTS.md names and stay in `serve.py`, beside the syscalls that read them; the per-asset artifact
+paths stay in the configs of the modules that produce them — this module reads the artifacts store only to list its
+asset folders and to size an asset's database.
 """
 
 from __future__ import annotations
@@ -17,26 +17,19 @@ from pathlib import Path
 # ---- the one server, its role chosen by ASSET
 CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping, measured by the Makefile
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
-PIPELINE_SERVICE = "pipeline"            # the compose service a basket-wide stage runs in
 DEVOPS_SERVICE = "devops"                # the one compose service that holds the docker socket
 DEVOPS_ROUTE_PREFIX = "/devops"          # the dashboard route the panel's API is proxied under
 CONTAINER_POLL_INTERVAL_SECONDS = 5      # published to the page, which never carries a cadence of its own
-RUN_SAMPLE_POINT_LIMIT = 900             # the timeline's stride: a long run is thinned, never truncated
 ASSET_STATUS_FETCH_TIMEOUT_SECONDS = 2   # bounds each socket operation of the proxy, not the exchange
 PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine exchanges, so its bound is its own
-DASHBOARD_READY_FETCH_TIMEOUT_SECONDS = 5   # the same bound for the readiness check that closes a run
 
-# ---- the recorder's loop around a wrapped stage
-SAMPLE_INTERVAL_SECONDS = 1.0
-# /proc/<pid>/io is unreadable once the child is a zombie, so it is polled far faster than the
-# samples are written: a stage shorter than one sample interval still leaves its byte counts
-PROCESS_POLL_INTERVAL_SECONDS = 0.05
-PIPE_READ_SIZE_BYTES = 65536
+# ---- the units the endpoint converts with
 MICROSECONDS_PER_SECOND = 1_000_000
-SECONDS_PER_HOUR = 3600
-BYTES_PER_DISK_BLOCK = 512   # the unit rusage counts ru_inblock and ru_oublock in
+# twice by extraction — identical in module_data/config.py, module_ml/config.py, module_monitoring/sub_module_dx/config.py
+# (module_skills/glossary.md § Twice by extraction)
+BYTES_PER_KIBIBYTE = 1024
 
-# ---- the run record: one directory per run of the chain, the whole basket inside it
+# ---- the run record: one directory per run of the chain, one file per stage, the whole basket inside it
 # the three stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
 # are read where the modules that measured themselves wrote them, and served under one route prefix
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
@@ -54,34 +47,14 @@ def store_status_file(name: str) -> Path:
 
 
 def run_dir(run_id: str) -> Path:
-    """One directory per recorded run of the chain — a run is the basket's, never one asset's."""
+    """One directory per recorded run of the chain — a run is the basket's, never one asset's; inside it one
+    `<stage>.json` per stage, as the repository's record.py wrote them."""
     return STORE_RUN_RECORDS_DIR / run_id
 
 
-def events_jsonl(run_id: str) -> Path:
-    """One line per stage, appended by the stage itself from whichever container ran it."""
-    return run_dir(run_id) / "events.jsonl"
-
-
-def resources_jsonl(run_id: str) -> Path:
-    """The 1 s container-wide samples, appended by every container of the run."""
-    return run_dir(run_id) / "resources.jsonl"
-
-
-def summary_json(run_id: str) -> Path:
-    """The stage table and the run totals, written once when the run is finalised."""
-    return run_dir(run_id) / "summary.json"
-
-
-def manifest_json(run_id: str) -> Path:
-    """What ran, where, on what host and how it ended, written beside the summary."""
-    return run_dir(run_id) / "manifest.json"
-
-
-def stage_log(run_id: str, stage: str, docker_service: str) -> Path:
-    """One stage's output verbatim. The container is half the name because one stage name runs once
-    per asset, and two containers opening one log would truncate each other."""
-    return run_dir(run_id) / "logs" / f"{stage}_{docker_service}.log"
+def asset_databases(ticker: str) -> list[Path]:
+    """The database files of one asset folder, as they lie there — the endpoint sizes what is there and names no descriptor of another module."""
+    return sorted((STORE_ASSETS_ARTIFACTS_DIR / ticker).glob("*.duckdb"))
 
 
 # ---- the compose services and their addresses
@@ -100,18 +73,7 @@ def devops_api_url(route: str) -> str:
     return f"http://{DEVOPS_SERVICE}:{CONTAINER_PORT}{route}"
 
 
-def dashboard_registry_url(port: str) -> str:
-    """The dashboard's registry as the host reaches it. Compose publishes it on loopback alone, on
-    the host side of the mapping, which is why the port is asked for and never assumed."""
-    return f"http://127.0.0.1:{port}/containers"
-
-
-def dashboard_asset_status_url(port: str, ticker: str) -> str:
-    """One asset proxied through the dashboard, from the host: the registry route plus the asset."""
-    return f"{dashboard_registry_url(port)}/{ticker}/status"
-
-
-# ---- the conversions the server and the recorder share
+# ---- the conversions the server uses
 def to_utc_text(moment: datetime) -> str:
     return moment.strftime("%Y-%m-%d %H:%M:%S")
 

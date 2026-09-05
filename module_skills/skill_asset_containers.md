@@ -79,7 +79,7 @@ a time, the ML stages `JOBS` at a time — so the container the tab measures is
 the one doing the work. The residency is the fan-out's, not the stage's: the
 command inside the quotes is the whole one-off form and runs the same outside any
 container, and that one macro line is the only place a resident is assumed for
-compute; `record.py` already tolerates a container that is gone. Replacing
+compute; `record.py` measures a stage from outside and knows no container. Replacing
 exec-into-resident with a one-off launch is one line and touches no stage; the
 panel would then measure a one-off instead of the resident. The direction is
 `skill_pre_aws_solution.md`. `ASSET` is read by that command line and by `serve.py`

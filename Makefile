@@ -4,7 +4,7 @@ PY          := .venv/bin/python
 PORT ?= $(shell p=$$(docker compose port dashboard 8900 2>/dev/null | cut -d: -f2); \
                 if [ -z "$$p" ]; then p=8900; while ss -Hltn "sport = :$$p" | grep -q .; do p=$$((p+1)); done; fi; \
                 echo $$p)
-# measured once per make: the mapping, the page and the finalise line ask one port
+# measured once per make: the mapping and the page ask one port
 PORT := $(PORT)
 # the docker group of this host, so the one container that holds the socket can read it without being root
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
@@ -38,13 +38,11 @@ JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
 PROPOSAL ?= 1
 # the tmux session the detached feature-set search runs in: one per asset, named for it
 FEATURE_SET_SEARCH_SESSION = feature-set-$(shell echo $(ASSET) | tr A-Z a-z)
-# a run wraps every stage command with the recorder; empty by default, so the recipes are unchanged
-RECORD ?=
 RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
 # $(1) = python command, $(2) = module
 fanout = printf '%s\n' $(TICKER_LIST) | OMP_NUM_THREADS=1 xargs -P $(JOBS) -I{} $(1) -m $(2) --tickers {}
-# $(1) = module, $(2) = width: each asset's stage runs inside its own resident container, which carries ASSET — the one line that assumes a resident; the quoted command is the whole one-off form
-dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_SERVICE_LIST) | xargs -P $(2) -I{} env $(COMPOSE_ENV) docker compose exec -T {} sh -c '$(RECORD) python -m $(1) --tickers $$ASSET'
+# $(1) = module, $(2) = width: each asset's stage runs inside its own resident container, which carries ASSET — the one line that assumes a resident
+dockerfanout = $(COMPOSE) up -d $(ASSET_SERVICE_LIST) && printf '%s\n' $(ASSET_SERVICE_LIST) | xargs -P $(2) -I{} env $(COMPOSE_ENV) docker compose exec -T {} sh -c 'python -m $(1) --tickers $$ASSET'
 
 .DEFAULT_GOAL := help
 
@@ -116,19 +114,19 @@ docker-down:     ## stop and remove every container
 on: docker-up    ## the presentation switch: the same as docker-up
 off: docker-down ## the presentation switch: the same as docker-down
 docker-data-download: ## both download stages inside the container (basket-wide, sequential)
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_binance --tickers $(TICKER_CSV)
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.download_bybit --tickers $(TICKER_CSV)
+	$(COMPOSE) run --rm -T pipeline python -m module_data.download_binance --tickers $(TICKER_CSV)
+	$(COMPOSE) run --rm -T pipeline python -m module_data.download_bybit --tickers $(TICKER_CSV)
 docker-data-ingest: ## the ingest stage, one asset at a time, each inside its own container
 	$(call dockerfanout,module_data.ingest,1)
 docker-data-status: ## the data status stage inside the container -> store_status/data_status.json
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_data.status --tickers $(TICKERS_CSV)
+	$(COMPOSE) run --rm -T pipeline python -m module_data.status --tickers $(TICKERS_CSV)
 
 docker-features-bars: ## module_features.bars, inside each asset's container
 	$(call dockerfanout,module_features.bars,$(JOBS))
 docker-features-catalogue: ## module_features.catalogue, inside each asset's container
 	$(call dockerfanout,module_features.catalogue,$(JOBS))
 docker-features-status: ## the features status stage inside the container -> store_status/features_status.json
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_features.status --tickers $(TICKER_CSV)
+	$(COMPOSE) run --rm -T pipeline python -m module_features.status --tickers $(TICKER_CSV)
 docker-features-all: ## the feature chain inside the containers
 	$(MAKE) docker-features-bars docker-features-catalogue docker-features-status
 
@@ -141,13 +139,13 @@ docker-ml-train:     ## module_ml.train, inside each asset's container
 docker-ml-strategy:  ## module_ml.strategy, inside each asset's container
 	$(call dockerfanout,module_ml.strategy,$(JOBS))
 docker-ml-status:    ## module_ml.status inside the container
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.status --tickers $(TICKERS_CSV)
+	$(COMPOSE) run --rm -T pipeline python -m module_ml.status --tickers $(TICKERS_CSV)
 docker-ml-all:       ## the ML chain inside the containers
 	$(MAKE) docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-ml-feature-set-search: ## module_ml.feature_set_search, inside each asset's container
 	$(call dockerfanout,module_ml.feature_set_search,$(JOBS))
 docker-ml-feature-set-promote: ## module_ml.feature_set_promote for one asset inside the container, then its ML chain inside the containers; ASSET= is required
-	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
+	$(COMPOSE) run --rm -T pipeline python -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
 	$(MAKE) docker-ml-all ASSET=$(ASSET)
 # the detached twin: the same docker twin in a tmux session that outlives the terminal, started in this checkout,
 # one asset per session; the session ends with the search — the ledger and the page are the record. A plain make,
@@ -155,12 +153,11 @@ docker-ml-feature-set-promote: ## module_ml.feature_set_promote for one asset in
 tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
 	tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make docker-ml-feature-set-search ASSET=$(ASSET)'
+# the stages of the chain, in order — what docker-all runs and docker-all-record measures, one make target each
+CHAIN_STAGES := docker-data-download docker-data-ingest docker-data-status docker-features-bars docker-features-catalogue docker-features-status docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> features -> ML -> snapshots
-	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-features-all docker-ml-all
+	$(MAKE) $(CHAIN_STAGES)
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows
-docker-all-record: docker-build ## one recorded run of the whole chain, the whole basket in one record -> store_run_records/<run_id>/
-	$(COMPOSE) up -d dashboard
-	@run_id=$(RUN_ID); \
-	 $(MAKE) docker-all RECORD="python -m module_monitoring.record $$run_id" && \
-	 PORT=$(PORT) python3 -m module_monitoring.record --finalise $$run_id
+docker-all-record: docker-build ## one recorded run of the whole chain, every stage of CHAIN_STAGES measured from outside by record.py -> store_run_records/<run_id>/<stage>.json
+	@run_id=$(RUN_ID); for stage in $(CHAIN_STAGES); do RUN_ID=$$run_id python3 record.py $${stage#docker-} $(MAKE) $$stage || exit $$?; done
 docker-btc-lifecycle: docker-all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows

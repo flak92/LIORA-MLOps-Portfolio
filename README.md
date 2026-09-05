@@ -196,7 +196,7 @@ boundary — what could be less, and whether it is — is
 | status    | `make data-status`     | DuckDB → stdout + `store_status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
-| lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
+| lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
@@ -222,11 +222,10 @@ raw ZIP trees. Schema:
   catalogue: every definition the repository computes, its terms, the history
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
 - **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
-- **Lifecycle** — one recorded run end to end: what ran, in which container, as
-  which PID, for how long, at what CPU and peak resident set, what bytes it moved
-  and what it left on disk; then one shared timeline with a dashed rule at every
-  stage boundary. A column marked *container* is the whole container over the
-  same window; every unmarked number is the stage's own, and the page says so.
+- **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
+  for every stage its start, its time, its exit code and what it added, changed and
+  removed in the four stores, then every file it touched, by store and path. Nothing
+  a stage says about itself enters the record.
 
 Two controls in the top right leave the page, one per persona beyond the
 business reader:

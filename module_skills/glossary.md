@@ -190,8 +190,8 @@ the env-named path, and the second path is a local accident, not an address.
 
 ## Twice by extraction
 
-**No module of the chain imports another** — `module_monitoring` still reads the
-three configs until its recorder leaves the package. Each of the objects below
+**No module imports another** — `module_monitoring` included: it reads what the
+snapshots publish and what lies in the stores. Each of the objects below
 therefore has two or more full owners, identical to the byte where a copy is a
 copy: the copy is registered here, named where it is defined on every side
 (`# twice by extraction — identical in …`), and a change to one copy is a change
@@ -206,14 +206,14 @@ distinct responsibility.
 | object | owners | why twice |
 |---|---|---|
 | `MILLISECONDS_PER_SECOND`, `MILLISECONDS_PER_MINUTE`, `MILLISECONDS_PER_DAY` (each module the ones it uses) | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | a unit is a unit; importing one across a boundary would drag the module behind it |
-| `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`, `module_monitoring/sub_module_dx/config.py` | the same |
+| `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`, `module_monitoring/config.py`, `module_monitoring/sub_module_dx/config.py` | the same |
 | `DUCKDB_MEMORY_LIMIT` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | every connection of every module pins the same ceiling beside `threads=1` |
 | the store reads `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_STATUS_DIR` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/config.py` | the two stores every module touches, each read as `Path(os.environ[...])` where it is used |
 | the descriptors `artifact_dir()`, `research_ohlcv_duckdb()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the asset folder and the database are the store the chain touches; the path grammar is one and is spelled once per owner |
 | `DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` | the writers `module_data/config.py`, `module_ml/config.py`, and the reader `module_monitoring/config.py` | the writer names the snapshot it writes, the reader the snapshot it serves |
 | `load_json()` | `module_ml/dataset.py`, `module_monitoring/serve.py` | two readers of the same JSON files |
 | `to_utc_ms()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the window literals of two modules are turned into milliseconds by the same function |
-| `build_ticker_parser()`, `parse_tickers()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the one CLI every stage shares; `module_monitoring` runs no stage — its recorder reads `--tickers` off the command it wraps until it leaves the package |
+| `build_ticker_parser()`, `parse_tickers()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the one CLI every stage shares; `module_monitoring` runs no stage and parses no ticker argument |
 | `rounded()` | `module_data/config.py`, `module_ml/config.py` | the two status reports round the same way |
 | `RESEARCH_START_UTC`, `RESEARCH_END_UTC` (and their `_MS`) | `module_features/config.py` (the bars and the catalogue), `module_ml/config.py` (the labels and the folds) | the frozen window is the experiment's; each layer that bounds by it owns the literal |
 | `feature_id()` | `module_features/config.py`, `module_ml/config.py` | the grammar of `../module_features/skills/skill_feature_taxonomy.md`, two lines, restated where X's columns are named |
@@ -224,8 +224,7 @@ distinct responsibility.
 
 The gate at every commit: the bodies of every pair the table marks identical
 compare equal as syntax trees, the two value-equal rows compare equal as values,
-and `git grep "from module_"` inside `module_data`, `module_features` and
-`module_ml` finds only the module itself.
+and `git grep "from module_"` inside any module finds only the module itself.
 
 ## Artifacts
 
@@ -296,13 +295,13 @@ how a stage is run, never what it computes.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, by `serve.py` choosing its role, and by `record.py` for the service a stage ran in — never by a stage module, and never a substitute for the command's `--tickers`, which has no default | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
+| the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by the fan-out's command line, `--tickers $ASSET`, and by `serve.py` choosing its role — never by a stage module, and never a substitute for the command's `--tickers`, which has no default | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | the basket, as the launcher defines it | `TICKERS` in the orchestration `Makefile`, one `asset-<ticker>` block per ticker under the compose anchor; `TICKER_LIST` (`ASSET` narrows it), `TICKERS_CSV` (the basket as one `--tickers` argument, for the basket-wide snapshots), `TICKER_CSV` (the make line's list as one argument) | — | — | a basket in a module's `config.py`, a second list in compose, a stage that defaults to it |
 | a compose service that is one asset's container: resident, answering `/status`, and locally the place every fanned-out per-asset stage runs | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a one-off `run --rm` container beside a resident, a `restart:` policy, a published port |
 | the one service that holds the docker socket, and the only one | `devops` — the `x-service` anchor plus its own command, `group_add` and the two mounts | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
-| the host port: the host side of the dashboard's mapping, measured at invocation, never hardcoded | `PORT` of the Makefile — the port the dashboard already publishes, else the first free port from 8900 upward; `PORT=n` overrides (`skill_asset_containers.md` § The topology); `${PORT:-8900}` in `docker-compose.yml`; the `PORT` environment `record.py` reads on the host | — | — | `8900` as the page's address in a document, a command or a comment; a second variable for it; `PORT` inside a container (the row of the command the servers run); a measurement outside the Makefile |
+| the host port: the host side of the dashboard's mapping, measured at invocation, never hardcoded | `PORT` of the Makefile — the port the dashboard already publishes, else the first free port from 8900 upward; `PORT=n` overrides (`skill_asset_containers.md` § The topology); `${PORT:-8900}` in `docker-compose.yml` | — | — | `8900` as the page's address in a document, a command or a comment; a second variable for it; `PORT` inside a container (the row of the command the servers run); a measurement outside the Makefile |
 | the one image every service runs | `image: mlops-portfolio-1m-pipeline` | — | — | compose's `<project>-<service>` default, one image per service |
 | the memory ceiling every service runs under | the `x-service` anchor's `deploy.resources.limits.memory` | — | — | `mem_limit` beside it, a CPU quota, a reservation, a service written outside the anchor and so without a ceiling |
 | how long a container lives: one-off — a `run --rm` process that exits with its stage — or resident — a server that stays up | the `lifetime` column of `skill_asset_containers.md` § The topology | — | — | one-shot, ephemeral, daemon, long-running; `task` or `job` for the one-off |
@@ -332,55 +331,32 @@ jumps *DX* and *DevOps*, and the ML Assets views *Labels & data*,
 
 What one recorded run of the chain leaves in `store_run_records/<run_id>/` — one
 record for the whole basket and never one per asset, because a run of the chain
-is one event and every asset's stages belong to it — written by
-`module_monitoring/record.py` wrapping each stage command in the container that
-stage already runs in. Its paths come from the descriptors of
-`module_monitoring/config.py` and from nowhere else. `run_id` is `<YYYYMMDDTHHMMSS>Z_<git short commit>`: not a
+is one event and every asset's stages belong to it — written by the repository's
+`record.py`, which wraps each make target of the chain from outside every
+container: the four stores listed before, the command, the four stores listed
+after. The recorder knows no module and reads nothing a stage says about itself;
+what a stage did is what it left in the stores — the same thing a task scheduler
+records about a task. `run_id` is `<YYYYMMDDTHHMMSS>Z_<git short commit>`: not a
 content hash, but git's own identity, the record `module_ml/config.py` already
 names — so it sorts chronologically and points at the code that ran.
-
-**In `events.jsonl` and `resources.jsonl` a `process_` key is the stage and a `container_` key
-is not.** `summary.json` needs no prefix on the stage's own numbers, because every unprefixed
-number in a stage row is already the stage's; only the container ones are marked there. The stage's cost
-comes from `wait4` rusage of the process the recorder spawned and reaped — exact,
-never sampled. The cgroup counters carry the whole container over the same
-window: the resident server, the recorder and the stage together.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | one recorded execution of the chain — the execution name, read forward | `run_id` | `run_id` | run | build, job, a content hash |
-| one command of a run, named in the Makefile's target grammar — one seam, `data-download`, runs two stages (`skill_pre_aws_solution.md` § The Makefile is the developer interface) | `stage_of()` | `stage` | stage | step, task |
-| the compose service the stage ran in | `docker_service()` | `docker_service` | container | host; a bare `container`, which the DevOps panel already uses for up/down |
-| CPU the stage process and its reaped descendants used | `rusage.ru_utime + ru_stime` | `process_cpu_seconds` | CPU | cpu, cpu_pct, cpu_time |
-| peak resident set of the stage process | `rusage.ru_maxrss` | `process_memory_peak_bytes` | peak resident set | RSS, RAM, mem, max_rss |
-| bytes the stage moved through `read()` / `write()`, independent of the page cache | `/proc/<pid>/io` | `process_read_chars`, `process_write_chars` | read / write | io, bytes_in |
-| physical blocks the stage caused, cache-dependent and writeback-delayed | `rusage.ru_inblock`, `ru_oublock` | `process_disk_read_bytes`, `process_disk_write_bytes` | — | a headline I/O number |
-| the whole container over the stage's window | the cgroup | `container_cpu_seconds_delta`, `container_memory_charged_peak_bytes`, `container_disk_*_bytes_delta`, `container_network_*_bytes_delta` | container | any of these as a stage cost |
-| how many 1 s samples the stage window held | `sample_count` | `sample_count` | samples | n_samples |
-| wall time between stages: docker exec setup and teardown | — | `orchestration_seconds` | orchestration | overhead, a hidden remainder |
-| the stage that took the longest | — | `bottleneck_stage` | bottleneck | slowest, hotspot |
-| the readiness check that closes a run | `fetch_dashboard_ready()` | `dashboard_ready` — the registry at the top level, one answer per ticker in `assets` | dashboard | healthcheck, ping; one asset's answer standing for the basket |
-| the basket one run covered | the `--tickers` every stage command carried, folded over the run's records | `tickers` | — | `ticker`, the first of the basket standing for it |
-| the assets one stage covered — its command's `--tickers`, which every stage command carries | `recorded_tickers()` | `tickers` — a key of `events.jsonl` | — | `ticker`; the container standing for the command's scope; a fallback to `ASSET` or to the basket |
-| the asset containers of a run, one row per ticker | `container_identity()` | `asset_containers` | — | `asset_container`, one container standing for the basket |
+| one command of a run, named by its make target — one seam, `data-download`, runs two stages (`skill_pre_aws_solution.md` § The Makefile is the developer interface) | the target name, the `docker-` prefix dropped | `stage` — the file name `<stage>.json` | stage | step, task |
+| the command the recorder ran | `command` | `command` | — | a stage naming itself |
+| how the stage ended | the command's exit code, the recorder's own | `exit_code` | exit | status, ok |
+| when the stage ran, and for how long | `started_at_utc`, `ended_at_utc`, `duration_seconds` | the same | start / time | wall, elapsed |
+| what the stage did to the stores — every file added, changed (size or mtime moved) or removed, by store and path | `store_diff()` | `store_diff` with `added`, `changed` (`store`, `path`, `size_bytes`, `mtime_ns`) and `removed` (`store`, `path`) | added / changed / removed, bytes written | output, artifacts, a stage → artifact map |
+| the basket one run covered | the launcher's `TICKERS`, which the make target the recorder wrapped carries into every stage command | — (not in the record: the recorder knows no basket) | — | `ticker`, the first of the basket standing for it |
 | where a run's record lives | `STORE_RUN_RECORDS_DIR`, `run_dir()` | — | — | a `runtime/` folder under an asset, one run record per asset |
 
-The four files of a run: `manifest.json` (what ran, where, on what host, and how
-it ended), `events.jsonl` (one line per stage, appended by the stage itself from
-whichever container ran it), `resources.jsonl` (the 1 s container-wide samples,
-likewise from every container of the run), `summary.json` (the stage table and
-the run totals, plus `measurement_notes`, which states in the payload what each
-number is and is not). One appended line is one `write()` to a file opened
-`O_APPEND`, so two containers never interleave a record; the readers put the
-lines back in order by their own timestamps, because the file holds arrival
-order. `logs/<stage>_<docker_service>.log` holds that stage's output verbatim,
-one file per container that ran it, because one stage name runs once per asset
-and two containers must never open one log. None of it is committed;
+One file per stage, `<stage>.json`, written after the second listing so it never
+appears in its own difference; a run is the directory. None of it is committed;
 `.gitignore` covers `store_run_records/`.
 
 The routes: `GET /runs` lists the run ids newest first, `GET /runs/<run_id>`
-answers one run's manifest, summary and samples, the samples strided to
-`RUN_SAMPLE_POINT_LIMIT` so a long run is thinned and never truncated.
+answers the run's stage records in the order the stages started.
 
 ## Developer experience
 
