@@ -107,11 +107,10 @@ function buildStrategyFrame(asset, mlStatus) {
   return frame.frame;
 }
 
-/* the three importances the payload carries per validation fold, in the order the tables show them */
+/* the two importances the payload carries per validation fold, in the order the tables show them */
 const IMPORTANCE_MEASURES = [
   { key: "gain_importance", label: "gain", format: (value) => formatCount(Math.round(value)) },
   { key: "mean_abs_shap_importance", label: "mean |SHAP|", format: (value) => formatNumber(value, 4) },
-  { key: "permutation_logloss_delta_importance", label: "permutation Δ log-loss", format: (value) => formatNumber(value, 5) },
 ];
 
 function buildImportanceCell(value, scaleMax, format) {
@@ -146,14 +145,14 @@ function buildFeatureSetFrame(asset, mlStatus) {
         ...row.means.map((value, i) => buildImportanceCell(value, scale[i], IMPORTANCE_MEASURES[i].format))])));
   });
   frame.body.appendChild(buildFootnote("each importance is the mean over folds " + folds.map((fold) => "F" + fold.split("_")[1]).join(", ")
-    + " of that fold's own booster: gain is XGBoost total gain, mean |SHAP| the mean absolute contribution in margin space, "
-    + "permutation Δ log-loss the rise of the fold's weighted log-loss when the column is permuted. "
+    + " of that fold's own booster: gain is XGBoost total gain, mean |SHAP| the mean absolute contribution in margin space. "
     + "The final holdout attributes nothing."));
   return frame.frame;
 }
 
-/* what the feature-set search found: every proposal with what it adds and removes against the active set,
-   its fold results and its deflated Sharpe ratio; the delta against the active score is page arithmetic */
+/* what the feature-set search found: every proposal with what it adds and removes against the active set, the
+   validation skill it was chosen on and what the strategy would do with it; the delta against the asset's mean
+   validation skill is page arithmetic, like the mean validation skill itself */
 function formatColumnChanges(proposal, timeframes) {
   return timeframes.map((timeframe) =>
     proposal.added_columns_by_timeframe[timeframe].map((name) => "+" + name + "_" + timeframe)
@@ -170,29 +169,32 @@ function buildProposalsFrame(asset, mlStatus) {
   }
   const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
   const folds = validationFolds(asset);
+  const meanValidationSkill = mean(folds.map((fold) => asset.validation[fold].relative_logloss_skill));
   frame.body.appendChild(buildKeyValueBox([
-    ["search", search.trial_count + " trials in " + search.pass_count + " passes · " + (search.search_converged ? "converged" : "not converged")
-      + " · active score " + formatNumber(asset.strategy.selection_score_mean_sharpe, 3)],
+    ["feature-set search", search.trial_count + " trials in " + search.pass_count + " passes · " + (search.search_converged ? "converged" : "not converged")
+      + " · the active set's mean validation skill " + formatPercent(meanValidationSkill, 2)],
   ]));
   frame.body.appendChild(buildTable(
-    ["#", "trial", "columns added / removed", ...folds.map((fold) => "Sharpe F" + fold.split("_")[1]),
-     ...folds.map((fold) => "trades F" + fold.split("_")[1]), "score", "&Delta; vs active", "&tau;", "deflated Sharpe ratio"],
+    ["#", "trial", "columns added / removed", ...folds.map((fold) => "skill F" + fold.split("_")[1]), "mean skill",
+     "&Delta; vs active", "&tau;", ...folds.map((fold) => "Sharpe F" + fold.split("_")[1]),
+     ...folds.map((fold) => "trades F" + fold.split("_")[1]), "selection score"],
     search.proposals.map((proposal) => {
-      const delta = proposal.selection_score_mean_sharpe - asset.strategy.selection_score_mean_sharpe;
-      const deflated = proposal.deflated_sharpe_ratio;
+      const delta = proposal.mean_relative_logloss_skill - meanValidationSkill;
       return [
         proposal.proposal, proposal.trial, formatColumnChanges(proposal, timeframes),
+        ...folds.map((fold) => formatPercent(proposal.validation[fold].relative_logloss_skill, 2)),
+        formatPercent(proposal.mean_relative_logloss_skill, 2),
+        (delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp",
+        proposal.entry_edge_threshold.toFixed(2) + (proposal.entry_edge_threshold_constraint_met ? "" : " !"),
         ...folds.map((fold) => formatNumber(proposal.validation[fold].sharpe, 2)),
         ...folds.map((fold) => formatCount(proposal.validation[fold].trade_count)),
-        formatNumber(proposal.selection_score_mean_sharpe, 3),
-        (delta >= 0 ? "+" : "") + delta.toFixed(3),
-        proposal.entry_edge_threshold.toFixed(2),
-        deflated === null ? "-" : formatPercent(deflated.probability, 1),
+        formatNumber(proposal.selection_score_mean_sharpe, 2),
       ];
     })));
-  frame.body.appendChild(buildFootnote("the score is the mean validation-fold Sharpe at the proposal's own entry edge threshold, "
-    + "under the parameters the search froze; the deflated Sharpe ratio is the probability that it beats the maximum "
-    + "expected from as many trials as cleared the trade floor. Nothing here touched the final holdout."));
+  frame.body.appendChild(buildFootnote("a proposal is one of the best trials by mean validation skill under the asset's frozen "
+    + "parameters — the moves that reached it were accepted fold by fold; the Sharpe and trade columns say what the "
+    + "strategy would do with it at its own entry edge threshold — τ marked ! when its trade floor was not met — and "
+    + "were never selected on. Nothing here touched the final holdout."));
   return frame.frame;
 }
 

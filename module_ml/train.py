@@ -1,4 +1,4 @@
-"""Frozen-parameter training: out-of-fold predictions per validation fold with the three importances of that fold's
+"""Frozen-parameter training: out-of-fold predictions per validation fold with the two importances of that fold's
 booster, then the final-holdout report — the numbers are persisted, the model is not."""
 
 from __future__ import annotations
@@ -32,33 +32,14 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     }
 
 
-def permutation_logloss_delta_importance(booster, x_scoring: np.ndarray, y_cls_scoring: np.ndarray,
-                                         scoring_weight: np.ndarray, model_logloss: float,
-                                         feature_columns: tuple[str, ...]) -> dict[str, float]:
-    """Breiman's permutation importance as a log-loss delta: the fold's weighted log-loss with one column permuted,
-    minus the fold's own. One permutation per fold, applied to each column in turn, so the draw depends on neither
-    the column order nor a resume."""
-    permutation = np.random.default_rng(config.SEED).permutation(x_scoring.shape[0])
-    deltas = {}
-    for j, column in enumerate(feature_columns):
-        permuted = x_scoring.copy()
-        permuted[:, j] = x_scoring[permutation, j]
-        proba = model.predict_proba(booster, permuted, feature_columns)
-        deltas[column] = validation.multiclass_logloss(y_cls_scoring, proba, scoring_weight) - model_logloss
-    return deltas
-
-
-def validation_importance_block(booster, xy: dict, y_cls: np.ndarray, fold_id: int, model_logloss: float) -> dict:
-    """The three importances of one validation fold's booster, measured on the fold's scoring rows."""
+def validation_importance_block(booster, xy: dict, fold_id: int) -> dict:
+    """The two importances of one validation fold's booster, the SHAP values measured on the fold's scoring rows."""
     oos_start, oos_end = validation.fold_bounds(fold_id)
-    scoring_rows, scoring_weight = validation.scoring_set(
+    scoring_rows, _ = validation.scoring_set(
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start, oos_end)
-    x_scoring = xy["x"][scoring_rows]
     return {
         "gain_importance": model.gain_importance(booster, xy["feature_columns"]),
-        "mean_abs_shap_importance": model.mean_abs_shap_importance(booster, x_scoring, xy["feature_columns"]),
-        "permutation_logloss_delta_importance": permutation_logloss_delta_importance(
-            booster, x_scoring, y_cls[scoring_rows], scoring_weight, model_logloss, xy["feature_columns"]),
+        "mean_abs_shap_importance": model.mean_abs_shap_importance(booster, xy["x"][scoring_rows], xy["feature_columns"]),
     }
 
 
@@ -103,8 +84,7 @@ def main() -> int:
         for fold_id in config.VALIDATION_FOLD_IDS:
             metrics, segments[f"fold_{fold_id}"], rows, booster = fold_evaluation(xy, y_cls, best, fold_id)
             per_fold[f"fold_{fold_id}"] = metrics
-            validation_importance[f"fold_{fold_id}"] = validation_importance_block(
-                booster, xy, y_cls, fold_id, metrics["model_logloss"])
+            validation_importance[f"fold_{fold_id}"] = validation_importance_block(booster, xy, fold_id)
             prediction_records.extend(rows)
 
         # the final holdout: fitted on everything before it, never used for a choice — and never attributed,

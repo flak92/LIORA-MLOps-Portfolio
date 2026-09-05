@@ -20,8 +20,8 @@ JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
                 if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
                 if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
-# the tmux session the detached feature-set search runs in: one per asset, the basket when ASSET is unset
-FEATURE_SET_SEARCH_SESSION = feature-set-$(shell echo $(if $(ASSET),$(ASSET),basket) | tr A-Z a-z)
+# the tmux session the detached feature-set search runs in: one per asset, named for it
+FEATURE_SET_SEARCH_SESSION = feature-set-$(shell echo $(ASSET) | tr A-Z a-z)
 # a run wraps every stage command with the recorder; empty by default, so the recipes are unchanged
 RECORD ?=
 RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
@@ -116,11 +116,11 @@ docker-ml-all:       ## the ML chain inside the containers
 	$(MAKE) docker-ml-labels docker-ml-hpo docker-ml-train docker-ml-strategy docker-ml-status
 docker-ml-feature-set-search: ## module_ml.feature_set_search, inside each asset's container
 	$(call dockerfanout,module_ml.feature_set_search,$(JOBS))
-# the detached twin: the same docker twin in a tmux session that outlives the terminal, started in this checkout;
-# the pane stays after the process ends so the last lines of progress can still be read
-tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes
+# the detached twin: the same docker twin in a tmux session that outlives the terminal, started in this checkout,
+# one asset per session; the session ends with the search — the ledger and the page are the record
+tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
+	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
 	tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) '$(MAKE) docker-ml-feature-set-search ASSET=$(ASSET)'
-	tmux set-option -t $(FEATURE_SET_SEARCH_SESSION) remain-on-exit on
 docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> features -> ML -> snapshots
 	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-features-all docker-ml-all
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows

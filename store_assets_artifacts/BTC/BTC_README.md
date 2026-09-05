@@ -11,7 +11,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `BTC_features_ss-mm-01-dd-MM.parquet` | the catalogue on 1h — every definition offered on it, on the decision grid | 2,950 KB |
 | `BTC_features_ss-mm-04-dd-MM.parquet` | the catalogue on 4h — every definition offered on it, on the decision grid | 1,667 KB |
 | `BTC_label_events_ss-15-hh-dd-MM.parquet` | Y — triple-barrier outcome and the event prices | 5,265 KB |
-| `BTC_model_evaluation.json` | classification metrics per fold | 9 KB |
+| `BTC_model_evaluation.json` | classification metrics per fold | 7 KB |
 | `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` | out-of-sample class probabilities, full windows | 2,387 KB |
 | `BTC_parameters.json` | the one parameters file: what the search chose | 371 B |
 | `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 10 KB |

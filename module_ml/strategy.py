@@ -165,7 +165,6 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     returns_15m = np.diff(equity_15m) / equity_15m[:-1]
     return {
         "equity_1m": equity_1m,
-        "returns_15m": returns_15m,
         "sharpe": validation.sharpe_annualised(returns_15m),
         "max_drawdown": validation.max_drawdown(equity_1m),  # 1m path: intra-bar drawdown is real
         "trade_count": int(trade_returns.size),
@@ -178,8 +177,8 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
 
 
 def pnl_block(result: dict) -> dict:
-    """Everything but the two paths, which are intermediates, not a report."""
-    return {k: v for k, v in result.items() if k not in ("equity_1m", "returns_15m")}
+    """Everything but the 1m path, which is an intermediate, not a report."""
+    return {k: v for k, v in result.items() if k != "equity_1m"}
 
 
 def equity_curve(equity_1m: np.ndarray) -> dict:

@@ -118,40 +118,38 @@ decision rows before `2021-02-03 08:00 UTC` are excluded everywhere; no NaN
 survives the warm-up (asserted, in `catalogue.build_catalogue`).
 
 **The feature-set search** (`make ml-feature-set-search`) is stepwise feature
-selection in the field's sense, run under the asset's frozen `best_params`. A
-trial is one set: three boosters fitted before F2, F3 and F4 as § 6 fits them,
-their windows predicted, and the strategy's own threshold selection of § 9 run
-on those predictions — the score is `selection_score_mean_sharpe` at the trial's
-own τ*. Trial 1 is the active set, and reproduces the strategy stage's score bit
+selection in the field's sense, run under the asset's frozen `best_params` and
+selecting on the model's own validation objective. A trial is one set: three
+boosters fitted before F2, F3 and F4 as § 6 fits them, scored as § 8 scores
+them — `relative_logloss_skill` per fold, the quantity the hyper-parameter
+search tunes — and, reported beside that and never selected on, the strategy's
+threshold selection of § 9 on their predictions: τ*, the fold Sharpes and trade
+counts, `selection_score_mean_sharpe`. Trial 1 is the active set, and
+reproduces the training stage's fold skills and the strategy stage's score bit
 for bit. A pass is one forward step — every set with one more column, in
-timeframe order and catalogue order, no timeframe above
-`FEATURE_SET_MAXIMUM_COLUMNS_PER_TIMEFRAME`, the highest score accepted when it
-clears the champion's by `FEATURE_SET_FORWARD_ACCEPTANCE_MINIMUM_SHARPE_DELTA` —
-then one backward step — the champion's column with the lowest mean permutation
-log-loss delta (§ 8) dropped, never the last on its timeframe, accepted at no
-worse score. The champion's score never falls, every forward step raises it and
-every backward step shrinks the set, so the search ends when a pass accepts
-nothing: `search_converged`. A set scored once is looked up, never fitted
-twice; a champion whose boosters are not in memory is fitted once more for its
-permutation importance. The ledger of every trial is
-`<TICKER>_feature_set_search.json`, rewritten after each, so an interrupted run
-resumes at its next candidate and a finished run rewrites the same bytes; its
-`inputs` — the window and seed, `best_params`, the catalogue's columns and the
-active set — are the one copy of other files' content an artifact carries,
-compared by equality when the stage is rerun. The proposals are the best trials
-that cleared the trade floor and differ from the active set, at most
-`FEATURE_SET_PROPOSAL_COUNT`, each with its deflated Sharpe ratio [14]: the
-probability that its Sharpe per 15m bar exceeds the maximum expected from N
-trials, N the trials that cleared the floor, the variance theirs, the return
-count, skewness and kurtosis the proposal's own over its three validation
-folds. Stated, not mitigated: the score is a mean of three fold Sharpes rather
-than one Sharpe of the pooled path; the trials are nested and correlated; the
-τ selection inside a trial is not counted; the returns are not independent. The
-score is conditional on the frozen `best_params`, which were tuned for the
-active set; a promotion (`make ml-feature-set-promote`) copies a proposal into
-`<TICKER>_feature_set.json` and reruns the chain, `ml-hpo` included, so the
-promoted set is re-tuned, its realised result differs from the search's score,
-and the next search starts from trial 1.
+timeframe order and catalogue order; a candidate qualifies when its skill is
+higher than the champion's on **every** validation fold, and the highest mean
+skill among the qualifiers is accepted, ties to the earlier candidate — then
+one backward step — every set with one column fewer, never the last column of
+the set (a timeframe may empty: the trend gate reads the catalogue, not the
+set); a candidate qualifies at no worse skill on every fold, and the highest
+mean skill among the qualifiers is accepted. Every forward step raises every
+fold's skill and every backward step shrinks the set at no worse folds, so no
+set recurs and the search ends when a pass accepts nothing: `search_converged`.
+A set scored once is looked up, never fitted twice, and no booster is kept. The
+ledger of every trial is `<TICKER>_feature_set_search.json`, rewritten after
+each, so an interrupted run resumes at its next candidate and a finished run is
+read, not rewritten; its `inputs` — the window and seed, `best_params`, the
+catalogue's columns and the active set — are the one copy of other files'
+content an artifact carries, compared by equality when the stage is rerun. The
+proposals are the best trials that differ from the active set, by mean skill,
+at most `FEATURE_SET_PROPOSAL_COUNT`; their strategy numbers are reported
+beside them and were never selected on — τ is chosen once, by `ml-strategy`,
+after a promotion. The skill is conditional on the frozen `best_params`, which
+were tuned for the active set; a promotion (`make ml-feature-set-promote`)
+copies a proposal into `<TICKER>_feature_set.json` and reruns the chain,
+`ml-hpo` included, so the promoted set is re-tuned, its realised result differs
+from the search's, and the next search starts from trial 1.
 
 ## 5. Labels
 
@@ -291,18 +289,13 @@ supervised subset of a fold
 whose maximum horizon fits inside it — the same t₀-decidable rule that governs
 strategy eligibility (§9); predictions cover the full fold.
 
-**Three importances per validation fold**, each of that fold's own booster on the
-fold's scoring rows, none of the final holdout's: `gain_importance`, XGBoost's
-total gain per column; `mean_abs_shap_importance`, the mean absolute SHAP value
-[13] per column over the rows and the three classes, in margin space and
-unweighted, because it is a property of the fitted function rather than of a
-population; `permutation_logloss_delta_importance`, Breiman's permutation
-importance [12] as the rise of the fold's uniqueness-weighted log-loss when one
-column is permuted — one permutation per fold, drawn from `SEED`, applied to
-each column in turn, so the draw depends on neither the column order nor a
-resumed run. They are results, not gates: the page shows their means over the
-validation folds, and the feature-set search reads the permutation delta to
-choose which column to drop.
+**Two importances per validation fold**, each of that fold's own booster, none
+of the final holdout's: `gain_importance`, XGBoost's total gain per column;
+`mean_abs_shap_importance`, the mean absolute SHAP value [12] per column over
+the fold's scoring rows and the three classes, in margin space and unweighted,
+because it is a property of the fitted function rather than of a population.
+They are results, not gates: the page shows their means over the validation
+folds, and nothing selects on them.
 
 ## 9. Strategy
 
@@ -482,6 +475,4 @@ block) — reported per asset, not resampled.
 | [9] | Chen, T., Guestrin, C. (2016). XGBoost: a scalable tree boosting system. *KDD 2016* |
 | [10] | Elder, A. (1993). *Trading for a Living* — triple-screen multi-timeframe hierarchy |
 | [11] | Makarov, I., Schoar, A. (2020). Trading and arbitrage in cryptocurrency markets. *Journal of Financial Economics*, 135(2), 293–319 — why `rel_divergence` stays a data-quality signal |
-| [12] | Breiman, L. (2001). Random forests. *Machine Learning*, 45(1), 5–32. doi:10.1023/A:1010933404324 — permutation importance |
-| [13] | Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., Lee, S.-I. (2020). From local explanations to global understanding with explainable AI for trees. *Nature Machine Intelligence*, 2(1), 56–67. doi:10.1038/s42256-019-0138-9 — SHAP values of a tree ensemble |
-| [14] | Bailey, D. H., López de Prado, M. (2014). The deflated Sharpe ratio: correcting for selection bias, backtest overfitting, and non-normality. *The Journal of Portfolio Management*, 40(5), 94–107. doi:10.3905/jpm.2014.40.5.094 — a different paper from [8], by two of its authors |
+| [12] | Lundberg, S. M., Erion, G., Chen, H., DeGrave, A., Prutkin, J. M., Nair, B., Katz, R., Himmelfarb, J., Bansal, N., Lee, S.-I. (2020). From local explanations to global understanding with explainable AI for trees. *Nature Machine Intelligence*, 2(1), 56–67. doi:10.1038/s42256-019-0138-9 — SHAP values of a tree ensemble |

@@ -197,26 +197,31 @@ function renderSearch(mlStatus) {
 }
 
 /* the feature set an asset's model saw, and what the feature-set search found beside it; the delta of the best
-   proposal against the active score is page arithmetic, like degradation */
+   proposal's mean validation skill against the asset's is page arithmetic, like the mean validation skill */
 function renderFeatureSet(mlStatus) {
   const timeframes = mlStatus.catalogue.timeframes.map((entry) => entry.timeframe);
+  const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
+  const deltas = mlStatus.assets.map((asset) => {
+    const search = asset.feature_set_search;
+    const bestProposal = search && search.proposals.length ? search.proposals[0] : null;
+    return bestProposal === null ? null : bestProposal.mean_relative_logloss_skill - meanValidationSkill(asset);
+  });
+  const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
   renderTable("cs-feature-set",
-    ["asset", ...timeframes.map((timeframe) => "columns " + timeframe), "active score", "trials", "passes", "converged",
-     "best proposal &Delta; vs active"],
-    mlStatus.assets.map((asset) => {
+    ["asset", ...timeframes.map((timeframe) => "columns " + timeframe), "mean val skill", "trials", "passes", "converged",
+     "best proposal &Delta; skill"],
+    mlStatus.assets.map((asset, i) => {
       const search = asset.feature_set_search;
-      const bestProposal = search && search.proposals.length ? search.proposals[0] : null;
-      const delta = bestProposal === null ? null
-        : bestProposal.selection_score_mean_sharpe - asset.strategy.selection_score_mean_sharpe;
+      const delta = deltas[i];
       const deltaCell = document.createElement("span");
       if (delta !== null) {
-        deltaCell.appendChild(buildMeter(100 * Math.max(0, delta)));
-        deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + delta.toFixed(2)));
+        deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
+        deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
       } else deltaCell.textContent = search === null ? "no feature-set search yet" : "no proposal";
       return [
         buildTickerLink(asset.ticker, selectAsset),
         ...timeframes.map((timeframe) => formatCount(asset.feature_columns.filter((column) => column.endsWith("_" + timeframe)).length)),
-        formatNumber(asset.strategy.selection_score_mean_sharpe, 2),
+        formatPercent(meanValidationSkill(asset), 2),
         search === null ? "-" : formatCount(search.trial_count),
         search === null ? "-" : formatCount(search.pass_count),
         search === null ? "-" : (search.search_converged ? "yes" : "no"),

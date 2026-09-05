@@ -137,26 +137,21 @@ def catalogue_block() -> dict:
     }
 
 
-def deflated_sharpe_ratio_block(block: dict | None) -> dict | None:
-    return None if block is None else {
-        "probability": config.rounded(block["probability"], 4),
-        "sharpe_15m": config.rounded(block["sharpe_15m"], 6),
-        "expected_maximum_sharpe_15m": config.rounded(block["expected_maximum_sharpe_15m"], 6),
-    }
-
-
 def proposal_block(proposal: dict) -> dict:
+    """One proposal as the page reads it: the model's skill it was chosen on, then what the strategy would do."""
     return {
         "proposal": proposal["proposal"],
         "trial": proposal["trial"],
         "columns_by_timeframe": proposal["columns_by_timeframe"],
         "added_columns_by_timeframe": proposal["added_columns_by_timeframe"],
         "removed_columns_by_timeframe": proposal["removed_columns_by_timeframe"],
-        "entry_edge_threshold": proposal["entry_edge_threshold"],
-        "selection_score_mean_sharpe": config.rounded(proposal["selection_score_mean_sharpe"], 3),
-        "validation": {fold: {"sharpe": round(block["sharpe"], 3), "trade_count": block["trade_count"]}
+        "mean_relative_logloss_skill": round(proposal["mean_relative_logloss_skill"], 6),
+        "validation": {fold: {"relative_logloss_skill": round(block["relative_logloss_skill"], 6),
+                              "sharpe": round(block["sharpe"], 3), "trade_count": block["trade_count"]}
                        for fold, block in sorted(proposal["validation"].items())},
-        "deflated_sharpe_ratio": deflated_sharpe_ratio_block(proposal["deflated_sharpe_ratio"]),
+        "entry_edge_threshold": proposal["entry_edge_threshold"],
+        "entry_edge_threshold_constraint_met": proposal["entry_edge_threshold_constraint_met"],
+        "selection_score_mean_sharpe": config.rounded(proposal["selection_score_mean_sharpe"], 3),
     }
 
 
@@ -180,12 +175,12 @@ def artifacts_block(ticker: str) -> dict:
     return {"model_evaluation_modified_utc": datetime.fromtimestamp(modified, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")}
 
 
-# the rounding of each importance as the page shows it: gain is a sum of gains, the two others are fractions
-IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6, "permutation_logloss_delta_importance": 6}
+# the rounding of each importance as the page shows it: gain is a sum of gains, the SHAP value a margin
+IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6}
 
 
 def validation_importance_block(validation_importance: dict) -> dict:
-    """The three importances of every validation booster, per column, rounded — the page takes their means."""
+    """The two importances of every validation booster, per column, rounded — the page takes their means."""
     return {fold: {measure: {column: round(value, IMPORTANCE_ROUNDING_DIGITS[measure])
                              for column, value in sorted(block[measure].items())}
                    for measure in IMPORTANCE_ROUNDING_DIGITS}
