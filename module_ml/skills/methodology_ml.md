@@ -18,7 +18,8 @@ named in `AGENTS.md`; *The repository shows the destination, not the road*.
 5. Overlapping labels carry **average-uniqueness** weights, measured on the
    population that uses them.
 6. A training event may **not cross the start of its OOS block**.
-7. HPO and the entry edge threshold `τ` see **F2–F4 only**.
+7. HPO, the entry edge threshold `τ` and, once a set is promoted, the feature set
+   see **F2–F4 only**.
 8. **F5 changes no decision** — not a feature, not a hyper-parameter, not the
    entry edge threshold, not a rule.
 9. PnL is **linear fixed-quantity research PnL on canonical prices**, with an
@@ -126,15 +127,16 @@ search tunes — and, reported beside that and never selected on, the strategy's
 threshold selection of § 9 on their predictions: τ*, the fold Sharpes and trade
 counts, `selection_score_mean_sharpe`. Trial 1 is the active set, and
 reproduces the training stage's fold skills and the strategy stage's score bit
-for bit. A pass is one forward step — every set with one more column, in
+for bit. A pass is one forward move — every set with one more column, in
 timeframe order and catalogue order; a candidate qualifies when its skill is
 higher than the champion's on **every** validation fold, and the highest mean
 skill among the qualifiers is accepted, ties to the earlier candidate — then
-one backward step — every set with one column fewer, never the last column of
+one backward move — every set with one column fewer, never the last column of
 the set (a timeframe may empty: the trend gate reads the catalogue, not the
 set); a candidate qualifies at no worse skill on every fold, and the highest
-mean skill among the qualifiers is accepted. Every forward step raises every
-fold's skill and every backward step shrinks the set at no worse folds, so no
+mean skill among the qualifiers is accepted, ties to the earlier candidate
+again. Every forward move raises every fold's skill and every backward move
+shrinks the set at no worse folds, so no
 set recurs and the search ends when a pass accepts nothing: `search_converged`.
 A set scored once is looked up, never fitted twice, and no booster is kept. The
 ledger of every trial is `<TICKER>_feature_set_search.json`, rewritten after
@@ -149,7 +151,8 @@ after a promotion. The skill is conditional on the frozen `best_params`, which
 were tuned for the active set; a promotion (`make ml-feature-set-promote
 ASSET=<TICKER> PROPOSAL=<n>`, one asset at a time, never fanned out) copies a
 proposal's columns into `<TICKER>_feature_set.json` — the columns and nothing
-else; the commit history is the record of every promotion — and reruns the
+else; once the file is admitted and committed, the commit history is the
+record of every promotion — and reruns the
 chain, `ml-hpo` included, so the promoted set is re-tuned, its realised result
 differs from the search's, and the next search starts from trial 1. The same
 proposal promoted twice changes nothing. Selection overfitting is bounded and
@@ -402,7 +405,10 @@ catalogue from `module_features/config`) · `module_ml/validation`,
 `module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
 IO: X/Y loading, canonical JSON, the re-exported parquet writer) ·
 `module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,
-`module_ml/status` (CLI stages, `python -m module_ml.<stage> [--tickers …]`).
+`module_ml/status` (CLI stages, `python -m module_ml.<stage> [--tickers …]`) ·
+`module_ml/feature_set_search`, `module_ml/feature_set_promote` (the two hand
+stages outside the chain, `python -m module_ml.<stage> --tickers <TICKER>`, the
+promotion also `--proposal <n>`).
 Constant convention: **experiment-semantic constants live in
 `module_features/config.py` and `module_ml/config.py`; implementation
 constants** (chunk sizes, the equity-curve stride — daily in the artifact,
@@ -437,6 +443,7 @@ stage, and most edits do not touch it:
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
 | the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
 | a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
+| a feature-set search (`make ml-feature-set-search`) | `ml-status` — its proposals reach the page |
 | the promoted feature set (`make ml-feature-set-promote`) | `ml-all` — run by the promotion itself |
 | the monitoring payload | `ml-status` |
 

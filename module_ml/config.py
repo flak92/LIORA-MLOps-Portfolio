@@ -8,7 +8,7 @@ different experiment, and the git commit is the record of which one ran.
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, MODULE_MONITORING_DIR,
+    BYTES_PER_KIBIBYTE, DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, MODULE_MONITORING_DIR,
     TICKERS, artifact_dir, build_ticker_parser, parse_tickers, research_ohlcv_duckdb, rounded, to_utc_ms,
 )
 from module_features.config import (  # re-exported
@@ -44,7 +44,7 @@ LABEL_HORIZON_MS = LABEL_HORIZON_MINUTES * MILLISECONDS_PER_MINUTE
 FOLD_BOUNDS_UTC = ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01",
                    "2025-01-01", RESEARCH_END_UTC)
 FOLD_BOUNDS_MS = tuple(to_utc_ms(d) for d in FOLD_BOUNDS_UTC)
-# F2, F3, F4 — the data-driven selection of hyper-parameters and the threshold
+# F2, F3, F4 — the data-driven selection of the hyper-parameters, the threshold and, once a set is promoted, the feature set
 VALIDATION_FOLD_IDS = (2, 3, 4)
 FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 

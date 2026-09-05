@@ -88,7 +88,7 @@ function buildStrategyFrame(asset, mlStatus) {
   const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
   frame.body.appendChild(buildKeyValueBox([
     ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
-    ["gate", "side = sign(" + mlStatus.trend_gate_feature + ") and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of 3 timeframes agree"],
+    ["gate", "side = sign(" + mlStatus.trend_gate_feature + ") and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of " + mlStatus.catalogue.timeframes.length + " timeframes agree"],
     ["cost per side", formatPercent(asset.strategy.execution_cost_rate_per_trade_side, 2)
       + "  (execution-cost-adjusted, excluding funding)"],
   ]));

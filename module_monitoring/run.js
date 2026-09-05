@@ -6,7 +6,6 @@
 
 const TIMELINE_WIDTH = 700;
 const TIMELINE_HEIGHT = 100;
-const SECONDS_PER_MINUTE = 60;
 const BYTES_PER_SECOND_LABEL = "/s";
 const HTTP_OK = 200;
 

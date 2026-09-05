@@ -67,7 +67,7 @@ STAGE_INPUT_NOTES = {
     "module_data.status": "the asset databases",
     "module_features.bars": "ohlcv_1m_canonical",
     "module_features.catalogue": "every ohlcv_<timeframe>_canonical of the register",
-    "module_ml.labels": "canonical 1m path + ohlcv_1h_canonical",
+    "module_ml.labels": f"canonical 1m path + ohlcv_{ml_config.LABEL_BARRIER_ATR_TIMEFRAME}_canonical",
     "module_ml.hpo": "X + Y",
     "module_ml.train": "X + Y + the search result",
     "module_ml.strategy": "out-of-sample predictions + the canonical 1m path",

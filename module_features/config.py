@@ -6,13 +6,12 @@ git commit is the record of which one ran."""
 from __future__ import annotations
 
 from module_data.config import (  # re-exported
-    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, TICKERS, artifact_dir,
+    DUCKDB_MEMORY_LIMIT, MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE, MILLISECONDS_PER_SECOND, TICKERS, artifact_dir,
     build_ticker_parser, parse_tickers, research_ohlcv_duckdb, to_utc_ms,
 )
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
 MINUTES_PER_HOUR = 60
-HOURS_PER_DAY = 24
 MILLISECONDS_PER_HOUR = MINUTES_PER_HOUR * MILLISECONDS_PER_MINUTE
 
 # ---- frozen research window (later data top-ups do not change this experiment)
@@ -29,7 +28,7 @@ RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 # <integer><unit>, and its duration and its file-name slot derive from the token (skills/skill_feature_taxonomy.md)
 HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
 DECISION_TIMEFRAME = "15m"
-TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": HOURS_PER_DAY * MILLISECONDS_PER_HOUR}
+TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": MILLISECONDS_PER_DAY}
 # the five slots of module_skills/skill_sorting_files_naming_standard.md, finest first, and the field each unit fills
 TIMEFRAME_SLOT_FIELDS = ("ss", "mm", "hh", "dd", "MM")
 TIMEFRAME_UNIT_SLOT_FIELD = {"m": 1, "h": 2, "d": 3}
@@ -54,9 +53,10 @@ WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATI
 
 # ---- the terms: a series of the bars, or an indicator of the register with its one integer parameter glued to the
 # token in a name (ema20, rsi14); the indicators' invariants are their register records in indicators.py
-SERIES_ATOMS = ("open", "high", "low", "close", "volume", "log_volume")   # log_volume = log1p(volume)
 FEATURE_DEFINITION_OPERATORS = ("minus", "over")
-FEATURE_DEFINITION_NORMALISERS = ("centered",)
+# a normaliser maps a bounded term to [-1, 1] as (value - midpoint) / half_range; its two numbers live in the record
+# and nowhere else — the evaluator reads them
+FEATURE_DEFINITION_NORMALISERS = {"centered": {"midpoint": 50.0, "half_range": 50.0}}
 
 # ---- the feature catalogue: one record per feature definition, from which the name, the computation, the history
 # and the required warm-up derive. A term is ("<indicator>", <parameter_bars>) on the default series close,

@@ -36,7 +36,8 @@ window's lookback are NaN, and a recursion is finite from its first bar.
     range_position = (close − min_n(low)) / (max_n(high) − min_n(low));  a flat range gives 0.5   LOOKBACK n
 
 `over` is a ratio that is 0 where the denominator is 0; `centered` maps a bounded oscillator to
-[−1, 1] as (x − 50) / 50.
+[−1, 1] as (x − midpoint) / half_range, the two numbers of its record in
+`FEATURE_DEFINITION_NORMALISERS` — 50 and 50 for RSI.
 
 ## The catalogue
 

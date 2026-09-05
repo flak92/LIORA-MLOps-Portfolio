@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from module_data.lean import MINUTES_PER_DAY
 
 from . import config, dataset
 
@@ -103,7 +102,7 @@ def catalogue_block() -> dict:
         duration_ms = config.TIMEFRAME_DURATION_MS[timeframe]
         timeframes.append({
             "timeframe": timeframe, "duration_ms": duration_ms,
-            "bars_per_day": MINUTES_PER_DAY * config.MILLISECONDS_PER_MINUTE // duration_ms,
+            "bars_per_day": config.MILLISECONDS_PER_DAY // duration_ms,
             "ratio_to_lower": None if lower is None else duration_ms // config.TIMEFRAME_DURATION_MS[lower],
             "slot": config.TIMEFRAME_SLOT[timeframe],
         })
@@ -130,6 +129,7 @@ def catalogue_block() -> dict:
     } for lower, upper in zip(config.HIERARCHY_TIMEFRAMES, config.HIERARCHY_TIMEFRAMES[1:])]
     warmup_end = datetime.fromtimestamp(config.WARMUP_END_MS / config.MILLISECONDS_PER_SECOND, tz=UTC)
     return {
+        "decision_timeframe": config.DECISION_TIMEFRAME,
         "timeframes": timeframes,
         "warmup": {"top_timeframe_bars": config.WARMUP_TOP_TIMEFRAME_BARS, "end_utc": warmup_end.strftime("%Y-%m-%d %H:%M")},
         "definitions": definitions,
@@ -352,7 +352,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 
-{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters and the entry edge threshold. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
+{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """
 
 

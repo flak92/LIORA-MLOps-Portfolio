@@ -5,6 +5,7 @@
 
 const BYTES_PER_KIBIBYTE = 1024;
 const MILLISECONDS_PER_SECOND = 1000;
+const SECONDS_PER_MINUTE = 60;
 
 function formatCount(value) {
   return value === null || value === undefined ? "-" : value.toLocaleString("en-US");

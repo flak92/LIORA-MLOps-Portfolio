@@ -20,7 +20,7 @@ JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
                 if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
                 if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
-# the proposal a promotion copies, by its rank in the search result
+# the proposal a promotion copies, by its rank in the feature-set search result
 PROPOSAL ?= 1
 # the tmux session the detached feature-set search runs in: one per asset, named for it
 FEATURE_SET_SEARCH_SESSION = feature-set-$(shell echo $(ASSET) | tr A-Z a-z)
@@ -73,7 +73,7 @@ ml-all:          ## the ML chain in order
 ml-feature-set-search: ## stepwise feature-set search on the validation folds under the asset's frozen parameters; resumes; promotes nothing
 	$(call fanout,$(PY),module_ml.feature_set_search)
 # a hand's decision for one asset, never fanned out: ASSET= is required, and an empty one fails in the parser
-ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset into <TICKER>_feature_set.json, then rerun its ML chain; ASSET= is required
+ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset into <TICKER>_feature_set.json, then rerun its ML chain either way; ASSET= is required
 	$(PY) -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
 	$(MAKE) ml-all ASSET=$(ASSET)
 
@@ -126,10 +126,11 @@ docker-ml-feature-set-promote: ## module_ml.feature_set_promote for one asset in
 	$(COMPOSE) run --rm -T pipeline $(RECORD) python -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
 	$(MAKE) docker-ml-all ASSET=$(ASSET)
 # the detached twin: the same docker twin in a tmux session that outlives the terminal, started in this checkout,
-# one asset per session; the session ends with the search — the ledger and the page are the record
+# one asset per session; the session ends with the search — the ledger and the page are the record. A plain make,
+# not $(MAKE): the session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs even under -n
 tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) '$(MAKE) docker-ml-feature-set-search ASSET=$(ASSET)'
+	tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make docker-ml-feature-set-search ASSET=$(ASSET)'
 docker-all:          ## the whole chain inside the containers: download -> ingest -> status -> features -> ML -> snapshots
 	$(MAKE) docker-data-download docker-data-ingest docker-data-status docker-features-all docker-ml-all
 docker-btc-all: docker-all ## the single-asset chain by its ticker name; the alias goes when the basket grows

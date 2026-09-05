@@ -41,7 +41,8 @@ experiment; the bars, the parquets and the catalogue's offered timeframes follow
 ## Series and indicators — the terms
 
 A **series** is a column of one timeframe's bars, with no parameter: `open`, `high`, `low`,
-`close`, `volume`, `log_volume` (= log1p(volume)) — `SERIES_ATOMS`.
+`close`, `volume`, `log_volume` (= log1p(volume)) — a bar column, or `log_volume`, the one series with a
+kernel (`SERIES_KERNELS` in `catalogue.py`).
 
 An **indicator** is one computation over series of one timeframe with exactly one integer
 parameter, written glued to the indicator token, as the trade writes RSI14 and SMA200. The
@@ -84,7 +85,8 @@ left to right:
     definition = [ normaliser "_" ] term { "_" operator "_" term }
     term       = series | [ series "_" ] indicator parameter
     operator   = minus | over            (difference; ratio, 0 where the denominator is 0)
-    normaliser = centered                (a bounded oscillator mapped to [-1, 1]: (x − 50) / 50 for RSI)
+    normaliser = centered                (a bounded oscillator mapped to [-1, 1]: (x − midpoint) / half_range,
+                                          the record's two numbers — 50 and 50 for RSI)
 
 `ema20_minus_ema50_over_atr14` reads: EMA(20) minus EMA(50), over ATR(14) — three terms, one
 timeframe, two operators. `close_minus_sma50_over_atr14` reads: close minus SMA(50), over ATR(14)

@@ -1,6 +1,6 @@
 """Stepwise feature-set search on the validation folds under the asset's frozen hyper-parameters, selecting on the
-model's own validation objective: a forward step adds the column that raises the relative log-loss skill of every
-validation fold, a backward step drops a column at no worse skill on every fold, until a pass accepts nothing. A
+model's own validation objective: a forward move adds the column that raises the relative log-loss skill of every
+validation fold, a backward move drops a column at no worse skill on every fold, until a pass accepts nothing. A
 trial's strategy numbers are reported beside it and never selected on. The ledger of every scored trial is the state,
 written after each, so an interrupted run resumes without a refit and a finished run is read, not rewritten.
 Promotes nothing: the proposals are read by a hand and copied by feature_set_promote."""
@@ -37,7 +37,7 @@ def without_column(columns_by_timeframe: dict, timeframe: str, name: str) -> dic
             timeframe: tuple(column for column in columns_by_timeframe[timeframe] if column != name)}
 
 
-def as_tuples(columns_by_timeframe: dict) -> dict:
+def to_tuples(columns_by_timeframe: dict) -> dict:
     return {timeframe: tuple(columns_by_timeframe[timeframe]) for timeframe in config.HIERARCHY_TIMEFRAMES}
 
 
@@ -50,11 +50,11 @@ def fold_skills(row: dict) -> list[float]:
     return [row["validation"][f"fold_{fold_id}"]["relative_logloss_skill"] for fold_id in config.VALIDATION_FOLD_IDS]
 
 
-def raises_every_fold(row: dict, champion: dict) -> bool:
+def is_skill_raised_on_every_fold(row: dict, champion: dict) -> bool:
     return all(skill > champion_skill for skill, champion_skill in zip(fold_skills(row), fold_skills(champion)))
 
 
-def no_worse_on_every_fold(row: dict, champion: dict) -> bool:
+def is_skill_no_worse_on_every_fold(row: dict, champion: dict) -> bool:
     return all(skill >= champion_skill for skill, champion_skill in zip(fold_skills(row), fold_skills(champion)))
 
 
@@ -94,7 +94,7 @@ def trial_result(xy: dict, y_cls: np.ndarray, best: dict, close_1m: np.ndarray, 
 
 def proposals_block(trials: list[dict], active: dict) -> list[dict]:
     """The best trials that differ from the active set, by mean skill, ties to the earlier trial."""
-    active = as_tuples(active)
+    active = to_tuples(active)
     candidates = sorted(
         ((index, row) for index, row in enumerate(trials, start=1) if row["columns_by_timeframe"] != active),
         key=lambda item: (-item[1]["mean_relative_logloss_skill"], item[0]))
@@ -129,9 +129,6 @@ def main() -> int:
     ).parse_args()
 
     for ticker in config.parse_tickers(args.tickers):
-        if not config.is_artifact_set_complete(ticker):
-            print(f"{ticker}: no complete artifact set — run `make ml-all` first", flush=True)
-            continue
         best = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
         xy = dataset.load_xy(ticker)
         y_cls = model.to_class(xy["y"])
@@ -153,7 +150,7 @@ def main() -> int:
         trials = state["trials"]
         ledger = {}
         for index, row in enumerate(trials, start=1):
-            row["columns_by_timeframe"] = as_tuples(row["columns_by_timeframe"])
+            row["columns_by_timeframe"] = to_tuples(row["columns_by_timeframe"])
             ledger[ledger_key(row["columns_by_timeframe"])] = index
         if state["search_converged"]:
             print(f"{ticker}: the search converged after {state['pass_count']} passes and {len(trials)} trials — "
@@ -197,7 +194,7 @@ def main() -> int:
                     row = trials[index - 1]
                     print(progress_line(ticker, pass_number, config.FEATURE_SET_SEARCH_MOVE_FORWARD,
                                         f"+{config.feature_id(name, timeframe)}", champion_row, row), flush=True)
-                    if raises_every_fold(row, champion_row) and (
+                    if is_skill_raised_on_every_fold(row, champion_row) and (
                             best_index is None
                             or row["mean_relative_logloss_skill"] > trials[best_index - 1]["mean_relative_logloss_skill"]):
                         best_index = index
@@ -216,7 +213,7 @@ def main() -> int:
                         row = trials[index - 1]
                         print(progress_line(ticker, pass_number, config.FEATURE_SET_SEARCH_MOVE_BACKWARD,
                                             f"-{config.feature_id(name, timeframe)}", champion_row, row), flush=True)
-                        if no_worse_on_every_fold(row, champion_row) and (
+                        if is_skill_no_worse_on_every_fold(row, champion_row) and (
                                 best_index is None
                                 or row["mean_relative_logloss_skill"] > trials[best_index - 1]["mean_relative_logloss_skill"]):
                             best_index = index

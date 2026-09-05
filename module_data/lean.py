@@ -13,9 +13,8 @@ import re
 import zipfile
 from pathlib import Path
 
-from .config import MILLISECONDS_PER_MINUTE
+from .config import MILLISECONDS_PER_DAY, MILLISECONDS_PER_MINUTE
 
-MILLISECONDS_PER_DAY = 86_400_000
 MINUTES_PER_DAY = MILLISECONDS_PER_DAY // MILLISECONDS_PER_MINUTE
 
 LEAN_DAY_ZIP_GLOB = "*_trade.zip"

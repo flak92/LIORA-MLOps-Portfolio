@@ -79,9 +79,9 @@ function renderCatalogue(mlStatus) {
   const timeframes = catalogue.timeframes.map((entry) => entry.timeframe);
   document.getElementById("catalogue-register").textContent =
     catalogue.timeframes.map((entry) =>
-      entry.timeframe.padEnd(5) + (entry.duration_ms / MILLISECONDS_PER_SECOND / 60) + " min · "
+      entry.timeframe.padEnd(5) + (entry.duration_ms / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE) + " min · "
       + entry.bars_per_day + " bars per day · "
-      + (entry.ratio_to_lower === null ? "the decision timeframe" : entry.ratio_to_lower + "× the level below")
+      + (entry.timeframe === catalogue.decision_timeframe ? "the decision timeframe" : entry.ratio_to_lower + "× the level below")
       + " · " + entry.slot).join("\n")
     + "\nwarm-up: " + catalogue.warmup.top_timeframe_bars + " bars of " + timeframes[timeframes.length - 1]
     + " · first decision " + catalogue.warmup.end_utc + " UTC";

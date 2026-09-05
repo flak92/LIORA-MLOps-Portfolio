@@ -48,6 +48,7 @@ The feature-set search, outside the chain, one asset at a time:
 ```bash
 make tmux-ml-feature-set-search ASSET=BTC   # the search detached in tmux session feature-set-btc; it outlives the terminal and ends with the search, resumes if rerun
 tmux attach -t feature-set-btc              # watch it; Ctrl-C stops it
+make ml-status                              # the finished search's proposals into the snapshot — the page reads nothing else
 ```
 
 Its proposals are the *Feature set* view and the PROPOSALS frame of *ML
@@ -192,8 +193,8 @@ boundary — what could be less, and whether it is — is
 | download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
 | status    | `make data-status`     | DuckDB → stdout + `module_monitoring/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
-| feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
-| promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
+| feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
+| promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; once the file is admitted and committed, the commit history is the record |
 | lifecycle | `make docker-all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage wrapped by `module_monitoring/record.py`; exact per-stage CPU and peak resident set from `wait4` rusage |
 | dashboard | `make docker-up`       | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make docker-up` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make monitoring-dx-update` | `git ls-files` → `module_monitoring/sub_module_dx/files_and_folders_visualisation.html` | the tracked tree as one self-contained page, redrawn by hand and by nothing else; opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
@@ -243,7 +244,7 @@ business reader:
 catalogue from the canonical series — eight feature definitions on the
 timeframes of the register, twenty-two columns, each name read off its terms
 ([module_features/skills/skill_feature_taxonomy.md](module_features/skills/skill_feature_taxonomy.md));
-`module_ml/` takes the fifteen columns of the default set as X,
+`module_ml/` takes the fifteen columns of the default set as X until a promotion,
 triple-barrier labels resolved on the canonical 1-minute path, a purged
 walk-forward protocol with average-uniqueness weights and an Optuna search over
 XGBoost, a final out-of-sample fold that selects nothing, and a top-down gated

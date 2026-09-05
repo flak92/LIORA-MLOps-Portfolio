@@ -42,7 +42,7 @@ def ratio(numerator: np.ndarray, denominator: np.ndarray) -> np.ndarray:
 
 
 OPERATOR_KERNELS = {"minus": lambda left, right: left - right, "over": ratio}
-NORMALISER_KERNELS = {"centered": lambda value: (value - 50.0) / 50.0}   # a bounded oscillator mapped to [-1, 1]
+NORMALISER_KERNELS = {"centered": lambda value, record: (value - record["midpoint"]) / record["half_range"]}
 
 
 def feature_definition_values(bars: dict[str, np.ndarray], definition: dict) -> np.ndarray:
@@ -51,7 +51,7 @@ def feature_definition_values(bars: dict[str, np.ndarray], definition: dict) -> 
     for operator, term in zip(definition.get("operators", ()), definition["terms"][1:]):
         value = OPERATOR_KERNELS[operator](value, term_values(bars, term))
     normaliser = definition.get("normaliser")
-    return NORMALISER_KERNELS[normaliser](value) if normaliser else value
+    return NORMALISER_KERNELS[normaliser](value, config.FEATURE_DEFINITION_NORMALISERS[normaliser]) if normaliser else value
 
 
 def timeframe_catalogue(bars: dict[str, np.ndarray], timeframe: str) -> dict[str, np.ndarray]:

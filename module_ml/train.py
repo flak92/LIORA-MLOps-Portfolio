@@ -32,7 +32,7 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     }
 
 
-def validation_importance_block(booster, xy: dict, fold_id: int) -> dict:
+def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
     """The two importances of one validation fold's booster, the SHAP values measured on the fold's scoring rows."""
     oos_start, oos_end = validation.fold_bounds(fold_id)
     scoring_rows, _ = validation.scoring_set(
@@ -84,7 +84,7 @@ def main() -> int:
         for fold_id in config.VALIDATION_FOLD_IDS:
             metrics, segments[f"fold_{fold_id}"], rows, booster = fold_evaluation(xy, y_cls, best, fold_id)
             per_fold[f"fold_{fold_id}"] = metrics
-            validation_importance[f"fold_{fold_id}"] = validation_importance_block(booster, xy, fold_id)
+            validation_importance[f"fold_{fold_id}"] = fold_importance_block(booster, xy, fold_id)
             prediction_records.extend(rows)
 
         # the final holdout: fitted on everything before it, never used for a choice — and never attributed,
