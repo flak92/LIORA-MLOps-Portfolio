@@ -129,7 +129,7 @@ columns; the table with histories and warm-ups is `methodology_features.md` § T
 
 A **feature set** is one asset's selection from the catalogue, per timeframe:
 `<TICKER>_feature_set.json`, written only by the promotion stage of `module_ml` and never by hand —
-a choice, not a derivation. No file = the default set, the definitions marked
+a choice, not a derivation, and tracked, because the asset's parameters are tuned for it. No file = the default set, the definitions marked
 `definition_in_default_set` on every timeframe they are offered on
 (`DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`) — the fifteen columns of the frozen experiment, in the
 order it stacks them. The order is load-bearing: the model samples columns by position, so the

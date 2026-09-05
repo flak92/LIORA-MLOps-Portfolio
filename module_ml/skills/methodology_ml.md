@@ -144,15 +144,17 @@ each, so an interrupted run resumes at its next candidate and a finished run is
 read, not rewritten; its `inputs` — the window and seed, `best_params`, the
 catalogue's columns and the active set — are the one copy of other files'
 content an artifact carries, compared by equality when the stage is rerun. The
-proposals are the best trials that differ from the active set, by mean skill,
-at most `FEATURE_SET_PROPOSAL_COUNT`; their strategy numbers are reported
-beside them and were never selected on — τ is chosen once, by `ml-strategy`,
+proposals are the sets a hand may promote: the champion the search accepted,
+move by move, then the trials no validation fold scores below the active set,
+by mean skill, ties to the smaller set — at most `FEATURE_SET_PROPOSAL_COUNT`.
+A set worse on any validation fold is never proposed, so the default
+`PROPOSAL=1` promotes the search's own answer. Their strategy numbers are
+reported beside them and were never selected on — τ is chosen once, by `ml-strategy`,
 after a promotion. The skill is conditional on the frozen `best_params`, which
 were tuned for the active set; a promotion (`make ml-feature-set-promote
 ASSET=<TICKER> PROPOSAL=<n>`, one asset at a time, never fanned out) copies a
 proposal's columns into `<TICKER>_feature_set.json` — the columns and nothing
-else; once the file is admitted and committed, the commit history is the
-record of every promotion — and reruns the
+else; the commit history is the record of every promotion — and reruns the
 chain, `ml-hpo` included, so the promoted set is re-tuned, its realised result
 differs from the search's, and the next search starts from trial 1. The same
 proposal promoted twice changes nothing. Selection overfitting is bounded and
@@ -379,9 +381,11 @@ two evaluation JSONs, the one parameters file, the feature set and its search
 when a hand has run them, and the README. Beside the
 manifest, outside it, lies the asset's own database,
 `<TICKER>_research_ohlcv.duckdb` — the market object every stage reads. The data
-files are regenerable; `<TICKER>_parameters.json` and `<TICKER>_README.md` are
-tracked, because they are what makes the rest readable without a run, and
-neither carries a timestamp, so an unchanged experiment reproduces them byte
+files are regenerable; `<TICKER>_parameters.json`, `<TICKER>_README.md` and,
+once a hand has promoted one, `<TICKER>_feature_set.json` are tracked, because
+they are what makes the rest readable — and reproducible: the parameters are
+tuned for the set they were searched under, so the two travel together — and
+none carries a timestamp, so an unchanged experiment reproduces them byte
 for byte. Every JSON is canonical (sorted keys, numpy scalars converted) and
 carries **only what it computed** — no provenance envelope, no hashes. The
 settings a run used are `module_ml/config.py` at the commit that ran it — the

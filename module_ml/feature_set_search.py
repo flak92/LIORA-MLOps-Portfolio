@@ -92,12 +92,17 @@ def trial_result(xy: dict, y_cls: np.ndarray, best: dict, close_1m: np.ndarray, 
     }
 
 
-def proposals_block(trials: list[dict], active: dict) -> list[dict]:
-    """The best trials that differ from the active set, by mean skill, ties to the earlier trial."""
+def proposals_block(trials: list[dict], active: dict, champion_trial: int) -> list[dict]:
+    """The sets a hand may promote: the champion the search accepted first, then the trials no validation fold
+    scores below the active set, by mean skill. A set worse on any fold is never proposed."""
     active = to_tuples(active)
-    candidates = sorted(
-        ((index, row) for index, row in enumerate(trials, start=1) if row["columns_by_timeframe"] != active),
-        key=lambda item: (-item[1]["mean_relative_logloss_skill"], item[0]))
+    qualifiers = [(index, row) for index, row in enumerate(trials, start=1)
+                  if row["columns_by_timeframe"] != active and is_skill_no_worse_on_every_fold(row, trials[0])]
+    # the champion first — the set the search itself accepted, move by move — then the rest by mean skill,
+    # ties to the smaller set and to the earlier trial
+    ranked = sorted(qualifiers, key=lambda item: (item[0] != champion_trial,
+                                                  -item[1]["mean_relative_logloss_skill"],
+                                                  column_count(item[1]["columns_by_timeframe"]), item[0]))
     return [{
         "proposal": rank,
         "trial": index,
@@ -109,11 +114,12 @@ def proposals_block(trials: list[dict], active: dict) -> list[dict]:
         "entry_edge_threshold": row["entry_edge_threshold"],
         "entry_edge_threshold_constraint_met": row["entry_edge_threshold_constraint_met"],
         "selection_score_mean_sharpe": row["selection_score_mean_sharpe"],
-    } for rank, (index, row) in enumerate(candidates[:config.FEATURE_SET_PROPOSAL_COUNT], start=1)]
+    } for rank, (index, row) in enumerate(ranked[:config.FEATURE_SET_PROPOSAL_COUNT], start=1)]
 
 
 def write_state(ticker: str, state: dict) -> None:
-    state["proposals"] = proposals_block(state["trials"], state["inputs"]["active_columns_by_timeframe"])
+    state["proposals"] = proposals_block(state["trials"], state["inputs"]["active_columns_by_timeframe"],
+                                         state["champion_trial"] or 1)
     dataset.write_json(config.feature_set_search_json(ticker), state)
 
 

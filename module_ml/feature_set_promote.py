@@ -1,7 +1,7 @@
 """Promotion of one proposal of the feature-set search into the asset's feature set — a hand's choice, never a
 derivation: the proposal's columns are copied into <TICKER>_feature_set.json and nothing else; the Makefile reruns
-the ML chain after it, and once the file is admitted and committed the commit history is the record of every
-promotion. The same columns again change nothing."""
+the ML chain after it, and the commit history is the record of every promotion. The same columns again change
+nothing."""
 
 from __future__ import annotations
 

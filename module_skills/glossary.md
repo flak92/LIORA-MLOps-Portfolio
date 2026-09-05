@@ -123,9 +123,9 @@ Written by `module_data/status.py`; every alias a scan publishes is the key it b
 | the set the search stands on — the best accepted so far, the one the next pass starts from | `champion_trial` | `champion_trial` | — | incumbent, current best |
 | the two moves of a pass — one column in when every fold's skill rises, one column out at no worse skill on every fold | `FEATURE_SET_SEARCH_MOVE_FORWARD`, `FEATURE_SET_SEARCH_MOVE_BACKWARD` | `move` = `forward` / `backward` | forward / backward | add / drop, greedy, step; a margin, a ceiling or a floor on the count of columns |
 | whether a pass accepted nothing — the search is over | `search_converged` | `search_converged` | converged | done, finished, stopped |
-| the promotion — a hand copying one proposal's columns into the asset's feature set and rerunning its ML chain, one asset at a time, never fanned out; the promoted set is re-tuned, so its realised result differs from the search's and the next search starts again; the same proposal twice changes nothing, and once the file is admitted and committed the commit history is the record of every promotion | `module_ml/feature_set_promote.py`, `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json` with `columns_by_timeframe` and nothing else | — (the page shows a promotion only as the set's `source`) | the promotion threshold of `skill_pre_aws_solution.md` § The databases (a database's word); apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history |
+| the promotion — a hand copying one proposal's columns into the asset's feature set and rerunning its ML chain, one asset at a time, never fanned out; the promoted set is re-tuned, so its realised result differs from the search's and the next search starts again; the same proposal twice changes nothing, and the commit history is the record of every promotion | `module_ml/feature_set_promote.py`, `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json` with `columns_by_timeframe` and nothing else | — (the page shows a promotion only as the set's `source`) | the promotion threshold of `skill_pre_aws_solution.md` § The databases (a database's word); apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history |
 | where an asset's feature set came from — the promoted file when it exists, else the default set of the catalogue | `feature_set_block()` | `feature_set` with `source` = `default` / `promoted`, `columns_by_timeframe` | source; `columns <timeframe>` in the cross-section | origin, provenance, `final_holdout_evaluation_count` (a counter git already records) |
-| the sets the search proposes — the best scored sets that differ from the active one, by mean skill, at most `FEATURE_SET_PROPOSAL_COUNT` | `proposals` | `proposals`, each `proposal`, `trial`, `columns_by_timeframe`, `added_columns_by_timeframe`, `removed_columns_by_timeframe`, `mean_relative_logloss_skill`, `validation`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `selection_score_mean_sharpe` | PROPOSALS — `#` for the rank, `columns added / removed` for the two differences | recommendations, top sets, best features |
+| the sets a hand may promote — the champion the search accepted, then the trials no validation fold scores below the active set, by mean skill, ties to the smaller set; at most `FEATURE_SET_PROPOSAL_COUNT` | `proposals` | `proposals`, each `proposal`, `trial`, `columns_by_timeframe`, `added_columns_by_timeframe`, `removed_columns_by_timeframe`, `mean_relative_logloss_skill`, `validation`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `selection_score_mean_sharpe` | PROPOSALS — `#` for the rank, `columns added / removed` for the two differences | recommendations, top sets, best features; a set worse on any validation fold; the highest mean without the fold test |
 | the inputs a search recorded, compared by equality when it is rerun — equal, it resumes; different, it starts again — the one copy of another file's content an artifact carries, admitted as the key of that comparison | `inputs` | `inputs` with `research_window`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe` | — | fingerprint, hash, checksum |
 | the HPO objective value at the chosen point | `best_logloss` | `best_logloss` | best mean F2–F4 log-loss (`best LL` in the search table) | best_value, score |
 | what the search chose: the point, its objective value and the trial count | `hyperparameter_search_result` | `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json) | search | a second name for the same block |
@@ -184,7 +184,7 @@ two a hand's stages write are listed with no size until they exist:
 | file | written by | holds |
 |---|---|---|
 | `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it; no timestamp |
-| `<TICKER>_feature_set.json` | `module_ml/feature_set_promote.py` | `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's |
+| `<TICKER>_feature_set.json` | `module_ml/feature_set_promote.py` | `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's; tracked, like the parameters it conditions |
 | `<TICKER>_feature_set_search.json` | `module_ml/feature_set_search.py` | `inputs`, `trials`, `champion_trial`, `pass_count`, `search_converged`, `proposals` — the ledger of every scored trial, the search's own state, rewritten after every scored trial; present once a search has run |
 | `<TICKER>_features_ss-15-hh-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 15m — `decision_ts` and every definition offered on 15m, on the decision grid |
 | `<TICKER>_features_ss-mm-01-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 1h — `decision_ts` and every definition offered on 1h |
@@ -195,11 +195,12 @@ two a hand's stages write are listed with no size until they exist:
 | `<TICKER>_parameters.json` | `module_ml/hpo.py` | `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`) |
 | `<TICKER>_strategy_evaluation.json` | `module_ml/strategy.py` | `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `selection_score_mean_sharpe`, `execution_cost_rate_per_trade_side`; per fold `sharpe`, `max_drawdown`, `trade_count`, `hit_rate`, `average_trade_return`, `exposure`, `exit_counts`, `final_equity`; the final holdout's `equity_curve` |
 
-Two files are tracked, `<TICKER>_README.md` and `<TICKER>_parameters.json` —
-they make a folder readable without a run; the seven others are regenerable
-from the database; the feature set and the feature-set search result, when they exist,
-are committed by the owner's hand together with the `.gitignore` lines that
-admit them. Beside the manifest, outside it, `<TICKER>_research_ohlcv.duckdb`
+Three files are tracked — `<TICKER>_README.md`, `<TICKER>_parameters.json` and,
+once a hand has promoted one, `<TICKER>_feature_set.json`: together they make a
+folder readable, and reproducible, without a run, because the parameters are
+tuned for the set they were searched under. The eight others are regenerable —
+the seven the chain rebuilds from the database, and the search result a hand
+reruns. Beside the manifest, outside it, `<TICKER>_research_ohlcv.duckdb`
 holds the canonical series and its aggregations: its size moves with every
 top-up, and the README is byte-reproducible for an unchanged experiment.
 

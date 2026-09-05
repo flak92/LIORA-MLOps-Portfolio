@@ -6,3 +6,4 @@ store_assets_artifacts/**
 !store_assets_artifacts/*/
 !store_assets_artifacts/*/*_parameters.json
 !store_assets_artifacts/*/*_README.md
+!store_assets_artifacts/*/*_feature_set.json
