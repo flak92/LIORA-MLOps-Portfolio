@@ -1,1 +1,1 @@
-"""Presentation of what the three runtime modules measured about themselves and of what the repository's record.py measured around every stage, and the one server that serves it — in an asset container, the container reporting itself."""
+"""Presentation of what the three runtime modules measured about themselves and of what record.py measured around every stage, and the one server that serves it — in an asset container, the container reporting itself."""

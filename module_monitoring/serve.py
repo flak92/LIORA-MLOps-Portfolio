@@ -36,6 +36,7 @@ def minutes_since(then: datetime) -> int:
     return max(0, (datetime.now(tz=UTC) - then) // timedelta(minutes=1))
 
 
+# twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -60,20 +61,19 @@ def snapshot_row(rows: list[dict], ticker: str) -> dict | None:
 
 
 def data_block(ticker: str, data_status: dict, ml_status: dict) -> dict | None:
-    """The asset's rows of the data snapshot with the two ages the tab judges them by; None while the snapshot
-    has no row for it, or the folder holds no database for those rows. The research window comes from the ML
+    """The asset's row of the data snapshot with the two ages the tab judges them by; None while the snapshot
+    has no row for it, or the folder holds no database for that row. The research window comes from the ML
     snapshot — the endpoint reads what the modules published and computes nothing of its own."""
-    symbol_row = snapshot_row(data_status["symbols"], ticker)
     canonical_row = snapshot_row(data_status["canonical_source"], ticker)
     databases = config.asset_databases(ticker)
-    if symbol_row is None or canonical_row is None or not databases:
+    if canonical_row is None or not databases:
         return None
     last_observation = config.to_utc_datetime(canonical_row["last_observation_utc"])
     research_window = ml_status["research_window"]
     research_end = config.to_utc_datetime(research_window["end_utc"])
     return {
         "generated_at_utc": data_status["generated_at_utc"],
-        "row_count": symbol_row["row_count"],
+        "row_count": canonical_row["row_count"],
         "last_observation_utc": canonical_row["last_observation_utc"],
         "observation_lag_minutes": minutes_since(last_observation),
         "measurement_age_minutes": minutes_since(config.to_utc_datetime(data_status["generated_at_utc"])),

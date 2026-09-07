@@ -24,12 +24,25 @@ linter, no build step, no framework.
   while equation and geometry locals may stay short inside one tight kernel;
   booleans answer a question. A table builds its header beside its rows, in the
   render function that emits the cells (`appendHeaderRow`, `renderTable`) —
-  `index.html` carries an empty `<thead>`, so adding a column is one edit in
-  one file.
+  `index.html` carries an empty `<thead>` for a table it knows the number of, so
+  adding a column is one edit in one file. A section with as many tables as the
+  payload has members builds them with `buildTable`, which makes its own `<thead>`,
+  and `index.html` carries the host element instead (the bullet below).
 - CSS classes follow **BEM**: `block__element`, `block--modifier`;
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold
   marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
+  One category is marked that way on the data views: `invariant`, on the cells of a
+  column whose only correct value is zero
+  (`../../module_data/skills/skill_candle_canonicalisation.md` § 16),
+  so a reader can tell the numbers he may be alarmed by from the ones a change of data
+  provider is expected to move. Such columns are named by their header in the render
+  function, never counted by position.
+- **A section with as many parts as the payload has members builds them, and names
+  none.** The data views take the provider set from the snapshot's `source_venues` and
+  build one frame, one column and one share cell per entry, the way the ML assets panel
+  builds one frame per asset; `index.html` carries the host element, not the parts. A
+  provider added to the pipeline therefore changes no file of this module.
 - The page reads three committed snapshots (`data_status.json`, `features_status.json`,
   `ml_status.json`) into `DATA_STATUS`, `FEATURES_STATUS` and `ML_STATUS` and renders
   everything client-side; the
@@ -37,7 +50,7 @@ linter, no build step, no framework.
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
   `GET /runs` and `GET /runs/<run_id>` and renders it as it arrives. The DevOps panel
-  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — six
+  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — seven
   state globals across the two pages; the pill-hook registry `PILL_HOOKS`, the load
   promise `DATA_STATUS_LOADED` and the latches `CONTAINER_POLL_IN_FLIGHT`,
   `PANEL_POLL_IN_FLIGHT` and `MACHINE_ACTION_IN_FLIGHT` are not state.
@@ -51,7 +64,7 @@ linter, no build step, no framework.
   tracked tree at `sub_module_dx/files_and_folders_visualisation.html`, and **DevOps** opens the
   panel at `sub_module_devops/index.html`. Both reach the browser as static files below the
   dashboard's web root — the panel from the sub-module the dashboard serves as a directory, the
-  drawing from the Orchestration repository's `sub_module_dx/`, which its `docker-compose.yml` mounts
+  drawing from `sub_module_dx/`, which its `docker-compose.yml` mounts
   read-only at that path — so the server's routes know about neither: the panel's API is a route, its page is not. The
   drawing is a derived artifact, redrawn only by `make dx-update`, and its inline renderer is
   reviewed as a whole and is not bound by the closed verb list above, which governs the
@@ -59,4 +72,25 @@ linter, no build step, no framework.
   drawing's rest — the configuration surface, the two views, the provenance stamp and the
   determinism it owes;
   `skill_devops_panel.md` holds the panel's.
+
+## Extending
+
+- **A tab** is one `<button class="pill" data-key="<key>">` in `#tabs`, one
+  `<section id="tab-<key>" data-panel="tab" data-key="<key>" hidden>`, and one section
+  script in the list at the end of `index.html` — `initPills` in `page.js` wires them by
+  `data-key`; then its row in `README_module_monitoring.md` § Design rationale, and the
+  enumerations that name the tabs move in the same commit: `README.md`
+  § Quickstart and § Dashboard, and `../../module_skills/glossary.md` § Container status
+  endpoint. A section that fetches a new object adds a state global, and the sentence
+  above that counts them moves with it.
+- **A route** of the dashboard is one branch of `DashboardHandler.do_GET` (or `do_POST`)
+  in `serve.py`, with its constant in `config.py` when it builds a path; a route of the
+  panel is `PanelHandler` in `sub_module_devops/serve.py` with its Engine path in
+  `sub_module_devops/config.py`, and its row in the route table of `skill_devops_panel.md`.
+  Either way the places that list routes move in the same commit — `serve.py`'s docstring,
+  `README_module_monitoring.md` § Design rationale, `../../module_skills/skill_asset_containers.md`
+  § The server, `../../module_skills/skill_pre_aws_solution.md` § The mapping table — and
+  every key the route publishes enters `../../module_skills/glossary.md`.
+- **A column or a cell** is one edit in the render function that emits the row, because the
+  header is built beside the rows.
 

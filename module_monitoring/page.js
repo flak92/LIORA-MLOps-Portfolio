@@ -3,6 +3,8 @@
    status page and the DevOps panel both load it and neither inherits the other's markup. */
 "use strict";
 
+/* twice by extraction — the browser's own copies of the units the configs carry (module_skills/glossary.md § Twice by
+   extraction); no config module reaches a page */
 const BYTES_PER_KIBIBYTE = 1024;
 const MILLISECONDS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
@@ -72,6 +74,15 @@ function appendRows(table, rows) {
     const tr = tbody.insertRow();
     cells.forEach((content) => (Array.isArray(content) ? appendCell(tr, content[0], content[1]) : appendCell(tr, content)));
   });
+}
+
+/* a table of its own, for a section that has as many tables as the payload has members */
+function buildTable(headers, rows) {
+  const table = document.createElement("table");
+  table.createTHead();
+  appendHeaderRow(table, headers);
+  appendRows(table, rows);
+  return table;
 }
 
 function renderTable(id, headers, rows) {

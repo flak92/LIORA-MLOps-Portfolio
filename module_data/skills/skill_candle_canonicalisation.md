@@ -27,9 +27,9 @@ price traceable to the venue that printed it.
 
 `module_data` does not own feature engineering, labels, hyper-parameter search,
 XGBoost, strategy selection, research simulation or any trading decision. In
-this repository it does not own the 15m/1h/4h aggregations either — those
+this project it does not own the 15m/1h/4h aggregations either — those
 tables live in the same database file but are written by `module_features/bars.py`,
-downstream of this contract (§ 12, § 13).
+in the feature module's repository, downstream of this contract (§ 13, § 14).
 
 Everything below the canonical object is source-neutral: no downstream stage
 knows which venue printed a given minute, and none needs venue-specific
@@ -66,10 +66,14 @@ Raw candles are kept as the evidence of one venue's observation, in a
 Lean-exact tree, one leaf per venue and symbol:
 
 ```
-store_raw_1m/cryptofuture/<venue>/minute/<symbol>/YYYYMMDD_trade.zip
-    └── YYYYMMDD_<symbol>_minute_trade_perp.csv
+store_raw_1m/cryptofuture/<venue>/minute/<symbol lowercase>/YYYYMMDD_trade.zip
+    └── YYYYMMDD_<symbol lowercase>_minute_trade_perp.csv
         headerless: offset_ms_from_utc_midnight,open,high,low,close,volume
 ```
+
+The folder and the file carry the symbol in lower case because Lean demands it; the
+artifact folder is the ticker in capitals — a boundary, not an inconsistency to tidy
+away (`AGENTS.md` § Architecture shape).
 
 Two units, deliberately distinct:
 
@@ -330,7 +334,7 @@ The asset itself is not a column: the database file names it once,
 `source` is what makes a source switch visible. Within a minute nothing is
 combined, so no averaging artifact exists to measure; between two minutes the
 series may change venue and carry the cross-venue basis, which is why
-`source_switch_count` and `max_abs_return_at_switch` are monitored (§ 14) rather
+`source_switch_count` and `max_abs_return_at_switch` are monitored (§ 16) rather
 than smoothed away.
 
 ## 12. Relative divergence
@@ -356,7 +360,7 @@ Under this contract a large divergence may not be used to:
 - synthesise a replacement candle.
 
 Strongly diverging minutes are real market dislocations, and the distribution
-is exposed as `relative_divergence_mean` / `_p99` / `_max`. Introducing any
+is exposed as `relative_divergence_p99` / `_max`. Introducing any
 divergence policy is a change to this contract, not a tuning decision.
 
 ## 13. Physical storage
@@ -438,19 +442,28 @@ in object storage (Amazon S3) — a copy, never a mount. The promotion threshold
 is `../../module_skills/skill_pre_aws_solution.md` § The databases.
 
 The rule this section instantiates for the database — a container is compute
-and never the owner of an asset's state — is repository-wide and lives in
-`../../module_skills/skill_pre_aws_solution.md`; this section stays its one
+and never the owner of an asset's state — is project-wide and lives in
+`../../module_skills/skill_pre_aws_solution.md`, the canon copy this repository carries; this section stays its one
 statement for the market object.
 
 ## 16. Data-quality invariants
 
 `module_data/status.py` scans each database read-only and publishes what it
-finds. Two numbers are invariants — a non-zero value is a defect:
+finds. Three numbers are invariants — a non-zero value is a defect:
 
 ```
-duplicate_count      == 0
-ohlc_violation_count == 0
+duplicate_count      == 0     per venue
+invalid_row_count    == 0     per venue
+ohlc_violation_count == 0     on the canonical series
 ```
+
+`invalid_row_count` counts what `ingest.py` will not join, with `ingest.py`'s own
+`OHLC_INTACT_PREDICATE` imported rather than restated (§ 4): a row whose fields are
+not finite, whose price is not above zero or whose volume is negative is rejected at
+the join and would otherwise be counted nowhere — `coverage_pct` and `gap_count` are
+built from timestamps present, not from rows usable. On the page an invariant column
+is marked as such: after a change of provider these must still be zero, while the
+observations beside them are expected to move.
 
 The rest are **observations**. They describe the market and the venues, and no
 value of them is by itself a failure:
@@ -458,14 +471,22 @@ value of them is by itself a failure:
 | observation | what a non-zero value means |
 |---|---|
 | `gap_count` | minutes a venue never printed; the canonical grid closes them |
-| `zero_volume_bars` | valid candles that traded nothing |
+| `zero_volume_bars` | candles that traded nothing — on a venue row the raw test `volume = 0`, on the canonical row the stored `zero_volume` flag, which § 6 sets only when the **winning** candle traded nothing. One name, two objects, and on the canonical series it is false on every forward-filled minute |
 | `ffill_bars` | minutes neither venue printed |
-| `binance_pct` | the share of minutes the primary venue won |
-| `bybit_pct` | the share the failover carried — evidence it works, not a fault |
+| `source_share_pct_by_venue` | the share of minutes each venue won, keyed by venue in the tier order of `source_venues`; a share below the primary's is evidence the failover works, not a fault |
 | `source_switch_count` | places the cross-venue basis can enter a return |
-| `relative_divergence` | the mean / p99 / max of the cross-venue close distance |
+| `relative_divergence_p99`, `relative_divergence_max` | the 99th percentile and the largest of the cross-venue close distance |
+| `flat_bars` | a venue's own minutes that traded nothing and quoted one price — `volume = 0` and `open = high = low = close`, tested on the raw table and consulting no validity predicate; a subset of that venue's `zero_volume_bars` |
+| `longest_flat_run_minutes` | the longest unbroken run of flat minutes **on the canonical series** — the same geometry as the venue row above, on a different object. A forward-filled row satisfies that geometry too (§ 10) and is **not** one of them: a canonical minute is forward-filled, flat, or traded, decided in that order, or fabrication would be reported as a quiet market |
+| `longest_ffill_run_minutes` | the longest unbroken run of forward fill. `ffill_bars` alone cannot tell a provider dark for three days from one dropping scattered minutes over four years; the first is a fabricated regime, the second is noise |
+| `repeated_candle_count` | canonical minutes repeating the previous candle verbatim **while volume was printed** — a feed frozen on its last bar. No flatness count can see it: the timestamps differ, the geometry is intact and the volume is not zero |
+| `last_close` | a venue's last printed close. Every other number here is dimensionless, so nothing else in the snapshot would notice a delivery under the wrong symbol |
+| `max_abs_return_1m` | the largest one-minute absolute return on the canonical series |
+| `max_abs_return_at_switch` | the largest one-minute absolute return at a source switch — the basis a switch let in |
+| `gap_count_after_first_observation` | a venue's gaps counted from its first printed minute, so a listing inside the window is not a gap |
+| `coverage_pct` | the share of the grid a venue printed. The real-data and forward-fill shares are the page's arithmetic over `row_count` and `ffill_bars`, not keys |
 
-`bybit_pct > 0` is proof of a working failover. `zero_volume_bars > 0`
+A non-zero share for a venue below the primary is proof of a working failover. `zero_volume_bars > 0`
 in a raw venue is not automatically a fault either — what it means depends on
 whether that minute won the canonical selection.
 
@@ -473,7 +494,7 @@ whether that minute won the canonical selection.
 
 These are properties of the contract, not defects to be smoothed away. The
 limitations of *acquisition* — a short post-listing day, the single listing
-probe, idempotence by file presence — are `methodology_data.md` § 3.
+probe, idempotence by file presence — are `methodology_data.md` § 4.
 
 - **A single-venue minute has nothing to fail over to.** When only one venue is
   listed and it prints a no-trade candle, the canonical bar is that candle,
@@ -509,10 +530,17 @@ Bybit       coverage 100 %      zero-volume candles  92
 
 Canonical   binance source  99.994 %
             bybit source     0.006 %   (181 minutes)
-            ffill                 0
-            zero-volume           0
+            ffill                 0    longest run 0
+            zero-volume           0    longest flat run 0
             source switches      18
+            repeated candles      1
+            invalid rows          0 on either venue
 ```
+
+The one repeated candle is 2025-06-29, where Binance printed the previous minute again
+down to its volume of 2.723. It is an observation of this run, not a rule: one minute in
+three million says nothing about the venue, and the count exists so that a frozen feed
+cannot pass as a market.
 
 The 181 Bybit minutes are exactly Binance's 181 zero-volume minutes: the case
 of § 7 where only the secondary traded, firing on every one of them. That

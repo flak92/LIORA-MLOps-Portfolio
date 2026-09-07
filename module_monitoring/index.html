@@ -22,31 +22,29 @@
   <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
     <div id="meta" class="box">loading store_status/data_status.json&hellip;</div>
     <div id="flow" class="box"></div>
-    <table id="symbols" hidden>
+    <table id="pipeline" hidden>
       <thead></thead>
       <tbody></tbody>
     </table>
+    <p class="foot">one row per asset of the series research consumes. The real-data share is the page's own
+      arithmetic over the forward-filled bars and the row count; a forward-filled minute is one neither provider
+      printed, and its longest run says whether that was noise or an outage.</p>
   </section>
 
   <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
-    <h2>Raw source: Binance USDS-M</h2>
-    <table id="raw-binance">
-      <thead></thead>
-      <tbody></tbody>
-    </table>
-    <h2>Raw source: Bybit Linear</h2>
-    <table id="raw-bybit">
-      <thead></thead>
-      <tbody></tbody>
-    </table>
+    <h2>Raw sources, one per provider</h2>
+    <div id="raw-sources"></div>
     <h2>Canonical dataset construction</h2>
     <table id="canonical-source">
       <thead></thead>
       <tbody></tbody>
     </table>
-    <p class="foot">the two sources above are the only place a provider is named: from the
-      canonical table onwards the dataset is one market object. Tier order, the verbatim-candle
-      rule and the reason it beats averaging are in skill_candle_canonicalisation.md.</p>
+    <p class="foot">one section per provider, in the tier order the snapshot publishes. The canonical table names
+      the providers once more, in its share columns — a share of the grid is the one number that is per provider by
+      nature; every other column of it describes one market object and asks about no source. A marked column is an
+      invariant, whose only correct value is zero; every other number is an observation, which a change of provider
+      is expected to move. Tier order, the verbatim-candle rule and the reason it beats averaging are in
+      skill_candle_canonicalisation.md.</p>
   </section>
 
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>

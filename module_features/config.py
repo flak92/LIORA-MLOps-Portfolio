@@ -12,9 +12,9 @@ from pathlib import Path
 
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
-# twice by extraction — identical in module_data/config.py, module_features/config.py, module_ml/config.py
-# (module_skills/glossary.md § Twice by extraction): the units, the ceiling, the two stores this module touches and their
-# descriptors, and the one CLI every stage shares; a change to one copy is a change to every copy, by hand
+# twice by extraction — identical in module_data/config.py and module_ml/config.py (module_skills/glossary.md § Twice by
+# extraction): the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
+# stage shares; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
@@ -191,8 +191,9 @@ def features_parquet(ticker: str, timeframe: str):
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts
 
 
+# twice by extraction — identical in module_ml/config.py, the reader (module_skills/glossary.md § Twice by extraction)
 def catalogue_json(ticker: str):
-    """The asset's copy of the feature layer's contract — what the ML layer reads instead of this module."""
+    """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"
 
 

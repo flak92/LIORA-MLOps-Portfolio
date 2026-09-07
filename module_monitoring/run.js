@@ -1,7 +1,7 @@
 /* Lifecycle tab: one recorded run read from /runs and /runs/<run_id> — the run header, the stage table
-   and what each stage wrote to the four stores. Classic script; uses the shared toolkit from page.js and
-   buildTable from ml.js. The page collects nothing: every number below was measured from outside the stage
-   by record.py of the repository — when it started, how it exited, what it added, changed and removed. */
+   and what each stage wrote to the four stores. Classic script; uses the shared toolkit from page.js,
+   buildTable among them. The page collects nothing: every number below was measured from outside the stage
+   by record.py — when it started, how it exited, what it added, changed and removed. */
 "use strict";
 
 /* the recorder writes UTC as "YYYY-MM-DD HH:MM:SS" */

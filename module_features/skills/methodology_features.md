@@ -5,7 +5,7 @@ canonical 1m series on every timeframe of the register, and the feature catalogu
 of them, aligned to the decision grid. The names are `skill_feature_taxonomy.md`; the definitions
 are here, equation by equation; the search that chooses a set from them is
 `module_ml/skills/methodology_ml.md` § 4. *The repository shows the destination, not the
-road*: the one guard is the finiteness assert of `catalogue.build_catalogue`.
+road*: the two guards are the finiteness assert of `catalogue.build_catalogue` and the causality assert of `indicators.asof_index`.
 
 ## The register
 
@@ -19,7 +19,9 @@ each token are read off the token.
 | `4h` | 14 400 000 | 6 | 4× | `ss-mm-04-dd-MM` |
 
 Bars are exact UTC-aligned aggregations of the canonical 1m series — O first, H max, L min, C last,
-V sum; `arg_min` / `arg_max` by timestamp for determinism — written by `bars.py` into the asset's
+V sum, plus `ffill_bars` and `zero_volume_bars`, the forward-filled and the valid no-trade minutes inside
+each bar, carried up for a reader and read by no later stage; `arg_min` / `arg_max` by timestamp for
+determinism — written by `bars.py` into the asset's
 own database, one table per entry of the hierarchy (`ohlcv_<timeframe>_canonical`).
 
 ## The kernels
@@ -30,7 +32,8 @@ recursion from its n-th.
 
     ema_t   = ema_{t-1} + α (x_t − ema_{t-1}),  α = 2 / (n + 1),  ema_0 = x_0           SPAN n
     wilder  = w_{t-1} + (x_t − w_{t-1}) / n,  seeded with the mean of the first n         SMOOTHING_PERIOD n
-    rsi     = 100 − 100 / (1 + wilder(gain) / wilder(loss)),  gain = max(Δclose, 0), loss = max(−Δclose, 0)
+    rsi     = 100 − 100 / (1 + wilder(gain) / wilder(loss)),  gain = max(Δclose, 0), loss = max(−Δclose, 0);
+              a zero loss with a positive gain gives 100, a zero gain and loss 50, and the first bar is NaN — the change grid realigned to the price grid
     atr     = wilder(true range),  true range = max(high − low, |high − prev close|, |low − prev close|)
     sma     = mean of the trailing n bars                                                   LOOKBACK n
     zscore  = (x − mean_n(x)) / sd_n(x),  sample sd; a zero sd gives 0                      LOOKBACK n

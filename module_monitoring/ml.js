@@ -10,14 +10,6 @@ const CLASS_NAMES = ["short", "neutral", "long"];
 let ML_STATUS = null;
 let FEATURES_STATUS = null;
 
-function buildTable(headers, rows) {
-  const table = document.createElement("table");
-  table.createTHead();
-  appendHeaderRow(table, headers);
-  appendRows(table, rows);
-  return table;
-}
-
 function buildShareCell(part, whole) {
   const pctValue = whole ? (100 * part) / whole : 0;
   const wrap = document.createElement("span");
@@ -244,12 +236,12 @@ function selectAsset(ticker) {
   document.querySelector("#asset-pills button[data-key='" + ticker + "']").click();
 }
 
-/* ---- load ---- */
+/* ---- fetch ---- */
 
-const loadSnapshot = (name) => fetch("/store_status/" + name, { cache: "no-store" })
+const fetchSnapshot = (name) => fetch("/store_status/" + name, { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error(name + " HTTP " + response.status); return response.json(); });
 
-Promise.all([loadSnapshot("ml_status.json"), loadSnapshot("features_status.json")])
+Promise.all([fetchSnapshot("ml_status.json"), fetchSnapshot("features_status.json")])
   .then(([mlStatus, featuresStatus]) => {
     const envelope =
       "research window: [" + mlStatus.research_window.start_utc + " .. " + mlStatus.research_window.end_utc + ") UTC\n" +

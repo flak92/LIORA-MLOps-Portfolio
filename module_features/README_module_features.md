@@ -35,7 +35,7 @@ and each asset's row counts, the one run-state fact this module has.
 
 ## Stages
 
-Run in order; `make features-all` runs the chain. The two per-asset stages fan out
+Run in order; `make features-all` runs the chain, each stage in a one-off container of this module's image, and this repository's own Makefile runs one stage at a time in a venv. The two per-asset stages fan out
 one process per asset with its threads pinned to one; `status` runs once over the
 assets the launcher names.
 
@@ -70,11 +70,11 @@ addition touches.
 
 | what you add | where, and how much | what it changes | the gate |
 |---|---|---|---|
-| a timeframe | one token in `HIERARCHY_TIMEFRAMES` (`config.py`) | a different experiment: the bars, every parquet, the contract and the snapshot, the labels, X and every artifact, the final holdout included | nothing stays byte-identical; the whole chain reruns |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` (`config.py`) — `<integer><unit>`, the unit one of `m`, `h`, `d` and the integer under 100: `TIMEFRAME_UNIT_MS` and `TIMEFRAME_UNIT_SLOT_FIELD` are the accepted set, and a wider number breaks the fixed-width slot; a token finer than the decision timeframe moves `DECISION_TIMEFRAME` with it | a different experiment: the bars, every parquet, the contract and the snapshot, the labels, X and every artifact, the final holdout included; a token above the top also moves `TREND_GATE_TIMEFRAME` and `WARMUP_END_MS`, and leaves `MINIMUM_AGREEING_TREND_TIMEFRAMES` in `module_ml/config.py` at 2 of a larger hierarchy — decide it in the same commit; `ANNUALISATION_PERIOD_15M_BARS` there is bound to the decision timeframe | nothing stays byte-identical; the whole chain reruns; the per-timeframe tables named in `module_data/README_module_data.md` § What it reads and writes and the manifest of `../module_skills/glossary.md` § Artifacts follow |
 | an indicator | its kernel and one record in `INDICATORS` (`indicators.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
 | a derived series | one entry in `SERIES_KERNELS` (`catalogue.py`) | nothing, until a term names it | the existing parquets byte-identical |
 | an operator or a normaliser | one record in `OPERATORS` or `NORMALISERS`, beside its kernel (`catalogue.py`) | nothing, until a catalogue record names it | the existing parquets byte-identical |
-| a feature definition | one record in `FEATURE_CATALOGUE` (`config.py`): its terms, the timeframes it is offered on, and `definition_in_default_set: False` | every parquet it is offered on gains a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the feature-set search's `inputs` change | the existing columns byte-identical; `ml-labels` … `ml-strategy` untouched and `features-status` republishing the catalogue; the next search starts from trial 1, and a model sees the column only after a promotion |
+| a feature definition | one record in `FEATURE_CATALOGUE` (`config.py`): its `terms`, its `operators` (one fewer than its terms) and any `normaliser`, its `range`, the `timeframes` it is offered on, and `definition_in_default_set: False` — the field table is `skills/skill_feature_taxonomy.md` § The catalogue and the feature set; then its equation in `skills/methodology_features.md` § The catalogue, and the counts in `skills/skill_feature_taxonomy.md` and in `README.md` § ML research layer | every parquet it is offered on gains a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the feature-set search's `inputs` change | the existing columns byte-identical; `ml-labels` … `ml-strategy` untouched and `features-status` republishing the catalogue; the next search starts from trial 1, and a model sees the column only after a promotion; the nesting of `skills/skill_feature_taxonomy.md` § Scope nesting still holds — recompute the level bounds and update its *Today* sentence in the same commit |
 | a second parameter for an indicator | the record and the name grammar, in one commit (`skills/skill_feature_taxonomy.md` § Series and indicators) | the derived names of existing terms do not change | the existing parquets byte-identical |
 
 `definition_in_default_set: True` is a different move: it puts the column into
@@ -82,9 +82,8 @@ every asset's X, so the ML chain reruns and today's numbers move. The default
 set is the frozen experiment's; a set chosen for one asset is the feature-set
 search's and a hand's promotion
 (`module_ml/skills/methodology_ml.md` § 4). A new asset is not an extension
-of this module at all: it is a ticker in `TICKERS` of the Orchestration Makefile
-and an `asset-<ticker>` block in its `docker-compose.yml` (the Orchestration
-`README.md` § The basket); nothing changes here, and both stages follow it
+of this module at all: it is a ticker in `TICKERS` of the Makefile
+and an `asset-<ticker>` block in its `docker-compose.yml` (`README.md` § The basket); nothing changes here, and both stages follow it
 without an edit.
 
 ## Design rationale

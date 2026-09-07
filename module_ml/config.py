@@ -12,9 +12,10 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-# twice by extraction — identical in module_data/config.py, module_features/config.py, module_ml/config.py
-# (module_skills/glossary.md § Twice by extraction): the units, the ceiling, the two stores this module touches and their
-# descriptors, and the one CLI every stage shares; a change to one copy is a change to every copy, by hand
+# twice by extraction — identical in module_data/config.py and module_features/config.py (module_skills/glossary.md
+# § Twice by extraction): the units, the ceiling, the two stores this module touches and their descriptors, and the one
+# CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py, module_monitoring/config.py and
+# sub_module_dx/config.py; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 BYTES_PER_KIBIBYTE = 1024
@@ -49,6 +50,7 @@ def parse_tickers(tickers_csv: str) -> list[str]:
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
+# twice by extraction — identical in module_data/config.py (module_skills/glossary.md § Twice by extraction)
 def rounded(x, ndigits: int):
     """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
     return None if x is None else round(float(x), ndigits)
@@ -128,10 +130,13 @@ FEATURE_SET_SEARCH_MOVE_BACKWARD = "backward"
 # ---- the feature layer's contract, per asset: <TICKER>_catalogue.json, written by module_features.catalogue and read once
 # per stage by dataset.load_catalogue — carried as `cat` (xy["catalogue"]) into every helper below; a helper reads the
 # dict and builds a path, and never reads a file
+# twice by extraction — equal by value to the first catalogue record of module_features/config.py (module_skills/glossary.md § Twice by extraction)
 TREND_GATE_FEATURE_DEFINITION = "ema20_minus_ema50_over_atr14"   # the definition the strategy reads on every timeframe, by name, set or no set
 
 
-def catalogue_json(ticker):
+# twice by extraction — identical in module_features/config.py, the writer (module_skills/glossary.md § Twice by extraction)
+def catalogue_json(ticker: str):
+    """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"
 
 
@@ -168,6 +173,7 @@ def catalogue_feature_ids(cat: dict) -> tuple[str, ...]:
 # ---- the asset folder paths: every per-asset file carries the <TICKER>_ prefix, a time series its grid in
 # timeframe slots (module_skills/skill_sorting_files_naming_standard.md), the decision slot read off the contract;
 # built here and nowhere else — the feature parquets named by the contract itself
+# twice by extraction — identical in module_monitoring/config.py, the reader (module_skills/glossary.md § Twice by extraction)
 ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"
 
 

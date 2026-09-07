@@ -168,6 +168,7 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
     hierarchy for the catalogue parquets, which the slot standard sorts finest first, as LC_COLLATE=C does."""
     return [
         (config.asset_readme_md(ticker), "this file"),
+        (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their slots, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
         (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
         (config.feature_set_search_json(ticker), "the feature-set search: every trial, the champion, the proposals"),
         *((config.features_parquet(ticker, cat, timeframe), f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
@@ -265,7 +266,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {markdown_table(["file", "holds", "size"], files)}
 
-Each of the three catalogue parquets carries {config.LABEL_HORIZON_MS // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.label_events_parquet(ticker, cat).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat).name}` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the {len(config.timeframes(cat))} catalogue parquets carries {config.LABEL_HORIZON_MS // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.label_events_parquet(ticker, cat).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat).name}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Feature set
 
@@ -291,7 +292,7 @@ Search: {hyperparameter_search_result['trial_count']} Optuna trials, best log-lo
 
 ## Strategy
 
-Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the 4h trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.timeframes(cat))} timeframes agreeing.
+Entry edge threshold **{strategy['entry_edge_threshold']}**{fallback_note}. Cost {100 * strategy['execution_cost_rate_per_trade_side']:.2f}% per side; the hierarchy gate requires the side to match the {config.trend_gate_timeframe(cat)} trend sign with at least {config.MINIMUM_AGREEING_TREND_TIMEFRAMES} of {len(config.timeframes(cat))} timeframes agreeing.
 
 {markdown_table(["fold", "Sharpe", "maxDD", "trades", "hit rate", "exposure", "final equity"], pnl_rows)}
 

@@ -2,7 +2,7 @@
 and the cadences — the one place this module builds a path or a URL.
 
 A run record belongs to the basket, not to one asset: one directory per run under the run-records store, one file per
-stage, written from outside every container by the repository's `record.py` and read here. The cgroup and procfs paths
+stage, written from outside every container by `record.py` and read here. The cgroup and procfs paths
 are the exception AGENTS.md names and stay in `serve.py`, beside the syscalls that read them; the per-asset artifact
 paths stay in the configs of the modules that produce them — this module reads the artifacts store only to list its
 asset folders and to size an asset's database.
@@ -33,6 +33,9 @@ BYTES_PER_KIBIBYTE = 1024
 # the three stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
 # are read where the modules that measured themselves wrote them, and served under one route prefix
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
+# twice by extraction — the two store reads below are identical in module_data/config.py, module_features/config.py and
+# module_ml/config.py, and the two snapshot paths are the writers' own, module_data/config.py and module_ml/config.py, read
+# here (module_skills/glossary.md § Twice by extraction)
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])   # the registry lists its asset folders
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"
@@ -48,7 +51,7 @@ def store_status_file(name: str) -> Path:
 
 def run_dir(run_id: str) -> Path:
     """One directory per recorded run of the chain — a run is the basket's, never one asset's; inside it one
-    `<stage>.json` per stage, as the repository's record.py wrote them."""
+    `<stage>.json` per stage, as record.py wrote them."""
     return STORE_RUN_RECORDS_DIR / run_id
 
 

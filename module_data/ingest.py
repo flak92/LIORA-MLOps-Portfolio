@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
   zero_volume    BOOLEAN,          -- the winning candle was valid and traded nothing
   binance_valid  BOOLEAN,          -- Binance row present with intact OHLC
   bybit_valid    BOOLEAN,          -- Bybit row present with intact OHLC
-  rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid (QC only)
+  rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid: a quality measurement, never a selection rule (skills § 12)
 );
 """
 

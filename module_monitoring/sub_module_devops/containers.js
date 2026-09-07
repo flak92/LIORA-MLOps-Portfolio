@@ -3,6 +3,7 @@
    The routes are root-relative because this page is served from a subdirectory. */
 "use strict";
 
+/* twice by extraction — the browser's own copy of a unit the configs carry (module_skills/glossary.md § Twice by extraction) */
 const MILLISECONDS_PER_MINUTE = 60000;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;

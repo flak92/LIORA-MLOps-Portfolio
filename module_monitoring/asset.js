@@ -1,6 +1,6 @@
-/* ML Assets tab: the per-asset panel. Classic script — uses buildMeter, buildFrame,
+/* ML Assets tab: the per-asset panel. Classic script — uses buildMeter, buildFrame, buildTable,
    buildKeyValueBox, buildFootnote, formatCount, formatNumber and formatPercent from page.js,
-   and buildTable, buildShareCell, validationFolds, CLASS_NAMES, ML_STATUS and FEATURES_STATUS from ml.js. */
+   and buildShareCell, validationFolds, CLASS_NAMES, ML_STATUS and FEATURES_STATUS from ml.js. */
 "use strict";
 
 /* single-series line with a dashed reference level; no legend needed, the

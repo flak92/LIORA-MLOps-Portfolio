@@ -194,7 +194,7 @@ execution fill: the volume gate applies to barrier touches and to the entry,
 not to the mark that closes an unresolved event.
 
 A minute touching **both** barriers leaves their order unknowable from OHLC, so
-the row is `label_valid = false` — never relabelled `0`. Ambiguity is a missing
+the row is `label_valid = false` — never relabelled `0`; the `y` column carries 0 for such a row because no barrier ordered the touch, and `label_valid` is what removes it from every population — `y` is never read without it. Ambiguity is a missing
 observation, not a third outcome.
 
 **Two conditions that look alike and must not be merged:**
@@ -381,8 +381,9 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `store_assets_artifacts/<TICKER>/`, eleven files, registered file by
-file in `../../module_skills/glossary.md` § Artifacts: three per-timeframe catalogue parquets, the
+Per asset in `store_assets_artifacts/<TICKER>/`, twelve files, registered file by
+file in `../../module_skills/glossary.md` § Artifacts: the feature layer's contract
+`<TICKER>_catalogue.json`, three per-timeframe catalogue parquets, the
 label-events and out-of-sample predictions parquets on the 15m decision grid,
 two evaluation JSONs, the one parameters file, the feature set and its search
 when a hand has run them, and the README. Beside the
@@ -451,9 +452,12 @@ stage, and most edits do not touch it:
 | what changed | what to rerun |
 |---|---|
 | the canonical series (`make data-ingest`) | everything, from `features-bars` |
-| a feature definition of the catalogue | `features-catalogue ml-hpo ml-train ml-strategy ml-status` |
+| a feature definition offered but not in the default set | `features-catalogue features-status ml-status`, and `ml-feature-set-search` if its proposals are to stay current |
+| a feature definition entering the default set | `features-catalogue features-status ml-hpo ml-train ml-strategy ml-status`, and `ml-feature-set-search` likewise |
 | a label or barrier parameter | `ml-labels ml-hpo ml-train ml-strategy ml-status` |
-| the search space or the seed | `ml-hpo ml-train ml-strategy ml-status` |
+| a fold bound or the fold ids | `ml-hpo ml-train ml-strategy ml-status` |
+| the research window — both copies, `module_features/config.py` and `module_ml/config.py` | everything, from `features-bars` |
+| the search space or the seed | `ml-hpo ml-train ml-strategy ml-status`, and `ml-feature-set-search` if its proposals are to stay current |
 | a strategy rule, the cost, the threshold grid | `ml-strategy ml-status` |
 | a feature-set search (`make ml-feature-set-search`) | `ml-status` — its proposals reach the page |
 | the promoted feature set (`make ml-feature-set-promote`) | `ml-all` — run by the promotion itself |

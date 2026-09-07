@@ -16,14 +16,16 @@ from pathlib import Path
 QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"
-# twice by extraction — the units, the ceiling, the store reads, their descriptors and the --tickers parser below are
-# identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md § Twice by extraction):
-# a change here is a change to every copy, by hand
+# twice by extraction — the units below (each module the ones it uses), the ceiling, the store reads, their descriptors
+# and the --tickers parser are identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md
+# § Twice by extraction): a change here is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
+# twice by extraction — identical in module_ml/config.py, module_monitoring/config.py and sub_module_dx/config.py, and the
+# browser's own in module_monitoring/page.js (module_skills/glossary.md § Twice by extraction)
 BYTES_PER_KIBIBYTE = 1024
-CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE
+CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 
 
 
@@ -45,7 +47,7 @@ BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline"
 BYBIT_CATEGORY = "linear"
 BYBIT_KLINE_REQUEST_LIMIT = 1000          # < 1440 -> one day = 2 windows of 720 minutes
 BYBIT_REQUEST_DELAY_SECONDS = 0.1
-USER_AGENT = "mlops-portfolio-1m-pipeline/1.0"
+USER_AGENT = "liora-module-data/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
@@ -56,6 +58,7 @@ STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
+# twice by extraction — identical in module_monitoring/config.py, the reader (module_skills/glossary.md § Twice by extraction)
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"   # the snapshot this module writes; the dashboard reads it there
 
 

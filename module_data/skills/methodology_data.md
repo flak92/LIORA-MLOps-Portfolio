@@ -39,7 +39,18 @@ exchanges do not restate klines; the tree's shape, the file names and the
 prohibition on combining the two venues' raw data are
 [skill_candle_canonicalisation.md](skill_candle_canonicalisation.md) § 3.
 
-## 2. Units & time
+## 2. Retries, backoff and pacing
+
+Every request carries `USER_AGENT` = `liora-module-data/1.0`. A request is tried six
+times (`fetch_klines(retries=6)`) with an exponential backoff that starts at one
+second and doubles: Binance retries on HTTP 418 and 429, sleeping at least what
+`Retry-After` asks; Bybit retries on `retCode 10006`, its rate-limit code, and raises
+on any other code. Between two written days the downloader sleeps a fixed
+`BINANCE_REQUEST_DELAY_SECONDS` = 0.2 s or `BYBIT_REQUEST_DELAY_SECONDS` = 0.1 s, never
+after a skipped day. A venue's rate limit is budgeted per process, which is why the
+launcher runs one process per venue and never fans the download out per asset.
+
+## 3. Units & time
 
 UTC everywhere; timestamps are **bar OPEN** epoch milliseconds on a strict
 60 000 ms grid; the data window is `2021-01-01 00:00 UTC` (inclusive) to the
@@ -49,7 +60,7 @@ quote turnover; the unit of download work is one UTC calendar day = one ZIP
 begin at the first available minute. Prices and volumes are stored exactly as
 the exchanges printed them — no rounding at any layer.
 
-## 3. Known limitations of acquisition
+## 4. Known limitations of acquisition
 
 - **A short post-listing day stops the download.** A day after a symbol's first
   traded day that a venue genuinely printed with fewer than 1440 minutes is

@@ -31,8 +31,9 @@ a resample.
 The hierarchy is a literal because everything that reads it is the experiment: the decision grid
 is its first entry, the trend gate's timeframe its last, the count the strategy's agreement
 compares its length. A token enters when its duration is an integer multiple of the decision
-timeframe and divides one UTC day, so bar boundaries land on UTC midnight (`2m`, `5m`, `30m`,
-`2h`, `6h`, `12h`, `1d` qualify; a week or a month needs an anchor the token does not carry).
+timeframe and divides one UTC day, so bar boundaries land on UTC midnight (`30m`, `2h`, `6h`, `12h`, `1d`
+qualify; a token finer than the decision timeframe would have to move `DECISION_TIMEFRAME` with it, and a week or a
+month needs an anchor the token does not carry).
 Adjacent entries keep a ratio of at least three — below that two levels sample the same price
 movement (the triple-screen hierarchy, `module_ml/skills/methodology_ml.md` § 13 [10]).
 Today: `15m`, `1h`, `4h`, ratios 4× and 4×. A new token is one line in the hierarchy and a new
@@ -133,6 +134,17 @@ belongs to the default set. The catalogue is drafted (source, like the rest of `
 column set of a timeframe's parquet is the catalogue restricted to that timeframe
 (`catalogue_columns`). As of this commit the catalogue holds eight definitions on twenty-two
 columns; the table with histories and warm-ups is `methodology_features.md` § The catalogue.
+
+One record of `FEATURE_CATALOGUE`, field by field:
+
+| field | required | what it holds | what fails when it is wrong |
+|---|---|---|---|
+| `terms` | yes | a tuple of terms — `("<indicator>", <parameter_bars>)` on the default series `close`, `("<series>", "<indicator>", <parameter_bars>)` on another series, `("<series>",)` a bare series; the first term names the definition and, through its indicator's `output_range`, is what `centered` reads | an indicator or series outside `INDICATORS` and `SERIES_KERNELS` is a `KeyError` in `catalogue.py` |
+| `operators` | when there is more than one term | one operator of `OPERATORS` between each pair of terms, one fewer than the terms; `zip` folds them, so a missing operator silently drops the terms after it from the computation while the name still lists them | a name that says more than the column computes |
+| `normaliser` | no | one of `NORMALISERS`, applied last; `centered` reads the first term's indicator `output_range` | a first term without an `output_range` under `centered` is a `KeyError` |
+| `range` | yes | the words the page shows for the definition's range; `status.py` reads it with no default | `features-status` fails on a record without it |
+| `timeframes` | yes | the tokens of `HIERARCHY_TIMEFRAMES` the definition is offered on — the whole hierarchy or a subset, § Scope nesting deciding which | a token outside the hierarchy has no bars to read |
+| `definition_in_default_set` | yes | `True` puts the column into every asset's X where no feature set is promoted — a different experiment; `False` offers it to the search alone | — |
 
 A **feature set** is one asset's selection from the catalogue, per timeframe:
 `<TICKER>_feature_set.json`, written only by the promotion stage of `module_ml` and never by hand —

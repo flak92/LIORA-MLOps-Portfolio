@@ -26,7 +26,7 @@ def main() -> int:
         added = feature_set_search.column_count(feature_set_search.columns_added(columns_by_timeframe, active, timeframes), timeframes)
         removed = feature_set_search.column_count(feature_set_search.columns_removed(columns_by_timeframe, active, timeframes), timeframes)
         dataset.write_json(path, {"columns_by_timeframe": columns_by_timeframe})
-        print(f"{ticker} {path.name} <- proposal {args.proposal} (+{added} -{removed} columns); ml-all follows", flush=True)
+        print(f"{ticker} {path.name} <- proposal {args.proposal} (+{added} -{removed} columns); rerun the ML chain for this asset", flush=True)
     return 0
 
 

@@ -24,8 +24,9 @@ management UI.
 
 It is nested rather than promoted because the dashboard serves its own
 directory, so the panel's page needs no route; the drawing, the other
-`sub_module_*`, sits at the repository root because its subject is the whole
-tree, and reaches the same browser through a read-only bind mount. Two is still
+`sub_module_*`, sits at the repository root because its subject
+is the whole tree, and reaches the same browser through the read-only bind mount
+that repository's `docker-compose.yml` makes below this directory. Two is still
 a coincidence — the third mints the convention or nothing does.
 
 ## The one socket, and what containment means
@@ -122,7 +123,7 @@ ones; the Engine's are what exists for a container that reports nothing.
 
 Five more sections sit below those two — **networks**, **volumes**, **bind
 mounts**, **image** and **events** — each a flat table of what its route
-answered, with no arithmetic of the page's own. Their keys are registered in
+answered — **image** a key-value box, the one row its route answers with — with no arithmetic of the page's own. Their keys are registered in
 `../../module_skills/glossary.md` § DevOps panel and are not restated here.
 
 The asset-container columns and badges:

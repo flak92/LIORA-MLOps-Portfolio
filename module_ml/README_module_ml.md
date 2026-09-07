@@ -13,14 +13,14 @@ gated strategy simulation, each persisted as a file in that asset's own folder.
 ## Where the responsibility stops
 
 It begins at the feature layer's contract, `<TICKER>_catalogue.json`, the
-catalogue parquets it names, and `ohlcv_1m_canonical`, and asks nothing about where a minute came from or how a
+catalogue parquets it names, and `ohlcv_1m_canonical` with the aggregate tables the contract names, and asks nothing about where a minute came from or how a
 column was computed. Downloading, venue selection, forward fill and provenance
 belong to `module_data`; the bars of the register and the catalogue belong to
 `module_features`; presentation of the results belongs to `module_monitoring`.
 Every stage here opens the asset's database read-only.
 
 Every stage here is a one-off process addressed as
-`python -m module_ml.<stage> --tickers <TICKER>` (under `make` or compose, which set the four `STORE_*_DIR` a stage reads its stores from): it reads files, writes files
+`python -m module_ml.<stage> --tickers <TICKER>` (under `make` or compose, which set the two `STORE_*_DIR` this module reads — the artifacts store and the status store): it reads files, writes files
 and holds nothing between runs, so the four stages of `ml-all` above `status`,
 and the feature-set search and the promotion outside the chain, already have
 the shape of asset-scoped compute that receives a finished catalogue and leaves
@@ -29,9 +29,13 @@ them. The
 direction:
 [../module_skills/skill_pre_aws_solution.md](../module_skills/skill_pre_aws_solution.md).
 
+`ANNUALISATION_PERIOD_15M_BARS` in `config.py` is the one timeframe fact this module
+does not read through the contract: it is bound to the decision timeframe being `15m`,
+and moving the decision timeframe means moving it in the same commit.
+
 ## Stages
 
-Run in order; `make ml-all` runs the chain. The four stages above `status` fan
+Run in order; `make ml-all` runs the chain, each stage in a one-off container of this module's image, and this repository's own Makefile runs one stage at a time in a venv. The four stages above `status` fan
 out one process per asset with its threads pinned to one; `status` runs once and
 aggregates the assets the launcher names — the whole basket.
 
@@ -42,7 +46,7 @@ aggregates the assets the launcher names — the whole basket.
 | training | `make ml-train` | `<TICKER>_model_evaluation.json`, the out-of-sample predictions parquet |
 | strategy | `make ml-strategy` | `<TICKER>_strategy_evaluation.json` |
 | status | `make ml-status` | `store_status/ml_status.json`, `<TICKER>_README.md` |
-| feature-set search — outside the chain, by a hand | `make ml-feature-set-search`; detached, `make tmux-ml-feature-set-search ASSET=<TICKER>`; `make ml-status` after it | `<TICKER>_feature_set_search.json` |
+| feature-set search — outside the chain, by a hand | `make ml-feature-set-search`, one process per asset of the basket, `ASSET=<TICKER>` narrowing it to one — detached on the host through the Makefile's `tmux-` twin, which requires `ASSET`; `make ml-status` after it | `<TICKER>_feature_set_search.json` |
 | promotion — outside the chain, by a hand, one asset at a time | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json`, then the chain's files anew |
 
 Every stage runs in a one-off container of the `ml` runner: a fanned-out
@@ -83,7 +87,7 @@ table, cited by its *responsibility* column and never repeated.
 | `hpo.py` | The search: one sequential, seeded study per asset, its objective the weighted log-loss over the validation folds (its docstring; `skills/methodology_ml.md` § 7). | It imports `config.py`, `dataset.py`, `model.py` and `validation.py`, reads X and Y through `load_xy()` and writes `<TICKER>_parameters.json`, the one file `train.py` takes from it. | It fans out `JOBS` at a time with threads pinned to one (§ Stages) and writes at `parameters_json()`, a tracked file with no timestamp (§ What it writes) — the same path on any host, the same bytes being the claim of `../module_skills/skill_determinism.md`. | COMPUTE — one stage for one asset |
 | `train.py` | Out-of-fold predictions per validation fold with the two importances of that fold's booster — gain and mean absolute SHAP — and the final-holdout report, under the frozen parameters `hpo.py` chose (its docstring; `skills/methodology_ml.md` § 8). | It imports `config.py`, `dataset.py`, `model.py` and `validation.py`, reads `<TICKER>_parameters.json` and writes the evaluation JSON and the predictions parquet `strategy.py` reads. | The numbers are persisted and the model is not (its docstring), so nothing of a run outlives its two files at `oos_predictions_parquet()` and `model_evaluation_json()` — the same paths on any disk mounted at `/store/assets_artifacts`. | COMPUTE — one stage for one asset |
 | `strategy.py` | STRATEGY — the research evaluation of the predictions on the canonical path, with explicit costs (`skills/methodology_ml.md` § 9), and it opens no connection to a venue; its threshold selection is one function the stage and the feature-set search both run. | The last stage of `ml-all` before `status`, importing `config.py`, `dataset.py` and `validation.py` and reading the predictions `train.py` wrote, and the trend definition on every timeframe from the catalogue columns `load_xy()` carries. | It writes `<TICKER>_strategy_evaluation.json` and trades nothing — the host that would is `../module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries — so its one output keeps the path `strategy_evaluation_json()` builds. | COMPUTE — one stage for one asset |
-| `feature_set_search.py` | The feature-set search: stepwise on the validation folds under the frozen parameters, selected on the model's validation skill fold by fold, the strategy's numbers reported beside every trial, the ledger of every trial its state (its docstring; `skills/methodology_ml.md` § 4). | It imports `config.py`, `dataset.py`, `model.py`, `strategy.py` and `train.py` — the fit, the predictions and the selection are the stages' own functions, called as a library — and writes the one file `status.py` reads as `feature_set_search`. | It runs one asset at a time, resumes by comparing its recorded inputs with the run's by equality, and rewrites `feature_set_search_json()` after every trial — the same path and the same bytes on any host, whether in the `ml` runner's container or detached in a tmux session on the host. | COMPUTE — one stage for one asset |
+| `feature_set_search.py` | The feature-set search: stepwise on the validation folds under the frozen parameters, selected on the model's validation skill fold by fold, the strategy's numbers reported beside every trial, the ledger of every trial its state (its docstring; `skills/methodology_ml.md` § 4). | It imports `config.py`, `dataset.py`, `model.py`, `strategy.py` and `train.py` — the fit, the predictions and the selection are the stages' own functions, called as a library — and writes the one file `status.py` reads as `feature_set_search`. | It runs one asset per process, resumes by comparing its recorded inputs with the run's by equality, and rewrites `feature_set_search_json()` after every trial — the same path and the same bytes on any host, whether in the `ml` runner's container or detached on the host through the Makefile. | COMPUTE — one stage for one asset |
 | `feature_set_promote.py` | The promotion: a hand's choice copied into the asset's feature set — the proposal's columns and nothing else, the commit history the record of every promotion — and nothing computed (its docstring; `skills/methodology_ml.md` § 4). | It imports `config.py`, `dataset.py` and `feature_set_search.py` — the tuple form and the column differences are the search's own functions, called as a library — reads the feature-set search result and writes the one file `load_feature_columns()` reads before every fit. | It takes `--tickers` and `--proposal` and is never fanned out — one asset per hand, a one-off of the `ml` runner in the shape of `status` — and the Makefile reruns `ml-all` for that asset after it, so the promoted set is re-tuned at the same paths on any host. | COMPUTE — one stage, one one-off process |
 | `status.py` | The stage that measures this module's own artifacts — the basket snapshot and each asset's README, assembled from the three result files and computing nothing of their own (its docstring) — placed by `../AGENTS.md` § Architecture shape. | It imports `config.py`, `dataset.py` and `feature_set_search.py`, whose `build_search_inputs()` is the one definition of what a search is conditioned on, reads what `hpo.py`, `train.py`, `strategy.py`, `feature_set_search.py` and `feature_set_promote.py` wrote, and writes `store_status/ml_status.json` for `ml.js` to fetch and `<TICKER>_README.md` into the asset's folder. | It runs once in a one-off container of the `ml` runner and folds the tickers `--tickers` names — the launcher passes the whole basket (§ Stages; `../module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism), the snapshot at the one path `ML_STATUS_JSON_PATH` builds, under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
 | `__init__.py` | The package that makes `python -m module_ml.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the feature set, the labels, the walk-forward, the model, the strategy simulation and the two reports, and imports nothing. | The same `python -m module_ml.<stage> --tickers <TICKER>` runs in a one-off container of the `ml` runner (§ Stages) — the launcher setting the four `STORE_*_DIR` — the command `docker compose run --rm -T ml` carries unchanged whichever host starts it. | COMPUTE — one stage, one one-off process |

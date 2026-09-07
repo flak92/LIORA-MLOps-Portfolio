@@ -61,6 +61,7 @@ def write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(to_json_safe(payload), sort_keys=True, indent=1) + "\n", encoding="utf-8")
 
 
+# twice by extraction — identical in module_monitoring/serve.py (module_skills/glossary.md § Twice by extraction)
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
