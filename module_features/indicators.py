@@ -16,8 +16,8 @@ def ema(x: np.ndarray, span_bars: int) -> np.ndarray:
     return out
 
 
-# twice by extraction — wilder_smoothing, atr and asof_index are identical in module_ml/labels.py (module_skills/glossary.md
-# § Twice by extraction): the label defines its own barrier scale
+# twice by extraction — wilder_smoothing, atr and asof_index are identical in module_ml/labels.py, changed on both sides in one
+# commit: the label defines its own barrier scale
 def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     """Wilder's recursive average: seeded with the SMA of the first period."""
     out = np.full_like(x, np.nan)

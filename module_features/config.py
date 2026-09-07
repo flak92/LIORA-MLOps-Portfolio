@@ -12,8 +12,8 @@ from pathlib import Path
 
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
-# twice by extraction — identical in module_data/config.py and module_ml/config.py (module_skills/glossary.md § Twice by
-# extraction): the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
+# twice by extraction — identical in module_data/config.py and module_ml/config.py, changed on every side in one
+# commit: the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
 # stage shares; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
@@ -63,11 +63,12 @@ RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 # ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
 # and the count the strategy's agreement reads all follow from it, so a new token is one line here and a new
 # experiment. Every entry is an exact aggregation of the canonical 1m series, written by bars.py; a token is
-# <integer><unit>, and its duration and its file-name slot derive from the token (skills/skill_feature_taxonomy.md)
+# <integer><unit>, and its duration and its file-name slot derive from the token
 HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
 DECISION_TIMEFRAME = "15m"
 TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": MILLISECONDS_PER_DAY}
-# the five slots of module_skills/skill_sorting_files_naming_standard.md, finest first, and the field each unit fills
+# the five file-name slots ss-mm-hh-dd-MM, finest first, and the field each unit fills: the active granularity is a
+# zero-padded number in its own slot and the others stay letters, so a plain listing sorts by granularity
 TIMEFRAME_SLOT_FIELDS = ("ss", "mm", "hh", "dd", "MM")
 TIMEFRAME_UNIT_SLOT_FIELD = {"m": 1, "h": 2, "d": 3}
 
@@ -137,7 +138,7 @@ def feature_definition_name(definition: dict) -> str:
     return f"{normaliser}_{name}" if normaliser else name
 
 
-# twice by extraction — identical in module_ml/config.py: the grammar of skills/skill_feature_taxonomy.md, restated where X's columns are named
+# twice by extraction — identical in module_ml/config.py: a feature is <definition>_<timeframe>, restated where X's columns are named
 def feature_id(definition_name: str, timeframe: str) -> str:
     """The column of X and the key of an importance: the definition aligned to the decision grid on one timeframe."""
     return f"{definition_name}_{timeframe}"
@@ -191,7 +192,7 @@ def features_parquet(ticker: str, timeframe: str):
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts
 
 
-# twice by extraction — identical in module_ml/config.py, the reader (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_ml/config.py, the reader; the writer names the contract it writes, the reader the one it reads
 def catalogue_json(ticker: str):
     """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"

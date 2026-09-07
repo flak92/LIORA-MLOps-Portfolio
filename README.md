@@ -12,15 +12,13 @@ purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the
-developer-experience drawing, the four stores, and the canon of rules that cross
-them. The governing contract — minimalism, minimum requirements,
-KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, and what holds the project
-together — is [AGENTS.md](AGENTS.md). Each module carries its own rules in its
-`skills/` and its front door in `README_module_<name>.md`; the naming register
-and the rules that cross modules are in [module_skills/](module_skills/), indexed
-by [module_skills/README.md](module_skills/README.md). The working path through
-the project is `AGENTS.md → module names → README_module_<name>.md → the
-module's own skills → code`; this README is the general overview.
+developer-experience drawing and the four stores. The governing contract —
+minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, the
+naming grammar and what holds the project together — is
+[AGENTS.md](AGENTS.md); every other rule is the comment beside the code it
+governs. The working path through the project is `AGENTS.md → module names →
+each module's package and its config.py → code`; this README is the general
+overview, and the two of them are the whole prose of the tree.
 
 ## Quickstart
 
@@ -86,7 +84,7 @@ is `docker compose run --rm -T features python -m module_features.catalogue --ti
 basket — and `data-all`, `features-all`, `ml-all` and `all` are the chains. The stage order is the
 Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
-(`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
+— and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
 a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
@@ -141,8 +139,7 @@ object. Everything below it describes the method, not the data provider.
 | `store_run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
 | `store_status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
 
-The store is the boundary between compute and state (`module_skills/glossary.md`
-§ Stores). Every stage reads and writes only these four and learns where they
+The store is the boundary between compute and state. Every stage reads and writes only these four and learns where they
 are from its environment — the Makefile exports the host paths, the compose file
 sets the container paths — and no module writes into another's tree. The images
 carry code and nothing of the state; the mounts carry the state and nothing of
@@ -182,14 +179,13 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | an asset | one ticker in `TICKERS` and one `asset-<ticker>` block in `docker-compose.yml`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
 | a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `<9NN>-module_<domain>/`, then here |
 | a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | the features repository |
-| a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | the features repository |
-| a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | the data module |
+| a feature | one record of `FEATURE_CATALOGUE` in `module_features/config.py`, its name read off its terms (`AGENTS.md` § The feature grammar) | the features repository |
+| a venue | `download_<venue>.py` beside its sibling, and the venue's tier in the failover order of `ingest.py` | the data module |
 | a module | a package `module_<domain>/` with a runner service and an image `liora-module-<domain>`; nothing is renumbered | a new repository, then here |
 
 ## Working in a module
 
-A module is a directory: its package, its orientation `README_module_<name>.md`
-and its own `skills/`. Edit it in place and run the stage it owns — nothing has
+A module is a directory: its package and nothing else. Edit it in place and run the stage it owns — nothing has
 to be built first, because the code is mounted into the container it runs in:
 
 ```bash
@@ -201,14 +197,6 @@ make help                    # every target with its one-line purpose
 `git grep "from module_"` inside a package finds only that package: no module
 imports another, and what would cross the boundary as an import crosses it as a
 file in a store instead (`AGENTS.md` § Architecture shape).
-
-## Skills
-
-`AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
-and the rules that cross modules. A module's own rules live under that module, in
-`module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
-them. Each rule is written exactly once, where it is owned, and no document
-restates another (`AGENTS.md` § The default choice).
 
 ## Parity
 
@@ -231,7 +219,7 @@ Every number here is reproducible. The proof, repeatable on any host:
 
 Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 `OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make
-the bytes equal (`module_skills/skill_determinism.md`). The comparison script and
+the bytes equal (`AGENTS.md` § Determinism). The comparison script and
 the reference md5 lists live outside every repository.
 
 ## Developer-experience drawing
@@ -243,8 +231,10 @@ the tree as tracked, and the same tree seated beside the primitives the Pre-AWS
 mapping names. `python3 -m sub_module_dx.visualise --check` says whether the
 committed page is fresh; the page is committed alone, after the commit it draws,
 so its provenance stamp names that commit. The dashboard serves it below its web
-root through a read-only bind mount; the drawing's contract is
-`module_skills/skill_developer_experience_drawing.md`.
+root through a read-only bind mount. Everything the picture shows — which
+island a path belongs to, what the side panel says about it, which primitives the
+deployment view draws — is `sub_module_dx/visualisation_config.json`; an unknown
+key there is an error, and a path that is not in the tree is an error too.
 
 ## One canonical series from two venues
 
@@ -253,11 +243,10 @@ candle is copied verbatim — traded Binance, traded Bybit, a valid no-trade
 candle from either in the same order — and only a minute with no valid candle
 on both venues is a canonical gap, forward-filled with the previous close and
 zero volume. Downstream code reads one continuous `t,O,H,L,C,V` series whose
-every printed price existed on a real market. The rule, the provenance and the
-schema:
-`module_data/skills/skill_candle_canonicalisation.md`;
-the endpoints:
-`module_data/skills/methodology_data.md`.
+every printed price existed on a real market. The validity predicate, the tier
+order and the provenance columns are `OHLC_INTACT_PREDICATE` and the decision
+table beside it in `module_data/ingest.py`; the endpoints and their limits are
+`module_data/download_binance.py` and `module_data/download_bybit.py`.
 
 ## The basket
 
@@ -291,19 +280,8 @@ answers to, or with the documents that deploy nowhere. Correctness is shown by
 the whole chain running end to end on a small representative basket, `BTC`
 today, never by production-scale infrastructure: there is no test suite, no
 security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
-§ Values). The rule, its non-goals, the mapping table and what the shape holds:
-[module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
-
-The same skill seats the four things a move would name first — the host and the
-volume where every asset's folder and the other `store_*` roots live, the
-one-off task and the state machine over the stages, the asset's one database
-file, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
-described lists the skills those seats imply, each with its owner, what it
-would govern and the one condition under which it is written. Four local skills
-carry one seat paragraph each, naming the primitive their object answers to and
-citing that skill for the rest. Whether each seat is the cheapest that keeps its
-boundary — what could be less, and whether it is — is
-[REPORT_pre_aws_minimalism.md](REPORT_pre_aws_minimalism.md).
+§ Values). The stance is `AGENTS.md` § Pre-AWS architectural direction; the
+mapping itself is the picture, and nothing else states it.
 
 ## Data formats
 
@@ -313,9 +291,8 @@ are bar-open UTC epoch milliseconds on a strict 60 000 ms grid, volume is
 base-asset volume. The canonical series and its 15m/1h/4h aggregations live only
 in `store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
 folder's parquets are feature columns, not prices. For Lean backtests use the
-raw ZIP trees. Schema:
-`module_data/skills/skill_candle_canonicalisation.md`
-§ 11 and § 13.
+raw ZIP trees. The schema of both is `CANONICAL_DDL` and `VENUE_DDL` in
+`module_data/ingest.py`, and the Lean file names are `module_data/lean.py`.
 
 ## Dashboard
 
@@ -348,7 +325,7 @@ business reader:
 `module_features/` builds, per asset and deterministically, the feature
 catalogue from the canonical series — eight feature definitions on the
 timeframes of the register, twenty-two columns, each name read off its terms
-(`module_features/skills/skill_feature_taxonomy.md`)
+(`AGENTS.md` § The feature grammar)
 — and writes the contract, `<TICKER>_catalogue.json`, that names them to the next
 layer; `module_ml/` takes the fifteen columns of the default set as X until a
 promotion, triple-barrier labels resolved on the canonical 1-minute path, a
@@ -357,5 +334,6 @@ search over XGBoost, a final out-of-sample fold that selects nothing, and a
 top-down gated strategy with explicit costs. The decision is taken at a 15m
 close and filled one minute later. Every per-asset stage runs `JOBS` assets in
 parallel, one process each, thread caps at one. Every asset folder describes
-itself in `<TICKER>_README.md`. Full methodology:
-`module_ml/skills/methodology_ml.md`.
+itself in `<TICKER>_README.md`. The method is the code that runs it:
+`module_ml/labels.py` for the barriers, `module_ml/validation.py` for the folds
+and the metrics, `module_ml/strategy.py` for the rules and the costs.

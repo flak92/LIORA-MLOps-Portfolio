@@ -6,7 +6,8 @@
    here with no edit to this file or to index.html. */
 "use strict";
 
-/* the columns whose only correct value is zero — the invariants of skill_candle_canonicalisation.md § 16.
+/* the columns whose only correct value is zero — duplicate and invalid rows per venue, OHLC violations on the
+   canonical series.
    They are marked as a category, not a magnitude, so a reader knows which numbers he may be alarmed by:
    after a change of provider these must still be zero, while every observation beside them is expected to move. */
 const VENUE_INVARIANT_HEADERS = ["dups", "invalid"];

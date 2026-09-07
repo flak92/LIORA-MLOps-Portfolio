@@ -36,7 +36,7 @@ def minutes_since(then: datetime) -> int:
     return max(0, (datetime.now(tz=UTC) - then) // timedelta(minutes=1))
 
 
-# twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_ml/dataset.py; two readers of the same JSON files, and neither imports the other
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 

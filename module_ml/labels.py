@@ -22,7 +22,7 @@ from . import config, dataset
 LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
 
 
-# twice by extraction — identical in module_features/indicators.py (module_skills/glossary.md § Twice by extraction): the
+# twice by extraction — identical in module_features/indicators.py, changed on both sides in one commit: the
 # label defines its own barrier scale, so the Wilder kernel it reads and the alignment to the last closed bar are its own
 def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     """Wilder's recursive average: seeded with the SMA of the first period."""

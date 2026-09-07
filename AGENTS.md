@@ -1,11 +1,11 @@
 # AGENTS — the contract of this repository
 
 The governing contract for every change, human or agent. Read the project in
-this order: **AGENTS.md → module names →
-`README_module_<name>.md` → the module's own `skills/` → code**, with
-`module_skills/` beside them for the rules that cross modules, indexed by
-`module_skills/README.md`. (A `README.md` is general information, not part of
-the working path.) If a change conflicts with this file, the change is wrong.
+this order: **AGENTS.md → module names → each module's package and its
+`config.py` → code**. This file and `README.md` are the whole prose of the tree:
+the contract here, the overview there, and every other rule in the comment beside
+the code it governs. No third prose file is created. If a change conflicts with
+this file, the change is wrong.
 
 ## Values
 
@@ -71,23 +71,21 @@ module_data/         sources → normalised raw 1m → one canonical DuckDB per 
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
-the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the four stores, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills and the index of every module's own
+the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the four stores, and the canon: this contract and the overview beside it
 ```
 
-Each module holds its package, its orientation `README_module_<domain>.md` and
-its own `skills/` under one directory; nothing above it belongs to one module
-alone. `make all` from a fresh clone runs the chain. A reference is a path in
+Each module holds its package under one directory; nothing above it belongs to
+one module alone. `make all` from a fresh clone runs the chain. A reference is a path in
 backticks, always.
 
-`module_skills` never participates in runtime imports or dataflow. **No module
-imports another.** What would cross a module boundary as an import crosses it as a
+**No module imports another.** What would cross a module boundary as an import crosses it as a
 file in a store instead — the four `STORE_*_DIR` the launcher names
-(`module_skills/glossary.md` § Stores), the per-asset contract
+and `README.md` § The stores tabulates, the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
 three snapshots each computational module writes about itself and the dashboard
-serves, the run record `record.py` writes around every stage — or as a copy
-registered in `module_skills/glossary.md` § Twice by extraction, identical to the
-byte on every side. The basket is the launcher's: `TICKERS` in the
+serves, the run record `record.py` writes around every stage — or as a copy marked
+`# twice by extraction` where it is defined, each marker naming its counterparts
+in its own line, identical to the byte on every side. The basket is the launcher's: `TICKERS` in the
 `Makefile`, and one `asset-<ticker>` service per ticker in its
 `docker-compose.yml`; every stage is told its assets by `--tickers` and defines
 none. The asset containers are services of that compose file, one per ticker of
@@ -118,8 +116,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   directory, determine its semantic family and derive its name from that
   family's established grammar, so analogous objects sort together and both the
   object's role and its expected location are predictable from its name. The
-  detailed sorting grammar lives in
-  `module_skills/skill_sorting_files_naming_standard.md`;
+  detailed sorting grammar is § Sorting and the timeframe slots;
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
   `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>`
@@ -131,8 +128,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_data`, `module_features`, `module_ml`,
   `module_monitoring` — the chain in its own order, the
   module's position in the chain at the time it was seated; a new module takes
-  the next free number and nothing is ever renumbered — then `module_skills`
-  and `sub_module_dx`, then `store_assets_artifacts`, `store_raw_1m`,
+  the next free number and nothing is ever renumbered — then `sub_module_dx`,
+  then `store_assets_artifacts`, `store_raw_1m`,
   `store_run_records`, `store_status`: blocks, not scattered entries. If
   renaming would put things of one category next to each other, rename them;
 - short, predictable paths, built only in a module's `config.py` — never
@@ -161,8 +158,9 @@ Pre-AWS is this repository's word for its own shape: a local, academic
 architecture whose boundaries would still be the right boundaries after local
 storage, local container execution and local stage order were replaced by their
 standard equivalents on Amazon Web Services (AWS). No cloud is used and none is
-planned; the mapping is described in `module_skills/skill_pre_aws_solution.md`
-and built nowhere.
+planned; the mapping is drawn — the deployment view of the developer-experience
+drawing seats every tracked file beside the primitive that would hold the same
+responsibility — and built nowhere.
 
 - **Academic, not AWS.** The runtime is local — one image per module under
   docker compose, driven by a Makefile — and the goal is a correct dataflow with visible
@@ -188,8 +186,7 @@ and built nowhere.
 - **Storage is separate from compute.** Pipeline state lives in the four stores
   — the `store_*` roots, named to every `config.py` by its
   `STORE_*_DIR` and mounted at `/store/<content>` into each service that touches
-  them, read-only where a service only reads
-  (`module_skills/skill_asset_containers.md` § The topology) — never
+  them, read-only where a service only reads — never
   inside a container and never inside a repository's tree; the image carries the
   pins and nothing else, the code and the state arrive as mounts, and the three
   snapshots are the one store that is tracked.
@@ -197,16 +194,10 @@ and built nowhere.
   functions that write the same state and live as long as it does, never beside
   what happened to be written with it; every object is classified before it is
   placed.
-- **Every placement is argued, and the mapping is the test.** For every object
-  a module holds, its `README_module_<name>.md` § Design rationale writes down,
-  in one row, the answers of `module_skills/skill_self_explaining_naming.md`
-  § The naming review that place it — why here, why beside these, why this
-  boundary — and which row of the mapping table it answers to, the fourth being
-  the test of the first three. An object one of whose responsibilities answers
-  to no row, or to two, is questioned before it is committed; a file that holds
-  several responsibilities — a descriptor per store, a role per `ASSET` —
-  answers with one row each, and says so. The rows are
-  `module_skills/skill_pre_aws_solution.md` § The mapping table.
+- **Every placement is argued.** Before an object is committed, § The naming
+  review answers where it lives, what it sits beside and which boundary it
+  draws; an object whose responsibilities answer to no primitive of the
+  deployment view, or to two, is questioned first.
 - **Names carry the responsibility.** A name says what the object is, what it
   does and where it belongs — a service by its runtime role, a store by what it
   holds, a function by its verb from the closed list or by the quantity it is;
@@ -223,43 +214,26 @@ and built nowhere.
   architecture; scale is `ASSET=<TICKER>`, never hundreds of assets.
 
 Cloud proper nouns are external vocabulary. Apart from the repository's own word
-*Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
-file stem it registers, the skill's and the report's — they are spoken only
-where the stance is stated, reviewed or a local object is seated: this section
-and § Skills absent here, described, `README.md` § Architectural direction, the
-skill's prose, the column *the same responsibility elsewhere* of its mapping
-table, `REPORT_pre_aws_minimalism.md` — the seats reviewed for excess — and the
-one picture of that column — the deployment view of the developer-experience drawing, the
-`deployment` block of
-`sub_module_dx/visualisation_config.json` and the page drawn
-from it, whose every primitive drawn is a row of the table and which names no
-primitive the table does not — together with the UI-label column of
-`module_skills/glossary.md` § Developer experience, which records the words that
-view shows; and, at the edge of a local rule, the one seat paragraph of
-`module_skills/skill_asset_containers.md`, `module_skills/skill_determinism.md`
-(its last bullet, the skill having no headings),
-`module_data/skills/skill_candle_canonicalisation.md` § 15 and
-`module_monitoring/skills/skill_devops_panel.md`, each naming the primitive in
-the table's words and citing the skill for the rest. Never in a make target, a
-compose service, an environment variable, a payload key, a code comment, an
-identifier, or a tracked path but the `pre_aws` stem. The non-goals, the twelve
-classes, the review of what stays local and the mapping table are
-`module_skills/skill_pre_aws_solution.md` — a cross-cutting skill of the kind
-§ The default choice names, beside `skill_asset_containers.md`.
+*Pre-AWS*, they are spoken in exactly two places: this section, where the stance
+is stated, and the `deployment` block of `sub_module_dx/visualisation_config.json`
+with the page drawn from it, where each one names the primitive a local object
+would become. Never in a make target, a compose service, an environment
+variable, a payload key, a code comment, an identifier or a tracked path.
 
 ## Canonical vocabulary
 
 **Names must be self-explanatory before they are project-specific. Prefer
 established software-engineering terminology over project-specific synonyms: if
 a concept already has a widely recognised name, use that name — in code, in
-documentation, in the skills and in the interface alike — and do not invent
-local terminology for a standard concept. A glossary confirms meaning; it must
-not be required to decode an obscure name.**
+documentation, in the comments and in the interface alike — and do not invent
+local terminology for a standard concept. No glossary is kept: a name that needs
+one is the wrong name.**
 
 One concept, one name — in the code, in the artifacts, in the interface, in the
-Makefile, in docker compose and in the documents. The
-register is `module_skills/glossary.md`, and a new name enters it in the same
-commit that introduces it. The word "test" never names a fold.
+Makefile, in docker compose and in the two documents. The tree is its own
+register: before minting a name, `git grep` it, and a name that already denotes
+something else in the same scope is renamed until it denotes one thing. The word
+"test" never names a fold.
 
 And one name, one concept. A name that could denote two things **in the same
 scope** is renamed until it denotes one. The scopes are enumerated so the rule
@@ -309,16 +283,14 @@ from its layer's grammar, never invented:
 | index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
 | booleans | `<subject>_<predicate>`, stating the condition that is true; a function that asks takes `is_`, `has_` or `requires_` — state, possession, obligation | `entry_observable`, `label_valid`, `is_full_utc_day()`, `is_artifact_set_complete()` | `flag`, `ok`, `check`; `should_`, `check_`, `needs_`, a bare `trigger` |
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
-| features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
+| features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is § The feature grammar | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
 | Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`, `dx-update`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` at the time it was seated — a new module takes the next free number and nothing is ever renumbered | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, a renumbered checkout, `repository_module_<domain>/` |
 | images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, one image for every module |
 | compose services | a runtime role, never an image or a ticker in code — the runners `data`, `features`, `ml`, the residents `dashboard`, `asset-<ticker>`, `devops` | `ml`, `asset-btc` | `pipeline`, a service named for an image or a tool, a service per asset stage |
 | store paths | `store_<content>/` on the host, `/store/<content>` inside a container, `STORE_<CONTENT>_DIR` the variable that names the one to the other | `store_raw_1m/`, `/store/raw_1m`, `STORE_RAW_1M_DIR` | a path derived from `__file__`, `/app/store_*` as an address, a store literal at the point of use |
-| a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both; a module's rule in `module_skills/` |
-| a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
-| artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
+| artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (§ Sorting and the timeframe slots) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
 | JavaScript functions at file scope | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
 
@@ -369,6 +341,158 @@ unix socket (`module_monitoring/sub_module_devops/`), and the file listing of th
 boundary is an exception the conventions name, not an inconsistency they
 tolerate.
 
+### Sorting and the timeframe slots
+
+A listing is read by eye, so a name is built to sort. Three rules give the
+grammar, and the slot standard follows from them:
+
+- **digits sort before letters** in every collation a terminal, an editor or a
+  file manager uses, so a numeric field placed left of a letter field orders the
+  listing by that number;
+- **every number is zero-padded** to the width of its field, or `10` sorts
+  before `2`;
+- **the field width is fixed**, so the columns of a listing line up and the eye
+  compares them without reading.
+
+The timeframe of an artifact is therefore written as five fixed slots, finest
+first, and only the active one carries digits:
+
+| slot | unit | a 15m artifact | a 1h artifact | a 4h artifact |
+|---|---|---|---|---|
+| `ss` | seconds | `ss` | `ss` | `ss` |
+| `mm` | minutes | `15` | `mm` | `mm` |
+| `hh` | hours | `hh` | `01` | `04` |
+| `dd` | days | `dd` | `dd` | `dd` |
+| `MM` | months | `MM` | `MM` | `MM` |
+
+`BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-01-dd-MM.parquet`,
+`BTC_features_ss-mm-04-dd-MM.parquet` — three siblings a plain `ls` orders from
+the finest granularity to the coarsest, which `15m`, `1h`, `4h` would not.
+
+**Two patterns, two jobs.** The slots name files on a filesystem; the compact
+token — `1m`, `15m`, `1h`, `4h` — names timeframes inside code, schemas and
+payload keys, where nothing sorts and the short form reads better. That is why
+the raw store is `store_raw_1m/` and not a slot string: a store names its
+granularity, it does not order siblings by it.
+
+### The feature grammar
+
+Every column of X is read off its own name; nothing but the catalogue record is
+needed to decode one:
+
+```
+feature     = definition "_" timeframe
+definition  = [normaliser "_"] term {"_" operator "_" term}
+term        = series | [series "_"] indicator parameter
+operator    = "minus" | "over"
+normaliser  = "centered"
+```
+
+- **the parameter is glued to the indicator token** — `ema20`, `rsi14`,
+  `atr14`, `sma200` — never `rsi_14`, which would read as two terms;
+- **the series prefix appears only when it is not the default** —
+  `log_volume_zscore50`, but a bare `rsi14`, because an indicator on the close
+  needs no prefix;
+- **`minus` is a difference and `over` a ratio**, and `over` yields `0.0` where
+  the denominator is zero — a fact of the arithmetic, not a fallback;
+- **`centered` maps a bounded indicator to its own midpoint**, `(x − mid) / half`,
+  so a centred RSI runs from −1 to 1;
+- **the suffix is the timeframe of every term in the definition.** A name says
+  nothing about the decision grid, the alignment or the label horizon, because
+  those belong to the run and not to the column.
+
+So `ema20_minus_ema50_over_atr14_4h` is the 4h distance between two exponential
+moving averages, expressed in 4h true ranges, and `centered_rsi14_1h` the 1h
+relative-strength index about its midpoint. The register of indicators, each
+with its parameter word, its warm-up multiple and its output range, is
+`INDICATORS` in `module_features/indicators.py` — one record beside each kernel,
+and the one place an indicator's invariants live.
+
+### The naming review
+
+Before an object is committed, six questions place it. They are answered in the
+head, not in a file:
+
+1. **What is it?** A quantity, a descriptor, an action, a population, a
+   constant — the layer decides the grammar.
+2. **What does it return, and in what unit?** The unit belongs in the name
+   unless the name already says what is counted.
+3. **Where does it belong?** Beside the functions that write the same state and
+   live as long as it does.
+4. **Is the term already used here?** `git grep` it. A name that denotes two
+   things in one scope is renamed until it denotes one.
+5. **Would a reader who has never seen this project guess right?** If the answer
+   needs a document, the name is wrong.
+6. **Is this the standard term?** A widely recognised name beats a local
+   synonym, always.
+
+**A name gives way to a more derivable one** — but a serialised name is a
+contract with the files on disk. An artifact key, a parquet or database column,
+a feature: each moves only together with everything that writes, reads and
+stores it, in one commit. Parity is measured against those names.
+
+### Minting a convention
+
+A convention is minted at the **third** occurrence, never the first: two
+occurrences are a coincidence, three are a family. It is minted only when the
+name is derived from its layer's grammar, the rule is written here in one line,
+every existing occurrence is renamed to it in the same commit, and the form it
+forbids is named beside it. At an external-format or external-library boundary
+the external vocabulary wins inside the call that speaks it, and the project's
+own names begin at the return value — that is why the Lean raw tree is a
+lowercase symbol while the artifact folder is the ticker in capitals.
+
+### The closed list absorbs its synonyms
+
+One verb per job. The synonyms below are not shades of meaning; they are the
+same job under another name, and they collapse:
+
+| the verb | absorbs |
+|---|---|
+| `write_` | `save_`, `publish_`, `persist_`, `store_` |
+| `load_` | `read_`, `open_`, `get_` |
+| `fetch_` | `download_`, `pull_`, `request_` |
+| `build_` | `generate_`, `calculate_`, `compute_`, `aggregate_` |
+| `parse_` | `decode_`, `extract_` |
+| `fit` | `train_` |
+| — | `process`, `handle`, `run`, `execute`, `manage`: these name no job at all |
+
+`evaluate_` is not a verb here either: it becomes the noun the artifact carries,
+`<object>_evaluation`. A function that *is* a quantity takes no verb: `rsi`, `atr`,
+`sharpe_annualised`. A function that computes never writes — the moment it
+persists, the body is split at the store.
+
+## Determinism
+
+The same inputs produce the same bytes, and **bit parity is the proof** — the
+standard any change that should not alter results is measured against
+(`README.md` § Parity is the procedure).
+
+- **the thread caps are correctness, not settings.** `SET threads=1` at every
+  DuckDB connection, `nthread=1` for XGBoost, `OMP_NUM_THREADS=1` in every
+  service: float summation must not be reordered, and a reordered sum changes
+  the last bits. They are never raised to go faster;
+- **`SEED = 42`**, and Optuna runs sequentially with a seeded sampler, so the
+  same search visits the same trials in the same order;
+- **DuckDB orders are pinned** — `arg_min` / `arg_max` over an explicit
+  `ORDER BY`, never an implicit row order — and every writer sorts before it
+  writes, JSON with sorted keys;
+- **speed comes from outside a stage, never from inside it.** `JOBS` is measured
+  at invocation from cores and available memory, one process per asset, and is
+  never hardcoded. `data-ingest` stays sequential because the memory ceiling is
+  per process.
+
+## Comments
+
+Comments are the only prose beside these two documents, so each one earns its
+place. A comment says the **why** that the code cannot: the invariant a line
+protects, the reason a constant has that value, the counterpart a copy must
+change with. It states its rule outright and never points at a document to carry
+it. What a comment is never: a restatement of what the line already says, a
+paraphrase of a rule written here, a debt marker — `TODO`, `FIXME`, `XXX`,
+`HACK` are a postponed decision, and a postponed decision is not committed — or
+a line of code left commented out, which is a version git already holds.
+
 ## Rejected vocabulary
 
 The rejected vocabulary stays as a list of words that steers the repository
@@ -379,8 +503,8 @@ rule and the register's `never` columns the synonyms bound to one concept; this
 list gathers the words bound to neither, and repeats the few the register
 already binds that are worth steering away from on sight.
 
-- **directories and path segments** (the drawing's node type `core` is neither, and is
-  registered in `module_skills/glossary.md` § Developer experience)**:** `src`, `core`, `lib`, `common`, `utils`,
+- **directories and path segments** (the drawing's node type `core` is neither: it is a
+  value in `sub_module_dx/visualisation_config.json`)**:** `src`, `core`, `lib`, `common`, `utils`,
   `helpers`, `manager`, `service`, `assets`, `artifacts`, `data`, `db`,
   `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder;
   `repository_module_<domain>`, a numbered package directory,
@@ -395,9 +519,9 @@ already binds that are worth steering away from on sight.
 - **function verbs:** `read_`, `probe_`, `spool_`, `iter_`, `run_`, `compute_`,
   `_factory`; in JavaScript `load`, `poll`. The stem is rejected as a **verb**: a
   function named for a domain noun the register carries is not one, which is why
-  `run_dir()` and `run_payload()` stand — a run is the object of
-  `module_skills/glossary.md` § Run record — and why `write_venue_spool()` stands, its
-  verb being `write` and its spool the CSV the register names
+  `run_dir()` and `run_payload()` stand — a run is the object `record.py` writes —
+  and why `write_venue_spool()` stands, its verb being `write` and its spool the CSV
+  it names
 - **key names:** bare `lag`, `age`, `usage` — without the subject and the unit —
   `mem`, `cpu_pct`, a bare duration for how long a container has been up, a
   hash, `weight` as a Y column, `_ts` on a UTC string
@@ -408,10 +532,9 @@ already binds that are worth steering away from on sight.
 - **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a
   second compose file, `/var/run/docker.sock` in any container other than
   `devops` — the one service whose responsibility is docker management, and
-  which publishes no port (`module_skills/skill_asset_containers.md`); `8900` as the
+  which publishes no port, as `docker-compose.yml` shows; `8900` as the
   page's address in a document, a command or a comment — the host port is measured, the
-  page's address the one `make on` prints (`module_skills/skill_asset_containers.md`
-  § The topology). `CONTAINER_PORT` is a different fact and may be written as itself: the
+  page's address the one `make on` prints. `CONTAINER_PORT` is a different fact and may be written as itself: the
   port every service listens on inside its own namespace, and the left-hand side of a
   reader's own forward; `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
@@ -426,19 +549,11 @@ already binds that are worth steering away from on sight.
 For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
-**A skill belongs to the module whose responsibility it describes.** A rule
-about one module lives in `module_<name>/skills/`; a rule that crosses modules or
-governs the project lives in `module_skills/` — the canon; a module's orientation
-is its `README_module_<name>.md`. Each is written exactly once, the location
-follows ownership, and there is no second copy to drift.
-`module_skills/README.md` is the index — it links to every skill, cross-cutting
-and module-owned alike, and restates none of them.
-
-`module_skills/skill_asset_containers.md` is the worked example of the cross-cutting
-boundary: the one image, the six services — the three runners, `asset-<ticker>`, `dashboard`
-and `devops` — the Makefile fan-out, the ceilings and the store mounts each service is given
-are a contract between the infrastructure and all four runtime modules at once, so it belongs
-to none of them and stays in the canon.
+**A rule about code lives in the comment beside that code; a rule about the
+project lives here. There is no third place.** Each is written exactly once, and
+there is no second copy to drift. A comment states its rule outright — it never
+points at a document to carry it, and the only documents it could point at are
+these two.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
 the owner of its subject, with its own `config.py`, its own `main()` and no
@@ -461,50 +576,23 @@ mints it or nothing does.
 The shape is four modules and a launcher: one image, the stores explicit and
 outside compute, the orchestration outside the modules, the contracts between
 modules as files, the asset as a parameter, the recorder measuring what a stage
-wrote — and nothing of a cloud
-(`module_skills/skill_pre_aws_solution.md` § What the shape holds, and what it
-does not). The conditions below hold at every commit; a change that breaks one
+wrote — and nothing of a cloud. The conditions below hold at every commit; a change that breaks one
 is wrong.
 
 | # | holds |
 |---|---|
 | D01 | the root holds no data, feature or ML logic: its only Python is `record.py` and `sub_module_dx/`, both describing the assembled project |
 | D02 | `git grep "from module_"` inside a module package finds only that package: no module imports another |
-| D03 | a module's skills live under that module and nowhere else; a rule that crosses modules lives in `module_skills/` |
 | D04 | a fresh `git clone` followed by `make all` and `make on` is a working project |
 | D05 | one `docker-compose.yml` carries the whole topology, and one `Makefile` the stage order and the fan-out |
 | D06 | no module writes into another's source tree: what a stage writes lands in a store |
 | D07 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never an image or a service definition of its own |
 | D08 | neither the drawing nor the panel is a module: `sub_module_dx/` is the launcher's, `module_monitoring/sub_module_devops/` the monitoring module's |
-| D09 | artifact names and keys move only with the register: every key of every payload has a row in `module_skills/glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe`, the `ticker` key in every row of `data_status.json`, and that snapshot's own measurement set — which `REPORT_dashboard_data_minimalism.md` argues field by field — are each registered there |
-| D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
+| D09 | a payload key and the identifier that produced it carry one name, and a key added, dropped or renamed moves every reader of it in the same commit — the feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block of `features_status.json` beside `assets[].row_count_by_timeframe`, and the `ticker` key in every row of `data_status.json` |
+| D10 | determinism is unchanged: the caps, the seed, the pinned orders (§ Determinism) |
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte against the reference list `README.md` § Parity names. A change that reshapes a snapshot re-bases that snapshot's line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
 | D12 | zero cloud mechanisms and zero new dependencies: the four pins are the project's |
 | D13 | `features_status.json` is written by `module_features.status` |
-| D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
+| D14 | every copy carried by extraction is marked `# twice by extraction` where it is defined, names its counterparts in that same comment, and is changed on every side at once |
 | D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the three snapshots are tracked, so a fresh clone opens on real numbers |
 | D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
-
-## Skills absent here, described
-
-Skills the Pre-AWS seats imply and this tree does not hold: each placed by
-ownership as § The default choice places every skill, described today where its
-last column says, and written when its one condition holds. Two rows this shape
-answered are no longer here: the status prefix — the three snapshots live in
-`store_status/`, the one tracked store (`module_skills/glossary.md` § Stores) —
-and the image contents — the `Dockerfile` carries the pins and each service
-mounts the stores it touches — the `dashboard` those it
-reads and the drawing, all read-only
-(`module_skills/skill_asset_containers.md` § The topology).
-
-| skill | owner | governs | written when | described today in |
-|---|---|---|---|---|
-| `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where the `./store_<content>` mounts are today — every asset's folder and the other `store_*` roots at the same `/store/<content>` paths, and what a task may leave on it | the first run whose `store_*` roots sit on a volume that is not this host's disk | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
-| `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
-| `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `data-all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
-| `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
-| `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |
-| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the three snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel of `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
-| `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — a fifth module beside `module_ml`, with its own container, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | that repository is created — the first strategy that consumes an artifact | `module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries; `module_skills/skill_pre_aws_solution.md` § Every object is classified before it is placed, STRATEGY EXECUTION; `module_skills/skill_pre_aws_solution.md` § The mapping table, the two STRATEGY EXECUTION rows |
-| `skill_per_asset_status.md` | `module_skills/` | one status object per asset, written by that asset's own status run, and the fold the reader does over them — never a lock, never a basket-wide writer fanned out | a status stage is fanned out for the first time | `module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_data.status` row |
-| `skill_database_promotion.md` | `module_data/skills/` | the threshold past which an asset's embedded file becomes a managed database — a second concurrent writer, or a query across assets | the first writer or query one embedded file cannot serve | `module_data/skills/skill_candle_canonicalisation.md` § 13, § 15; `module_skills/skill_pre_aws_solution.md` § The databases |

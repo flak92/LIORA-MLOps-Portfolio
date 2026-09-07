@@ -17,13 +17,13 @@ QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"
 # twice by extraction — the units below (each module the ones it uses), the ceiling, the store reads, their descriptors
-# and the --tickers parser are identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md
-# § Twice by extraction): a change here is a change to every copy, by hand
+# and the --tickers parser are identical in module_features/config.py and module_ml/config.py: no module imports another,
+# so a change here is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
 # twice by extraction — identical in module_ml/config.py, module_monitoring/config.py and sub_module_dx/config.py, and the
-# browser's own in module_monitoring/page.js (module_skills/glossary.md § Twice by extraction)
+# browser's own in module_monitoring/page.js; changed on every side in one commit
 BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 
@@ -58,7 +58,7 @@ STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
-# twice by extraction — identical in module_monitoring/config.py, the reader (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_monitoring/config.py, the reader; the writer names the snapshot it writes, the reader the one it serves
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"   # the snapshot this module writes; the dashboard reads it there
 
 

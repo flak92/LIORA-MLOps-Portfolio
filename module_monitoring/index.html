@@ -43,8 +43,9 @@
       the providers once more, in its share columns — a share of the grid is the one number that is per provider by
       nature; every other column of it describes one market object and asks about no source. A marked column is an
       invariant, whose only correct value is zero; every other number is an observation, which a change of provider
-      is expected to move. Tier order, the verbatim-candle rule and the reason it beats averaging are in
-      skill_candle_canonicalisation.md.</p>
+      is expected to move. A canonical minute is one venue's whole candle copied verbatim — Binance where it
+      traded, Bybit where only Bybit did, an explicitly flagged forward fill where neither printed — and never
+      an average of the two, because an average prints a price no market made.</p>
   </section>
 
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>

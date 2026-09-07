@@ -25,8 +25,8 @@ PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine e
 
 # ---- the units the endpoint converts with
 MICROSECONDS_PER_SECOND = 1_000_000
-# twice by extraction — identical in module_data/config.py, module_ml/config.py, sub_module_dx/config.py
-# (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_data/config.py, module_ml/config.py, sub_module_dx/config.py;
+# no module imports another, so all four change in one commit
 BYTES_PER_KIBIBYTE = 1024
 
 # ---- the run record: one directory per run of the chain, one file per stage, the whole basket inside it
@@ -35,7 +35,7 @@ BYTES_PER_KIBIBYTE = 1024
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
 # twice by extraction — the two store reads below are identical in module_data/config.py, module_features/config.py and
 # module_ml/config.py, and the two snapshot paths are the writers' own, module_data/config.py and module_ml/config.py, read
-# here (module_skills/glossary.md § Twice by extraction)
+# here; each writer names the snapshot it writes, and this reader the ones it serves
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])   # the registry lists its asset folders
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"

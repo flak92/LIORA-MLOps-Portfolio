@@ -304,7 +304,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 
-{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
+{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The folds are a purged walk-forward: each training population drops the events that had not resolved when its fold opened. Every field name above is the key of the same measurement in `{config.model_evaluation_json(ticker).name}`, `{config.strategy_evaluation_json(ticker).name}` and `ml_status.json`.
 """
 
 

@@ -18,7 +18,9 @@ from .ingest import OHLC_INTACT_PREDICATE
 from .lean import MINUTES_PER_DAY
 
 # invalid_row_count is what ingest.py refuses to join, counted with ingest's own predicate: the validity rule
-# is written once (skills/skill_candle_canonicalisation.md § 4) and imported, never restated here
+# is written once, as OHLC_INTACT_PREDICATE in ingest.py — finite O/H/L/C/V, prices above zero, volume not
+# negative, low no greater than min(open, close), high no less than max(open, close) — and imported, never
+# restated here
 VENUE_SCAN = """
 SELECT count(*)                     AS row_count,
        count(DISTINCT timestamp_ms) AS distinct_timestamp_count,
@@ -71,7 +73,7 @@ FROM (SELECT close,
 # a minute of the canonical grid is in exactly one state — forward-filled, flat, or traded — and the longest run
 # of each of the first two is one pass and one grouping. A forward-filled row repeats the previous close with no
 # volume, so it satisfies the flat geometry as well; the state is decided in order, so fabrication is never
-# reported as a quiet market (skills/skill_candle_canonicalisation.md § 6, § 10)
+# reported as a quiet market
 CANONICAL_RUN_SCAN = """
 WITH marked AS (SELECT timestamp_ms,
                        CASE WHEN source = 'ffill'                     THEN 'ffill'
