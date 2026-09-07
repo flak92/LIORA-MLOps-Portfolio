@@ -7,6 +7,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | file | holds | size |
 | --- | --- | --- |
 | `BTC_README.md` | this file | — |
+| `BTC_catalogue.json` | the feature layer's contract: the timeframes and their slots, the warm-up, the columns offered per timeframe and the default set — read once per stage | 2 KB |
 | `BTC_feature_set.json` | the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's | — |
 | `BTC_feature_set_search.json` | the feature-set search: every trial, the champion, the proposals | — |
 | `BTC_features_ss-15-hh-dd-MM.parquet` | the catalogue on 15m — every definition offered on it, on the decision grid | 10,699 KB |
@@ -18,7 +19,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One directory per ticker, on
 | `BTC_parameters.json` | the one parameters file: what the search chose | 371 B |
 | `BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 10 KB |
 
-Each of the three catalogue parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the four out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the 3 catalogue parquets carries 16 rows more than `BTC_label_events_ss-15-hh-dd-MM.parquet`: the tail decisions whose full 240-minute horizon does not fit inside the research window have features but no label. `BTC_oos_predictions_ss-15-hh-dd-MM.parquet` holds the 4 out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Feature set
 

@@ -1,8 +1,8 @@
 """Measure one stage of a run from outside: the four stores before, the command, the four stores after — one record.
 
-    python3 record.py <stage> <command…>
+    RUN_ID=<run_id> python3 record.py <stage> <command…>
 
-The recorder knows no module. It lists the four stores the launcher names (STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR,
+The recorder knows no module. Given the execution name RUN_ID, it lists the four stores the launcher names (STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR,
 STORE_RUN_RECORDS_DIR, STORE_STATUS_DIR — path, size and mtime of every file), runs the command with its output passed
 through, lists them again, and writes store_run_records/<RUN_ID>/<stage>.json: when the stage started and ended, how it
 exited, and what it added, changed and removed in the stores. Its exit code is the command's. This is what a task scheduler
@@ -55,13 +55,9 @@ def store_diff(store: str, before: dict, after: dict) -> dict[str, list]:
     }
 
 
-def to_utc_text(moment: datetime) -> str:
-    return moment.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def main() -> int:
     if len(sys.argv) < 3:
-        raise SystemExit("usage: python3 record.py <stage> <command…>")
+        raise SystemExit("usage: RUN_ID=<run_id> python3 record.py <stage> <command…>")
     stage, command = sys.argv[1], sys.argv[2:]
     run_id = os.environ["RUN_ID"]
     roots = {store: Path(os.environ[variable]) for store, variable in STORES.items()}
@@ -80,8 +76,8 @@ def main() -> int:
         "stage": stage,
         "command": " ".join(command),
         "exit_code": exit_code,
-        "started_at_utc": to_utc_text(started_at),
-        "ended_at_utc": to_utc_text(ended_at),
+        "started_at_utc": started_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "ended_at_utc": ended_at.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_seconds": duration_seconds,
         "store_diff": {state: [row for diff in diffs for row in diff[state]] for state in ("added", "changed", "removed")},
     }
