@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "76 tracked files \u00b7 8 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 431d455 \u00b7 2026-09-05 21:09:27",
+ "subtitle": "54 tracked files \u00b7 7 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 156e103 \u00b7 2026-09-07 15:11:26",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -157,45 +157,34 @@ const VIEWS = {
    "START_ROT_Y": 0.19
   },
   "desc": {
-   "AGENTS.md": "The contract of this repository, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
+   "AGENTS.md": "The contract of this repository, where every boundary on this picture was decided \u2014 \u00a7 Pre-AWS architectural direction is the stance this view draws; it deploys nowhere and governs everything that does.",
    "Dockerfile": "",
    "Makefile": "The local spelling of the state machine beside it: `all:`, `data-all:`, `features-all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stage in a one-off runner of its module's image, and nothing here schedules \u2014 the developer interface, never a scheduler.",
-   "README.md": "The overview of the project: the modules, the stores, the chain, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
-   "REPORT_dashboard_data_minimalism.md": "",
-   "REPORT_pre_aws_minimalism.md": "The review of these seats for excess: what could be less, and whether it is; it deploys nowhere and names no primitive the table does not.",
+   "README.md": "The overview of the project: the quickstart, the stores, the chain and the dashboard; it deploys nowhere and is the first page a reader opens.",
    "asset_store": "Object storage with one prefix per asset and version (Amazon S3): `artifacts/\u003cticker>/\u003cversion>/`, the version the run's execution name \u2014 the asset folder copied whole from the volume after the run: the one database file and the parquets and JSONs beside it. The copy, never the home; the strategy host reads it here.",
    "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none \u2014 the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here \u2014 described.",
    "dashboard_front": "A static front (Amazon S3 with Amazon CloudFront): the page files and the three snapshots served with no process rendering them \u2014 only when a reader outside the host appears; until then the reader container beside it serves them from the volume. Absent here \u2014 described.",
    "data_ingest_task": "The data-ingest task: the data image run with a `module_data` command (`RunTask` with the command overridden, on the task host) \u2014 DownloadMarketData and PublishStatus for data once for the basket, BuildCanonicalData once per asset with `--tickers` narrowed to it \u2014 that fetches the venues' public endpoints, writes the raw tree and the asset's canonical market object on the volume and exits, holding nothing between runs.",
    "docker-compose.yml": "Four task definitions \u2014 one per image, each parameterised by `--tickers` \u2014 registered with the service that runs them on the host beside it, never a new unit per asset \u2014 and the residents \u2014 `liora-dashboard-1`, `liora-devops-1` and one `liora-asset-\u003cticker>-1` per ticker \u2014 as services kept running, one per service, as they are here; the three runners are the task definitions' local spelling, one resident per ticker written out so the parameter stays visible, and the store mounts each service is given are the volume read forward.",
-   "event_rule": "A schedule and a condition state (Amazon EventBridge Scheduler; a Step Functions choice): the schedule starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full \u2014 `is_full_utc_day()` in `module_data/lean.py`; the condition asks the volume whether this asset needs its artifacts rebuilt, and gates the states from AggregateBars on. Today the cadence is a hand typing `make all`, and the condition the downloaders' day-presence skip and the rerun table of `methodology_ml.md` \u00a7 11, read by a human. Absent here \u2014 described.",
+   "event_rule": "A schedule and a condition state (Amazon EventBridge Scheduler; a Step Functions choice): the schedule starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full \u2014 `is_full_utc_day()` in `module_data/lean.py`; the condition asks the volume whether this asset needs its artifacts rebuilt, and gates the states from AggregateBars on. Today the cadence is a hand typing `make all`, and the condition is the downloaders' own day-presence skip, with the decision to rerun a stage taken by a human at the Makefile. Absent here \u2014 described.",
    "image_registry": "Four container images in a registry (Amazon ECR): `liora-1m-pipeline`, carrying the packages \u2014 pulled by the task host; here it is built by `make build`, and the image carries the code as it would there.",
    "log_streams": "Log streams keyed by stage and container, and metrics (Amazon CloudWatch): every task's output shipped off the host. Here a stage's output reaches the terminal that ran it, and `record.py` keeps a run's time, exit code and store diff. Absent here \u2014 described.",
    "ml_research_task": "The ml-research task: the features image, then the ml image, each run with its module's command and `--tickers` narrowed to one asset (`RunTask` on the same host), one run per stage from AggregateBars to EvaluateStrategy inside a Map over the basket as wide as `JOBS`, and PublishStatus for features and for ML once each for the basket, never per asset \u2014 reading and writing the asset's folder on the volume, and holding nothing between runs.",
    "module_data/": "The code of the data-ingest task, in its own repository: the venue downloads, the Lean raw format, ingest into the canonical market object and the data status \u2014 inside `liora-module-data`, run in the task beside it.",
-   "module_data/README_module_data.md": "",
    "module_data/config.py": "",
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
    "module_data/ingest.py": "",
    "module_data/lean.py": "",
-   "module_data/skills/": "",
-   "module_data/skills/methodology_data.md": "",
-   "module_data/skills/skill_candle_canonicalisation.md": "",
    "module_data/status.py": "",
    "module_features/": "The code of the ml-research task's first states, in its own repository: the bars of the register, the feature catalogue and the contract `\u003cTICKER>_catalogue.json` \u2014 inside `liora-module-features`, run in the task beside it, one asset at a time.",
-   "module_features/README_module_features.md": "",
    "module_features/bars.py": "",
    "module_features/catalogue.py": "",
    "module_features/config.py": "",
    "module_features/dataset.py": "",
    "module_features/indicators.py": "",
-   "module_features/skills/": "",
-   "module_features/skills/methodology_features.md": "",
-   "module_features/skills/skill_feature_taxonomy.md": "",
    "module_features/status.py": "",
    "module_ml/": "The code of the ml-research task from GenerateLabels on, in its own repository: the feature set, labels, search, model, strategy evaluation and the ML status \u2014 inside `liora-module-ml`, run in the task beside it, one asset at a time.",
-   "module_ml/README_module_ml.md": "",
    "module_ml/config.py": "",
    "module_ml/dataset.py": "",
    "module_ml/feature_set_promote.py": "",
@@ -203,14 +192,11 @@ const VIEWS = {
    "module_ml/hpo.py": "",
    "module_ml/labels.py": "",
    "module_ml/model.py": "",
-   "module_ml/skills/": "",
-   "module_ml/skills/methodology_ml.md": "",
    "module_ml/status.py": "",
    "module_ml/strategy.py": "",
    "module_ml/train.py": "",
    "module_ml/validation.py": "",
    "module_monitoring/": "The monitoring module's repository: the page files \u2014 the page and its scripts \u2014 inside `liora-module-monitoring`, served by the reader container from the image, the three snapshots read from the status store, the static front absent; `serve.py`'s routes are that container's code.",
-   "module_monitoring/README_module_monitoring.md": "",
    "module_monitoring/asset.js": "",
    "module_monitoring/config.py": "",
    "module_monitoring/data.js": "",
@@ -219,9 +205,6 @@ const VIEWS = {
    "module_monitoring/page.js": "",
    "module_monitoring/run.js": "",
    "module_monitoring/serve.py": "",
-   "module_monitoring/skills/": "",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "",
-   "module_monitoring/skills/skill_devops_panel.md": "",
    "module_monitoring/style.css": "",
    "module_monitoring/sub_module_devops/": "",
    "module_monitoring/sub_module_devops/config.py": "",
@@ -230,21 +213,11 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "",
    "module_monitoring/sub_module_devops/index.html": "",
    "module_monitoring/sub_module_devops/serve.py": "",
-   "module_skills/": "The canon: the cross-cutting skills and the name register (`module_skills/glossary.md`), \u2014 they travel with the code and deploy nowhere: not project code, not a primitive, and the contract of every boundary this picture draws.",
-   "module_skills/README.md": "",
-   "module_skills/glossary.md": "",
-   "module_skills/skill_agent_first_development.md": "",
-   "module_skills/skill_asset_containers.md": "",
-   "module_skills/skill_determinism.md": "",
-   "module_skills/skill_developer_experience_drawing.md": "",
-   "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its column *the same responsibility elsewhere* is these primitives \u2014 and \u00a7 What the shape holds, and what it does not, says which of them this repository holds.",
-   "module_skills/skill_self_explaining_naming.md": "",
-   "module_skills/skill_sorting_files_naming_standard.md": "",
    "raw_store": "Raw objects under a venue and symbol prefix (Amazon S3): `raw/\u003cvenue>/\u003csymbol>/\u003cday>`, one object per UTC day, each written once \u2014 the raw tree copied from the volume after the run, Lean-exact so the strategy host could read it as it is. Here it is `store_raw_1m/`, on disk and untracked, so the development view does not hold it.",
    "reader_container": "The `dashboard` service \u2014 `liora-dashboard-1`, the monitoring image \u2014 kept running on the task host: the `/containers`, `/runs`, `/store_status/` and `/devops/*` routes of `serve.py`, reading the run records and the snapshots on the volume and reaching the asset services and the panel by name as here; reached from outside by port-forward, where `ssh -L` stands today, and by no public port.",
    "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four stores before and after, and writes `\u003crun_id>/\u003cstage>.json` into the run store \u2014 the execution history a state machine keeps for itself, and nothing a task carries.",
    "requirements.txt": "",
-   "root": "The same tracked tree, read forward: every file and folder of this repository seated beside the primitive it would run on or live in \u2014 the column *the same responsibility elsewhere* of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them. One host with a durable volume is the home of every store, object storage its copy after the run, the stages the states of one machine, the image the code. Described and drawn, built nowhere.",
+   "root": "The same tracked tree, read forward: every file and folder of this repository seated beside the primitive it would run on or live in \u2014 this view is that mapping, its primitives drawn as icons with the flows between them, and `AGENTS.md` \u00a7 Pre-AWS architectural direction is the stance it draws. One host with a durable volume is the home of every store, object storage its copy after the run, the stages the states of one machine, the image the code. Described and drawn, built nowhere.",
    "run_store": "Run and status objects in object storage (Amazon S3): `runs/\u003crun_id>/` \u2014 the record `record.py` writes on the host, one file per stage \u2014 and `status/`, the three snapshots' own prefix, both copied from the volume after the run. The reader on the host reads the files on the volume, not this copy. Here they are `store_run_records/`, on disk and untracked, and `store_status/`, tracked in this repository.",
    "state_machine": "A state machine whose states are the stages (AWS Step Functions): DownloadMarketData \u2192 BuildCanonicalData \u2192 PublishStatus for data \u2192 AggregateBars \u2192 GenerateFeatures \u2192 PublishStatus for features \u2192 GenerateLabels \u2192 SearchHyperparameters \u2192 TrainModel \u2192 EvaluateStrategy \u2192 PublishStatus for ML, then PublishStores \u2014 the copy of every store to its prefix after the last stage has exited. Every per-asset state is a Map over `TICKERS` \u2014 1 wide for BuildCanonicalData, `JOBS` wide above it; the execution name is `run_id`. It starts each task on the host and sits above every stage and inside none \u2014 which is why its flows rise over the picture; the Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:` are the same order, read locally.",
    "store_assets_artifacts/": "The asset folders and their home: one folder per ticker on the volume, the tracked README and parameters two of its files; the store beside it is this folder's copy after the run, never its home.",
@@ -379,7 +352,7 @@ const VIEWS = {
    }
   ],
   "hub": {
-   "S1": "module_skills/",
+   "S1": "sub_module_dx/",
    "S2": "image_registry",
    "S3": "task_host",
    "S4": "data_ingest_task",
@@ -394,8 +367,6 @@ const VIEWS = {
    "Dockerfile": "S1",
    "Makefile": "S9",
    "README.md": "S1",
-   "REPORT_dashboard_data_minimalism.md": "S1",
-   "REPORT_pre_aws_minimalism.md": "S1",
    "asset_store": "S5",
    "brokerage_secret": "S8",
    "dashboard_front": "S7",
@@ -406,29 +377,20 @@ const VIEWS = {
    "log_streams": "S3",
    "ml_research_task": "S6",
    "module_data/": "S4",
-   "module_data/README_module_data.md": "S4",
    "module_data/config.py": "S4",
    "module_data/download_binance.py": "S4",
    "module_data/download_bybit.py": "S4",
    "module_data/ingest.py": "S4",
    "module_data/lean.py": "S4",
-   "module_data/skills/": "S4",
-   "module_data/skills/methodology_data.md": "S4",
-   "module_data/skills/skill_candle_canonicalisation.md": "S4",
    "module_data/status.py": "S4",
    "module_features/": "S6",
-   "module_features/README_module_features.md": "S6",
    "module_features/bars.py": "S6",
    "module_features/catalogue.py": "S6",
    "module_features/config.py": "S6",
    "module_features/dataset.py": "S6",
    "module_features/indicators.py": "S6",
-   "module_features/skills/": "S6",
-   "module_features/skills/methodology_features.md": "S6",
-   "module_features/skills/skill_feature_taxonomy.md": "S6",
    "module_features/status.py": "S6",
    "module_ml/": "S6",
-   "module_ml/README_module_ml.md": "S6",
    "module_ml/config.py": "S6",
    "module_ml/dataset.py": "S6",
    "module_ml/feature_set_promote.py": "S6",
@@ -436,14 +398,11 @@ const VIEWS = {
    "module_ml/hpo.py": "S6",
    "module_ml/labels.py": "S6",
    "module_ml/model.py": "S6",
-   "module_ml/skills/": "S6",
-   "module_ml/skills/methodology_ml.md": "S6",
    "module_ml/status.py": "S6",
    "module_ml/strategy.py": "S6",
    "module_ml/train.py": "S6",
    "module_ml/validation.py": "S6",
    "module_monitoring/": "S7",
-   "module_monitoring/README_module_monitoring.md": "S7",
    "module_monitoring/asset.js": "S7",
    "module_monitoring/config.py": "S7",
    "module_monitoring/data.js": "S7",
@@ -452,9 +411,6 @@ const VIEWS = {
    "module_monitoring/page.js": "S7",
    "module_monitoring/run.js": "S7",
    "module_monitoring/serve.py": "S7",
-   "module_monitoring/skills/": "S7",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "S7",
-   "module_monitoring/skills/skill_devops_panel.md": "S7",
    "module_monitoring/style.css": "S7",
    "module_monitoring/sub_module_devops/": "S7",
    "module_monitoring/sub_module_devops/config.py": "S7",
@@ -463,16 +419,6 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "S7",
    "module_monitoring/sub_module_devops/index.html": "S7",
    "module_monitoring/sub_module_devops/serve.py": "S7",
-   "module_skills/": "S1",
-   "module_skills/README.md": "S1",
-   "module_skills/glossary.md": "S1",
-   "module_skills/skill_agent_first_development.md": "S1",
-   "module_skills/skill_asset_containers.md": "S1",
-   "module_skills/skill_determinism.md": "S1",
-   "module_skills/skill_developer_experience_drawing.md": "S1",
-   "module_skills/skill_pre_aws_solution.md": "S1",
-   "module_skills/skill_self_explaining_naming.md": "S1",
-   "module_skills/skill_sorting_files_naming_standard.md": "S1",
    "raw_store": "S5",
    "reader_container": "S7",
    "record.py": "S9",
@@ -498,7 +444,7 @@ const VIEWS = {
   "islands": {
    "S1": {
     "color": "#2BD4BD",
-    "name": "1 \u00b7 The canon \u2014 deploys nowhere"
+    "name": "1 \u00b7 The contract and the drawing \u2014 deploy nowhere"
    },
    "S2": {
     "color": "#7D93BF",
@@ -677,8 +623,6 @@ const VIEWS = {
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
-   "REPORT_dashboard_data_minimalism.md": "doc",
-   "REPORT_pre_aws_minimalism.md": "doc",
    "asset_store": "store",
    "brokerage_secret": "secret",
    "dashboard_front": "front",
@@ -689,29 +633,20 @@ const VIEWS = {
    "log_streams": "log_streams",
    "ml_research_task": "container",
    "module_data/": "module",
-   "module_data/README_module_data.md": "doc",
    "module_data/config.py": "code",
    "module_data/download_binance.py": "code",
    "module_data/download_bybit.py": "code",
    "module_data/ingest.py": "code",
    "module_data/lean.py": "code",
-   "module_data/skills/": "module",
-   "module_data/skills/methodology_data.md": "doc",
-   "module_data/skills/skill_candle_canonicalisation.md": "doc",
    "module_data/status.py": "code",
    "module_features/": "module",
-   "module_features/README_module_features.md": "doc",
    "module_features/bars.py": "code",
    "module_features/catalogue.py": "code",
    "module_features/config.py": "code",
    "module_features/dataset.py": "code",
    "module_features/indicators.py": "code",
-   "module_features/skills/": "module",
-   "module_features/skills/methodology_features.md": "doc",
-   "module_features/skills/skill_feature_taxonomy.md": "doc",
    "module_features/status.py": "code",
    "module_ml/": "module",
-   "module_ml/README_module_ml.md": "doc",
    "module_ml/config.py": "code",
    "module_ml/dataset.py": "code",
    "module_ml/feature_set_promote.py": "code",
@@ -719,14 +654,11 @@ const VIEWS = {
    "module_ml/hpo.py": "code",
    "module_ml/labels.py": "code",
    "module_ml/model.py": "code",
-   "module_ml/skills/": "module",
-   "module_ml/skills/methodology_ml.md": "doc",
    "module_ml/status.py": "code",
    "module_ml/strategy.py": "code",
    "module_ml/train.py": "code",
    "module_ml/validation.py": "code",
    "module_monitoring/": "module",
-   "module_monitoring/README_module_monitoring.md": "doc",
    "module_monitoring/asset.js": "code",
    "module_monitoring/config.py": "code",
    "module_monitoring/data.js": "code",
@@ -735,9 +667,6 @@ const VIEWS = {
    "module_monitoring/page.js": "code",
    "module_monitoring/run.js": "code",
    "module_monitoring/serve.py": "code",
-   "module_monitoring/skills/": "module",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "doc",
-   "module_monitoring/skills/skill_devops_panel.md": "doc",
    "module_monitoring/style.css": "code",
    "module_monitoring/sub_module_devops/": "module",
    "module_monitoring/sub_module_devops/config.py": "code",
@@ -746,16 +675,6 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "code",
    "module_monitoring/sub_module_devops/index.html": "code",
    "module_monitoring/sub_module_devops/serve.py": "code",
-   "module_skills/": "module",
-   "module_skills/README.md": "doc",
-   "module_skills/glossary.md": "doc",
-   "module_skills/skill_agent_first_development.md": "doc",
-   "module_skills/skill_asset_containers.md": "doc",
-   "module_skills/skill_determinism.md": "doc",
-   "module_skills/skill_developer_experience_drawing.md": "doc",
-   "module_skills/skill_pre_aws_solution.md": "doc",
-   "module_skills/skill_self_explaining_naming.md": "doc",
-   "module_skills/skill_sorting_files_naming_standard.md": "doc",
    "raw_store": "store",
    "reader_container": "container",
    "record.py": "code",
@@ -786,37 +705,26 @@ const VIEWS = {
    "START_ROT_Y": 6.21
   },
   "desc": {
-   "AGENTS.md": "",
+   "AGENTS.md": "The contract of this repository: the values, the architecture shape, the canonical vocabulary and the default choice. Every boundary on this picture was decided here, and it is the first thing read.",
    "Dockerfile": "",
-   "Makefile": "Entrypoint of everything \u2014 the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the four `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
-   "README.md": "",
-   "REPORT_dashboard_data_minimalism.md": "",
-   "REPORT_pre_aws_minimalism.md": "",
+   "Makefile": "Entrypoint of everything \u2014 the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the four `STORE_*_DIR` of this checkout, and `all`, `data-all`, `features-all` and `ml-all`, where the stage order is written down.",
+   "README.md": "The overview of the project: the quickstart, the four stores, the chain in order, the basket and the dashboard \u2014 what a reader needs before opening a module.",
    "docker-compose.yml": "One image, three anchors, six services: the store environment every service reads, what every service is \u2014 and the stores each one mounts, read-only where it only reads, never the code \u2014 and the one command the dashboard and the assets share; three runners run a stage and exit, three residents stay up, all under the one project name `liora`.",
    "module_data/": "The data module's repository: its package, its Dockerfile, its pins, its venv Makefile and its one-page README \u2014 ingest: venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
-   "module_data/README_module_data.md": "",
    "module_data/config.py": "",
    "module_data/download_binance.py": "",
    "module_data/download_bybit.py": "",
    "module_data/ingest.py": "",
    "module_data/lean.py": "",
-   "module_data/skills/": "",
-   "module_data/skills/methodology_data.md": "",
-   "module_data/skills/skill_candle_canonicalisation.md": "",
    "module_data/status.py": "",
    "module_features/": "The features module's repository \u2014 the bars of the timeframe register, the indicator kernels and the feature catalogue, one parquet per timeframe, and the contract `\u003cTICKER>_catalogue.json` the ML layer reads.",
-   "module_features/README_module_features.md": "",
    "module_features/bars.py": "",
    "module_features/catalogue.py": "",
    "module_features/config.py": "",
    "module_features/dataset.py": "",
    "module_features/indicators.py": "",
-   "module_features/skills/": "",
-   "module_features/skills/methodology_features.md": "",
-   "module_features/skills/skill_feature_taxonomy.md": "",
    "module_features/status.py": "",
    "module_ml/": "The research module's repository \u2014 the feature set, triple-barrier labels, purged walk-forward XGBoost, the strategy simulation.",
-   "module_ml/README_module_ml.md": "",
    "module_ml/config.py": "",
    "module_ml/dataset.py": "",
    "module_ml/feature_set_promote.py": "",
@@ -824,14 +732,11 @@ const VIEWS = {
    "module_ml/hpo.py": "",
    "module_ml/labels.py": "",
    "module_ml/model.py": "",
-   "module_ml/skills/": "",
-   "module_ml/skills/methodology_ml.md": "",
    "module_ml/status.py": "",
    "module_ml/strategy.py": "",
    "module_ml/train.py": "",
    "module_ml/validation.py": "",
    "module_monitoring/": "The monitoring module's repository \u2014 presentation of what the runtime modules measured, and the one server that serves it; standard library only.",
-   "module_monitoring/README_module_monitoring.md": "",
    "module_monitoring/asset.js": "",
    "module_monitoring/config.py": "",
    "module_monitoring/data.js": "",
@@ -840,9 +745,6 @@ const VIEWS = {
    "module_monitoring/page.js": "",
    "module_monitoring/run.js": "",
    "module_monitoring/serve.py": "",
-   "module_monitoring/skills/": "",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "",
-   "module_monitoring/skills/skill_devops_panel.md": "",
    "module_monitoring/style.css": "",
    "module_monitoring/sub_module_devops/": "",
    "module_monitoring/sub_module_devops/config.py": "",
@@ -851,19 +753,9 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "",
    "module_monitoring/sub_module_devops/index.html": "",
    "module_monitoring/sub_module_devops/serve.py": "",
-   "module_skills/": "The canon: the cross-cutting skills, the drawing's among them, the name register, and the index of the skills each module owns.",
-   "module_skills/README.md": "",
-   "module_skills/glossary.md": "",
-   "module_skills/skill_agent_first_development.md": "",
-   "module_skills/skill_asset_containers.md": "",
-   "module_skills/skill_determinism.md": "",
-   "module_skills/skill_developer_experience_drawing.md": "",
-   "module_skills/skill_pre_aws_solution.md": "",
-   "module_skills/skill_self_explaining_naming.md": "",
-   "module_skills/skill_sorting_files_naming_standard.md": "",
    "record.py": "Measures a stage from outside: wraps one make target, lists the four stores before and after, and writes the run record \u2014 knowing no module.",
    "requirements.txt": "",
-   "root": "The repository: the four modules of the chain in its own order, beside what runs them. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
+   "root": "The repository: the four modules of the chain in its own order, beside what runs them. Working path: AGENTS.md \u2192 module names \u2192 each module's package and its `config.py` \u2192 code; the contract and the overview are the only prose, and a module is read from its own files.",
    "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so this view does not hold them.",
    "store_assets_artifacts/BTC/": "",
    "store_status/": "The three snapshots \u2014 data, features, ML \u2014 each module's statement about itself, tracked so a fresh clone opens on real numbers, served under `/store_status/`.",
@@ -879,7 +771,7 @@ const VIEWS = {
   "flows": [],
   "hub": {
    "S1": "docker-compose.yml",
-   "S2": "module_skills/",
+   "S2": "sub_module_dx/",
    "S3": "module_data/",
    "S4": "module_features/",
    "S5": "module_ml/",
@@ -891,33 +783,22 @@ const VIEWS = {
    "Dockerfile": "S1",
    "Makefile": "S1",
    "README.md": "S2",
-   "REPORT_dashboard_data_minimalism.md": "S2",
-   "REPORT_pre_aws_minimalism.md": "S2",
    "docker-compose.yml": "S1",
    "module_data/": "S3",
-   "module_data/README_module_data.md": "S3",
    "module_data/config.py": "S3",
    "module_data/download_binance.py": "S3",
    "module_data/download_bybit.py": "S3",
    "module_data/ingest.py": "S3",
    "module_data/lean.py": "S3",
-   "module_data/skills/": "S3",
-   "module_data/skills/methodology_data.md": "S3",
-   "module_data/skills/skill_candle_canonicalisation.md": "S3",
    "module_data/status.py": "S3",
    "module_features/": "S4",
-   "module_features/README_module_features.md": "S4",
    "module_features/bars.py": "S4",
    "module_features/catalogue.py": "S4",
    "module_features/config.py": "S4",
    "module_features/dataset.py": "S4",
    "module_features/indicators.py": "S4",
-   "module_features/skills/": "S4",
-   "module_features/skills/methodology_features.md": "S4",
-   "module_features/skills/skill_feature_taxonomy.md": "S4",
    "module_features/status.py": "S4",
    "module_ml/": "S5",
-   "module_ml/README_module_ml.md": "S5",
    "module_ml/config.py": "S5",
    "module_ml/dataset.py": "S5",
    "module_ml/feature_set_promote.py": "S5",
@@ -925,14 +806,11 @@ const VIEWS = {
    "module_ml/hpo.py": "S5",
    "module_ml/labels.py": "S5",
    "module_ml/model.py": "S5",
-   "module_ml/skills/": "S5",
-   "module_ml/skills/methodology_ml.md": "S5",
    "module_ml/status.py": "S5",
    "module_ml/strategy.py": "S5",
    "module_ml/train.py": "S5",
    "module_ml/validation.py": "S5",
    "module_monitoring/": "S6",
-   "module_monitoring/README_module_monitoring.md": "S6",
    "module_monitoring/asset.js": "S6",
    "module_monitoring/config.py": "S6",
    "module_monitoring/data.js": "S6",
@@ -941,9 +819,6 @@ const VIEWS = {
    "module_monitoring/page.js": "S6",
    "module_monitoring/run.js": "S6",
    "module_monitoring/serve.py": "S6",
-   "module_monitoring/skills/": "S6",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "S6",
-   "module_monitoring/skills/skill_devops_panel.md": "S6",
    "module_monitoring/style.css": "S6",
    "module_monitoring/sub_module_devops/": "S6",
    "module_monitoring/sub_module_devops/config.py": "S6",
@@ -952,16 +827,6 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "S6",
    "module_monitoring/sub_module_devops/index.html": "S6",
    "module_monitoring/sub_module_devops/serve.py": "S6",
-   "module_skills/": "S2",
-   "module_skills/README.md": "S2",
-   "module_skills/glossary.md": "S2",
-   "module_skills/skill_agent_first_development.md": "S2",
-   "module_skills/skill_asset_containers.md": "S2",
-   "module_skills/skill_determinism.md": "S2",
-   "module_skills/skill_developer_experience_drawing.md": "S2",
-   "module_skills/skill_pre_aws_solution.md": "S2",
-   "module_skills/skill_self_explaining_naming.md": "S2",
-   "module_skills/skill_sorting_files_naming_standard.md": "S2",
    "record.py": "S1",
    "requirements.txt": "S1",
    "root": "core",
@@ -984,7 +849,7 @@ const VIEWS = {
    },
    "S2": {
     "color": "#2BD4BD",
-    "name": "2 \u00b7 Contract & skills"
+    "name": "2 \u00b7 The contract, and the picture of it"
    },
    "S3": {
     "color": "#F2B24E",
@@ -1039,33 +904,22 @@ const VIEWS = {
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
-   "REPORT_dashboard_data_minimalism.md": "doc",
-   "REPORT_pre_aws_minimalism.md": "doc",
    "docker-compose.yml": "config",
    "module_data/": "module",
-   "module_data/README_module_data.md": "doc",
    "module_data/config.py": "code",
    "module_data/download_binance.py": "code",
    "module_data/download_bybit.py": "code",
    "module_data/ingest.py": "code",
    "module_data/lean.py": "code",
-   "module_data/skills/": "module",
-   "module_data/skills/methodology_data.md": "doc",
-   "module_data/skills/skill_candle_canonicalisation.md": "doc",
    "module_data/status.py": "code",
    "module_features/": "module",
-   "module_features/README_module_features.md": "doc",
    "module_features/bars.py": "code",
    "module_features/catalogue.py": "code",
    "module_features/config.py": "code",
    "module_features/dataset.py": "code",
    "module_features/indicators.py": "code",
-   "module_features/skills/": "module",
-   "module_features/skills/methodology_features.md": "doc",
-   "module_features/skills/skill_feature_taxonomy.md": "doc",
    "module_features/status.py": "code",
    "module_ml/": "module",
-   "module_ml/README_module_ml.md": "doc",
    "module_ml/config.py": "code",
    "module_ml/dataset.py": "code",
    "module_ml/feature_set_promote.py": "code",
@@ -1073,14 +927,11 @@ const VIEWS = {
    "module_ml/hpo.py": "code",
    "module_ml/labels.py": "code",
    "module_ml/model.py": "code",
-   "module_ml/skills/": "module",
-   "module_ml/skills/methodology_ml.md": "doc",
    "module_ml/status.py": "code",
    "module_ml/strategy.py": "code",
    "module_ml/train.py": "code",
    "module_ml/validation.py": "code",
    "module_monitoring/": "module",
-   "module_monitoring/README_module_monitoring.md": "doc",
    "module_monitoring/asset.js": "code",
    "module_monitoring/config.py": "code",
    "module_monitoring/data.js": "code",
@@ -1089,9 +940,6 @@ const VIEWS = {
    "module_monitoring/page.js": "code",
    "module_monitoring/run.js": "code",
    "module_monitoring/serve.py": "code",
-   "module_monitoring/skills/": "module",
-   "module_monitoring/skills/skill_dashboard_conventions.md": "doc",
-   "module_monitoring/skills/skill_devops_panel.md": "doc",
    "module_monitoring/style.css": "code",
    "module_monitoring/sub_module_devops/": "module",
    "module_monitoring/sub_module_devops/config.py": "code",
@@ -1100,16 +948,6 @@ const VIEWS = {
    "module_monitoring/sub_module_devops/devops.js": "code",
    "module_monitoring/sub_module_devops/index.html": "code",
    "module_monitoring/sub_module_devops/serve.py": "code",
-   "module_skills/": "module",
-   "module_skills/README.md": "doc",
-   "module_skills/glossary.md": "doc",
-   "module_skills/skill_agent_first_development.md": "doc",
-   "module_skills/skill_asset_containers.md": "doc",
-   "module_skills/skill_determinism.md": "doc",
-   "module_skills/skill_developer_experience_drawing.md": "doc",
-   "module_skills/skill_pre_aws_solution.md": "doc",
-   "module_skills/skill_self_explaining_naming.md": "doc",
-   "module_skills/skill_sorting_files_naming_standard.md": "doc",
    "record.py": "code",
    "requirements.txt": "config",
    "root": "root",
@@ -1143,30 +981,6 @@ const TREE_NODES = [
   "path": "module_data/",
   "role": "module",
   "type": "folder"
- },
- {
-  "id": "module_data/skills/",
-  "path": "module_data/skills/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "id": "module_data/skills/methodology_data.md",
-  "path": "module_data/skills/methodology_data.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_data/skills/skill_candle_canonicalisation.md",
-  "path": "module_data/skills/skill_candle_canonicalisation.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_data/README_module_data.md",
-  "path": "module_data/README_module_data.md",
-  "role": "doc",
-  "type": "file"
  },
  {
   "id": "module_data/config.py",
@@ -1211,30 +1025,6 @@ const TREE_NODES = [
   "type": "folder"
  },
  {
-  "id": "module_features/skills/",
-  "path": "module_features/skills/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "id": "module_features/skills/methodology_features.md",
-  "path": "module_features/skills/methodology_features.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_features/skills/skill_feature_taxonomy.md",
-  "path": "module_features/skills/skill_feature_taxonomy.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_features/README_module_features.md",
-  "path": "module_features/README_module_features.md",
-  "role": "doc",
-  "type": "file"
- },
- {
   "id": "module_features/bars.py",
   "path": "module_features/bars.py",
   "role": "code",
@@ -1275,24 +1065,6 @@ const TREE_NODES = [
   "path": "module_ml/",
   "role": "module",
   "type": "folder"
- },
- {
-  "id": "module_ml/skills/",
-  "path": "module_ml/skills/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "id": "module_ml/skills/methodology_ml.md",
-  "path": "module_ml/skills/methodology_ml.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_ml/README_module_ml.md",
-  "path": "module_ml/README_module_ml.md",
-  "role": "doc",
-  "type": "file"
  },
  {
   "id": "module_ml/config.py",
@@ -1367,24 +1139,6 @@ const TREE_NODES = [
   "type": "folder"
  },
  {
-  "id": "module_monitoring/skills/",
-  "path": "module_monitoring/skills/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "id": "module_monitoring/skills/skill_dashboard_conventions.md",
-  "path": "module_monitoring/skills/skill_dashboard_conventions.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_monitoring/skills/skill_devops_panel.md",
-  "path": "module_monitoring/skills/skill_devops_panel.md",
-  "role": "doc",
-  "type": "file"
- },
- {
   "id": "module_monitoring/sub_module_devops/",
   "path": "module_monitoring/sub_module_devops/",
   "role": "module",
@@ -1424,12 +1178,6 @@ const TREE_NODES = [
   "id": "module_monitoring/sub_module_devops/serve.py",
   "path": "module_monitoring/sub_module_devops/serve.py",
   "role": "code",
-  "type": "file"
- },
- {
-  "id": "module_monitoring/README_module_monitoring.md",
-  "path": "module_monitoring/README_module_monitoring.md",
-  "role": "doc",
   "type": "file"
  },
  {
@@ -1484,66 +1232,6 @@ const TREE_NODES = [
   "id": "module_monitoring/style.css",
   "path": "module_monitoring/style.css",
   "role": "code",
-  "type": "file"
- },
- {
-  "id": "module_skills/",
-  "path": "module_skills/",
-  "role": "module",
-  "type": "folder"
- },
- {
-  "id": "module_skills/README.md",
-  "path": "module_skills/README.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/glossary.md",
-  "path": "module_skills/glossary.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_agent_first_development.md",
-  "path": "module_skills/skill_agent_first_development.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_asset_containers.md",
-  "path": "module_skills/skill_asset_containers.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_determinism.md",
-  "path": "module_skills/skill_determinism.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_developer_experience_drawing.md",
-  "path": "module_skills/skill_developer_experience_drawing.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_pre_aws_solution.md",
-  "path": "module_skills/skill_pre_aws_solution.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_self_explaining_naming.md",
-  "path": "module_skills/skill_self_explaining_naming.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "module_skills/skill_sorting_files_naming_standard.md",
-  "path": "module_skills/skill_sorting_files_naming_standard.md",
-  "role": "doc",
   "type": "file"
  },
  {
@@ -1637,18 +1325,6 @@ const TREE_NODES = [
   "type": "file"
  },
  {
-  "id": "REPORT_dashboard_data_minimalism.md",
-  "path": "REPORT_dashboard_data_minimalism.md",
-  "role": "doc",
-  "type": "file"
- },
- {
-  "id": "REPORT_pre_aws_minimalism.md",
-  "path": "REPORT_pre_aws_minimalism.md",
-  "role": "doc",
-  "type": "file"
- },
- {
   "id": "docker-compose.yml",
   "path": "docker-compose.yml",
   "role": "config",
@@ -1690,12 +1366,6 @@ const TREE_EDGES = [
   "from": "root",
   "thick": true,
   "to": "module_monitoring/",
-  "type": "tree"
- },
- {
-  "from": "root",
-  "thick": true,
-  "to": "module_skills/",
   "type": "tree"
  },
  {
@@ -1743,18 +1413,6 @@ const TREE_EDGES = [
  {
   "from": "root",
   "thick": false,
-  "to": "REPORT_dashboard_data_minimalism.md",
-  "type": "tree"
- },
- {
-  "from": "root",
-  "thick": false,
-  "to": "REPORT_pre_aws_minimalism.md",
-  "type": "tree"
- },
- {
-  "from": "root",
-  "thick": false,
   "to": "docker-compose.yml",
   "type": "tree"
  },
@@ -1768,18 +1426,6 @@ const TREE_EDGES = [
   "from": "root",
   "thick": false,
   "to": "requirements.txt",
-  "type": "tree"
- },
- {
-  "from": "module_data/",
-  "thick": true,
-  "to": "module_data/skills/",
-  "type": "tree"
- },
- {
-  "from": "module_data/",
-  "thick": false,
-  "to": "module_data/README_module_data.md",
   "type": "tree"
  },
  {
@@ -1819,30 +1465,6 @@ const TREE_EDGES = [
   "type": "tree"
  },
  {
-  "from": "module_data/skills/",
-  "thick": false,
-  "to": "module_data/skills/methodology_data.md",
-  "type": "tree"
- },
- {
-  "from": "module_data/skills/",
-  "thick": false,
-  "to": "module_data/skills/skill_candle_canonicalisation.md",
-  "type": "tree"
- },
- {
-  "from": "module_features/",
-  "thick": true,
-  "to": "module_features/skills/",
-  "type": "tree"
- },
- {
-  "from": "module_features/",
-  "thick": false,
-  "to": "module_features/README_module_features.md",
-  "type": "tree"
- },
- {
   "from": "module_features/",
   "thick": false,
   "to": "module_features/bars.py",
@@ -1876,30 +1498,6 @@ const TREE_EDGES = [
   "from": "module_features/",
   "thick": false,
   "to": "module_features/status.py",
-  "type": "tree"
- },
- {
-  "from": "module_features/skills/",
-  "thick": false,
-  "to": "module_features/skills/methodology_features.md",
-  "type": "tree"
- },
- {
-  "from": "module_features/skills/",
-  "thick": false,
-  "to": "module_features/skills/skill_feature_taxonomy.md",
-  "type": "tree"
- },
- {
-  "from": "module_ml/",
-  "thick": true,
-  "to": "module_ml/skills/",
-  "type": "tree"
- },
- {
-  "from": "module_ml/",
-  "thick": false,
-  "to": "module_ml/README_module_ml.md",
   "type": "tree"
  },
  {
@@ -1969,27 +1567,9 @@ const TREE_EDGES = [
   "type": "tree"
  },
  {
-  "from": "module_ml/skills/",
-  "thick": false,
-  "to": "module_ml/skills/methodology_ml.md",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/",
-  "thick": true,
-  "to": "module_monitoring/skills/",
-  "type": "tree"
- },
- {
   "from": "module_monitoring/",
   "thick": true,
   "to": "module_monitoring/sub_module_devops/",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/",
-  "thick": false,
-  "to": "module_monitoring/README_module_monitoring.md",
   "type": "tree"
  },
  {
@@ -2047,18 +1627,6 @@ const TREE_EDGES = [
   "type": "tree"
  },
  {
-  "from": "module_monitoring/skills/",
-  "thick": false,
-  "to": "module_monitoring/skills/skill_dashboard_conventions.md",
-  "type": "tree"
- },
- {
-  "from": "module_monitoring/skills/",
-  "thick": false,
-  "to": "module_monitoring/skills/skill_devops_panel.md",
-  "type": "tree"
- },
- {
   "from": "module_monitoring/sub_module_devops/",
   "thick": false,
   "to": "module_monitoring/sub_module_devops/config.py",
@@ -2092,60 +1660,6 @@ const TREE_EDGES = [
   "from": "module_monitoring/sub_module_devops/",
   "thick": false,
   "to": "module_monitoring/sub_module_devops/serve.py",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/README.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/glossary.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_agent_first_development.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_asset_containers.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_determinism.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_developer_experience_drawing.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_pre_aws_solution.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_self_explaining_naming.md",
-  "type": "tree"
- },
- {
-  "from": "module_skills/",
-  "thick": false,
-  "to": "module_skills/skill_sorting_files_naming_standard.md",
   "type": "tree"
  },
  {
