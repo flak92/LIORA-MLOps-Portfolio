@@ -16,8 +16,7 @@ directly at `/sub_module_dx/files_and_folders_visualisation.html`. The drawing i
 and `docker-compose.yml` mounts it read-only below the dashboard's web root, so nothing in `serve.py`
 changes and `module_monitoring` holds no code of it.
 
-Nodes are the files and folders `git ls-files --recurse-submodules` reports — a submodule's files as
-its own; an uninitialised submodule is an error naming the fix — and, in the deployment view, the primitives
+Nodes are the files and folders `git ls-files` reports and, in the deployment view, the primitives
 the mapping table names; edges are parent → child and, between primitives, the flows the view
 declares — nothing else. Standard library plus the `git` binary — there is nothing to install. The
 page holds two views of that one tree, flipped by one control: the tree's nodes and edges are the
@@ -55,8 +54,8 @@ way edge weight does — not a knob.
 | `deployment.<key>` | The same key, for the deployment view. A key the block leaves out is the top level's; `roles`, `descriptions` and `camera` layer over the top level's entry by entry, so the block says only the roles, the sentences and the camera that change, and every other key it names replaces the top level's whole. Its `camera` is scanned for its own layout. |
 | `primitives` | Id → `role`, `name`, optional `absent`. A primitive is a node a view declares for a row of the mapping table no tracked path is. It joins the view's nodes beside the tree, so `story_map` may name its id (exact match), a story may make it its `hub`, `place` may seat it and `descriptions` may give it a sentence; an unmapped id joins `default_story` like a path. `role` picks the icon from one closed set — registry, instance, container, store, database, state_machine, event_rule, log_streams, front, secret — and an unknown role is an error naming it. `absent: true` draws a dashed outline for a primitive nothing local answers to. An island seats its hub first, then its primitives in the order listed, then its tracked roots. The name's head — before the dash or the parenthesis — is the canvas label, so it is short; the rest is the panel's. The development view declares none. |
 | `notice` | The words a view shows in the top right, in red capitals, one line per newline — what the picture is, in the presenter's words; empty shows nothing. The development view has none; the deployment view says its mapping is in progress, and that the tree is shaped for the move. |
-| `flows` | List of `{from, to}` over primitive ids of the same view. Each is one dashed edge with an arrowhead at `to`, coloured by the island it leaves, rising with its length (§ Two views of one tree). An endpoint that is not a node of the view is an error. |
-| `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>`, read from `remote.origin.url`, and the tab title ends with the repository name. Off, the page names no repository, so the same bytes are fresh in every clone. |
+| `flows` | List of `{from, to}` over primitive ids of the same view. Each is one dashed edge with an arrowhead at `to`, coloured by the island it leaves, rising with its length (§ Two views of one tree). An endpoint that is not a primitive this view declares — a tracked path included — is an error, and so is a flow that leaves and arrives at the same primitive. |
+| `header.eyebrow_from_git` | When true, the small line above the title is `<owner> / <repo>`, read from `remote.origin.url`, and the tab title ends with the repository name. Off, the header names no repository — the eyebrow is empty and the tab title is the title alone — so the same bytes are fresh in every clone. |
 | `header.title` | The heading and the browser tab title; with `eyebrow_from_git` on, the repository name follows it in the tab. |
 | `header.subtitle` | The line under the heading. May use `{files}`, `{modules}`, `{assets}`, `{nodes}`, `{edges}` — tracked files that survived `exclude`, top-level folders, aggregated folders, and the tree's totals (a view's primitives and flows are not counted). Any other placeholder is an error naming it. |
 
@@ -179,7 +178,7 @@ stops short of its target by `FLOW_TIP_GAP`, a hub's halo radius, so the arrowhe
 
 ## Determinism
 
-Same commit, same bytes. Paths come from `git ls-files -z --recurse-submodules` in git's byte order; children sort folders
+Same commit, same bytes. Paths come from `git ls-files -z` in git's byte order; children sort folders
 first, then by byte; every emitted literal is JSON with sorted keys and ASCII escapes; the file is
 written with `\n` endings; and the only date in the output is a committer date.
 

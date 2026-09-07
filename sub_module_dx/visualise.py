@@ -1,13 +1,13 @@
 """Draw the tracked git tree into files_and_folders_visualisation.html, beside this file.
 
 The picture is not a drawing of the repository; it is the repository. Nodes are
-the files and folders `git ls-files --recurse-submodules` reports and, in a view, the primitives it
+the files and folders `git ls-files` reports and, in a view, the primitives it
 declares beside them; edges are parent -> child, and the flows a view draws
 between its primitives; the whole structure is spliced into the one marked
 region of files_and_folders_visualisation_template.html. Everything outside that region is
 hand-written rendering code this module never touches.
 
-    git ls-files --recurse-submodules
+    git ls-files
       -> exclude globs
       -> tree, folders inferred from the paths
       -> aggregate rules collapse a matching folder into a single node
@@ -65,21 +65,12 @@ def _git(*args: str) -> str:
 
 
 def load_tracked_paths() -> list[str]:
-    """Every tracked path, in git's own byte order — a submodule's files as its own.
+    """Every tracked path, in git's own byte order.
 
     -z rather than plain output: git quotes and escapes unusual names otherwise,
-    and a quoted path would enter the tree as a different file. --recurse-submodules,
-    because a superproject's own listing shows a submodule as one gitlink and not as
-    its files; an uninitialised submodule would then draw as an empty folder, so it
-    is an error naming the fix instead.
+    and a quoted path would enter the tree as a different file.
     """
-    for line in _git("submodule", "status", "--recursive").splitlines():
-        if line.startswith("-"):
-            raise VisualisationError(
-                f"submodule {line.split()[1]} is not initialised, so its files cannot be drawn.\n"
-                f"  fix: git submodule update --init"
-            )
-    raw = _git("ls-files", "-z", "--recurse-submodules")
+    raw = _git("ls-files", "-z")
     paths = [p for p in raw.split("\0") if p]
     return sorted(paths, key=lambda p: p.encode("utf-8"))
 

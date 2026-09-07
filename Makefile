@@ -2,7 +2,7 @@
 # else the first free port from 8900 upward — another project on this host, or a checkout of LIORA run under
 # COMPOSE_PROJECT_NAME=, may hold 8900
 PORT ?= $(shell p=$$(docker compose port dashboard 8900 2>/dev/null | cut -d: -f2); \
-                if [ -z "$$p" ]; then p=8900; while ss -Hltn "sport = :$$p" | grep -q .; do p=$$((p+1)); done; fi; \
+                if [ -z "$$p" ]; then p=8900; while python3 -c "import socket, sys; sys.exit(0 if socket.socket().connect_ex(('127.0.0.1', $$p)) == 0 else 1)"; do p=$$((p+1)); done; fi; \
                 echo $$p)
 # measured once per make: the mapping and the page ask one port
 PORT := $(PORT)
@@ -110,11 +110,11 @@ ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset i
 # the detached twin: the same search in a tmux session that outlives the terminal, started in this checkout, one asset per
 # session; the session ends with the search — the ledger and the page are the record. A plain make, not $(MAKE): the
 # session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs even under -n
-tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
+tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun after it ends resumes; ASSET= is required
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make ml-feature-set-search ASSET=$(ASSET)'
+	@tmux has-session -t $(FEATURE_SET_SEARCH_SESSION) 2>/dev/null && echo '$(FEATURE_SET_SEARCH_SESSION) is already running — tmux attach -t $(FEATURE_SET_SEARCH_SESSION)' || tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make ml-feature-set-search ASSET=$(ASSET)'
 
-# the presentation switch — the one alias pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
+# the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page
 on: build        ## the presentation switch: the dashboard, the DevOps panel and the asset residents up, the page's address printed and opened
 	$(COMPOSE) up -d dashboard devops $(ASSET_SERVICE_LIST)

@@ -1,12 +1,7 @@
-# AGENTS — the contract of the project
+# AGENTS — the contract of this repository
 
-The governing contract for every change, human or agent, in each of the five
-repositories of LIORA: the four module repositories and the Orchestration
-repository that pins them as submodules and runs them. This file is written
-once, in `LIORA-MLOps-Portfolio-Orchestration`, and travels into every module
-repository as a read-only copy stamped by `module_skills/distributed_from.md`
-(§ The default choice); wherever you read it, the source is the Orchestration
-repository. Read the project in this order: **AGENTS.md → module names →
+The governing contract for every change, human or agent. Read the project in
+this order: **AGENTS.md → module names →
 `README_module_<name>.md` → the module's own `skills/` → code**, with
 `module_skills/` beside them for the rules that cross modules, indexed by
 `module_skills/README.md`. (A `README.md` is general information, not part of
@@ -20,11 +15,10 @@ the working path.) If a change conflicts with this file, the change is wrong.
 - **Minimalism.** Every line, file, module and dependency has a concrete
   purpose. If its purpose cannot be named, it goes.
 - **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
-  is `python:3.12-slim`, one image per module repository. A library is added
+  is `python:3.12-slim`, one image for the tree. A library is added
   only when the standard library and the current stack — `duckdb`, `numpy`,
-  `optuna`, `xgboost-cpu` — cannot do the job. Each module repository's
-  `requirements.txt` declares its own direct dependencies only, pinned to the
-  versions the other three pin.
+  `optuna`, `xgboost-cpu` — cannot do the job. `requirements.txt` declares the
+  project's direct dependencies only, one pinned version each.
 - **KISS / YAGNI / DRY / SOLID.** The simplest correct implementation, built
   for the need that exists, never for a hypothetical one. One responsibility
   per module; repeated logic becomes one function, not three copies.
@@ -68,43 +62,32 @@ the working path.) If a change conflicts with this file, the change is wrong.
 ## Architecture shape
 
 `module_*` is a top-level project responsibility; `store_*` is persisted or
-generated state; a repository is one of the five the project is made of. Four
-module repositories — one Python package `module_<domain>` each, in the order
-the data moves through them — and the Orchestration repository, which carries
-no dataflow:
+generated state. Four modules — one Python package `module_<domain>` each, in
+the order the data moves through them — and, around them, the launcher that runs
+them and carries no dataflow of its own:
 
 ```
-LIORA-MLOps-Portfolio-module-data        module_data/        sources → normalised raw 1m → one canonical DuckDB per asset
-LIORA-MLOps-Portfolio-module-features    module_features/    canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
-LIORA-MLOps-Portfolio-module-ml          module_ml/          the catalogue and the canonical path → X, Y → search → model → research simulation
-LIORA-MLOps-Portfolio-module-monitoring  module_monitoring/  presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
-LIORA-MLOps-Portfolio-Orchestration      the workspace       the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the four stores, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills and the index of every module's own
+module_data/         sources → normalised raw 1m → one canonical DuckDB per asset
+module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
+module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
+module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
+the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the four stores, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills and the index of every module's own
 ```
 
-A module repository holds its package at its root — `module_<domain>/`, the
-package unchanged — beside its own `Dockerfile`, `requirements.txt`, `Makefile`
-(a venv, for the module alone), `README.md`, and the copies of the canon. The
-Orchestration repository pins the four as git submodules, checked out as
-`901-module_data/`, `902-module_features/`, `903-module_ml/`,
-`904-module_monitoring/`; a clone of Orchestration with `--recurse-submodules` is
-the workspace, and `make all` in it runs the chain. A path written
-`module_<domain>/…` in this contract or in a skill names the package wherever it
-is checked out — at the root of its own repository, and under
-`<9NN>-module_<domain>/` in the workspace — so the same sentence is true in the
-canon and in every copy; a hyperlink from one repository into another is an
-absolute GitHub URL, carried by the index `module_skills/README.md` and, once
-per repository, by the Orchestration `README.md` § The repositories — every
-other reference is a path in backticks.
+Each module holds its package, its orientation `README_module_<domain>.md` and
+its own `skills/` under one directory; nothing above it belongs to one module
+alone. `make all` from a fresh clone runs the chain. A reference is a path in
+backticks, always.
 
 `module_skills` never participates in runtime imports or dataflow. **No module
-imports another.** What crossed a module boundary as an import in the monorepo
-crosses it now as a file in a store — the four `STORE_*_DIR` the launcher names
+imports another.** What would cross a module boundary as an import crosses it as a
+file in a store instead — the four `STORE_*_DIR` the launcher names
 (`module_skills/glossary.md` § Stores), the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
 three snapshots each computational module writes about itself and the dashboard
 serves, the run record `record.py` writes around every stage — or as a copy
 registered in `module_skills/glossary.md` § Twice by extraction, identical to the
-byte on every side. The basket is the launcher's: `TICKERS` in the Orchestration
+byte on every side. The basket is the launcher's: `TICKERS` in the
 `Makefile`, and one `asset-<ticker>` service per ticker in its
 `docker-compose.yml`; every stage is told its assets by `--tickers` and defines
 none. The asset containers are services of that compose file, one per ticker of
@@ -123,7 +106,7 @@ Each `module_*` is an **extracted bounded context**: its domain rules, its
 orientation and its code sit together in its own repository, so its meaning is
 never reconstructed from documentation that stayed elsewhere. It builds its own
 image from its own tree alone (`docker build` in the repository, outside any
-workspace), runs standalone against the four stores its `Makefile` is pointed at
+workspace), runs standalone against the stores its `Makefile` is pointed at
 (`make setup`, then `make <module>-<stage> ASSET=<TICKER>` in a venv), and knows
 nothing of the others: they share the store contract, the files it names and the
 copies the register lists, and nothing between them speaks over a network.
@@ -144,9 +127,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_features`, `module_ml`) measures its own domain state in `status.py`,
   and `module_monitoring` presents their snapshots;
 - **taxonomic ordering — the category token comes first, so siblings sort
-  together.** A listing is read by eye before it is parsed: in the workspace
-  `901-module_data`, `902-module_features`, `903-module_ml`,
-  `904-module_monitoring` — the chain in its own order, the number being the
+  together.** A listing is read by eye before it is parsed: at the root
+  `module_data`, `module_features`, `module_ml`,
+  `module_monitoring` — the chain in its own order, the
   module's position in the chain at the time it was seated; a new module takes
   the next free number and nothing is ever renumbered — then `module_skills`
   and `sub_module_dx`, then `store_assets_artifacts`, `store_raw_1m`,
@@ -168,8 +151,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   begins with the exact canonical root token, so the name predicts the
   directory it names — on the host `STORE_RAW_1M_DIR` → `store_raw_1m/`,
   `STORE_RUN_RECORDS_DIR` → `store_run_records/`, in a container the same
-  variables → `/store/raw_1m`, `/store/run_records`; `MODULE_MONITORING_DIR` →
-  `module_monitoring/`;
+  variables → `/store/raw_1m`, `/store/run_records`;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
 
@@ -198,17 +180,19 @@ and built nowhere.
   service definition is named for a ticker — `asset-<ticker>` is one instance
   of the asset container, and a ticker may name a convenience alias in the
   Makefile, with its sunset note, never a target another file depends on; a new
-  asset is one line in the Orchestration `Makefile`'s `TICKERS` and one
+  asset is one line in the `Makefile`'s `TICKERS` and one
   `asset-<ticker>` block in its `docker-compose.yml`, and nothing in any module.
 - **Compute owns no state.** A stage reads a store, writes a store and exits; it
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
   no resident peer.
 - **Storage is separate from compute.** Pipeline state lives in the four stores
-  — the `store_*` roots of the workspace, mounted into every container as
-  `/store/<content>` and named to every `config.py` by its `STORE_*_DIR` — never
-  inside a container and never inside a repository's tree; each image carries
-  its module's code and nothing of the state, the mounts carry the state and
-  nothing of the code, and the three snapshots are the one store that is tracked.
+  — the `store_*` roots, named to every `config.py` by its
+  `STORE_*_DIR` and mounted at `/store/<content>` into each service that touches
+  them, read-only where a service only reads
+  (`module_skills/skill_asset_containers.md` § The topology) — never
+  inside a container and never inside a repository's tree; the image carries the
+  pins and nothing else, the code and the state arrive as mounts, and the three
+  snapshots are the one store that is tracked.
 - **Modules are built by ownership and lifetime.** A function sits beside the
   functions that write the same state and live as long as it does, never beside
   what happened to be written with it; every object is classified before it is
@@ -242,7 +226,7 @@ Cloud proper nouns are external vocabulary. Apart from the repository's own word
 *Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
 file stem it registers, the skill's and the report's — they are spoken only
 where the stance is stated, reviewed or a local object is seated: this section
-and § Skills absent here, described, the Orchestration `README.md` § Architectural direction, the
+and § Skills absent here, described, `README.md` § Architectural direction, the
 skill's prose, the column *the same responsibility elsewhere* of its mapping
 table, `REPORT_pre_aws_minimalism.md` — the seats reviewed for excess — and the
 one picture of that column — the deployment view of the developer-experience drawing, the
@@ -287,11 +271,9 @@ addressed by different tools and never appear in one listing.
 **Derived, never drafted.** A derived artifact is generated from source and
 config and never hand-edited: `<TICKER>_parameters.json`,
 `<TICKER>_feature_set_search.json`, `<TICKER>_README.md`, `<TICKER>_catalogue.json`,
-the three snapshots, the developer-experience drawing
-(`sub_module_dx/files_and_folders_visualisation.html`) and, in a module
-repository, the copies of this contract and of `module_skills/` with their stamp
-`module_skills/distributed_from.md`, written by `make skills-distribute` alone. A
-hand edit to one is a violation.
+the three snapshots and the developer-experience drawing
+(`sub_module_dx/files_and_folders_visualisation.html`). A hand edit to one is a
+violation.
 
 **Rule-derived structure over repeated project knowledge.** When a family —
 assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
@@ -329,14 +311,12 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | in Orchestration, `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`, `dx-update`, `skills-status`, `skills-distribute`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note; in a module repository, the same `<module>-<stage>` grammar for its own stages, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a `docker`, `compose` or `tmux` word in a module repository's Makefile |
-| directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/`; in the workspace a module repository is checked out as `<9NN>-module_<domain>/`, the number the module's position in the chain at the time it was seated — a new module takes the next free number and nothing is ever renumbered | `module_*`, `store_*`, `store_raw_1m`, `901-module_data` … `904-module_monitoring` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, a renumbered checkout, `repository_module_<domain>/` |
-| repositories | `LIORA-MLOps-Portfolio-<Role>`, the role `Orchestration` or `module-<domain>` — the same `module` + `<domain>` tokens as the package and the checkout, the separator the scope's own | `LIORA-MLOps-Portfolio-Orchestration`, `LIORA-MLOps-Portfolio-module-data` … `LIORA-MLOps-Portfolio-module-monitoring` | a ticker in a repository name; `common`, `shared`, `lib`; a repository per asset; a number in a GitHub name |
-| images | `liora-module-<domain>`, one per module repository, built from its `Dockerfile` alone | `liora-module-data`, `liora-module-features`, `liora-module-ml`, `liora-module-monitoring` | compose's `<project>-<service>` default, an image per service, an image per asset, one image for every module |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`, `dx-update`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
+| directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` at the time it was seated — a new module takes the next free number and nothing is ever renumbered | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, a renumbered checkout, `repository_module_<domain>/` |
+| images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, one image for every module |
 | compose services | a runtime role, never an image or a ticker in code — the runners `data`, `features`, `ml`, the residents `dashboard`, `asset-<ticker>`, `devops` | `ml`, `asset-btc` | `pipeline`, a service named for an image or a tool, a service per asset stage |
 | store paths | `store_<content>/` on the host, `/store/<content>` inside a container, `STORE_<CONTENT>_DIR` the variable that names the one to the other | `store_raw_1m/`, `/store/raw_1m`, `STORE_RAW_1M_DIR` | a path derived from `__file__`, `/app/store_*` as an address, a store literal at the point of use |
-| the distribution stamp | `module_skills/distributed_from.md`, one line — `LIORA-MLOps-Portfolio-Orchestration@<commit> — read-only copies; edit at the source` — written by `make skills-distribute` | — | a version number, a date, a hand-written stamp, an edited copy |
-| a module's own skills | `module_<name>/skills/`, in the module's own repository, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both; a module's rule in the Orchestration repository |
+| a module's own skills | `module_<name>/skills/`, holding every rule about that module and nothing else | `module_data/skills/`, `module_features/skills/`, `module_ml/skills/`, `module_monitoring/skills/` | a single module's rule kept in `module_skills/`; a second copy of one rule in both; a module's rule in `module_skills/` |
 | a module's orientation | `README_module_<name>.md`, the name derived from the module directory it sits in | `module_data/README_module_data.md`, `module_features/README_module_features.md`, `module_ml/README_module_ml.md`, `module_monitoring/README_module_monitoring.md` | `module_data/README.md`; an orientation file that restates a skill |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (`module_skills/skill_sorting_files_naming_standard.md`) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
@@ -375,7 +355,7 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`module_data/lean.py`), the Binance and Bybit REST parameters
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
 (`module_ml/model.py`, `module_ml/hpo.py`), numpy (every module that computes),
-argparse (`module_data/config.py`, `module_data/status.py`,
+argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/config.py` — the one parser, twice by extraction —,
 `module_ml/feature_set_promote.py`, `sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
 the drawing's template), docker compose (`Makefile`,
@@ -399,10 +379,11 @@ rule and the register's `never` columns the synonyms bound to one concept; this
 list gathers the words bound to neither, and repeats the few the register
 already binds that are worth steering away from on sight.
 
-- **directories and path segments:** `src`, `core`, `lib`, `common`, `utils`,
+- **directories and path segments** (the drawing's node type `core` is neither, and is
+  registered in `module_skills/glossary.md` § Developer experience)**:** `src`, `core`, `lib`, `common`, `utils`,
   `helpers`, `manager`, `service`, `assets`, `artifacts`, `data`, `db`,
   `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder;
-  `repository_module_<domain>`, `submodule_`, a `<9NN>` number reused or
+  `repository_module_<domain>`, a numbered package directory,
   renumbered
 - **module and file stems:** `module_compose`, `module_docker`,
   `module_capsule`, `module_asset`, `module_viz`; `dashboard.py`, `proxy.py`,
@@ -412,7 +393,11 @@ already binds that are worth steering away from on sight.
   `processor`; `common`, `shared`, `lib` as a repository or a package for what
   two modules share
 - **function verbs:** `read_`, `probe_`, `spool_`, `iter_`, `run_`, `compute_`,
-  `_factory`; in JavaScript `load`, `poll`
+  `_factory`; in JavaScript `load`, `poll`. The stem is rejected as a **verb**: a
+  function named for a domain noun the register carries is not one, which is why
+  `run_dir()` and `run_payload()` stand — a run is the object of
+  `module_skills/glossary.md` § Run record — and why `write_venue_spool()` stands, its
+  verb being `write` and its spool the CSV the register names
 - **key names:** bare `lag`, `age`, `usage` — without the subject and the unit —
   `mem`, `cpu_pct`, a bare duration for how long a container has been up, a
   hash, `weight` as a Y column, `_ts` on a UTC string
@@ -426,13 +411,15 @@ already binds that are worth steering away from on sight.
   which publishes no port (`module_skills/skill_asset_containers.md`); `8900` as the
   page's address in a document, a command or a comment — the host port is measured, the
   page's address the one `make on` prints (`module_skills/skill_asset_containers.md`
-  § The topology); `TODO`, `FIXME`,
+  § The topology). `CONTAINER_PORT` is a different fact and may be written as itself: the
+  port every service listens on inside its own namespace, and the left-hand side of a
+  reader's own forward; `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
   generator, framework; `authority`, `single source of truth`; `one-shot` for a
-  one-off; `cloud-ready`, `AWS-ready`, `cloud-native`; `s3://` in a path
-  constant, an adapter for a cloud that is not there; a `docker` or `compose`
-  word in a module repository's Makefile, a compose file in a module
-  repository, a hand-edited copy of the canon, a submodule on a detached HEAD
+  one-off — an external API's own parameter spelling is that API's, not ours
+  (§ Canonical vocabulary, the external-vocabulary boundary); `cloud-ready`, `AWS-ready`, `cloud-native`; `s3://` in a path
+  constant, an adapter for a cloud that is not there; a second compose file, a
+  second Makefile, a hand-edited derived artifact
 
 ## The default choice
 
@@ -440,29 +427,18 @@ For every new change, prefer **the smallest, most modular and most obvious
 implementation that correctly closes the full pipeline.**
 
 **A skill belongs to the module whose responsibility it describes.** A rule
-about one module lives in `module_<name>/skills/`, in that module's repository;
-a rule that crosses modules or governs the project lives in `module_skills/` of
-the Orchestration repository — the canon; a module's orientation is its
-`README_module_<name>.md`. Each is written exactly once, the location follows
-ownership, and there is no second copy to drift — with one named exception: the
-canon is **distributed**. Every module repository carries a read-only copy of
-this contract and of `module_skills/`, so that a module repository read alone
-still carries the rules it answers to; the copy is stamped by
-`module_skills/distributed_from.md` with the Orchestration commit it was taken
-from, `make skills-status` in the workspace reports any copy that differs from
-the canon, `make skills-distribute` overwrites every copy from the canon and
-rewrites the stamp, and a copy is never edited by hand — a change to a rule is
-made at the source, distributed, committed in each module repository as *Take
-the distributed rules from LIORA-MLOps-Portfolio-Orchestration@<commit>*, and
-pinned. `module_skills/README.md` is the index — it links to every skill,
-cross-cutting and module-owned alike, the module-owned ones by absolute GitHub
-URL, and restates none of them.
+about one module lives in `module_<name>/skills/`; a rule that crosses modules or
+governs the project lives in `module_skills/` — the canon; a module's orientation
+is its `README_module_<name>.md`. Each is written exactly once, the location
+follows ownership, and there is no second copy to drift.
+`module_skills/README.md` is the index — it links to every skill, cross-cutting
+and module-owned alike, and restates none of them.
 
 `module_skills/skill_asset_containers.md` is the worked example of the cross-cutting
-boundary: four images, the three runner services and `asset-<ticker>`, the Makefile
-fan-out, the ceilings and the store mounts are a contract between the
-infrastructure and all four runtime modules at once, so it belongs to none of
-them and stays in the canon.
+boundary: the one image, the six services — the three runners, `asset-<ticker>`, `dashboard`
+and `devops` — the Makefile fan-out, the ceilings and the store mounts each service is given
+are a contract between the infrastructure and all four runtime modules at once, so it belongs
+to none of them and stays in the canon.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
 the owner of its subject, with its own `config.py`, its own `main()` and no
@@ -480,69 +456,55 @@ either and `module_monitoring` holds no code of it. `sub_module_*` does not ente
 the directory grammar above: two occurrences are a coincidence, and the third one
 mints it or nothing does.
 
-## The split — what holds five repositories together
+## The shape — what holds the project together
 
-The project was one repository, `LIORA-MLOps-Portfolio`, until the tag
-`monorepo-split-ready`; its `main` ends with the boundary refactor the split was
-cut from and a README banner naming Orchestration as its successor, and the tag
-`monorepo-baseline` marks the tree whose nine BTC artifacts every later commit
-reproduces byte for byte. What the split added is exactly this — an image per
-module, the stores explicit and outside compute, the orchestration outside the
-modules, the contracts between modules as files, the asset as a parameter, the
-recorder measuring what a stage wrote — and nothing of a cloud
-(`module_skills/skill_pre_aws_solution.md` § What the split added, and what it
-did not). The conditions below hold at every commit of Orchestration; a change
-that breaks one is wrong.
+The shape is four modules and a launcher: one image, the stores explicit and
+outside compute, the orchestration outside the modules, the contracts between
+modules as files, the asset as a parameter, the recorder measuring what a stage
+wrote — and nothing of a cloud
+(`module_skills/skill_pre_aws_solution.md` § What the shape holds, and what it
+does not). The conditions below hold at every commit; a change that breaks one
+is wrong.
 
 | # | holds |
 |---|---|
-| D01 | Orchestration holds no data, feature or ML logic: its only Python is `record.py` and `sub_module_dx/`, both describing the assembled project |
-| D02 | each module repository carries its own `Dockerfile` |
-| D03 | each module repository carries its own `requirements.txt` — its direct dependencies only, pinned to the versions the other three pin |
-| D04 | each image builds from its repository alone, outside any workspace |
-| D05 | `git grep "from module_"` in a module repository finds only its own package |
-| D06 | a module's skills live in that module's repository and nowhere else |
-| D07 | the cross-cutting canon — this contract and `module_skills/` — is written only in Orchestration |
-| D08 | every copy of the canon is stamped by `module_skills/distributed_from.md` naming an Orchestration commit |
-| D09 | `make skills-status` reports a copy that differs from the canon, and is silent when none does |
-| D10 | `make skills-distribute` overwrites every copy from the canon; nothing else writes one |
-| D11 | the four gitlinks are pinned: `git submodule status` shows no `+`, `-` or `U` |
-| D12 | a fresh `git clone --recurse-submodules` followed by `make all` and `make on` is a working project |
-| D13 | one `docker-compose.yml`, Orchestration's, carries the whole topology; no module repository has one |
-| D14 | one `Makefile`, Orchestration's, carries the stage order and the fan-out; a module repository's Makefile names no docker, compose or tmux |
-| D15 | no module writes into another's source tree: what a stage writes lands in a store |
-| D16 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never a repository, an image or a service definition of its own |
-| D17 | neither the drawing nor the panel is a repository: `sub_module_dx/` is Orchestration's, `module_monitoring/sub_module_devops/` the monitoring module's |
-| D18 | artifact names and keys are the monorepo's, with the registered exceptions: `<TICKER>_catalogue.json`, the one new file; the `catalogue` block, moved whole from `ml_status.json` to `features_status.json`, beside the one new key `assets[].row_count_by_timeframe`; the `ticker` key in every row of `data_status.json` |
-| D19 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
-| D20 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte (the Orchestration `README.md` § Parity) |
-| D21 | zero cloud mechanisms and zero new dependencies: the four pins are the monorepo's |
-| D22 | `features_status.json` is written by `module_features.status` |
-| D23 | every module repository's `README.md` carries the rows of `module_skills/glossary.md` § Twice by extraction that name it |
-| D24 | the old repository carries the tags `monorepo-baseline` and `monorepo-split-ready` |
-| D25 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the three snapshots are tracked in Orchestration |
-| D26 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
-| D27 | the old repository's `README.md` opens with the banner naming Orchestration as its successor |
+| D01 | the root holds no data, feature or ML logic: its only Python is `record.py` and `sub_module_dx/`, both describing the assembled project |
+| D02 | `git grep "from module_"` inside a module package finds only that package: no module imports another |
+| D03 | a module's skills live under that module and nowhere else; a rule that crosses modules lives in `module_skills/` |
+| D04 | a fresh `git clone` followed by `make all` and `make on` is a working project |
+| D05 | one `docker-compose.yml` carries the whole topology, and one `Makefile` the stage order and the fan-out |
+| D06 | no module writes into another's source tree: what a stage writes lands in a store |
+| D07 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never an image or a service definition of its own |
+| D08 | neither the drawing nor the panel is a module: `sub_module_dx/` is the launcher's, `module_monitoring/sub_module_devops/` the monitoring module's |
+| D09 | artifact names and keys move only with the register: every key of every payload has a row in `module_skills/glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe`, the `ticker` key in every row of `data_status.json`, and that snapshot's own measurement set — which `REPORT_dashboard_data_minimalism.md` argues field by field — are each registered there |
+| D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
+| D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte against the reference list `README.md` § Parity names. A change that reshapes a snapshot re-bases that snapshot's line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
+| D12 | zero cloud mechanisms and zero new dependencies: the four pins are the project's |
+| D13 | `features_status.json` is written by `module_features.status` |
+| D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
+| D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the three snapshots are tracked, so a fresh clone opens on real numbers |
+| D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
 
 ## Skills absent here, described
 
 Skills the Pre-AWS seats imply and this tree does not hold: each placed by
 ownership as § The default choice places every skill, described today where its
-last column says, and written when its one condition holds. Two rows the split
+last column says, and written when its one condition holds. Two rows this shape
 answered are no longer here: the status prefix — the three snapshots live in
 `store_status/`, the one tracked store (`module_skills/glossary.md` § Stores) —
-and the image contents — each module repository's `Dockerfile` copies its
-package, and the mounts carry the four stores — and, on `dashboard`, the drawing
-read-only (`module_skills/skill_asset_containers.md` § The topology).
+and the image contents — the `Dockerfile` carries the pins and each service
+mounts the stores it touches — the `dashboard` those it
+reads and the drawing, all read-only
+(`module_skills/skill_asset_containers.md` § The topology).
 
 | skill | owner | governs | written when | described today in |
 |---|---|---|---|---|
-| `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where the four `./store_<content>` mounts are today — every asset's folder and the other `store_*` roots at the same `/store/<content>` paths, and what a task may leave on it | the first run whose `store_*` roots sit on a volume that is not the workspace's disk | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
+| `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where the `./store_<content>` mounts are today — every asset's folder and the other `store_*` roots at the same `/store/<content>` paths, and what a task may leave on it | the first run whose `store_*` roots sit on a volume that is not this host's disk | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_asset_containers.md` § The topology |
 | `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw/<venue>/<symbol>/<day>` written once, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/skill_pre_aws_solution.md` § The volume is the home, the store is the copy; `module_skills/skill_pre_aws_solution.md` § The asset folder is a prefix, read forward |
 | `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `all:`, `data-all:`, `features-all:` and `ml-all:`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/skill_pre_aws_solution.md` § The Makefile is the developer interface; `module_skills/skill_pre_aws_solution.md` § The retrain runtime is a ladder |
 | `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `module_skills/skill_pre_aws_solution.md` § The rebuild condition stays separable; `module_skills/glossary.md` § Pre-AWS direction |
 | `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the asset prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `module_skills/skill_pre_aws_solution.md` § Correlatable artifacts, without a version scheme; `module_ml/skills/methodology_ml.md` § 10 |
-| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the three snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel of the Orchestration `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
-| `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — its own repository, `LIORA-MLOps-Portfolio-module-trading`, seated in the workspace as the next free `<9NN>-module_trading/` with its own image and container beside `module_ml`, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | that repository is created — the first strategy that consumes an artifact | `module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries; `module_skills/skill_pre_aws_solution.md` § Every object is classified before it is placed, STRATEGY EXECUTION; `module_skills/skill_pre_aws_solution.md` § The mapping table, the two STRATEGY EXECUTION rows |
+| `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files and the three snapshots as static objects behind a content-delivery front, the registry, run and proxy routes staying a reader process; until then the tunnel of `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/skill_pre_aws_solution.md` § The mapping table, the static dashboard and reader rows; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_monitoring/` row |
+| `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — a fifth module beside `module_ml`, with its own container, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | that repository is created — the first strategy that consumes an artifact | `module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries; `module_skills/skill_pre_aws_solution.md` § Every object is classified before it is placed, STRATEGY EXECUTION; `module_skills/skill_pre_aws_solution.md` § The mapping table, the two STRATEGY EXECUTION rows |
 | `skill_per_asset_status.md` | `module_skills/` | one status object per asset, written by that asset's own status run, and the fold the reader does over them — never a lock, never a basket-wide writer fanned out | a status stage is fanned out for the first time | `module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism; `module_skills/skill_pre_aws_solution.md` § What stays as it is, and why, the `module_data.status` row |
 | `skill_database_promotion.md` | `module_data/skills/` | the threshold past which an asset's embedded file becomes a managed database — a second concurrent writer, or a query across assets | the first writer or query one embedded file cannot serve | `module_data/skills/skill_candle_canonicalisation.md` § 13, § 15; `module_skills/skill_pre_aws_solution.md` § The databases |
