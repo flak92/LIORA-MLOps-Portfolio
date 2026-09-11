@@ -13,15 +13,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 # twice by extraction — identical in module_data/config.py and module_features/config.py, changed on every side in
-# one commit: the units, the ceiling, the two stores this module touches and their descriptors, and the one
-# CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py, module_monitoring/config.py and
-# sub_module_dx/config.py; a change to one copy is a change to every copy, by hand
+# one commit: the units, the ceiling, the two stores every module of the chain touches and their descriptors,
+# and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py,
+# module_monitoring/config.py and sub_module_dx/config.py; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 BYTES_PER_KIBIBYTE = 1024
 DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
+
+# this module's alone, and outside the block above: the trials store, where both searches leave every point they drew
+STORE_TRIALS_DIR = Path(os.environ["STORE_TRIALS_DIR"])
 
 
 def to_utc_ms(day: str) -> int:
@@ -203,6 +206,10 @@ def strategy_evaluation_json(ticker):
 
 def feature_set_search_json(ticker):
     return artifact_dir(ticker) / f"{ticker}_feature_set_search.json"
+
+
+def trials_sqlite(ticker):
+    return STORE_TRIALS_DIR / ticker / "trials.sqlite3"
 
 
 def feature_set_json(ticker):

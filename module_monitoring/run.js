@@ -1,5 +1,5 @@
 /* Lifecycle tab: one recorded run read from /runs and /runs/<run_id> — the run header, the stage table
-   and what each stage wrote to the four stores. Classic script; uses the shared toolkit from page.js,
+   and what each stage wrote to the four pipeline stores. Classic script; uses the shared toolkit from page.js,
    buildTable among them. The page collects nothing: every number below was measured from outside the stage
    by record.py — when it started, how it exited, what it added, changed and removed. */
 "use strict";
@@ -38,7 +38,7 @@ function buildRunHeader(record) {
     ["stages", stages.length + (failed.length
       ? "  ·  failed at " + failed.map((stage) => stage.stage).join(", ")
       : "  ·  every exit code 0")],
-    ["written", formatBytes(stages.reduce((total, stage) => total + bytesWritten(stage), 0)) + " across the four stores"],
+    ["written", formatBytes(stages.reduce((total, stage) => total + bytesWritten(stage), 0)) + " across the four pipeline stores"],
   ]);
 }
 
@@ -82,7 +82,7 @@ function renderRun(record) {
   header.body.appendChild(buildRunHeader(record));
   const stages = buildFrame("STAGES — what ran, how long, how it ended, what it wrote");
   renderRunStages(stages.body, record.stages);
-  const stores = buildFrame("STORES — every file a stage added, changed or removed");
+  const stores = buildFrame("STORES — every file a stage added, changed or removed in the pipeline stores");
   renderRunStores(stores.body, record.stages);
   [header, stages, stores].forEach((frame) => host.appendChild(frame.frame));
 }

@@ -10,14 +10,19 @@ PORT := $(PORT)
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
 COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
 COMPOSE     := $(COMPOSE_ENV) docker compose
-# the four stores of this checkout, one variable per store — the store contract every config.py reads; facts, not settings:
-# docker-compose.yml mounts ./store_<content> by the same names, record.py lists them by these host paths, and every
-# container sees /store/<content> in its own environment
+# the five stores of this checkout, one variable per store — the store contract every config.py reads; facts, not settings:
+# docker-compose.yml mounts ./store_<content> by the same names, record.py lists the four pipeline stores among them by
+# these host paths, and every container sees /store/<content> in its own environment
 export STORE_RAW_1M_DIR := $(CURDIR)/store_raw_1m
 export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store_assets_artifacts
+export STORE_TRIALS_DIR := $(CURDIR)/store_trials
 export STORE_RUN_RECORDS_DIR := $(CURDIR)/store_run_records
 export STORE_STATUS_DIR := $(CURDIR)/store_status
-STORES := store_raw_1m store_assets_artifacts store_run_records store_status
+STORES := store_raw_1m store_assets_artifacts store_trials store_run_records store_status
+# mlflow speaks at import: it opens a telemetry client and prints an agent hint unless told otherwise. Both are off
+# here and in docker-compose.yml, so a stage run in a venv is as quiet and as offline as one run in a container
+export MLFLOW_DISABLE_TELEMETRY := true
+export MLFLOW_DISABLE_AGENT_HINT := 1
 # the basket — the one definition; the asset-<ticker> residents of docker-compose.yml follow it, one block per ticker.
 # ASSET=<TICKER> on the make line narrows every per-asset stage to one asset; make exports ASSET into every recipe's
 # environment, which is harmless: the residents carry their own ASSET and a runner is told its assets by --tickers
@@ -122,7 +127,7 @@ on: build        ## the presentation switch: the dashboard, the DevOps panel and
 off:             ## the presentation switch: stop and remove every container of this project
 	$(COMPOSE) down
 btc-all: all     ## the single-asset chain by its ticker name; the alias goes when the basket grows
-# the stages of all, one make target each, measured from outside by record.py: the four stores before and after
+# the stages of all, one make target each, measured from outside by record.py: the four pipeline stores before and after
 RECORDED_STAGES := data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status
 all-record: build ## one recorded run of the whole chain, every stage measured from outside by record.py -> store_run_records/<run_id>/<stage>.json
 	@run_id=$(RUN_ID); for stage in $(RECORDED_STAGES); do RUN_ID=$$run_id python3 record.py $$stage $(MAKE) $$stage || exit $$?; done

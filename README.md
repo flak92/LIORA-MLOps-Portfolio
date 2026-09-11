@@ -12,7 +12,7 @@ purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the
-developer-experience drawing and the four stores. The governing contract —
+developer-experience drawing and the five stores. The governing contract —
 minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, the
 naming grammar and what holds the project together — is
 [AGENTS.md](AGENTS.md); every other rule is the comment beside the code it
@@ -92,10 +92,10 @@ docker-only and reachable on loopback alone; on a remote machine tunnel with
 The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
 ticker of the basket, the monitoring image for all — only serve: no stage runs inside a
 resident, and no stage depends on it — a stage is the one-off
-`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Four direct dependencies across
-the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `numpy` (mathematics:
-features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu` (model: ml); `module_monitoring` is standard
-library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
+`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Five direct dependencies across
+the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `mlflow-skinny` (the searches'
+trial ledger: ml), `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
+(model: ml); `module_monitoring` is standard library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
 
 ```
                  ┌── market source A ──┐
@@ -137,9 +137,10 @@ object. Everything below it describes the method, not the data provider.
 | `store_raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
 | `store_assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
 | `store_run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
+| `store_trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point both searches drew; the `ml` runner alone writes it, and a hand clears it |
 | `store_status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
 
-The store is the boundary between compute and state. Every stage reads and writes only these four and learns where they
+The store is the boundary between compute and state. Every stage reads and writes only these five and learns where they
 are from its environment — the Makefile exports the host paths, the compose file
 sets the container paths — and no module writes into another's tree. The images
 carry code and nothing of the state; the mounts carry the state and nothing of
@@ -153,7 +154,7 @@ its module's runner, `docker compose run --rm -T <runner> python -m <module>.<st
 once for the whole basket (the three status stages and the download). `ASSET=<TICKER>`
 on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
-`record.py`, which lists the four stores before and after and writes
+`record.py`, which lists the four pipeline stores before and after and writes
 `store_run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
 `liora-devops-1` and `liora-asset-<ticker>-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
@@ -168,7 +169,7 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | features status | `make features-status` | the parquets → `store_status/features_status.json` | read-only; the catalogue's facts and each asset's row counts |
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
-| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four stores |
+| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
 | dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 | drawing   | `make dx-update` | `git ls-files` → `sub_module_dx/files_and_folders_visualisation.html` | the tracked tree of the whole workspace as one self-contained page, redrawn by hand and by nothing else; this repository's own, mounted read-only below the dashboard's web root and opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
 
@@ -306,7 +307,7 @@ raw ZIP trees. The schema of both is `CANONICAL_DDL` and `VENUE_DDL` in
 - **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and
-  removed in the four stores, then every file it touched, by store and path. Nothing
+  removed in the four pipeline stores, then every file it touched, by store and path. Nothing
   a stage says about itself enters the record.
 
 Two controls in the top right leave the page, one per persona beyond the

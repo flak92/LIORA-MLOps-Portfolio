@@ -1,8 +1,9 @@
 # one image, three anchors, six services — a service is a role, not an image. x-store-environment is the store contract:
-# the four STORE_*_DIR every config.py reads, one variable per store, plus the thread cap that is correctness, not a
-# setting. x-service is what every service of this file is; x-server adds the one command the dashboard and the assets
-# share. The three runners — data, features, ml — carry no command: a stage is `docker compose run --rm <runner>
-# python -m <module>.<stage> --tickers <T>`, one one-off container per asset, and exits; the three residents serve.
+# the five STORE_*_DIR every config.py reads, one variable per store, plus the thread cap and the three mlflow facts
+# that are correctness, not settings. x-service is what every service of this file is; x-server adds the one command
+# the dashboard and the assets share. The three runners — data, features, ml — carry no command: a stage is `docker
+# compose run --rm <runner> python -m <module>.<stage> --tickers <T>`, one one-off container per asset, and exits;
+# the three residents serve.
 # environment: and volumes: REPLACE an anchor's key rather than extend it, so a service that adds a variable merges the
 # store map with <<: (asset-btc) and a service respells its mounts whole. Every service mounts the code and the stores it
 # touches, read-only where it only reads, and no store it does not touch. The project name is fixed:
@@ -13,9 +14,15 @@ name: liora
 x-store-environment: &store_environment
   STORE_RAW_1M_DIR: /store/raw_1m
   STORE_ASSETS_ARTIFACTS_DIR: /store/assets_artifacts
+  STORE_TRIALS_DIR: /store/trials
   STORE_RUN_RECORDS_DIR: /store/run_records
   STORE_STATUS_DIR: /store/status
   OMP_NUM_THREADS: "1"
+  # mlflow speaks at import — a telemetry client and an agent hint — and stamps a run with the name of the user
+  # running it; this image has no passwd entry for the container's uid, so getpass.getuser() would raise
+  MLFLOW_DISABLE_TELEMETRY: "true"
+  MLFLOW_DISABLE_AGENT_HINT: "1"
+  USER: liora
 
 x-service: &service
   build: .
@@ -52,6 +59,7 @@ services:
     volumes:
       - .:/app
       - ./store_assets_artifacts:/store/assets_artifacts
+      - ./store_trials:/store/trials
       - ./store_status:/store/status
     deploy:
       resources:
@@ -85,7 +93,7 @@ services:
 
   # the one service that holds the docker socket, and the only one: its whole responsibility is docker management and
   # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It holds no store; its environment still
-  # carries the four store names only because module_monitoring/config.py reads them at import.
+  # carries the five store names only because module_monitoring/config.py reads three of them at import.
   devops:
     <<: *service
     command: python -m module_monitoring.sub_module_devops.serve

@@ -95,11 +95,11 @@
   },
   "descriptions": {
     "root": "The repository: the four modules of the chain in its own order, beside what runs them. Working path: AGENTS.md → module names → each module's package and its `config.py` → code; the contract and the overview are the only prose, and a module is read from its own files.",
-    "Makefile": "Entrypoint of everything — the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the four `STORE_*_DIR` of this checkout, and `all`, `data-all`, `features-all` and `ml-all`, where the stage order is written down.",
+    "Makefile": "Entrypoint of everything — the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the five `STORE_*_DIR` of this checkout, and `all`, `data-all`, `features-all` and `ml-all`, where the stage order is written down.",
     "docker-compose.yml": "One image, three anchors, six services: the store environment every service reads, what every service is — and the stores each one mounts, read-only where it only reads, never the code — and the one command the dashboard and the assets share; three runners run a stage and exit, three residents stay up, all under the one project name `liora`.",
-    "record.py": "Measures a stage from outside: wraps one make target, lists the four stores before and after, and writes the run record — knowing no module.",
+    "record.py": "Measures a stage from outside: wraps one make target, lists the four pipeline stores before and after, and writes the run record — knowing no module.",
     "AGENTS.md": "The contract of this repository: the values, the architecture shape, the canonical vocabulary and the default choice. Every boundary on this picture was decided here, and it is the first thing read.",
-    "README.md": "The overview of the project: the quickstart, the four stores, the chain in order, the basket and the dashboard — what a reader needs before opening a module.",
+    "README.md": "The overview of the project: the quickstart, the five stores, the chain in order, the basket and the dashboard — what a reader needs before opening a module.",
     "module_data/": "The data module's repository: its package, its Dockerfile, its pins, its venv Makefile and its one-page README — ingest: venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
     "module_features/": "The features module's repository — the bars of the timeframe register, the indicator kernels and the feature catalogue, one parquet per timeframe, and the contract `<TICKER>_catalogue.json` the ML layer reads.",
     "module_ml/": "The research module's repository — the feature set, triple-barrier labels, purged walk-forward XGBoost, the strategy simulation.",
@@ -217,7 +217,7 @@
       },
       "store_volume": {
         "role": "store",
-        "name": "Store volume — the four store_* roots, every asset's folder among them (Amazon EBS)"
+        "name": "Store volume — the five store_* roots, every asset's folder among them (Amazon EBS)"
       },
       "log_streams": {
         "role": "log_streams",
@@ -375,7 +375,7 @@
       "dashboard_front": "A static front (Amazon S3 with Amazon CloudFront): the page files and the three snapshots served with no process rendering them — only when a reader outside the host appears; until then the reader container beside it serves them from the volume. Absent here — described.",
       "reader_container": "The `dashboard` service — `liora-dashboard-1`, the monitoring image — kept running on the task host: the `/containers`, `/runs`, `/store_status/` and `/devops/*` routes of `serve.py`, reading the run records and the snapshots on the volume and reaching the asset services and the panel by name as here; reached from outside by port-forward, where `ssh -L` stands today, and by no public port.",
       "module_monitoring/": "The monitoring module's repository: the page files — the page and its scripts — inside `liora-module-monitoring`, served by the reader container from the image, the three snapshots read from the status store, the static front absent; `serve.py`'s routes are that container's code.",
-      "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four stores before and after, and writes `<run_id>/<stage>.json` into the run store — the execution history a state machine keeps for itself, and nothing a task carries.",
+      "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four pipeline stores before and after, and writes `<run_id>/<stage>.json` into the run store — the execution history a state machine keeps for itself, and nothing a task carries.",
       "sub_module_dx/": "The repository's view — this drawing, a static object served below the page through a read-only bind mount, and not project code; it answers to no primitive of its own, and sits with the documents that deploy nowhere.",
       "strategy_host": "A separate Linux instance running QuantConnect Lean (Amazon EC2): one strategy container — a lean-backtest task, or one that stays running and trades live — reading the raw objects in Lean's own format and the research artifacts under the asset prefix, its brokerage credentials read once from the secrets store when it starts. No Lean runtime, container or dependency exists here. Absent here — described.",
       "brokerage_secret": "A secret in a secrets store (AWS Secrets Manager): the brokerage credentials the strategy host reads when it starts to trade live. Locally there is none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential. Absent here — described.",
