@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "76 tracked files \u00b7 8 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 431d455 \u00b7 2026-09-05 21:09:27",
+ "subtitle": "76 tracked files \u00b7 8 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 52959f0 \u00b7 2026-09-11 21:03:10",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -242,7 +242,7 @@ const VIEWS = {
    "module_skills/skill_sorting_files_naming_standard.md": "",
    "raw_store": "Raw objects under a venue and symbol prefix (Amazon S3): `raw/\u003cvenue>/\u003csymbol>/\u003cday>`, one object per UTC day, each written once \u2014 the raw tree copied from the volume after the run, Lean-exact so the strategy host could read it as it is. Here it is `store_raw_1m/`, on disk and untracked, so the development view does not hold it.",
    "reader_container": "The `dashboard` service \u2014 `liora-dashboard-1`, the monitoring image \u2014 kept running on the task host: the `/containers`, `/runs`, `/store_status/` and `/devops/*` routes of `serve.py`, reading the run records and the snapshots on the volume and reaching the asset services and the panel by name as here; reached from outside by port-forward, where `ssh -L` stands today, and by no public port.",
-   "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four stores before and after, and writes `\u003crun_id>/\u003cstage>.json` into the run store \u2014 the execution history a state machine keeps for itself, and nothing a task carries.",
+   "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four pipeline stores before and after, and writes `\u003crun_id>/\u003cstage>.json` into the run store \u2014 the execution history a state machine keeps for itself, and nothing a task carries.",
    "requirements.txt": "",
    "root": "The same tracked tree, read forward: every file and folder of this repository seated beside the primitive it would run on or live in \u2014 the column *the same responsibility elsewhere* of the mapping table in `module_skills/skill_pre_aws_solution.md`, its primitives drawn as icons with the flows between them. One host with a durable volume is the home of every store, object storage its copy after the run, the stages the states of one machine, the image the code. Described and drawn, built nowhere.",
    "run_store": "Run and status objects in object storage (Amazon S3): `runs/\u003crun_id>/` \u2014 the record `record.py` writes on the host, one file per stage \u2014 and `status/`, the three snapshots' own prefix, both copied from the volume after the run. The reader on the host reads the files on the volume, not this copy. Here they are `store_run_records/`, on disk and untracked, and `store_status/`, tracked in this repository.",
@@ -570,7 +570,7 @@ const VIEWS = {
    {
     "absent": false,
     "id": "store_volume",
-    "name": "Store volume \u2014 the four store_* roots, every asset's folder among them (Amazon EBS)",
+    "name": "Store volume \u2014 the five store_* roots, every asset's folder among them (Amazon EBS)",
     "path": "store_volume",
     "role": "store",
     "type": "primitive"
@@ -788,7 +788,7 @@ const VIEWS = {
   "desc": {
    "AGENTS.md": "",
    "Dockerfile": "",
-   "Makefile": "Entrypoint of everything \u2014 the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the four `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
+   "Makefile": "Entrypoint of everything \u2014 the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the five `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
    "README.md": "",
    "REPORT_dashboard_data_minimalism.md": "",
    "REPORT_pre_aws_minimalism.md": "",
@@ -861,7 +861,7 @@ const VIEWS = {
    "module_skills/skill_pre_aws_solution.md": "",
    "module_skills/skill_self_explaining_naming.md": "",
    "module_skills/skill_sorting_files_naming_standard.md": "",
-   "record.py": "Measures a stage from outside: wraps one make target, lists the four stores before and after, and writes the run record \u2014 knowing no module.",
+   "record.py": "Measures a stage from outside: wraps one make target, lists the four pipeline stores before and after, and writes the run record \u2014 knowing no module.",
    "requirements.txt": "",
    "root": "The repository: the four modules of the chain in its own order, beside what runs them. Working path: AGENTS.md \u2192 module names \u2192 README_module_\u003cname>.md \u2192 the module's own skills \u2192 code.",
    "store_assets_artifacts/": "Per-asset artifacts \u2014 one folder per ticker, the asset's whole namespace: its database and every research file beside it. The raw tree and the run records are untracked, so this view does not hold them.",
