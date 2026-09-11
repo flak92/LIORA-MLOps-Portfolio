@@ -2,14 +2,15 @@
 model's own validation objective: a forward move adds the column that raises the relative log-loss skill of every
 validation fold, a backward move drops a column at no worse skill on every fold, until a pass accepts nothing. A
 trial's strategy numbers are reported beside it and never selected on. The ledger of every scored trial is the state,
-written after each, so an interrupted run resumes without a refit and a finished run is read, not rewritten.
+written after each, so an interrupted run resumes without a refit and a finished run is read, not rewritten; every
+scored set also reaches the asset's trial ledger once, when the search converges, in the shape hpo leaves there.
 Promotes nothing: the proposals are read by a hand and copied by feature_set_promote."""
 
 from __future__ import annotations
 
 import numpy as np
 
-from . import config, dataset, model, strategy, train
+from . import config, dataset, hpo, model, strategy, train
 
 
 # the helpers take the hierarchy from the asset's contract (xy["timeframes"]) — the ML layer holds no register of its own
@@ -241,6 +242,14 @@ def main() -> int:
             state["pass_count"] = pass_number
             state["search_converged"] = not accepted
             write_state(ticker, state, timeframes)
+
+        hpo.log_trials(ticker, "feature_set",
+                       [{"params": {timeframe: ",".join(columns)
+                                    for timeframe, columns in row["columns_by_timeframe"].items()},
+                         "metrics": {"mean_relative_logloss_skill": row["mean_relative_logloss_skill"],
+                                     "entry_edge_threshold": row["entry_edge_threshold"],
+                                     "selection_score_mean_sharpe": row["selection_score_mean_sharpe"]}}
+                        for row in trials])
 
         champion_row = trials[champion - 1]
         print(f"{ticker} {path.name}: converged after {state['pass_count']} passes and {len(trials)} trials, "

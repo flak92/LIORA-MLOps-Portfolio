@@ -107,9 +107,9 @@
   },
   "descriptions": {
     "root": "The repository: the four modules of the chain in its own order, beside what runs them. Working path: AGENTS.md → module names → README_module_<name>.md → the module's own skills → code.",
-    "Makefile": "Entrypoint of everything — the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the four `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
+    "Makefile": "Entrypoint of everything — the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the five `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
     "docker-compose.yml": "One image, three anchors, six services: the store environment every service reads, what every service is — and the stores each one mounts, read-only where it only reads, never the code — and the one command the dashboard and the assets share; three runners run a stage and exit, three residents stay up, all under the one project name `liora`.",
-    "record.py": "Measures a stage from outside: wraps one make target, lists the four stores before and after, and writes the run record — knowing no module.",
+    "record.py": "Measures a stage from outside: wraps one make target, lists the four pipeline stores before and after, and writes the run record — knowing no module.",
     "module_data/": "The data module's repository: its package, its Dockerfile, its pins, its venv Makefile and its one-page README — ingest: venue downloads, Lean ZIPs, one canonical DuckDB per asset.",
     "module_data/Dockerfile": "The recipe of `liora-module-data`: `python:3.12-slim`, the module's pins, the package copied in — the code inside, the stores mounted.",
     "module_data/Makefile": "The module alone: `setup` makes its venv, `data-<stage> ASSET=<TICKER>` runs one stage against the stores this module reads.",
@@ -244,7 +244,7 @@
       },
       "store_volume": {
         "role": "store",
-        "name": "Store volume — the four store_* roots, every asset's folder among them (Amazon EBS)"
+        "name": "Store volume — the five store_* roots, every asset's folder among them (Amazon EBS)"
       },
       "log_streams": {
         "role": "log_streams",
@@ -422,7 +422,7 @@
       "module_monitoring/Dockerfile": "The recipe of `liora-module-monitoring`: `python:3.12-slim` and the package copied in — no pins, standard library only; the image the three residents share.",
       "module_monitoring/module_monitoring/config.py": "Every address the reader knows — the internal port, the service names, the run record's paths — built once here; no code depends on a container name.",
       "module_monitoring/module_monitoring/serve.py": "Three things in one file: every file it serves is served by the reader container from its image, its `/containers`, `/runs`, `/store_status/` and `/devops/*` routes are that container, and its asset role, `/status`, is the `asset-<ticker>` service beside it — a local mechanism the host keeps, with no primitive of its own.",
-      "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four stores before and after, and writes `<run_id>/<stage>.json` into the run store — the execution history a state machine keeps for itself, and nothing a task carries.",
+      "record.py": "The record of one run, kept beside the machine's local spelling: it wraps one make target on the host, lists the four pipeline stores before and after, and writes `<run_id>/<stage>.json` into the run store — the execution history a state machine keeps for itself, and nothing a task carries.",
       "module_monitoring/module_monitoring/index.html": "The page: a file inside the monitoring image, served by the reader container as it is here; no static front serves it.",
       "module_monitoring/module_monitoring/skills/": "The page's conventions and the panel's travel inside the image: documents, not primitives.",
       "sub_module_dx/": "The repository's view — this drawing, a static object served below the page through a read-only bind mount, and not project code; it answers to no primitive of its own, and sits with the documents that deploy nowhere.",

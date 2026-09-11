@@ -2,6 +2,7 @@
 __pycache__/
 store_raw_1m/
 store_run_records/
+store_trials/
 store_assets_artifacts/**
 !store_assets_artifacts/*/
 !store_assets_artifacts/*/*_parameters.json

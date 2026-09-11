@@ -16,9 +16,14 @@ the working path.) If a change conflicts with this file, the change is wrong.
   purpose. If its purpose cannot be named, it goes.
 - **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
   is `python:3.12-slim`, one image for the tree. A library is added
-  only when the standard library and the current stack — `duckdb`, `numpy`,
-  `optuna`, `xgboost-cpu` — cannot do the job. `requirements.txt` declares the
-  project's direct dependencies only, one pinned version each.
+  only when the standard library and the current stack — `duckdb`,
+  `mlflow-skinny`, `numpy`, `optuna`, `xgboost-cpu` — cannot do the job, or when
+  it is the field's own instrument for a responsibility this project names and
+  the stack's equivalent would be a private reimplementation of it: § Canonical
+  vocabulary's preference for an established name over a local synonym, read
+  forward from names to instruments. `mlflow-skinny` is the one such addition
+  and the trial ledger the one such responsibility. `requirements.txt` declares
+  the project's direct dependencies only, one pinned version each.
 - **KISS / YAGNI / DRY / SOLID.** The simplest correct implementation, built
   for the need that exists, never for a hypothetical one. One responsibility
   per module; repeated logic becomes one function, not three copies.
@@ -71,7 +76,7 @@ module_data/         sources → normalised raw 1m → one canonical DuckDB per 
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
-the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the four stores, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills and the index of every module's own
+the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the five stores, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills and the index of every module's own
 ```
 
 Each module holds its package, its orientation `README_module_<domain>.md` and
@@ -81,7 +86,7 @@ backticks, always.
 
 `module_skills` never participates in runtime imports or dataflow. **No module
 imports another.** What would cross a module boundary as an import crosses it as a
-file in a store instead — the four `STORE_*_DIR` the launcher names
+file in a store instead — the five `STORE_*_DIR` the launcher names
 (`module_skills/glossary.md` § Stores), the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
 three snapshots each computational module writes about itself and the dashboard
@@ -133,13 +138,13 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   module's position in the chain at the time it was seated; a new module takes
   the next free number and nothing is ever renumbered — then `module_skills`
   and `sub_module_dx`, then `store_assets_artifacts`, `store_raw_1m`,
-  `store_run_records`, `store_status`: blocks, not scattered entries. If
+  `store_run_records`, `store_status`, `store_trials`: blocks, not scattered entries. If
   renaming would put things of one category next to each other, rename them;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
   `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
-  `record.py` for the four stores it lists)
+  `record.py` for the four pipeline stores it lists)
   — and the browser, which has no config module and fetches its three snapshots
   (`data_status.json`, `features_status.json`, `ml_status.json`) under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal
@@ -185,7 +190,7 @@ and built nowhere.
 - **Compute owns no state.** A stage reads a store, writes a store and exits; it
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
   no resident peer.
-- **Storage is separate from compute.** Pipeline state lives in the four stores
+- **Storage is separate from compute.** Pipeline state lives in the five stores
   — the `store_*` roots, named to every `config.py` by its
   `STORE_*_DIR` and mounted at `/store/<content>` into each service that touches
   them, read-only where a service only reads
@@ -354,7 +359,7 @@ inside the call that speaks it, and project names begin at the return value.
 The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`module_data/lean.py`), the Binance and Bybit REST parameters
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
-(`module_ml/model.py`, `module_ml/hpo.py`), numpy (every module that computes),
+(`module_ml/model.py`, `module_ml/hpo.py`), mlflow (`module_ml/hpo.py`), numpy (every module that computes),
 argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/config.py` — the one parser, twice by extraction —,
 `module_ml/feature_set_promote.py`, `sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
@@ -364,7 +369,7 @@ the drawing's template), docker compose (`Makefile`,
 command line over `subprocess` (`sub_module_dx/visualise.py`) and a stage's
 command line over `subprocess` (`record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
 cgroup v2 and procfs (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its
-unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four stores
+unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four pipeline stores
 (`record.py`). A
 boundary is an exception the conventions name, not an inconsistency they
 tolerate.
@@ -479,7 +484,7 @@ is wrong.
 | D09 | artifact names and keys move only with the register: every key of every payload has a row in `module_skills/glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe`, the `ticker` key in every row of `data_status.json`, and that snapshot's own measurement set — which `REPORT_dashboard_data_minimalism.md` argues field by field — are each registered there |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte against the reference list `README.md` § Parity names. A change that reshapes a snapshot re-bases that snapshot's line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
-| D12 | zero cloud mechanisms and zero new dependencies: the four pins are the project's |
+| D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host, and `mlflow` writes a tracking URI built in `module_ml/config.py` under `STORE_TRIALS_DIR`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
 | D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
 | D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the three snapshots are tracked, so a fresh clone opens on real numbers |

@@ -435,7 +435,7 @@ Those belong to this document, and they hold identically when the same stage is
 run outside a container.
 
 **The seat.** On the one Linux container instance (Amazon ECS on Amazon EC2) the
-file sits at the same path under `/store`, on the volume mounted where the four
+file sits at the same path under `/store`, on the volume mounted where the five
 `./store_<content>` mounts are today; the whole-file lock holds because that volume is a block device, not a
 network filesystem. After the run the file is copied whole to the asset's prefix
 in object storage (Amazon S3) — a copy, never a mount. The promotion threshold
