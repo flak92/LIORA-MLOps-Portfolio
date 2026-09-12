@@ -11,17 +11,16 @@ import optuna
 from . import config, dataset, model, validation
 
 
-def log_trials(ticker: str, search: str, trials: list[dict]) -> None:
-    """Every trial of a search, in one shape for both of them: one mlflow run per trial, named `<search>_<n>` — the
-    search that drew it, `hpo` or `feature_set`, and its place in that search counting from one — in the asset's own
-    ledger, so two fanned-out processes share no path and no experiment id. mlflow's own vocabulary, its run id
-    among it, begins and ends inside this call."""
+def log_trials(ticker: str, trials: list[dict]) -> None:
+    """Every trial of the search: one mlflow run per trial, named `hpo_<n>` — its place in the search, counting from
+    one — in the asset's own ledger, so two fanned-out processes share no path and no experiment id. mlflow's own
+    vocabulary, its run id among it, begins and ends inside this call."""
     ledger = config.trials_sqlite(ticker)
     ledger.parent.mkdir(parents=True, exist_ok=True)
     mlflow.set_tracking_uri(f"sqlite:///{ledger}")
     mlflow.set_experiment(ticker)
     for index, trial in enumerate(trials, start=1):
-        with mlflow.start_run(run_name=f"{search}_{index}"):
+        with mlflow.start_run(run_name=f"hpo_{index}"):
             mlflow.log_params(trial["params"])
             mlflow.log_metrics(trial["metrics"])
 
@@ -70,9 +69,9 @@ def main() -> int:
         }
         out = config.parameters_json(ticker)
         dataset.write_json(out, payload)
-        log_trials(ticker, "hpo", [{"params": trial.params,
-                                   "metrics": {"mean_validation_logloss": trial.value}}
-                                  for trial in study.trials])
+        log_trials(ticker, [{"params": trial.params,
+                             "metrics": {"mean_validation_logloss": trial.value}}
+                            for trial in study.trials])
         print(f"{ticker} {out.name}: best logloss {study.best_value:.6f} "
               f"(trial {study.best_trial.number})", flush=True)
     return 0
