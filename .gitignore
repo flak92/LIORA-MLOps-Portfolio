@@ -8,3 +8,8 @@ store_assets_artifacts/**
 !store_assets_artifacts/*/*_parameters.json
 !store_assets_artifacts/*/*_README.md
 !store_assets_artifacts/*/*_feature_set.json
+
+# agent and editor files: never part of this repository
+CLAUDE.local.md
+.claude/
+*.code-workspace

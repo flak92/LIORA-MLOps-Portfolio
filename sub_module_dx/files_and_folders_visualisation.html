@@ -145,7 +145,7 @@ MAX_DPR: 1.5            // pixel-ratio cap
 const META = {
  "documentTitle": "Files and Folders",
  "eyebrow": "",
- "subtitle": "76 tracked files \u00b7 8 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 568ea80 \u00b7 2026-09-12 16:38:35",
+ "subtitle": "77 tracked files \u00b7 8 top-level folders \u00b7 1 asset artifacts \u00b7 tree as of 568ea80 \u00b7 2026-09-12 16:38:35",
  "title": "Files and Folders"
 };
 const VIEWS = {
@@ -158,6 +158,7 @@ const VIEWS = {
   },
   "desc": {
    "AGENTS.md": "The contract of this repository, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
+   "CLAUDE.md": "",
    "Dockerfile": "",
    "Makefile": "The local spelling of the state machine beside it: `all:`, `data-all:`, `features-all:` and `ml-all:` list the state order, `xargs -P $(JOBS)` is the Map's width, `RUN_ID` the execution name, the fan-out runs one asset's stage in a one-off runner of its module's image, and nothing here schedules \u2014 the developer interface, never a scheduler.",
    "README.md": "The overview of the project: the modules, the stores, the chain, and \u00a7 Architectural direction, where this stance is stated in one paragraph.",
@@ -391,6 +392,7 @@ const VIEWS = {
   },
   "island": {
    "AGENTS.md": "S1",
+   "CLAUDE.md": "S1",
    "Dockerfile": "S1",
    "Makefile": "S9",
    "README.md": "S1",
@@ -674,6 +676,7 @@ const VIEWS = {
   ],
   "role": {
    "AGENTS.md": "doc",
+   "CLAUDE.md": "doc",
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
@@ -787,6 +790,7 @@ const VIEWS = {
   },
   "desc": {
    "AGENTS.md": "",
+   "CLAUDE.md": "",
    "Dockerfile": "",
    "Makefile": "Entrypoint of everything \u2014 the basket `TICKERS`, the per-asset fan-out into one-off runners, `JOBS` measured from cores and memory, the host port from the ports in use, the five `STORE_*_DIR` of this checkout, and the two targets that keep the canon's copies equal.",
    "README.md": "",
@@ -888,6 +892,7 @@ const VIEWS = {
   },
   "island": {
    "AGENTS.md": "S2",
+   "CLAUDE.md": "S1",
    "Dockerfile": "S1",
    "Makefile": "S1",
    "README.md": "S2",
@@ -1036,6 +1041,7 @@ const VIEWS = {
   "primitives": [],
   "role": {
    "AGENTS.md": "doc",
+   "CLAUDE.md": "doc",
    "Dockerfile": "config",
    "Makefile": "entrypoint",
    "README.md": "doc",
@@ -1619,6 +1625,12 @@ const TREE_NODES = [
   "type": "file"
  },
  {
+  "id": "CLAUDE.md",
+  "path": "CLAUDE.md",
+  "role": "doc",
+  "type": "file"
+ },
+ {
   "id": "Dockerfile",
   "path": "Dockerfile",
   "role": "config",
@@ -1720,6 +1732,12 @@ const TREE_EDGES = [
   "from": "root",
   "thick": false,
   "to": "AGENTS.md",
+  "type": "tree"
+ },
+ {
+  "from": "root",
+  "thick": false,
+  "to": "CLAUDE.md",
   "type": "tree"
  },
  {
