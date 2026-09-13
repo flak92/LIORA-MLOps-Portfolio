@@ -1,7 +1,7 @@
 {
  "files_in_scope_count": 79,
- "measured_at_commit": "18808dd06e27f988cd095ac280c2f0b51387d879",
- "measured_at_commit_utc": "2026-09-13 21:05:09",
+ "measured_at_commit": "cb866b61ace3d7b262989ccbdb75540e367cdd6c",
+ "measured_at_commit_utc": "2026-09-13 21:13:07",
  "metrics": [
   {
    "examples": [],
@@ -252,12 +252,18 @@
    "value": 0
   },
   {
-   "examples": [],
+   "examples": [
+    "AGENTS.md:1 \u2014 conformant",
+    "CLAUDE.md:1 \u2014 deferred",
+    "Dockerfile:1 \u2014 conformant",
+    "Makefile:1 \u2014 conformant",
+    "docker-compose.yml:1 \u2014 conformant"
+   ],
    "family": "review",
    "kind": "observation",
    "metric": "files_reviewed_pct",
    "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
-   "value": 0.0
+   "value": 100.0
   },
   {
    "examples": [],
@@ -276,12 +282,17 @@
    "value": 0
   },
   {
-   "examples": [],
+   "examples": [
+    "AGENTS.md:1 \u2014 conformant",
+    "Dockerfile:1 \u2014 conformant",
+    "Makefile:1 \u2014 conformant",
+    "docker-compose.yml:1 \u2014 conformant"
+   ],
    "family": "review",
    "kind": "observation",
    "metric": "conformant_file_count",
    "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
-   "value": 0
+   "value": 4
   },
   {
    "examples": [],
@@ -292,20 +303,24 @@
    "value": 0
   },
   {
-   "examples": [],
+   "examples": [
+    "CLAUDE.md:1 \u2014 deferred"
+   ],
    "family": "review",
    "kind": "observation",
    "metric": "deferred_file_count",
    "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
-   "value": 0
+   "value": 1
   },
   {
-   "examples": [],
+   "examples": [
+    "CLAUDE.md:8"
+   ],
    "family": "review",
    "kind": "observation",
    "metric": "finding_count",
    "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
-   "value": 0
+   "value": 1
   },
   {
    "examples": [],
@@ -316,12 +331,18 @@
    "value": 0
   },
   {
-   "examples": [],
+   "examples": [
+    "AGENTS.md:279 \u2014 commit that introduces it. The word \"test\" never names a fold.",
+    "CLAUDE.md:8 \u2014 of a session.** If a change conflicts with it, the change is wrong.",
+    "Dockerfile:6 \u2014 the code comes from the compose tree mount (.:/app), the state from the ./store/<content> mounts at /store/<content>, so the image holds the pins alone",
+    "Makefile:27 \u2014 the basket \u2014 the one definition; the asset-<ticker> residents of docker-compose.yml follow it, one block per ticker.",
+    "docker-compose.yml:1 \u2014 one image, three anchors, six services \u2014 a service is a role, not an image. x-store-environment is the store contract:"
+   ],
    "family": "review",
    "kind": "observation",
    "metric": "self_explaining_level_mean",
    "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
-   "value": null
+   "value": 4.8
   }
  ],
  "modules": [
