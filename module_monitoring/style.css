@@ -60,8 +60,8 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
-/* a jump between the pages of the three personas: the status page, the developer-experience drawing and the DevOps panel.
-   Floated, so the first in source order sits furthest right */
+/* a jump between the pages of the two personas: the status page and the DevOps panel, each carrying the one jump to
+   the other in its top right corner */
 .jump {
   float: right;
   font-family: inherit;

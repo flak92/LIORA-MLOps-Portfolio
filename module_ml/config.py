@@ -14,8 +14,8 @@ from pathlib import Path
 
 # twice by extraction — identical in module_data/config.py and module_features/config.py (module_skills/glossary.md
 # § Twice by extraction): the units, the ceiling, the two stores every module of the chain touches and their
-# descriptors, and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py,
-# module_monitoring/config.py and sub_module_dx/config.py; a change to one copy is a change to every copy, by hand
+# descriptors, and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py and
+# module_monitoring/config.py; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 BYTES_PER_KIBIBYTE = 1024

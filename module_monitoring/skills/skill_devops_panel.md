@@ -1,19 +1,17 @@
 # Skill: the DevOps panel — the machines, and the one socket
 
-Three personas, three entries. The status page carries the results a business
-reader wants; the **DX** control opens the drawing a developer wants; the
-**DevOps** control opens this panel — the containers, networks and volumes the
-project actually runs on. *The repository shows the destination, not the road*:
+Two personas, two entries. The status page carries the results the business
+persona wants; the **DevOps** control opens this panel — the containers, networks and
+volumes the project actually runs on. *The repository shows the destination, not the road*:
 the panel shows what the daemon reports and offers three verbs, and nothing else.
 
 The panel is `module_monitoring/sub_module_devops/`. Its page is a static
-file the dashboard already serves, like the drawing; only its API is a route.
+file the dashboard already serves; only its API is a route.
 
 ## Why a sub-module, and why that name
 
-The panel is named for the persona whose page it is, as the drawing is: the
-**DevOps** control opens `sub_module_devops/` the way the **DX** control opens
-`sub_module_dx/`, and the route the dashboard proxies for it is `/devops/*` —
+The panel is named for the persona whose page it is: the **DevOps** control
+opens `sub_module_devops/`, and the route the dashboard proxies for it is `/devops/*` —
 one word for the control, the route, the compose service `devops` and the
 directory. Retired: `portraefik`, the owner's coinage of two tool brands this
 repository does not use — a name that needed a lookup before it said anything.
@@ -23,11 +21,8 @@ nothing of Portainer or Traefik is inside: no reverse proxy, no third-party
 management UI.
 
 It is nested rather than promoted because the dashboard serves its own
-directory, so the panel's page needs no route; the drawing, the other
-`sub_module_*`, sits at the repository root because its subject
-is the whole tree, and reaches the same browser through the read-only bind mount
-that repository's `docker-compose.yml` makes below this directory. Two is still
-a coincidence — the third mints the convention or nothing does.
+directory, so the panel's page needs no route; whether `sub_module_*` is a
+convention is `../../AGENTS.md` § The default choice.
 
 ## The one socket, and what containment means
 

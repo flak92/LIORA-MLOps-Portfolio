@@ -59,19 +59,11 @@ linter, no build step, no framework.
   over already measured values (shares, a cross-fold mean, a difference of two
   reported metrics, a CPU rate from two polls of `cpu_usage_seconds`). Moving
   those into the payload would grow it without adding a fact.
-- The status page carries exactly two jumps out of itself, both `.jump` controls in the top right,
-  one per persona beyond the business reader: **DX** opens the developer-experience drawing of the
-  tracked tree at `sub_module_dx/files_and_folders_visualisation.html`, and **DevOps** opens the
-  panel at `sub_module_devops/index.html`. Both reach the browser as static files below the
-  dashboard's web root — the panel from the sub-module the dashboard serves as a directory, the
-  drawing from `sub_module_dx/`, which its `docker-compose.yml` mounts
-  read-only at that path — so the server's routes know about neither: the panel's API is a route, its page is not. The
-  drawing is a derived artifact, redrawn only by `make dx-update`, and its inline renderer is
-  reviewed as a whole and is not bound by the closed verb list above, which governs the
-  hand-written dashboard scripts. `../../module_skills/skill_developer_experience_drawing.md` holds the
-  drawing's rest — the configuration surface, the two views, the provenance stamp and the
-  determinism it owes;
-  `skill_devops_panel.md` holds the panel's.
+- The status page carries exactly one jump out of itself, a `.jump` control in the top right, for
+  the persona beyond the business one: **DevOps** opens the panel at `sub_module_devops/index.html`. It reaches the
+  browser as a static file below the dashboard's web root, from the sub-module the dashboard serves
+  as a directory — so the server's routes know nothing of it: the panel's API is a route, its page
+  is not. `skill_devops_panel.md` holds the panel's rest.
 
 ## Extending
 

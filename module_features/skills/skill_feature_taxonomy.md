@@ -209,5 +209,5 @@ column measures, and the importance tables say what it measured), `rsi14_240m` (
 timeframe), `sma800_15m` for a 4h quantity, `rsi14_1h_btc` (an asset in a name), `bb20` (an
 abbreviation the register does not hold — the computation is `zscore20`; the trade's label
 Bollinger %b lives in the glossary), `atom` or `molecule` as an identifier (the words of this
-skill's prose; the identifiers are `term` and `feature definition`), `palette` (the drawing's word
-for a colour set), `family` for a definition.
+skill's prose; the identifiers are `term` and `feature definition`), `palette`, `family` for a
+definition.

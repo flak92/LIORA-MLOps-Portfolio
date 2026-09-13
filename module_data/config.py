@@ -22,8 +22,8 @@ SOURCE_CANDLE_INTERVAL = "1m"
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
-# twice by extraction — identical in module_ml/config.py, module_monitoring/config.py and sub_module_dx/config.py, and the
-# browser's own in module_monitoring/page.js (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_ml/config.py and module_monitoring/config.py, and the browser's own in
+# module_monitoring/page.js (module_skills/glossary.md § Twice by extraction)
 BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 

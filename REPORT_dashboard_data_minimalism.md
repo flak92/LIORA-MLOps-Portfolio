@@ -93,7 +93,7 @@ and one wrong number made right.
 
 ## The minimum each view holds
 
-The navigation does not move: five tabs, the two jumps, the names as
+The navigation does not move: five tabs, the DevOps jump, the names as
 `module_skills/glossary.md` § Container status endpoint enumerates them. What
 changes is that **the invariants are marked**: the cells of a column whose only
 correct value is zero carry the class `invariant`, so colour marks the category

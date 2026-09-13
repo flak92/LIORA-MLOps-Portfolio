@@ -52,9 +52,10 @@ Not built here, and not to be added because production would have it:
 - no infrastructure code: if `infra/` exists it is shaped by responsibility —
   compute, storage, orchestration, monitoring — its resources named
   `<project>-<environment>-<resource-role>`, `<project>` being `liora` as the
-  image and the compose project spell it, the role a deployment-view primitive
-  id with `_` read as `-`; no second list of roles, no `dev` or `prod` in a
-  name before it does.
+  image and the compose project spell it, the role the seat's name in
+  § Infrastructure seats or the task a row of § The mapping table names, lower
+  case with `-` between its words; no second list of roles, no `dev` or `prod`
+  in a name before it does.
 
 **The rule.** A mechanism that exists only because production AWS would require
 it, and that the academic logic does not need, is not implemented locally; its
@@ -79,7 +80,7 @@ today:
 | ORCHESTRATION | ordering and launching the stages — the wall time between two stages is nobody's number, not the record's | the Makefile |
 | MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_features/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `record.py`, the page scripts |
 | STRATEGY EXECUTION | taking research artifacts and market data into a running strategy | absent here — described: `module_trading/`, its own container on the strategy host (§ Infrastructure seats) |
-| INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/`, `sub_module_dx/` |
+| INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/` |
 
 Group by who writes the state and how long it lives — never by "written
 together", "same library", "same author" or "convenient". A name that does not
@@ -118,10 +119,9 @@ sits on — never a cloud "service" of its own, and never a module named for one
   backtest could read it directly
   (`module_data/skills/skill_candle_canonicalisation.md` § 13); that is the
   whole of Lean's presence. No Lean runtime, container or dependency exists in
-  this repository; § Infrastructure seats gives it its seat, and the deployment
-  view of the drawing draws it absent. Strategy execution, if it ever exists, is
-  `module_trading/` — its own container beside `module_ml`, never inside it; the
-  register keeps one Lean row, `glossary.md` § Market object.
+  this repository; § Infrastructure seats gives it its seat. Strategy execution,
+  if it ever exists, is `module_trading/` — its own container beside `module_ml`,
+  never inside it; the register keeps one Lean row, `glossary.md` § Market object.
 
 ## Infrastructure seats
 
@@ -346,8 +346,7 @@ target, `data-download`, once.
 
 Read forward, the Makefile is a state machine whose states are the stages. The
 test of a stage's width is whether it has a one-line state name; every stage of
-the pipeline passes today (`dx-update` redraws a tracked file on the
-host and never runs elsewhere, so it is a tool, not a state):
+the pipeline passes today:
 
 | stage | the state it would be |
 |---|---|
@@ -534,10 +533,7 @@ elsewhere*, the shape the same responsibility would take; the fourth, *the
 move*, what the move is — a rename, one edit, or absent here — described. No
 path in the elsewhere column is a proposal for a local directory. Where a cloud
 proper noun is spoken is the closed list of `AGENTS.md` § Pre-AWS architectural
-direction; a row whose move is absent here — described has no local counterpart,
-and its primitive, if it has one, is drawn absent
-(`skill_developer_experience_drawing.md` § Two views
-of one tree).
+direction; a row whose move is absent here — described has no local counterpart.
 
 | this repository has | responsibility | the same responsibility elsewhere | the move |
 |---|---|---|---|
@@ -551,14 +547,14 @@ of one tree).
 | `store_assets_artifacts/<TICKER>/` | STORAGE — one prefix per asset | the same folder on the volume, and its copy under `artifacts/<ticker>/<version>/` in object storage after the run, the version the execution name, each key the descriptor's path relative to `STORE_ASSETS_ARTIFACTS_DIR` (Amazon S3) — nothing to edit in either descriptor | a rename |
 | `<TICKER>_research_ohlcv.duckdb` | STORAGE — the canonical market object, one writer at a time | the same embedded file on the volume, opened by the same process under the same whole-file lock, copied whole to the asset's version prefix after the run — never a database process, never a shared network filesystem; a managed database (Amazon RDS) only past the threshold of § The databases | a rename |
 | the parquets and JSONs of the asset folder | STORAGE — research artifacts | artifact objects under the same version prefix | a rename |
-| a hand typing `make all`, `download_cadence_minutes` of `data_status.json` being the only cadence the tree names; the downloaders' day-presence skip and the rerun table of `module_ml/skills/methodology_ml.md` § 11, read by a human | ORCHESTRATION — the cadence and the rebuild condition, not yet code | a schedule that starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full — `is_full_utc_day()` in `module_data/lean.py` (Amazon EventBridge Scheduler), and a condition state between BuildCanonicalData and AggregateBars that reads the volume and launches nothing (a Step Functions choice) — both absent, one primitive of the deployment view | absent here — described |
+| a hand typing `make all`, `download_cadence_minutes` of `data_status.json` being the only cadence the tree names; the downloaders' day-presence skip and the rerun table of `module_ml/skills/methodology_ml.md` § 11, read by a human | ORCHESTRATION — the cadence and the rebuild condition, not yet code | a schedule that starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full — `is_full_utc_day()` in `module_data/lean.py` (Amazon EventBridge Scheduler), and a condition state between BuildCanonicalData and AggregateBars that reads the volume and launches nothing (a Step Functions choice) — both absent | absent here — described |
 | `store_status/data_status.json`, `store_status/features_status.json`, `store_status/ml_status.json`, `store_run_records/<run_id>/`, `store_trials/<TICKER>/` | STORAGE — status, run and trial objects | the run record under `runs/<run_id>/`, the three snapshots under `status/` and each asset's trial ledger under `trials/<ticker>/`, copied from the store after the run, the page reading them from the status store as here — `store_status/` is already that prefix, read forward; the move off `module_monitoring/` turned the five points § What stays as it is, and why names, and answered the question `skill_status_prefix.md` asked (`AGENTS.md` § Skills absent here, described) | a rename |
 | a stage's stdout, left in the terminal; no resource sampling at all | MONITORING — logs and resource metrics | log streams keyed by stage and metrics (Amazon CloudWatch) — no local counterpart: the run record holds time, exit code and store difference and nothing else | absent here — described |
 | the page files of `module_monitoring/`; the three snapshots are STORAGE (the row above) and reach the page through the `/store_status/<name>` route | MONITORING — the static dashboard | served by the reader service of the row below from the volume; static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) only when a reader outside the host appears — the front absent | absent here — described |
 | the `/containers`, `/runs`, `/store_status/<name>` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
 | the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Linux instance (Amazon EC2) — the strategy host: a lean-backtest task, or a container that stays running and trades live, reading the raw and asset prefixes from the copy and never the volume, its brokerage credentials read from the secret below when it starts | absent here — described |
 | none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts | absent here — described |
-| `sub_module_devops` — the one socket; `sub_module_dx` | INFRASTRUCTURE — the engine's views, the repository's view | the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon; the provider's console and a repository view, not project code — the console a sentence inside this row, no primitive of its own | a rename |
+| `sub_module_devops` — the one socket | INFRASTRUCTURE — the engine's views | the same socket on the instance, because the service that runs the tasks starts them through the host's own daemon; the provider's console, not project code — a sentence inside this row, no row of its own | a rename |
 | none — the copy after the run: every stage writes the stores through their mounts and exits, and nothing copies | ORCHESTRATION — PublishStores, the copy after the run | a state after the last stage of a run has exited that copies each `store_*` root whole — `store_status/` among them — to their prefixes — `raw/<venue>/<symbol>/<day>`, `artifacts/<ticker>/<version>/`, `runs/<run_id>/`, `status/` — in object storage (Amazon S3), once per run, never a stage's own write, never mid-run (§ The volume is the home, the store is the copy) | absent here — described |
 
 ## Rejected forms
@@ -631,9 +627,8 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 | `module_monitoring/` is served wholesale, five routes and a proxy beside static files | one root is page and package; the status store is reached through one route | the page files are static objects of the package, the snapshots static objects of another store; the routes are a reader process | no — described |
 | no callable "does this asset need a rebuild?" exists | the condition has no home; nothing is wrongly fused | keep compute unconditional; a future predicate is the `is_` / `has_` / `requires_` question above, never a lift of the downloader's loop | no — described |
 | `btc-all`, `btc-lifecycle` | a ticker in a target name | detached from every document and page; retire when the basket grows, as their sunset notes say | no — described |
-| the compose project is named `liora` in the file — `liora-dashboard-1`, `liora-asset-btc-1`, `liora-devops-1` on every host | none | one name every document, the panel and the drawing can spell; two checkouts of the project on one host share it, so run one at a time or set `COMPOSE_PROJECT_NAME` — the host port stays measured | yes — done |
+| the compose project is named `liora` in the file — `liora-dashboard-1`, `liora-asset-btc-1`, `liora-devops-1` on every host | none | one name every document and the panel can spell; two checkouts of the project on one host share it, so run one at a time or set `COMPOSE_PROJECT_NAME` — the host port stays measured | yes — done |
 | the image is named `liora-1m-pipeline` | none | the project's head and what the tree is, no ticker — one image for every role, the service and its command deciding which; two checkouts that build one tag share whichever built last, which is one more reason to run one at a time | yes — done |
 | `centered_rsi14` is spelled the American way | the one identifier that breaks the British spelling of the prose | a stored column, an artifact key and a feature name — a contract with files on disk that moves only with every writer and reader in one commit | no — described |
-| the drawing's `color` key is spelled the CSS way beside prose that says colour | one key against the British prose around it | the word of the CSS it feeds; seventeen keys of `visualisation_config.json`, the generator, the template and a redraw of the derived page would move together for one letter | no — described |
 | `hpo` names the stage and the file; `hyperparameter_search_result` names the key | one term in two forms | a domain abbreviation `AGENTS.md` § Canonical vocabulary admits, spelled out where a key has no file name beside it — as UTC and OHLCV are | no — described |
 | `module_ml.status` writes a basket snapshot and per-asset READMEs in one stage | two namespaces in one stage | each named: the README is an asset artifact of an asset-scoped part of that stage, the snapshot a fold over completed asset artifacts | no — described |

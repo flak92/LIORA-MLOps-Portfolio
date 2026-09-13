@@ -33,7 +33,7 @@ Stated, not mitigated. The panel's own contract is
 | service | what it is | role | lifetime |
 |---|---|---|---|
 | `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor plus the stores its stages touch — `data` the raw tree, the artifacts and the status store, `features` the artifacts and the status store, `ml` those two and the trials store it alone writes — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
-| `dashboard` | the `x-server` anchor, plus `ports:` and four read-only mounts — the artifacts, the run records and the status store it reads, and the repository's drawing below its web root, `./sub_module_dx:/app/module_monitoring/sub_module_dx:ro` | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
+| `dashboard` | the `x-server` anchor, plus `ports:` and three read-only mounts — the artifacts, the run records and the status store it reads | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
 | `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>`, and the artifacts and the status store read-only | the same server in its asset role | resident |
 | `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the one mount, the socket | the DevOps panel's server: the one container that holds the docker socket | resident |
 
@@ -87,8 +87,7 @@ stage from outside and knows no container. The direction is
 nothing else — the fan-out passes `--tickers <TICKER>` from `TICKER_LIST`; `build_ticker_parser` has no default — every launcher names
 the assets — and no stage module reads `ASSET`. The `COMPOSE` macro never gains `-f` or `COMPOSE_FILE`: one
 compose file, every service visible in it. Adding an asset is one line in
-`TICKERS`, one `asset-<ticker>` block under `x-server`, the folder's `roles` and `descriptions` entries in the deployment
-view of `sub_module_dx/visualisation_config.json` and a redraw — and nothing else (the whole recipe,
+`TICKERS` and one `asset-<ticker>` block under `x-server` — and nothing else (the whole recipe,
 the ticker's precondition included: `README.md` § Extending).
 
 **The seat.** The `x-service` anchor is one task definition parameterised by `--tickers`,

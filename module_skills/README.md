@@ -17,7 +17,6 @@ once, and a skill is named below by the path it holds in the tree.
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this project — subtract, don't add |
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology — one image, three runners, three residents —, the container endpoint and the scoped socket rule: the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
-| [skill_developer_experience_drawing.md](skill_developer_experience_drawing.md) | the developer-experience drawing of the whole tracked tree — the repository's own, served by the dashboard — its two views and its configuration surface |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seat paragraphs, the ladder, the non-goals, what the shape holds and what it does not, and why none of it is built |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
