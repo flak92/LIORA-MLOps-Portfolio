@@ -76,7 +76,7 @@ module_data/         sources → normalised raw 1m → one canonical DuckDB per 
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
-the root             the Makefile and docker-compose.yml that run the four, record.py, the developer-experience drawing (sub_module_dx/), the five stores, and the canon: this contract and the overview beside it
+the root             the Makefile and docker-compose.yml that run the four, record.py, the five stores, and the canon: this contract and the overview beside it
 ```
 
 Each module holds its package under one directory; nothing above it belongs to
@@ -133,8 +133,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_data`, `module_features`, `module_ml`,
   `module_monitoring` — the chain in its own order, the
   module's position in the chain at the time it was seated; a new module takes
-  the next free number and nothing is ever renumbered — then `sub_module_dx`,
-  then `store_assets_artifacts`, `store_raw_1m`,
+  the next free number and nothing is ever renumbered — then
+  `store_assets_artifacts`, `store_raw_1m`,
   `store_run_records`, `store_status`, `store_trials`: blocks, not scattered entries. If
   renaming would put things of one category next to each other, rename them;
 - short, predictable paths, built only in a module's `config.py` — never
@@ -162,10 +162,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 Pre-AWS is this repository's word for its own shape: a local, academic
 architecture whose boundaries would still be the right boundaries after local
 storage, local container execution and local stage order were replaced by their
-standard equivalents on Amazon Web Services (AWS). No cloud is used and none is
-planned; the mapping is drawn — the deployment view of the developer-experience
-drawing seats every tracked file beside the primitive that would hold the same
-responsibility — and built nowhere.
+standard equivalents on Amazon Web Services (AWS) — an object store, a container
+runtime, a stage orchestrator. No cloud is used and none is planned; the mapping
+is described here and built nowhere.
 
 - **Academic, not AWS.** The runtime is local — one image per module under
   docker compose, driven by a Makefile — and the goal is a correct dataflow with visible
@@ -202,7 +201,7 @@ responsibility — and built nowhere.
 - **Every placement is argued.** Before an object is committed, § The naming
   review answers where it lives, what it sits beside and which boundary it
   draws; an object whose responsibilities answer to no primitive of the
-  deployment view, or to two, is questioned first.
+  mapping above, or to two, is questioned first.
 - **Names carry the responsibility.** A name says what the object is, what it
   does and where it belongs — a service by its runtime role, a store by what it
   holds, a function by its verb from the closed list or by the quantity it is;
@@ -219,11 +218,10 @@ responsibility — and built nowhere.
   architecture; scale is `ASSET=<TICKER>`, never hundreds of assets.
 
 Cloud proper nouns are external vocabulary. Apart from the repository's own word
-*Pre-AWS*, they are spoken in exactly two places: this section, where the stance
-is stated, and the `deployment` block of `sub_module_dx/visualisation_config.json`
-with the page drawn from it, where each one names the primitive a local object
-would become. Never in a make target, a compose service, an environment
-variable, a payload key, a code comment, an identifier or a tracked path.
+*Pre-AWS*, they are spoken in exactly one place: this section, where the stance
+is stated and the mapping described. Never in a make target, a compose service,
+an environment variable, a payload key, a code comment, an identifier or a
+tracked path.
 
 ## Canonical vocabulary
 
@@ -249,10 +247,8 @@ addressed by different tools and never appear in one listing.
 
 **Derived, never drafted.** A derived artifact is generated from source and
 config and never hand-edited: `<TICKER>_parameters.json`,
-`<TICKER>_feature_set_search.json`, `<TICKER>_README.md`, `<TICKER>_catalogue.json`,
-the three snapshots and the developer-experience drawing
-(`sub_module_dx/files_and_folders_visualisation.html`). A hand edit to one is a
-violation.
+`<TICKER>_feature_set_search.json`, `<TICKER>_README.md`, `<TICKER>_catalogue.json`
+and the three snapshots. A hand edit to one is a violation.
 
 **Rule-derived structure over repeated project knowledge.** When a family —
 assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
@@ -290,7 +286,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is § The feature grammar | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`, `dx-update`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
 | directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` at the time it was seated — a new module takes the next free number and nothing is ever renumbered | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, a renumbered checkout, `repository_module_<domain>/` |
 | images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, one image for every module |
 | compose services | a runtime role, never an image or a ticker in code — the runners `data`, `features`, `ml`, the residents `dashboard`, `asset-<ticker>`, `devops` | `ml`, `asset-btc` | `pipeline`, a service named for an image or a tool, a service per asset stage |
@@ -333,12 +329,10 @@ The boundaries, each with the file that owns it: the QuantConnect Lean tree
 (`download_binance.py`, `download_bybit.py`), xgboost and optuna
 (`module_ml/model.py`, `module_ml/hpo.py`), mlflow (`module_ml/hpo.py`), numpy (every module that computes),
 argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/config.py` — the one parser, twice by extraction —,
-`module_ml/feature_set_promote.py`, `sub_module_dx/visualise.py`), DuckDB SQL (every module that queries), the SVG
-and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included, and the canvas of
-the drawing's template), docker compose (`Makefile`,
+`module_ml/feature_set_promote.py`), DuckDB SQL (every module that queries), the SVG
+and DOM attributes (every `*.js` of `module_monitoring`, its sub-modules included), docker compose (`Makefile`,
 `docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`,
-`module_monitoring/sub_module_devops/config.py` and both downloaders), the `git`
-command line over `subprocess` (`sub_module_dx/visualise.py`) and a stage's
+`module_monitoring/sub_module_devops/config.py` and both downloaders), a stage's
 command line over `subprocess` (`record.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
 cgroup v2 and procfs (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its
 unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four pipeline stores
@@ -508,8 +502,7 @@ rule and the register's `never` columns the synonyms bound to one concept; this
 list gathers the words bound to neither, and repeats the few the register
 already binds that are worth steering away from on sight.
 
-- **directories and path segments** (the drawing's node type `core` is neither: it is a
-  value in `sub_module_dx/visualisation_config.json`)**:** `src`, `core`, `lib`, `common`, `utils`,
+- **directories and path segments:** `src`, `core`, `lib`, `common`, `utils`,
   `helpers`, `manager`, `service`, `assets`, `artifacts`, `data`, `db`,
   `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder;
   `repository_module_<domain>`, a numbered package directory,
@@ -562,19 +555,14 @@ these two.
 
 A **sub-module** is the one boundary in this shape: `sub_module_<domain>/` inside
 the owner of its subject, with its own `config.py`, its own `main()` and no
-dataflow of its own. It exists twice. The DevOps panel is
+dataflow of its own. It exists once: the DevOps panel is
 `module_monitoring/sub_module_devops/`, nested rather than promoted because the
 dashboard serves its own directory — a top-level module would have to be given a
 route, and the page reaches the browser as a static file instead; the panel adds
 one route for its API alone, because an API is not a file, and the socket it holds
-is the reason it is a service of its own rather than a role of `serve.py`. The
-developer-experience drawing is `sub_module_dx/` at the repository root, because
-its subject is the whole tracked tree and no module owns that; the dashboard
-serves its page as a static file through the read-only bind mount
-`docker-compose.yml` seats below its web root, so the drawing costs no route
-either and `module_monitoring` holds no code of it. `sub_module_*` does not enter
-the directory grammar above: two occurrences are a coincidence, and the third one
-mints it or nothing does.
+is the reason it is a service of its own rather than a role of `serve.py`.
+`sub_module_*` does not enter the directory grammar above: it has one occurrence,
+and a convention is minted only at the third.
 
 ## The shape — what holds the project together
 
@@ -586,13 +574,13 @@ is wrong.
 
 | # | holds |
 |---|---|
-| D01 | the root holds no data, feature or ML logic: its only Python is `record.py` and `sub_module_dx/`, both describing the assembled project |
+| D01 | the root holds no data, feature or ML logic: its only Python is `record.py`, describing the assembled project |
 | D02 | `git grep "from module_"` inside a module package finds only that package: no module imports another |
 | D04 | a fresh `git clone` followed by `make all` and `make on` is a working project |
 | D05 | one `docker-compose.yml` carries the whole topology, and one `Makefile` the stage order and the fan-out |
 | D06 | no module writes into another's source tree: what a stage writes lands in a store |
 | D07 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never an image or a service definition of its own |
-| D08 | neither the drawing nor the panel is a module: `sub_module_dx/` is the launcher's, `module_monitoring/sub_module_devops/` the monitoring module's |
+| D08 | the panel is not a module: `module_monitoring/sub_module_devops/` is the monitoring module's |
 | D09 | a payload key and the identifier that produced it carry one name, and a key added, dropped or renamed moves every reader of it in the same commit — the feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block of `features_status.json` beside `assets[].row_count_by_timeframe`, and the `ticker` key in every row of `data_status.json` |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (§ Determinism) |
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte against the reference list `README.md` § Parity names. A change that reshapes a snapshot re-bases that snapshot's line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |

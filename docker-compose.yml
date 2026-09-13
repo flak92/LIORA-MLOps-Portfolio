@@ -66,9 +66,8 @@ services:
         limits:
           memory: 5g
 
-  # the dashboard serves and never writes, so its stores are read-only; it seats the drawing, sub_module_dx/, below its
-  # web root read-only — the DX jump of the page keeps its URL, and module_monitoring holds no code of the drawing. It
-  # mounts no raw store: nothing it serves is measured there.
+  # the dashboard serves and never writes, so its stores are read-only; it mounts no raw store: nothing it serves is
+  # measured there.
   dashboard:
     <<: *server
     ports:
@@ -78,7 +77,6 @@ services:
       - ./store_assets_artifacts:/store/assets_artifacts:ro
       - ./store_run_records:/store/run_records:ro
       - ./store_status:/store/status:ro
-      - ./sub_module_dx:/app/module_monitoring/sub_module_dx:ro
 
   # an asset container reports itself and writes nothing
   asset-btc:

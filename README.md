@@ -11,8 +11,8 @@ deterministic canonical DuckDB per asset → the feature catalogue and labels �
 purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
-Makefile and the compose file that run them, the recorder, the
-developer-experience drawing and the five stores. The governing contract —
+Makefile and the compose file that run them, the recorder and the five stores.
+The governing contract —
 minimalism, minimum requirements, KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, the
 naming grammar and what holds the project together — is
 [AGENTS.md](AGENTS.md); every other rule is the comment beside the code it
@@ -31,20 +31,17 @@ make off                   # stop and remove every container of this project
 make help                  # every target with its one-line purpose
 ```
 
-Clone whole, never `--depth`: the drawing refuses a shallow clone, because its
-provenance stamp cannot be trusted at a graft. `git`, `docker`, `make` and
-Python 3 — standard library only, for `record.py`, the drawing and the opener
-`make on` prints through — are the whole requirement of the host; `tmux` joins
-them for the detached search.
+`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`
+and the opener `make on` prints through — are the whole requirement of the host;
+`tmux` joins them for the detached search.
 Everything runs through the Makefile. `on` and `off` are the one alias pair the
 target grammar admits ([AGENTS.md](AGENTS.md) § Canonical vocabulary): two words
 for a presenter to remember; the targets they name are the convention.
 
-The chain, and the pictures it leaves:
+The chain, and the record it leaves:
 
 ```bash
 make all-record            # the same chain, every stage measured from outside by record.py into store_run_records/<run_id>/ — the Lifecycle tab
-make dx-update             # redraw the developer-experience drawing after the tracked tree changes
 ```
 
 The feature-set search, outside the chain, one asset at a time:
@@ -64,16 +61,12 @@ make ml-feature-set-promote ASSET=BTC PROPOSAL=1   # copy proposal 1's columns i
 
 `tmux` is a tool of the host beside `docker` and `git`, never of an image.
 
-Three readers, three doors, all behind `make on`:
+Two personas, two doors, both behind `make on`:
 
 - **business** — the status page at `http://127.0.0.1:<port>/`, the address
   `make on` prints: *Pipeline*, *Data
   Quality*, *ML Research*, *ML Assets* and *Lifecycle*, the results and the cost
   of producing them (§ Dashboard below);
-- **developer** — the **DX** control in the top right opens the drawing of the
-  tracked tree, one self-contained page in two views: the tree as tracked, and
-  the same tree seated where each part would live or run under § Architectural
-  direction;
 - **DevOps** — the **DevOps** control opens the panel: the asset containers as
   they report themselves, every container on the host with its ports, the
   networks, volumes, bind mounts, the image and the engine's events, with
@@ -170,8 +163,7 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
-| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DX drawing and the DevOps panel behind its two jumps, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
-| drawing   | `make dx-update` | `git ls-files` → `sub_module_dx/files_and_folders_visualisation.html` | the tracked tree of the whole workspace as one self-contained page, redrawn by hand and by nothing else; this repository's own, mounted read-only below the dashboard's web root and opened by the **DX** control of the status page; two views of one tree, development and deployment, flipped by one control on the page |
+| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 
 ## Extending
 
@@ -223,20 +215,6 @@ Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 the bytes equal (`AGENTS.md` § Determinism). The comparison script and
 the reference md5 lists live outside every repository.
 
-## Developer-experience drawing
-
-`make dx-update` redraws `sub_module_dx/files_and_folders_visualisation.html`
-from `git ls-files` — every tracked file
-as its own — in two views:
-the tree as tracked, and the same tree seated beside the primitives the Pre-AWS
-mapping names. `python3 -m sub_module_dx.visualise --check` says whether the
-committed page is fresh; the page is committed alone, after the commit it draws,
-so its provenance stamp names that commit. The dashboard serves it below its web
-root through a read-only bind mount. Everything the picture shows — which
-island a path belongs to, what the side panel says about it, which primitives the
-deployment view draws — is `sub_module_dx/visualisation_config.json`; an unknown
-key there is an error, and a path that is not in the tree is an error too.
-
 ## One canonical series from two venues
 
 Every market feed has missing minutes. Per minute the highest-priority valid
@@ -270,19 +248,14 @@ module, storage and container boundaries are drawn as a Pre-AWS architecture on
 purpose: every local implementation is the smallest that works — one DuckDB file
 per asset, Parquet and JSON in the asset's folder, one image per module, a
 Makefile — and the responsibilities are cut so that a later move onto standard
-cloud primitives (an object store, a container runtime, a stage orchestrator)
-would replace the local storage, the local Docker execution and the local stage
-order without redrawing the domain pipeline. No cloud infrastructure exists here
-and none is planned; the mapping is described, not built. It is also drawn: the
-deployment view of the developer-experience drawing, one control on the **DX**
-page, draws the primitives of the mapping table as icons with the flows between
-them, and seats every tracked file and folder beside the one its responsibility
-answers to, or with the documents that deploy nowhere. Correctness is shown by
-the whole chain running end to end on a small representative basket, `BTC`
-today, never by production-scale infrastructure: there is no test suite, no
-security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
-§ Values). The stance is `AGENTS.md` § Pre-AWS architectural direction; the
-mapping itself is the picture, and nothing else states it.
+cloud primitives would replace the local storage, the local Docker execution and
+the local stage order without redrawing the domain pipeline. No cloud
+infrastructure exists here and none is planned; the mapping is described, not
+built. Correctness is shown by the whole chain running end to end on a small
+representative basket, `BTC` today, never by production-scale infrastructure:
+there is no test suite, no security layer and no guard beyond the seven the
+mathematics needs (`AGENTS.md` § Values). The stance and the mapping are
+`AGENTS.md` § Pre-AWS architectural direction.
 
 ## Data formats
 
@@ -310,16 +283,13 @@ raw ZIP trees. The schema of both is `CANONICAL_DDL` and `VENUE_DDL` in
   removed in the four pipeline stores, then every file it touched, by store and path. Nothing
   a stage says about itself enters the record.
 
-Two controls in the top right leave the page, one per persona beyond the
-business reader:
-
-- **DX** — the developer-experience drawing of the tracked tree;
-- **DevOps** — the panel: one row per asset container, live through the
-  dashboard's proxy (up or down, up since, memory against its ceiling, peak, CPU
-  share over the last poll, the observation lag and the measurement age, then one
-  container as it reports itself), and beside it every container, network and
-  volume the daemon reports, with `start` / `stop` / `restart` offered for this
-  project's own containers alone.
+One control in the top right leaves the page, for the DevOps persona: **DevOps**
+opens the panel — one row per asset container, live through the dashboard's
+proxy (up or down, up since, memory against its ceiling, peak, CPU share over the
+last poll, the observation lag and the measurement age, then one container as it
+reports itself), and beside it every container, network and volume the daemon
+reports, with `start` / `stop` / `restart` offered for this project's own
+containers alone.
 
 ## ML research layer
 

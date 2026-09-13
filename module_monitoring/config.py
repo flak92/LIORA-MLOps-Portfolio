@@ -25,8 +25,8 @@ PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine e
 
 # ---- the units the endpoint converts with
 MICROSECONDS_PER_SECOND = 1_000_000
-# twice by extraction — identical in module_data/config.py, module_ml/config.py, sub_module_dx/config.py;
-# no module imports another, so all four change in one commit
+# twice by extraction — identical in module_data/config.py and module_ml/config.py, and the browser's own in
+# module_monitoring/page.js; no module imports another, so all four change in one commit
 BYTES_PER_KIBIBYTE = 1024
 
 # ---- the run record: one directory per run of the chain, one file per stage, the whole basket inside it
