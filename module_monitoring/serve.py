@@ -1,6 +1,6 @@
 """The one server of module_monitoring, its role chosen by ASSET.
 
-    dashboard role (ASSET unset)   the static page; GET /store_status/<name>, one snapshot as the module that measured itself wrote it;
+    dashboard role (ASSET unset)   the static page; GET /store_status/<name>, one snapshot as its writer left it;
                                    GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
                                    GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
                                    GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket

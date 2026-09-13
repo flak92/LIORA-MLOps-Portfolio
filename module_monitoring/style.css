@@ -52,7 +52,7 @@ td:first-child, th:first-child { text-align: left; }
   margin-right: 0.4em;
 }
 .meter__fill { display: block; height: 100%; background: #0a7a0a; }
-/* an invariant column: its only correct value is zero (skill_candle_canonicalisation.md § 16). Colour marks the
+/* an invariant cell: its only correct value is zero (skill_candle_canonicalisation.md § 16; skill_scalability_crawler.md). Colour marks the
    category, never a magnitude — the observations beside it are expected to move when a provider changes, and these
    are not. Declared before .warn, so a broken invariant reads as a warning rather than as its calm self. */
 .invariant { background: #eaf0ea; }

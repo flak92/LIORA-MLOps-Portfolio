@@ -347,7 +347,7 @@ dashboard, `GET /status` on an asset container.
 
 The asset-container columns and labels are the table of
 `module_monitoring/skills/skill_devops_panel.md`. The page's navigation: the
-tabs *Pipeline*, *Data Quality*, *ML Research*, *ML Assets*, *Lifecycle*, the
+tabs *Pipeline*, *Data Quality*, *ML Research*, *ML Assets*, *Scalability*, *Lifecycle*, the
 jump *DevOps*, and the ML Assets views *Labels & data*,
 *Classification*, *Strategy*, *Search*, *Feature set*.
 
@@ -464,12 +464,13 @@ counted against its contract. The rules are
 |---|---|---|---|---|
 | the crawler: the canon's sub-module that counts the tracked tree against `AGENTS.md` and the skills, and gates nothing | `sub_module_scalability_crawler`; `make skills-status`; `REPO_ROOT`, the checkout as git names it | — | — | a linter, a check, a gate, a CI step; a crawler that fetches anything |
 | the snapshot it writes, a function of the tracked tree | `SKILLS_STATUS_JSON_PATH`, `build_skills_status()` in `status.py` | `skills_status.json` | — | a snapshot that reads itself back; a wall clock in it |
-| the commit a snapshot measured: the last one that touched anything the snapshot reads, and that commit's time | `build_skills_status()` | `measured_at_commit`, `measured_at_commit_utc` | — | `generated_at_utc` for it; the checkout's HEAD |
-| the files in scope: every tracked file but the stores and the dated reviews — of the stores only the keys and the file names are read | `MEASURED_SCOPE_PATHSPECS`, `scope_paths()` | `files_in_scope_count`, `python_line_count` | — | — |
-| one metric: its family, its kind — an invariant or an observation, the two of § Data quality — the rule it counts, its value and at most `EXAMPLES_PER_METRIC_COUNT` places it found | `METRICS` in `status.py` | `metrics` with `family` = `modularity`, `naming`, `vocabulary`, `self-explaining`, `sorting`, `documents` or `review`, `metric`, `kind`, `value`, `examples`, `rule` | — | score, grade; a violation for an observation |
-| what one module measures to | `module_block()` | `modules` with `module`, `file_count`, `python_line_count`, `function_count`, `class_count`, `design_rationale_row_pct`, `module_docstring_pct`, `public_function_docstring_pct`, `files_reviewed_pct` | — | — |
+| the commit a snapshot measured: the last one that touched anything the snapshot reads, and that commit's time | `build_skills_status()` | `measured_at_commit`, `measured_at_commit_utc` | measured at | `generated_at_utc` for it; the checkout's HEAD |
+| the files in scope: every tracked file but the stores and the dated reviews — of the stores only the keys and the file names are read | `MEASURED_SCOPE_PATHSPECS`, `scope_paths()` | `files_in_scope_count`, `python_line_count` | files in scope; python lines | — |
+| one metric: its family, its kind — an invariant or an observation, the two of § Data quality — the rule it counts, its value and at most `EXAMPLES_PER_METRIC_COUNT` places it found | `METRICS` in `status.py` | `metrics` with `family` = `modularity`, `naming`, `vocabulary`, `self-explaining`, `sorting`, `documents` or `review`, `metric`, `kind`, `value`, `examples`, `rule` | family, metric, value, examples, rule | score, grade; a violation for an observation |
+| what one module measures to | `module_block()` | `modules` with `module`, `file_count`, `python_line_count`, `function_count`, `class_count`, `design_rationale_row_pct`, `module_docstring_pct`, `public_function_docstring_pct`, `files_reviewed_pct` | files, python lines, functions, classes, rationale rows, module docstrings, function docstrings, reviewed | — |
 | the canon, and the identity of its content | `CANON_PATHSPECS`, `canon_id()` | `canon_id` | — | a hash (as a key), fingerprint, checksum |
 | the review record: one row per reviewed file, identified by the blob it reviewed, and the conventions a review proposed | `SKILLS_REVIEW_JSON_PATH`, `load_review_record()` | `skills_review.json`: `files` with `path`, `blob_id`, `canon_id`, `verdict`, `self_explaining_level`, `evidence`, `findings` (`rule`, `finding`, `example`); `proposals` with `canon_id`, `pattern`, `forbids`, `scope`, `occurrences`, `occurrence_count` | — | ledger (the trial ledger's word); a commit as the identity of a verdict |
 | what a review concluded of one file | `verdict` | `verdict` = `conformant`, `amended` or `deferred` | — | ok / fail, pass / red |
-| how far one file explains itself, one to five, with the line that earns it | `self_explaining_level`, `evidence` | `self_explaining_level`, `evidence` | — | score, grade; a level without its line |
+| how far one file explains itself, one to five, with the line that earns it | `self_explaining_level`, `evidence` | `self_explaining_level`, `evidence` | self-explaining level | score, grade; a level without its line |
 | a verdict older than the canon: its file unchanged, the canon's content changed since | `stale_count` | — | — | outdated, dirty |
+| the page's view of the count: the metrics by family, the modules, what the review record holds | `scalability.js`; `SKILLS_STATUS`, `SKILLS_REVIEW` | — | Scalability — METRICS, MODULES, REVIEW | a tab named for a tool; scale for a larger basket, which is `ASSET=<TICKER>` (`AGENTS.md` § Pre-AWS architectural direction) |

@@ -9,7 +9,7 @@ linter, no build step, no framework.
   every page shares — formatters, cells, tables, frames, pills and the one fetch
   of the data snapshot — and writes into no page-specific element, so a second
   page loads it without inheriting the first page's markup. `data.js`, `ml.js`,
-  `asset.js` and `run.js` render the status page's sections; `containers.js` and
+  `asset.js`, `run.js` and `scalability.js` render the status page's sections; `containers.js` and
   `devops.js` render the panel's.
 - **The desktop viewport is the only target.**
 - Reachable on **loopback only** (`127.0.0.1`): the server binds `0.0.0.0`
@@ -32,9 +32,11 @@ linter, no build step, no framework.
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold
   marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
-  One category is marked that way on the data views: `invariant`, on the cells of a
-  column whose only correct value is zero
-  (`../../module_data/skills/skill_candle_canonicalisation.md` § 16),
+  One category is marked that way on the data views and the Scalability tab: `invariant`,
+  on the cells of a column — on the Scalability tab, of the rows whose `kind` names it —
+  whose only correct value is zero
+  (`../../module_data/skills/skill_candle_canonicalisation.md` § 16;
+  `../../module_skills/skill_scalability_crawler.md` § The registry),
   so a reader can tell the numbers he may be alarmed by from the ones a change of data
   provider is expected to move. Such columns are named by their header in the render
   function, never counted by position.
@@ -43,14 +45,15 @@ linter, no build step, no framework.
   build one frame, one column and one share cell per entry, the way the ML assets panel
   builds one frame per asset; `index.html` carries the host element, not the parts. A
   provider added to the pipeline therefore changes no file of this module.
-- The page reads three committed snapshots (`data_status.json`, `features_status.json`,
-  `ml_status.json`) into `DATA_STATUS`, `FEATURES_STATUS` and `ML_STATUS` and renders
-  everything client-side; the
-  payload carries only fields the page reads. The DevOps panel reads the live
+- The page reads four committed snapshots (`data_status.json`, `features_status.json`,
+  `ml_status.json`, `skills_status.json`) and the crawler's review record into `DATA_STATUS`,
+  `FEATURES_STATUS`, `ML_STATUS`, `SKILLS_STATUS` and `SKILLS_REVIEW` and renders
+  everything client-side; a snapshot carries only fields the page reads, and the review
+  record, beside them, the identities `status.py` reads. The DevOps panel reads the live
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
   `GET /runs` and `GET /runs/<run_id>` and renders it as it arrives. The DevOps panel
-  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — seven
+  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — nine
   state globals across the two pages; the pill-hook registry `PILL_HOOKS`, the load
   promise `DATA_STATUS_LOADED` and the latches `CONTAINER_POLL_IN_FLIGHT`,
   `PANEL_POLL_IN_FLIGHT` and `MACHINE_ACTION_IN_FLIGHT` are not state.

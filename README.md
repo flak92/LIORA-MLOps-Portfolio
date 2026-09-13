@@ -66,8 +66,8 @@ Two personas, two doors, both behind `make on`:
 
 - **business** — the status page at `http://127.0.0.1:<port>/`, the address
   `make on` prints: *Pipeline*, *Data
-  Quality*, *ML Research*, *ML Assets* and *Lifecycle*, the results and the cost
-  of producing them (§ Dashboard below);
+  Quality*, *ML Research*, *ML Assets*, *Scalability* and *Lifecycle* — the results,
+  the tree counted against its contract and the cost of producing them (§ Dashboard below);
 - **DevOps** — the **DevOps** control opens the panel: the asset containers as
   they report themselves, every container on the host with its ports, the
   networks, volumes, bind mounts, the image and the engine's events, with
@@ -167,7 +167,7 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
-| dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
+| dashboard | `make on`              | snapshots → six-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 
 ## Extending
 
@@ -306,6 +306,9 @@ raw ZIP trees. Schema:
   catalogue: every definition the repository computes, its terms, the history
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
 - **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
+- **Scalability** — the tracked tree counted against `AGENTS.md` and the skills by `make skills-status`:
+  every metric by family with the places it found, the invariants marked, each module's size, argued
+  placements and docstrings, and what the crawler's review record holds;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and
   removed in the four pipeline stores, then every file it touched, by store and path. Nothing

@@ -15,6 +15,7 @@
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
+    <button class="pill" data-key="scalability">Scalability</button>
     <button class="pill" data-key="lifecycle">Lifecycle</button>
   </nav>
 
@@ -98,6 +99,15 @@
   </section>
 
 
+  <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
+    <div id="scalability-meta" class="box">loading /store_status/skills_status.json + skills_review.json&hellip;</div>
+    <div id="scalability-detail"></div>
+    <p class="foot">the tracked tree counted against AGENTS.md and the skills by the crawler of <code>module_skills/</code>,
+      which gates nothing. A marked cell is an invariant, whose only correct value is zero; every other number is an
+      observation, read against its previous reading. The rules each metric reads by are skill_scalability_crawler.md;
+      regenerate with <code>make skills-status</code>.</p>
+  </section>
+
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
     <div id="run-meta" class="box">loading /runs&hellip;</div>
     <div id="run-detail"></div>
@@ -107,13 +117,14 @@
       Nothing a stage says about itself enters the record.</p>
   </section>
 
-  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code>
-    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code>) &middot; the containers, the networks
+  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code> / <code>store/status/skills_status.json</code>
+    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code> / <code>make skills-status</code>) &middot; the containers, the networks
     and the volumes are the <strong>DevOps</strong> panel</p>
   <script src="page.js"></script>
   <script src="data.js"></script>
   <script src="asset.js"></script>
   <script src="ml.js"></script>
   <script src="run.js"></script>
+  <script src="scalability.js"></script>
 </body>
 </html>

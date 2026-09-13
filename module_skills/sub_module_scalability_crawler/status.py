@@ -51,7 +51,7 @@ def example(path: str, line: int, name: str) -> str:
 
 def word_pattern(word: str) -> re.Pattern:
     """A word bounded by anything but a word character, a space inside it matching any run of whitespace."""
-    return re.compile(r"(?<!\w)" + re.escape(word).replace(" ", r"\s+") + r"(?!\w)")
+    return re.compile(r"(?<!\w)" + r"\s+".join(map(re.escape, word.split())) + r"(?!\w)")
 
 
 # ---- markdown: fences, headings, tables, code spans ------------------------------------------------------------------

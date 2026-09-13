@@ -81,7 +81,7 @@ them and carries no dataflow of its own:
 module_data/         sources → normalised raw 1m → one canonical DuckDB per asset
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
-module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
+module_monitoring/   presentation of what the three computational modules measured about themselves, of what record.py measured around every stage and of what the canon's crawler counted of the tree, and the server that serves it — in an asset container, the container reporting itself
 the root             the Makefile and docker-compose.yml that run the four, record.py, the five stores, one folder each under store/, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills, the index of every module's own, and the one sub-module that counts the tree against them (module_skills/sub_module_scalability_crawler/)
 ```
 
@@ -96,8 +96,8 @@ imports another.** What would cross a module boundary as an import crosses it as
 file in a store instead — the five `STORE_*_DIR` the launcher names
 (`module_skills/glossary.md` § Stores), the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
-three snapshots each computational module writes about itself and the dashboard
-serves, the run record `record.py` writes around every stage — or as a copy
+snapshots each computational module writes about itself and the one the crawler
+writes about the tree, which the dashboard serves, the run record `record.py` writes around every stage — or as a copy
 registered in `module_skills/glossary.md` § Twice by extraction, identical to the
 byte on every side. The basket is the launcher's: `TICKERS` in the
 `Makefile`, and one `asset-<ticker>` service per ticker in its
@@ -152,8 +152,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
   `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
   `record.py` for the four pipeline stores it lists, every store but `store/trials/`)
-  — and the browser, which has no config module and fetches its three snapshots
-  (`data_status.json`, `features_status.json`, `ml_status.json`) under
+  — and the browser, which has no config module and fetches its four snapshots
+  (`data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json`) and the crawler's review record under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal
   name; one asset is one folder,
   `store/assets_artifacts/<TICKER>/`, one file per distinct artifact

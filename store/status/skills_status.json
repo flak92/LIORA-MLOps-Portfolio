@@ -1,5 +1,5 @@
 {
- "files_in_scope_count": 76,
+ "files_in_scope_count": 77,
  "measured_at_commit": "ec055ec7a8f1cbe71b8b929415af93b9bc995a6a",
  "measured_at_commit_utc": "2026-09-13 20:07:24",
  "metrics": [
@@ -211,13 +211,13 @@
     "AGENTS.md:138 \u2014 modules: module_data, module_features, module_ml",
     "AGENTS.md:144 \u2014 modules: module_data, module_features, module_ml, module_monitoring",
     "AGENTS.md:154 \u2014 four pipeline stores",
-    "AGENTS.md:155 \u2014 three snapshots"
+    "AGENTS.md:167 \u2014 stores: store/raw_1m, store/run_records"
    ],
    "family": "documents",
    "kind": "observation",
    "metric": "enumeration_incomplete_count",
    "rule": "AGENTS.md \u00a7 Canonical vocabulary, rule-derived structure over repeated project knowledge",
-   "value": 47
+   "value": 42
   },
   {
    "examples": [],
@@ -337,7 +337,7 @@
   {
    "class_count": 7,
    "design_rationale_row_pct": 100.0,
-   "file_count": 20,
+   "file_count": 21,
    "files_reviewed_pct": 0.0,
    "function_count": 62,
    "module": "module_monitoring",
