@@ -106,18 +106,20 @@ def build_brief(batch: list[dict], prior_failure: str | None) -> str:
 
 
 def fetch_agent_envelope(brief: str, worktree: Path) -> tuple[dict, str | None]:
-    """The JSON envelope the agent's command line printed, and the failure of the attempt when there is one. A launch
-    that returns no envelope with a result is a configuration error and ends the pass."""
+    """The result event the agent's command line printed — the last event of type result, whether the line prints the
+    session's events as one list or that event alone — and the failure of the attempt when there is one. A launch that
+    returns no result is a configuration error and ends the pass."""
     try:
         completed = subprocess.run(config.AGENT_COMMAND, input=brief, cwd=worktree, capture_output=True, text=True,
                                    timeout=config.AGENT_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
         return {}, f"the agent ran past {config.AGENT_TIMEOUT_SECONDS} seconds"
     try:
-        envelope = json.loads(completed.stdout)
+        printed = json.loads(completed.stdout)
     except json.JSONDecodeError:
-        envelope = {}
-    envelope = envelope if isinstance(envelope, dict) else {}
+        printed = []
+    events = printed if isinstance(printed, list) else [printed]
+    envelope = next((event for event in reversed(events) if isinstance(event, dict) and event.get("type") == "result"), {})
     if completed.returncode != 0 and "result" not in envelope:
         raise SystemExit(f"the agent did not run (exit {completed.returncode}): {completed.stderr.strip()}")
     facts = f"{envelope.get('subtype')}, {envelope.get('num_turns')} turns"

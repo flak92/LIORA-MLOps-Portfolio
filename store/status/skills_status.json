@@ -378,10 +378,10 @@
    "module": "module_skills",
    "module_docstring_pct": 100.0,
    "public_function_docstring_pct": 41.0,
-   "python_line_count": 1396
+   "python_line_count": 1398
   }
  ],
- "python_line_count": 5642,
+ "python_line_count": 5644,
  "shape": [
   {
    "condition": "D01",
