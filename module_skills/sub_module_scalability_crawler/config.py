@@ -137,6 +137,31 @@ SHAPE_EVIDENCE_BY_CONDITION = {
     "D17": "make skills-status",
 }
 
+# the review pass: its branch and the worktree beside the checkout, never inside it
+CRAWLER_DIR = "module_skills/sub_module_scalability_crawler"
+BRIEF_TEMPLATE_PATH = "module_skills/sub_module_scalability_crawler/crawl_brief_template.md"
+CRAWL_BRANCH = "scalability-crawler"
+CRAWL_WORKTREE_DIR = REPO_ROOT.parent / f"{REPO_ROOT.name}_scalability_crawler"
+# the bound of one pass: batches of one module, at most this many files each, at most this many batches, two attempts each
+CRAWL_BATCH_FILE_COUNT = 6
+CRAWL_PASS_BATCH_COUNT = 6
+CRAWL_ATTEMPT_COUNT_PER_BATCH = 2
+AGENT_TIMEOUT_SECONDS = 1800
+# the checkout is quiet when nothing under it but these changed for this long; 0 turns the wait off
+QUIET_PROBE_SECONDS = 300
+PROBE_EXCLUDE = (".git", ".venv", "store/status/skills_status.json", "store/status/skills_review.json")
+# module_skills/glossary.md § Scalability crawler, the verdict and level rows
+VERDICTS = ("conformant", "amended", "deferred")
+SELF_EXPLAINING_LEVELS = (1, 2, 3, 4, 5)
+# the agent's command line — its own vocabulary inside this tuple: Claude Sonnet 5, one JSON envelope on stdout, the brief
+# on stdin; only the tools a review needs, no tool that creates a file, nothing that would ask a question, and none of the
+# user's settings, MCP servers or sessions
+AGENT_COMMAND = ("claude", "-p", "--model", "claude-sonnet-5", "--output-format", "json", "--max-turns", "40",
+                 "--tools", "Read,Edit,Glob,Grep,Bash",
+                 "--allowedTools", "Read,Edit,Glob,Grep,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status:*),Bash(git grep:*)",
+                 "--permission-mode", "acceptEdits", "--permission-prompts", "none",
+                 "--setting-sources", "project", "--strict-mcp-config", "--no-session-persistence")
+
 EXAMPLES_PER_METRIC_COUNT = 5
 PCT_DECIMAL_COUNT = 1
 LEVEL_MEAN_DECIMAL_COUNT = 2

@@ -117,11 +117,75 @@ no evidence.
 `store/status/skills_review.json` holds one row per reviewed file — its `path`,
 the `blob_id` it reviewed, the `canon_id` it was reviewed under, its `verdict`,
 its `self_explaining_level` with the line that earns it as `evidence`, and its
-`findings` — and the `proposals` a review wrote. `status.py` reads it and never
-writes it. A row counts while its file is still the blob the row names, and is
-stale while the canon's content is not the `canon_id` the row names; the canon
-is `CANON_PATHSPECS` — `AGENTS.md`, `module_skills/*.md` and
-`module_*/skills/*.md`.
+`findings` — and the `proposals` a review wrote. `crawl.py` writes it, through
+one function; `status.py` and the page read it. A row counts while its file is
+still the blob the row names, and is stale while the canon's content is not the
+`canon_id` the row names; the canon is `CANON_PATHSPECS` — `AGENTS.md`,
+`module_skills/*.md` and `module_*/skills/*.md`. The writer keeps the rows
+sorted by path and the proposals by pattern, drops a row whose file left the
+scope and a proposal made under another canon, and rewrites the file only when
+its content changes.
+
+## The pass
+
+`make skills-crawl` runs one bounded pass, and `make tmux-skills-crawl` runs the
+same pass in the tmux session `skills-crawl`, which outlives the terminal —
+`tmux attach -t skills-crawl` to watch it, Ctrl-C to stop it. A pass:
+
+1. stops, in one line, when the checkout is not clean — a file git does not
+   track is work in progress, so scratch belongs in a gitignored path — when
+   branch `scalability-crawler` holds a commit the checkout has not merged, or
+   when the agent's command line is not on `PATH`;
+2. is skipped, saying `skipped: activity at <path>`, when anything under the
+   checkout changed within `QUIET_PROBE_SECONDS`: a stage writing into a store is
+   activity, and the crawler's own two files in the status store are not;
+3. queues the files in scope whose row is missing, whose blob is not the row's
+   or whose canon is not the row's — unreviewed, changed, stale, in that order —
+   the amendable files first and the review-only files last: the crawler's own,
+   the canon and the root's. An empty queue ends the pass before anything is
+   created;
+4. opens a worktree beside the checkout on branch `scalability-crawler` and
+   measures its invariants, the base of the ratchet;
+5. reviews at most `CRAWL_PASS_BATCH_COUNT` batches, each at most
+   `CRAWL_BATCH_FILE_COUNT` files of one module and one mode, one agent at a time.
+   Every attempt starts from the committed files. An amendment is kept when every
+   edit stays inside the batch — its files, the module's orientation and the
+   glossary, and nothing in a review-only batch — when every edited Python file
+   still compiles, and when no invariant, measured by the checkout's own code,
+   exceeds the base. A failed attempt is tried once more, its failure in the
+   brief; then the batch is reverted, and the files the agent edited — every file
+   of the batch, when no attempt answered — are `deferred` with the failure as
+   their finding, while the others keep their verdict;
+6. commits each batch once — the kept amendments with the review record — and,
+   after the last batch, the snapshot alone; then removes the worktree and prints
+   the two commands a morning has: `git merge --no-ff --no-edit
+   scalability-crawler` or `git branch -D scalability-crawler`.
+
+A launch of the agent that returns no result is a configuration error: the pass
+exits 1 with the agent's own error and writes no row. The checkout is never
+written; a change to it during the pass stops the pass. After the merge the next
+pass goes on from the record.
+
+## The reviewer
+
+The reviewer is Claude Sonnet 5 through its command line, `AGENT_COMMAND` in
+`config.py`: the brief on stdin and one JSON envelope on stdout, the tools a
+review needs and none that creates a file, no question it could wait on, and
+none of the user's settings, MCP servers or sessions. The brief,
+`crawl_brief_template.md`, cites the rules the reviewer judges by and restates
+none: the reviewer amends what the grammar derives without a decision, writes a
+finding for everything else, and proposes a convention at two occurrences; the
+page marks the third (`skill_self_explaining_naming.md` § Minting a new
+convention).
+
+## One commit per batch
+
+A row names the blob it reviewed and the canon it was reviewed under — git's own
+identities, read off the index once the amendment is staged — and never a
+commit. A file is current while its blob and the canon are the ones its row
+names, whatever merge brought them: a squash, a rebase and a `--no-ff` merge
+leave the same blobs, so one commit per batch carries everything a later pass
+reads.
 
 ## Design rationale
 
@@ -137,4 +201,6 @@ column.
 | `__init__.py` | The package that makes `python3 -m module_skills.sub_module_scalability_crawler.status` a command, its docstring the sub-module's responsibility in one line. | It imports nothing, and `module_skills/` above it stays a folder of documents with no package file. | The same command runs from whichever checkout git names as its root. | no row — a measurement of the tree that travels with the canon, run by a hand on the host |
 | `config.py` | The one surface of configuration (its docstring): where the snapshot lands, the files in scope, the canon, the closed lists each read off a section of the contract or a skill, and its copy of `rounded()` — twice by extraction (`glossary.md` § Twice by extraction). | `status.py` imports it and nothing else does; it reads `STORE_STATUS_DIR` from the environment the `Makefile` sets, as every `config.py` does, and asks git where the checkout is, `REPO_ROOT` — never `__file__`. | A word the contract adds to a closed list is one line here, so the count follows the contract without a change of code. | no row — a measurement of the tree that travels with the canon, run by a hand on the host |
 | `status.py` | The measurement: the six kinds, the structural rules, `METRICS` naming each metric once, and the snapshot assembled from them (its docstring). | It imports `config.py` alone, reads the tracked files through git and the review record from the status store, and writes `skills_status.json`; no module imports it. | A function of the tree it reads: the same commit measures to the same bytes on any host. | no row — a measurement of the tree that travels with the canon, run by a hand on the host |
-| `store/status/skills_status.json` + `store/status/skills_review.json` | The snapshot `status.py` writes and the review record it reads — status objects beside the computational snapshots, tracked like them. | In the status store, outside this sub-module and every module (`AGENTS.md` § Pre-AWS architectural direction, *Storage is separate from compute*); the route `/store_status/<name>` serves them as it serves every snapshot. | Their paths are `STORE_STATUS_DIR / <name>` in `config.py`, under whatever disk is mounted for the store. | STORAGE — status, run and trial objects |
+| `crawl.py` | The pass (its docstring): the queue, the worktree, the attempts, the three conditions an amendment is kept by, and the one writer of the review record. | It imports `config.py` and `status.py` — the queue and the ratchet are the measurement's own functions — and runs git and the agent's command line over `subprocess`; no module imports it. | It writes only branch `scalability-crawler` and a worktree beside the checkout, so the checkout stays as its owner left it on whatever host runs the pass. | no row — a measurement of the tree that travels with the canon, run by a hand on the host |
+| `crawl_brief_template.md` | The brief every batch sends the reviewer, its placeholders filled by `crawl.py`: what to read, what to judge and amend, and the form of the answer. | Beside `crawl.py`, its one reader; it cites `AGENTS.md` and the skills and restates neither (`glossary.md` § Documentation ownership, the brief excepted). | The same brief reaches whichever reviewer the command line names. | no row — a measurement of the tree that travels with the canon, run by a hand on the host |
+| `store/status/skills_status.json` + `store/status/skills_review.json` | The snapshot `status.py` writes and the review record `crawl.py` writes — status objects beside the computational snapshots, tracked like them. | In the status store, outside this sub-module and every module (`AGENTS.md` § Pre-AWS architectural direction, *Storage is separate from compute*); the route `/store_status/<name>` serves them as it serves every snapshot. | Their paths are `STORE_STATUS_DIR / <name>` in `config.py`, under whatever disk is mounted for the store. | STORAGE — status, run and trial objects |

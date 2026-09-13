@@ -27,8 +27,8 @@ ENUMERATION_SEPARATOR_PATTERN = r"[\s`*,/+·()]*(?:\b(?:and|or)\b)?[\s`*,/+·()]
 REVIEW_RULE = "module_skills/skill_scalability_crawler.md § The review record"
 
 
-def git(*args: str) -> str:
-    return subprocess.run(("git", *args), cwd=config.REPO_ROOT, capture_output=True, text=True, check=True).stdout
+def git(*args: str, root=None) -> str:
+    return subprocess.run(("git", *args), cwd=root or config.REPO_ROOT, capture_output=True, text=True, check=True).stdout
 
 
 def tracked_paths(*pathspecs: str) -> list[str]:
@@ -633,8 +633,10 @@ def blob_ids() -> dict[str, str]:
     return {line.split("\t", 1)[1]: line.split()[2] for line in git("ls-tree", "-r", "HEAD").splitlines()}
 
 
-def canon_id() -> str:
-    lines = sorted(f"{path} {blob_ids().get(path, '')}" for path in tracked_paths(*config.CANON_PATHSPECS))
+def canon_id(blobs: dict[str, str] | None = None) -> str:
+    """The identity of the canon's content: its paths and blobs — of HEAD, or of the blobs a caller names."""
+    blobs = blob_ids() if blobs is None else blobs
+    lines = sorted(f"{path} {blobs.get(path, '')}" for path in tracked_paths(*config.CANON_PATHSPECS))
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
 
 

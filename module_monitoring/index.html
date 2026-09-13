@@ -105,7 +105,9 @@
     <p class="foot">the tracked tree counted against AGENTS.md and the skills by the crawler of <code>module_skills/</code>,
       which gates nothing. A marked cell is an invariant, whose only correct value is zero; every other number is an
       observation, read against its previous reading. The rules each metric reads by are skill_scalability_crawler.md;
-      regenerate with <code>make skills-status</code>.</p>
+      regenerate with <code>make skills-status</code>. <code>make tmux-skills-crawl</code> runs a review pass on branch
+      scalability-crawler, which a hand keeps with <code>git merge --no-ff --no-edit scalability-crawler</code> or
+      drops with <code>git branch -D scalability-crawler</code>.</p>
   </section>
 
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>

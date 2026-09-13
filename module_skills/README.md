@@ -19,7 +19,7 @@ once, and a skill is named below by the path it holds in the tree.
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology — one image, three runners, three residents —, the container endpoint and the scoped socket rule: the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seat paragraphs, the ladder, the non-goals, what the shape holds and what it does not, and why none of it is built |
-| [skill_scalability_crawler.md](skill_scalability_crawler.md) | the scalability crawler: the tree counted against the contract, the snapshot it writes, the rules each metric reads by |
+| [skill_scalability_crawler.md](skill_scalability_crawler.md) | the scalability crawler: the tree counted against the contract, the snapshot it writes, the rules each metric reads by, and the review pass |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
 

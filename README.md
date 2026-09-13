@@ -34,7 +34,8 @@ make help                  # every target with its one-line purpose
 
 `git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
 `make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
-`tmux` joins them for the detached search.
+`tmux` joins them for the detached search and the crawler's review pass, and the Claude Code command line
+for that pass's reviewer.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
 vocabulary): two words for a presenter to remember.
@@ -81,7 +82,8 @@ at invocation — the port the dashboard already publishes, else the first free 
 (`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
 derives, so a rerun fetches and rebuilds only what its contract says — the trial
-ledger alone grows, one search more per `ml-hpo`. The dashboard is
+ledger alone grows, one search more per `ml-hpo`, and beside the chain the crawler's review record
+keeps each file's last verdict. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
@@ -200,8 +202,9 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 
 `AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
 and the rules that cross modules, and the one sub-module that counts the tree
-against them — `make skills-status` writes `store/status/skills_status.json` and
-gates nothing (`module_skills/skill_scalability_crawler.md`). A module's own rules live under that module, in
+against them — `make skills-status` writes `store/status/skills_status.json`, and
+`make tmux-skills-crawl` hands batches of the tree to a reviewer on branch
+`scalability-crawler`; it gates nothing (`module_skills/skill_scalability_crawler.md`). A module's own rules live under that module, in
 `module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
 them. Each rule is written exactly once, where it is owned, and no document
 restates another (`AGENTS.md` § The default choice).

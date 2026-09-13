@@ -119,6 +119,12 @@ tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<
 # nothing, and no target of the chain depends on it
 skills-status:   ## skills_status.json -> store/status: the tracked tree counted against AGENTS.md and the skills
 	python3 -B -m module_skills.sub_module_scalability_crawler.status
+skills-crawl:    ## one bounded pass of the review on a quiet, clean checkout: the agent's amendments on branch scalability-crawler, never in the checkout; a rerun after the merge goes on
+	python3 -B -m module_skills.sub_module_scalability_crawler.crawl
+# the detached twin: the same pass in a tmux session that outlives the terminal, started in this checkout with this shell's
+# PATH, where the agent's command line lives; a plain make, not $(MAKE), for the reason the search's twin gives
+tmux-skills-crawl: ## the pass detached in tmux session skills-crawl, alive after the terminal closes and gone with the pass; tmux attach -t skills-crawl to watch, Ctrl-C stops it
+	@tmux has-session -t skills-crawl 2>/dev/null && echo 'skills-crawl is already running — tmux attach -t skills-crawl' || tmux new-session -d -s skills-crawl -e PATH="$$PATH" -c $(CURDIR) 'make skills-crawl'
 
 # the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page

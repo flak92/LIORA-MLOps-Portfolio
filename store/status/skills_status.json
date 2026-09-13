@@ -1,5 +1,5 @@
 {
- "files_in_scope_count": 77,
+ "files_in_scope_count": 79,
  "measured_at_commit": "35376ab640f57f8e93987fb7c5219fc9c557bad6",
  "measured_at_commit_utc": "2026-09-13 20:16:43",
  "metrics": [
@@ -231,11 +231,11 @@
   },
   {
    "examples": [
-    "AGENTS.md:111 \u2014 two modules",
-    "AGENTS.md:138 \u2014 modules: module_data, module_features, module_ml",
-    "AGENTS.md:144 \u2014 modules: module_data, module_features, module_ml, module_monitoring",
-    "AGENTS.md:154 \u2014 four pipeline stores",
-    "AGENTS.md:167 \u2014 stores: store/raw_1m, store/run_records"
+    "AGENTS.md:114 \u2014 two modules",
+    "AGENTS.md:141 \u2014 modules: module_data, module_features, module_ml",
+    "AGENTS.md:147 \u2014 modules: module_data, module_features, module_ml, module_monitoring",
+    "AGENTS.md:157 \u2014 four pipeline stores",
+    "AGENTS.md:170 \u2014 stores: store/raw_1m, store/run_records"
    ],
    "family": "documents",
    "kind": "observation",
@@ -372,16 +372,16 @@
   {
    "class_count": 0,
    "design_rationale_row_pct": 100.0,
-   "file_count": 12,
+   "file_count": 14,
    "files_reviewed_pct": 0.0,
-   "function_count": 78,
+   "function_count": 98,
    "module": "module_skills",
    "module_docstring_pct": 100.0,
-   "public_function_docstring_pct": 35.9,
-   "python_line_count": 976
+   "public_function_docstring_pct": 39.8,
+   "python_line_count": 1360
   }
  ],
- "python_line_count": 5222,
+ "python_line_count": 5606,
  "shape": [
   {
    "condition": "D01",
@@ -466,6 +466,11 @@
   {
    "condition": "D17",
    "evidence": "make skills-status",
+   "holds": null
+  },
+  {
+   "condition": "D18",
+   "evidence": null,
    "holds": null
   }
  ]
