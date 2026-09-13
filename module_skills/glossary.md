@@ -266,7 +266,7 @@ two a hand's stages write are listed with no size until they exist:
 | `<TICKER>_README.md` | `module_ml/status.py` | what the folder holds and what came out of it; no timestamp |
 | `<TICKER>_catalogue.json` | `module_features/catalogue.py` | the feature layer's contract the ML layer reads instead of the feature configuration: `decision_timeframe`, `timeframes` (each `timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` |
 | `<TICKER>_feature_set.json` | `module_ml/feature_set_promote.py` | `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's; tracked, like the parameters it conditions |
-| `<TICKER>_feature_set_search.json` | `module_ml/feature_set_search.py` | `inputs`, `trials`, `champion_trial`, `pass_count`, `search_converged`, `proposals` — the ledger of every scored trial, the search's own state, rewritten after every scored trial; present once a search has run |
+| `<TICKER>_feature_set_search.json` | `module_ml/feature_set_search.py` | `inputs`, `trials`, `champion_trial`, `pass_count`, `search_converged`, `proposals` — every scored trial, the search's own state, rewritten after every scored trial; present once a search has run |
 | `<TICKER>_features_ss-15-hh-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 15m — `decision_ts` and every definition offered on 15m, on the decision grid |
 | `<TICKER>_features_ss-mm-01-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 1h — `decision_ts` and every definition offered on 1h |
 | `<TICKER>_features_ss-mm-04-dd-MM.parquet` | `module_features/catalogue.py` | the catalogue on 4h — `decision_ts` and every definition offered on 4h |
@@ -329,7 +329,7 @@ how a stage is run, never what it computes.
 | a runner — a compose service that is a role and a one-off: no command of its own, `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>` supplies one and the container exits with the stage | `data`, `features`, `ml` — the `x-service` anchor, which carries the one `build:` and `image:`; the `run`, `fanout` and `basket` macros of the Makefile | — | — | `pipeline` (one runner for every module), a stage run by `exec` inside a resident, a runner with a `command:` |
 | the memory ceiling of the one task that needs it — HPO and XGBoost above DuckDB's `4GB` | `deploy.resources.limits.memory` of the `ml` runner alone | — | — | `mem_limit` beside it, a CPU quota, a reservation; a ceiling on the anchor, so on the dashboard too |
 | how long a container lives: one-off — a `run --rm` process that exits with its stage — or resident — a server that stays up | the `lifetime` column of `skill_asset_containers.md` § The topology | — | — | one-shot, ephemeral, daemon, long-running; `task` or `job` for the one-off |
-| the presentation switch: the whole stack up with the page open, or everything down, in one word | `make on`, `make off` — the two bare lifecycle targets a presenter types | — | — | `start` / `stop` (the panel's verbs for one container), bare `up` / `down` (compose's), `run`, a third alias |
+| the presentation switch: the whole stack up with the page open, or everything down, in one word | `make on`, `make off` — the two bare lifecycle targets a presenter types | — | — | `start` / `stop` (the panel's verbs for one container), bare `up` / `down` (compose's), `run`, a second switch pair |
 
 ## Container status endpoint
 

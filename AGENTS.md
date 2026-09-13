@@ -29,8 +29,9 @@ the working path.) If a change conflicts with this file, the change is wrong.
   per module; repeated logic becomes one function, not three copies.
 - **UCAS — Useless Click Avoiding System.** Manual steps, clicks and context
   switches that can be automated, are: `make all` runs the whole pipeline
-  from a fresh clone, every stage is idempotent, the dashboard opens
-  itself.
+  from a fresh clone, every stage is idempotent in what it derives — the
+  trial ledger alone accumulates, each search appending its `hpo_<n>` runs,
+  until a hand clears it — and the dashboard opens itself.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the seven
   guards the mathematics requires: causality invariants (`indicators.asof_index`) and
@@ -143,7 +144,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
   `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
-  `record.py` for the four pipeline stores it lists)
+  `record.py` for the four pipeline stores it lists, every store but `store/trials/`)
   — and the browser, which has no config module and fetches its three snapshots
   (`data_status.json`, `features_status.json`, `ml_status.json`) under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal

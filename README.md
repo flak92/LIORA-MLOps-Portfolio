@@ -35,9 +35,9 @@ make help                  # every target with its one-line purpose
 `git`, `docker`, `make` and Python 3 — standard library only, for `record.py`
 and the opener `make on` prints through — are the whole requirement of the host;
 `tmux` joins them for the detached search.
-Everything runs through the Makefile. `on` and `off` are the one alias pair the
-target grammar admits ([AGENTS.md](AGENTS.md) § Canonical vocabulary): two words
-for a presenter to remember; the targets they name are the convention.
+Everything runs through the Makefile. `on` and `off` are the presentation switch,
+the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
+vocabulary): two words for a presenter to remember.
 
 The chain, and the record it leaves:
 
@@ -79,8 +79,9 @@ basket — and `data-all`, `features-all`, `ml-all` and `all` are the chains. Th
 Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
 (`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
-it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent, so
-a rerun fetches and rebuilds only what its contract says. The dashboard is
+it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
+derives, so a rerun fetches and rebuilds only what its contract says — the trial
+ledger alone grows, one search more per `ml-hpo`. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
@@ -131,7 +132,7 @@ object. Everything below it describes the method, not the data provider.
 | `store/raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
 | `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
 | `store/run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
-| `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point the hyper-parameter search drew; the `ml` runner alone writes it, and a hand clears it |
+| `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point every hyper-parameter search drew, a rerun appending a search of its own; `module_ml/hpo.py` alone writes it, the `ml` runner the one service that mounts it, and a hand clears it |
 | `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
 
 The store is the boundary between compute and state (`module_skills/glossary.md`
@@ -149,7 +150,8 @@ its module's runner, `docker compose run --rm -T <runner> python -m <module>.<st
 once for the whole basket (the three status stages and the download). `ASSET=<TICKER>`
 on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
-`record.py`, which lists the four pipeline stores before and after and writes
+`record.py`, which lists the four pipeline stores — every store but
+`store/trials/`, a search's own account of itself — before and after and writes
 `store/run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
 `liora-devops-1` and `liora-asset-<ticker>-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
@@ -216,10 +218,9 @@ Every number here is reproducible. The proof, repeatable on any host:
    parameters, the out-of-fold predictions, the model and strategy evaluations,
    the asset README — byte-identical to the reference list;
    `BTC_catalogue.json`, the one new file, identical between two runs;
-4. the three snapshots identical after dropping `generated_at_utc`,
-   `assets[].artifacts.model_evaluation_modified_utc` in `ml_status.json` (a file
-   time) and `symbols[].db_bytes` in `data_status.json` (a file size that follows
-   the file's history, not its data).
+4. the three snapshots identical after dropping `generated_at_utc` from each and
+   `assets[].artifacts.model_evaluation_modified_utc` from `ml_status.json` (a
+   file time).
 
 Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 `OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make

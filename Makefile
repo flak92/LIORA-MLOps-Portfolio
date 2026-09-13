@@ -108,8 +108,9 @@ ml-feature-set-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset i
 	$(run) ml python -m module_ml.feature_set_promote --tickers $(ASSET) --proposal $(PROPOSAL)
 	$(MAKE) ml-all ASSET=$(ASSET)
 # the detached twin: the same search in a tmux session that outlives the terminal, started in this checkout, one asset per
-# session; the session ends with the search — the ledger and the page are the record. A plain make, not $(MAKE): the
-# session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs even under -n
+# session; the session ends with the search — `<TICKER>_feature_set_search.json` and the page are the record.
+# A plain make, not $(MAKE): the session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs
+# even under -n
 tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t feature-set-<ticker> to watch, Ctrl-C stops, a rerun after it ends resumes; ASSET= is required
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
 	@tmux has-session -t $(FEATURE_SET_SEARCH_SESSION) 2>/dev/null && echo '$(FEATURE_SET_SEARCH_SESSION) is already running — tmux attach -t $(FEATURE_SET_SEARCH_SESSION)' || tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make ml-feature-set-search ASSET=$(ASSET)'

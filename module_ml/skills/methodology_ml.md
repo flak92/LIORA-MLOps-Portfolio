@@ -138,8 +138,8 @@ mean skill among the qualifiers is accepted, ties to the earlier candidate
 again. Every forward move raises every fold's skill and every backward move
 shrinks the set at no worse folds, so no
 set recurs and the search ends when a pass accepts nothing: `search_converged`.
-A set scored once is looked up, never fitted twice, and no booster is kept. The
-ledger of every trial is `<TICKER>_feature_set_search.json`, rewritten after
+A set scored once is looked up, never fitted twice, and no booster is kept. Every
+scored trial is recorded in `<TICKER>_feature_set_search.json`, rewritten after
 each, so an interrupted run resumes at its next candidate and a finished run is
 read, not rewritten; its `inputs` — the window with its warm-up and seed,
 `best_params`, the catalogue's columns and the active set — are the one copy of

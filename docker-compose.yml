@@ -2,11 +2,12 @@
 # the five STORE_*_DIR every config.py reads, one variable per store, plus the thread cap and the three mlflow facts
 # that are correctness, not settings. x-service is what every service of this file is; x-server adds the one command
 # the dashboard and the assets share. The three runners — data, features, ml — carry no command: a stage is `docker
-# compose run --rm <runner> python -m <module>.<stage> --tickers <T>`, one one-off container per asset, and exits;
-# the three residents serve.
+# compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>`, one one-off container per asset or one
+# for the whole basket, and exits; the three residents serve.
 # environment: and volumes: REPLACE an anchor's key rather than extend it, so a service that adds a variable merges the
-# store map with <<: (asset-btc) and a service respells its mounts whole. Every service mounts the code and the stores it
-# touches, read-only where it only reads, and no store it does not touch. The project name is fixed:
+# store map with <<: (asset-btc) and a service respells its mounts whole. Every service mounts the tree at /app — store/
+# rides in it, an address no service uses — and at /store/<content> the stores it touches, read-only where it only
+# reads, and no other. The project name is fixed:
 # liora-dashboard-1, liora-asset-btc-1, liora-devops-1 on every host — two checkouts on one host share it, so run one at
 # a time or override COMPOSE_PROJECT_NAME.
 name: liora
@@ -66,7 +67,7 @@ services:
         limits:
           memory: 5g
 
-  # the dashboard serves and never writes, so its stores are read-only. It mounts no raw store: nothing it serves is
+  # the dashboard serves and never writes, so its stores are read-only; it mounts no raw store: nothing it serves is
   # measured there.
   dashboard:
     <<: *server
@@ -90,9 +91,9 @@ services:
       - ./store/status:/store/status:ro
 
   # the one service that holds the docker socket, and the only one: its whole responsibility is docker management and
-  # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It holds no store; its environment still
-  # carries the five store names from the anchor, because its server imports module_monitoring/config.py, which reads
-  # three of them at import.
+  # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It addresses no store; its environment
+  # still carries the five store names from the anchor, because its server imports module_monitoring/config.py, which
+  # reads three of them at import.
   devops:
     <<: *service
     command: python -m module_monitoring.sub_module_devops.serve

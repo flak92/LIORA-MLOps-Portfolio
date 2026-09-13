@@ -12,9 +12,10 @@ from . import config, dataset, model, validation
 
 
 def log_trials(ticker: str, trials: list[dict]) -> None:
-    """Every trial of the search: one mlflow run per trial, named `hpo_<n>` — its place in the search, counting from
-    one — in the asset's own ledger, so two fanned-out processes share no path and no experiment id. mlflow's own
-    vocabulary, its run id among it, begins and ends inside this call."""
+    """Every trial of the search: one mlflow run per trial, named `hpo_<n>` — its place in that search, counting from
+    one — in the asset's own ledger, so two fanned-out processes share no path and no experiment id. The experiment
+    is the ticker and is reused, so a rerun appends a search of its own, `hpo_1` again; the ledger only grows. mlflow's
+    own vocabulary, its run id among it, begins and ends inside this call."""
     ledger = config.trials_sqlite(ticker)
     ledger.parent.mkdir(parents=True, exist_ok=True)
     mlflow.set_tracking_uri(f"sqlite:///{ledger}")
