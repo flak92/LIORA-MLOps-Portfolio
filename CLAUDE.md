@@ -5,7 +5,7 @@ with the document it points at. It exists because an agent session loads this
 filename and not `AGENTS.md`.
 
 `AGENTS.md` is the governing contract. **Read it in full before the first edit
-of a session.** If a change conflicts with it, the change is wrong.
+of a session.**
 
 ## The working path
 
