@@ -187,6 +187,51 @@ names, whatever merge brought them: a squash, a rebase and a `--no-ff` merge
 leave the same blobs, so one commit per batch carries everything a later pass
 reads.
 
+## The schedule
+
+Nothing in the tree schedules a pass: the `Makefile` never schedules
+(`AGENTS.md` § Pre-AWS architectural direction). A host that wants one every
+weekday night writes the schedule outside the tree, with its own checkout and the
+`PATH` of the shell the reviewer's command line is installed in, in one of two
+forms.
+
+The default is a user timer of systemd, because its journal keeps what a pass
+printed — `skipped: activity at …`, a stop, the summary — for
+`journalctl --user -u skills-crawl` to read in the morning:
+
+```
+# skills-crawl.service, beside the timer in the user's systemd directory
+[Service]
+Type=oneshot
+WorkingDirectory=<checkout>
+Environment=PATH=<PATH of the installing shell>
+ExecStart=/usr/bin/make skills-crawl
+Nice=10
+
+# skills-crawl.timer
+[Timer]
+OnCalendar=Mon..Fri 02:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+`systemctl --user enable --now skills-crawl.timer` starts it, and
+`loginctl enable-linger` keeps it on a host nobody stays logged in to. The
+fallback is a cron line, its output mailed:
+
+```
+MAILTO=<address>
+0 2 * * 1-5 cd <checkout> && PATH=<PATH of the installing shell> make skills-crawl
+```
+
+A timer or a cron line needs no terminal; `make tmux-skills-crawl` is the pass a
+hand starts and may leave. Either way the morning is the same:
+`git log --oneline HEAD..scalability-crawler`, then one command —
+`git merge --no-ff --no-edit scalability-crawler` or
+`git branch -D scalability-crawler`.
+
 ## Design rationale
 
 Why each object of this sub-module sits where it does — the answers of
