@@ -118,6 +118,13 @@ def scope_paths() -> tuple[str, ...]:
 
 
 @functools.cache
+def crawl_paths() -> tuple[str, ...]:
+    """The files the review pass may queue: the files in scope CRAWL_PATHSPECS names."""
+    scope = set(scope_paths())
+    return tuple(path for path in tracked_paths(*config.CRAWL_PATHSPECS) if path in scope)
+
+
+@functools.cache
 def tracked_directories() -> frozenset[str]:
     return frozenset(path[:match.start()] for path in all_paths() for match in re.finditer("/", path))
 
@@ -648,13 +655,13 @@ def load_review_record() -> dict:
 def current_review_rows() -> list[dict]:
     """The rows of the record whose file is still the blob they reviewed."""
     return [row for row in load_review_record()["files"]
-            if row["path"] in scope_paths() and blob_ids().get(row["path"]) == row["blob_id"]]
+            if row["path"] in crawl_paths() and blob_ids().get(row["path"]) == row["blob_id"]]
 
 
 @functools.cache
 def review_values() -> dict[str, tuple]:
     rows = current_review_rows()
-    scope = scope_paths()
+    scope = crawl_paths()
     changed = [row for row in load_review_record()["files"] if row["path"] in scope and blob_ids().get(row["path"]) != row["blob_id"]]
     stale = [row for row in rows if row["canon_id"] != canon_id()]
     levels = [row["self_explaining_level"] for row in rows if row["self_explaining_level"] is not None]
@@ -770,6 +777,7 @@ def module_block(module: str) -> dict:
     trees = [python_tree(path) for path in files if path.endswith(".py")]
     public = [node for tree in trees for node in functions(tree) if not node.name.startswith("_")]
     reviewed = {row["path"] for row in current_review_rows()}
+    listed = [path for path in files if path in crawl_paths()]
 
     def pct(part: int, whole: int):
         return config.rounded(100 * part / whole, config.PCT_DECIMAL_COUNT) if whole else None
@@ -783,7 +791,7 @@ def module_block(module: str) -> dict:
         "design_rationale_row_pct": pct(sum(is_argued(path) for path in files), len(files)),
         "module_docstring_pct": pct(sum(ast.get_docstring(tree) is not None for tree in trees), len(trees)),
         "public_function_docstring_pct": pct(sum(ast.get_docstring(node) is not None for node in public), len(public)),
-        "files_reviewed_pct": pct(sum(path in reviewed for path in files), len(files)),
+        "files_reviewed_pct": pct(sum(path in reviewed for path in listed), len(listed)),
     }
 
 

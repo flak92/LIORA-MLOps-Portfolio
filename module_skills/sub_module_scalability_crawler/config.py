@@ -25,6 +25,9 @@ ARTIFACT_JSON_PATH_PATTERNS = ("store/status/*.json", "store/assets_artifacts/*/
 
 # the files in scope: the tracked tree but the stores (derived, D09 guards their keys) and the dated reviews
 MEASURED_SCOPE_PATHSPECS = (".", ":(exclude)store", ":(exclude,glob)REPORT_*.md")
+# the files the review pass may queue, a list kept by hand: a file, a document or a whole folder added at a time, as a git
+# pathspec; a file in scope it does not name is measured and never reviewed
+CRAWL_PATHSPECS = ("AGENTS.md", "CLAUDE.md", "Makefile", "Dockerfile", "docker-compose.yml")
 # the canon (AGENTS.md § The default choice): the contract, the register, the index and every skill
 CANON_PATHSPECS = (":(glob)AGENTS.md", ":(glob)module_skills/*.md", ":(glob)module_*/skills/*.md")
 # how a store is addressed (AGENTS.md § Canonical vocabulary, the row store paths): on the host, inside a container

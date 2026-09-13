@@ -44,7 +44,8 @@ def to_checkout_relative(path: Path) -> str:
 
 
 def build_queue() -> list[dict]:
-    """The files to review — unreviewed, changed since their verdict, stale under a newer canon — in order: amendable
+    """The files CRAWL_PATHSPECS names that want a review — unreviewed, changed since their verdict, stale under a newer
+    canon — in order: amendable
     files first, by class, then by module in the chain's order, the orientation and config.py first inside a module;
     the review-only files — the crawler's own, the canon, the root's — last."""
     rows = {row["path"]: row for row in status.load_review_record()["files"]}
@@ -52,7 +53,7 @@ def build_queue() -> list[dict]:
     canon_paths = set(status.tracked_paths(*config.CANON_PATHSPECS))
     modules = status.module_order()
     queue = []
-    for path in status.scope_paths():
+    for path in status.crawl_paths():
         row = rows.get(path)
         queue_class = ("unreviewed" if row is None else "changed" if row["blob_id"] != blobs.get(path)
                        else "stale" if row["canon_id"] != canon else None)
@@ -290,7 +291,7 @@ def write_batch_review(worktree: Path, batch: list[dict], base: dict[str, int]) 
         proposals.update((proposal["pattern"], {**proposal, "canon_id": canon, "occurrence_count": len(proposal["occurrences"])})
                          for proposal in answer.get("proposals", []))
     write_review_record(record_path, {"files": list(rows.values()), "proposals": list(proposals.values())},
-                        set(status.tracked_paths(*config.MEASURED_SCOPE_PATHSPECS)), canon)
+                        set(status.crawl_paths()), canon)
     status.git("add", "--", to_checkout_relative(config.SKILLS_REVIEW_JSON_PATH), root=worktree)
     module = batch[0]["module"]
     status.git("commit", "-q", "-m", f"{'Defer' if failure else 'Review'} {module}: {len(batch)} file(s)", root=worktree)

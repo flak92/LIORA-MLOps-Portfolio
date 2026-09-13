@@ -476,6 +476,7 @@ counted against its contract. The rules are
 | a verdict older than the canon: its file unchanged, the canon's content changed since | `stale_count` | — | — | outdated, dirty |
 | one bounded run of the review — the queue, the worktree, the batches and their attempts — and its detached twin | `crawl.py`; `make skills-crawl`, `make tmux-skills-crawl` in the tmux session `skills-crawl` | — | — | a job; a run (the run record's word); the feature-set search's pass (`pass_count`) |
 | where a pass writes: its branch, and the worktree beside the checkout | `CRAWL_BRANCH` = `scalability-crawler`, `CRAWL_WORKTREE_DIR` | — | — | a branch the checkout works on; a worktree inside the checkout |
+| the files the review pass may queue — a list kept by hand, a file, a document or a folder added at a time; every other file in scope is measured and never reviewed | `CRAWL_PATHSPECS`, `crawl_paths()` | — | — | a list derived from the metrics; the whole tree by default |
 | why a file is queued, and the files one reviewer takes at once — one module, one mode | `build_queue()`, `queue_batches()`, `CRAWL_BATCH_FILE_COUNT`, `CRAWL_PASS_BATCH_COUNT`, `CRAWL_ATTEMPT_COUNT_PER_BATCH` | — | unreviewed / changed / stale | a chunk; dirty |
 | a file the reviewer judges and never edits: the crawler's own, the canon's, the root's | `review_only` | — | review-only | read-only, locked, frozen |
 | the brief a batch sends the reviewer | `crawl_brief_template.md`, `build_brief()` | — | — | a prompt per module; a rule restated in it |

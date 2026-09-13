@@ -495,7 +495,7 @@ is wrong.
 | D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
 | D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the tracked tree; `skills_review.json` is written by `module_skills.sub_module_scalability_crawler.crawl` alone, and read by `status.py` and the page |
 | D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it, and its review pass writes only branch `scalability-crawler` and a worktree beside the checkout |
-| D19 | which file the crawler reviews is git's answer — a missing row, a changed blob, a changed canon; a pass is bounded, goes on from the review record, and is started by a hand or by a host's own timer, never by the tree |
+| D19 | which files the crawler may review is a list kept by hand, `CRAWL_PATHSPECS`, and which of them it reviews is git's answer — a missing row, a changed blob, a changed canon; a pass is bounded, goes on from the review record, and is started by a hand or by a host's own timer, never by the tree |
 
 ## Skills absent here, described
 

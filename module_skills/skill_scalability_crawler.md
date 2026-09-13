@@ -123,8 +123,9 @@ still the blob the row names, and is stale while the canon's content is not the
 `canon_id` the row names; the canon is `CANON_PATHSPECS` — `AGENTS.md`,
 `module_skills/*.md` and `module_*/skills/*.md`. The writer keeps the rows
 sorted by path and the proposals by pattern, drops a row whose file left the
-scope and a proposal made under another canon, and rewrites the file only when
-its content changes.
+list and a proposal made under another canon, and rewrites the file only when
+its content changes. The review's share, `files_reviewed_pct`, is taken over the
+files the list names; every other file in scope is measured and never reviewed.
 
 ## The pass
 
@@ -139,8 +140,10 @@ same pass in the tmux session `skills-crawl`, which outlives the terminal —
 2. is skipped, saying `skipped: activity at <path>`, when anything under the
    checkout changed within `QUIET_PROBE_SECONDS`: a stage writing into a store is
    activity, and the crawler's own two files in the status store are not;
-3. queues the files in scope whose row is missing, whose blob is not the row's
-   or whose canon is not the row's — unreviewed, changed, stale, in that order —
+3. queues the files `CRAWL_PATHSPECS` names — a list kept by hand in
+   `config.py`, a file, a document or a whole folder added at a time — whose row
+   is missing, whose blob is not the row's or whose canon is not the row's —
+   unreviewed, changed, stale, in that order —
    the amendable files first and the review-only files last: the crawler's own,
    the canon and the root's. An empty queue ends the pass before anything is
    created;
