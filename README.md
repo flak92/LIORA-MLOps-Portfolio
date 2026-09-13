@@ -11,7 +11,7 @@ deterministic canonical DuckDB per asset → the feature catalogue and labels �
 purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
-Makefile and the compose file that run them, the recorder, the five stores, and
+Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
 the canon of rules that cross them. The governing contract — minimalism, minimum requirements,
 KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, and what holds the project
 together — is [AGENTS.md](AGENTS.md). Each module carries its own rules in its
@@ -27,7 +27,7 @@ module's own skills → code`; this README is the general overview.
 git clone https://github.com/flak92/LIORA-MLOps-Portfolio.git
 cd LIORA-MLOps-Portfolio
 make all                   # the whole chain from a fresh clone, every stage in a one-off container: build -> data-all -> features-all -> ml-all
-make on                    # build the images if needed, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
+make on                    # build the image if needed, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
 make off                   # stop and remove every container of this project
 make help                  # every target with its one-line purpose
 ```
@@ -42,7 +42,7 @@ for a presenter to remember; the targets they name are the convention.
 The chain, and the record it leaves:
 
 ```bash
-make all-record            # the same chain, every stage measured from outside by record.py into store_run_records/<run_id>/ — the Lifecycle tab
+make all-record            # the same chain, every stage measured from outside by record.py into store/run_records/<run_id>/ — the Lifecycle tab
 ```
 
 The feature-set search, outside the chain, one asset at a time:
@@ -84,7 +84,7 @@ a rerun fetches and rebuilds only what its contract says. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
-ticker of the basket, the monitoring image for all — only serve: no stage runs inside a
+ticker of the basket, on the one image, `liora-1m-pipeline`, like every service — only serve: no stage runs inside a
 resident, and no stage depends on it — a stage is the one-off
 `python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Five direct dependencies across
 the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `mlflow-skinny` (the hyper-parameter
@@ -128,18 +128,18 @@ object. Everything below it describes the method, not the data provider.
 
 | store | variable | in a container | tracked |
 |---|---|---|---|
-| `store_raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
-| `store_assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
-| `store_run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
-| `store_trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point the hyper-parameter search drew; the `ml` runner alone writes it, and a hand clears it |
-| `store_status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
+| `store/raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
+| `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
+| `store/run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
+| `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point the hyper-parameter search drew; the `ml` runner alone writes it, and a hand clears it |
+| `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
 
 The store is the boundary between compute and state (`module_skills/glossary.md`
 § Stores). Every stage reads and writes only these five and learns where they
 are from its environment — the Makefile exports the host paths, the compose file
-sets the container paths — and no module writes into another's tree. The images
-carry code and nothing of the state; the mounts carry the state and nothing of
-the code.
+sets the container paths — and no module writes into another's tree. The image
+carries the pins and nothing else; the code and the state arrive as mounts, and
+a container addresses a store only at `/store/<content>`.
 
 ## The chain
 
@@ -150,21 +150,21 @@ once for the whole basket (the three status stages and the download). `ASSET=<TI
 on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
 `record.py`, which lists the four pipeline stores before and after and writes
-`store_run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
+`store/run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
 `liora-devops-1` and `liora-asset-<ticker>-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
 run one at a time, or set `COMPOSE_PROJECT_NAME`.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
-| download  | `make data-download`   | both APIs → `store_raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete; one process per venue for the whole basket |
+| download  | `make data-download`   | both APIs → `store/raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete; one process per venue for the whole basket |
 | ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
-| status    | `make data-status`     | DuckDB → stdout + `store_status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
+| status    | `make data-status`     | DuckDB → stdout + `store/status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
 | catalogue | `make features-catalogue` | the bars → one feature parquet per timeframe and `<TICKER>_catalogue.json`, the contract the ML layer reads | deterministic; the existing columns byte-identical after an extension |
-| features status | `make features-status` | the parquets → `store_status/features_status.json` | read-only; the catalogue's facts and each asset's row counts |
+| features status | `make features-status` | the parquets → `store/status/features_status.json` | read-only; the catalogue's facts and each asset's row counts |
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
-| lifecycle | `make all-record` | one recorded run of the whole chain → `store_run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
+| lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
 | dashboard | `make on`              | snapshots → five-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
 
 ## Extending
@@ -172,11 +172,11 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | to add | change | where |
 |---|---|---|
 | an asset | one ticker in `TICKERS` and one `asset-<ticker>` block in `docker-compose.yml`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
-| a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `<9NN>-module_<domain>/`, then here |
-| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | the features repository |
-| a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | the features repository |
-| a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | the data module |
-| a module | a package `module_<domain>/` with a runner service and an image `liora-module-<domain>`; nothing is renumbered | a new repository, then here |
+| a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `module_<domain>/`, then here |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | `module_features/` |
+| a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | `module_features/` |
+| a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | `module_data/` |
+| a module | a package `module_<domain>/` with a runner service on the one image | `module_<domain>/` beside the others, then here |
 
 ## Working in a module
 
@@ -207,7 +207,7 @@ restates another (`AGENTS.md` § The default choice).
 Every number here is reproducible. The proof, repeatable on any host:
 
 1. a fresh `git clone` of this repository, and a frozen copy
-   of the raw store hardlinked into `store_raw_1m/` — the downloaders never
+   of the raw store hardlinked into `store/raw_1m/` — the downloaders never
    overwrite an existing ZIP;
 2. `make build data-ingest data-status features-all ml-all` — the chain without
    `data-download`, whose window ends at today's UTC midnight and would move the
@@ -224,7 +224,7 @@ Every number here is reproducible. The proof, repeatable on any host:
 Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 `OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make
 the bytes equal (`module_skills/skill_determinism.md`). The comparison script and
-the reference md5 lists live outside every repository.
+the reference md5 lists live outside this repository.
 
 ## One canonical series from two venues
 
@@ -258,7 +258,7 @@ grid.
 LIORA is an academic, local MLOps research system, not an AWS deployment. Its
 module, storage and container boundaries are drawn as a Pre-AWS architecture on
 purpose: every local implementation is the smallest that works — one DuckDB file
-per asset, Parquet and JSON in the asset's folder, one image per module, a
+per asset, Parquet and JSON in the asset's folder, one image for the tree, a
 Makefile — and the responsibilities are cut so that a later move onto standard
 cloud primitives (an object store, a container runtime, a stage orchestrator)
 would replace the local storage, the local Docker execution and the local stage
@@ -271,7 +271,7 @@ security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
 [module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
 
 The same skill seats the four things a move would name first — the host and the
-volume where every asset's folder and the other `store_*` roots live, the
+volume where every asset's folder and the other `store/<content>/` folders live, the
 one-off task and the state machine over the stages, the asset's one database
 file, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
 described lists the skills those seats imply, each with its owner, what it
@@ -287,7 +287,7 @@ Raw ZIPs are the Lean `cryptofuture` minute format, one tree per venue,
 headerless `offset_ms_from_utc_midnight,open,high,low,close,volume`; timestamps
 are bar-open UTC epoch milliseconds on a strict 60 000 ms grid, volume is
 base-asset volume. The canonical series and its 15m/1h/4h aggregations live only
-in `store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
+in `store/assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
 folder's parquets are feature columns, not prices. For Lean backtests use the
 raw ZIP trees. Schema:
 `module_data/skills/skill_candle_canonicalisation.md`

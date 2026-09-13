@@ -4,7 +4,7 @@
 
 The recorder knows no module. Given the execution name RUN_ID, it lists the four pipeline stores named below (STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR,
 STORE_RUN_RECORDS_DIR, STORE_STATUS_DIR — path, size and mtime of every file), runs the command with its output passed
-through, lists them again, and writes store_run_records/<RUN_ID>/<stage>.json: when the stage started and ended, how it
+through, lists them again, and writes store/run_records/<RUN_ID>/<stage>.json: when the stage started and ended, how it
 exited, and what it added, changed and removed in the stores. Its exit code is the command's. This is what a task scheduler
 records about a task — what it wrote — and nothing a stage could say about itself. STORE_TRIALS_DIR is deliberately
 absent: a trial ledger is the stage's own account of its search, which is the one thing this recorder never reads."""

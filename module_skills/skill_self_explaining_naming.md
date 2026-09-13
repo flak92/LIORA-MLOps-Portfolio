@@ -19,7 +19,9 @@ the names carry the discipline; no check stands behind them.
   Every layer has a closed grammar, fixed in `AGENTS.md`: a verb from a closed
   list for functions that act, no verb at all for functions that *are* a
   quantity, `<what>_<unit>` for quantities, `<population>_rows` for index
-  arrays, `<category>_<detail>/` for directories. Given the layer, the name
+  arrays, `<category>_<detail>/` for a module's directory and
+  `store/<content>/` for a store — the category spoken once, by the parent
+  folder. Given the layer, the name
   follows; there is nothing left to invent, and nothing to argue about.
 - **Units belong to quantities.** A name holding a number says its unit —
   counts, rates, durations, sizes, intervals — while enumerations, paths and

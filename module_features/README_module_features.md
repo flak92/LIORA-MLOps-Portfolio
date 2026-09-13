@@ -29,13 +29,13 @@ Beyond its parquets this module publishes two things. Per asset,
 this module: the decision grid, the hierarchy with each timeframe's slot and
 duration, the warm-up, the columns per timeframe in catalogue order, the default
 set and the parquet each timeframe's columns live in. And one snapshot,
-`store_status/features_status.json`, written by `status.py`: the register, the
+`store/status/features_status.json`, written by `status.py`: the register, the
 catalogue with histories and warm-ups, the nesting — the facts of `config.py` —
 and each asset's row counts, the one run-state fact this module has.
 
 ## Stages
 
-Run in order; `make features-all` runs the chain, each stage in a one-off container of this module's image, and this repository's own Makefile runs one stage at a time in a venv. The two per-asset stages fan out
+Run in order; `make features-all` runs the chain, each stage in a one-off container of the `features` runner, and a single stage is its own `features-<stage>` target in the same runner, or `python -m module_features.<stage> --tickers <TICKER>` run by hand in a shell that exports the `STORE_*_DIR` it reads (`../module_skills/glossary.md` § Stores). The two per-asset stages fan out
 one process per asset with its threads pinned to one; `status` runs once over the
 assets the launcher names.
 
@@ -43,7 +43,7 @@ assets the launcher names.
 |---|---|---|
 | bars | `make features-bars` | `ohlcv_<timeframe>_canonical`, one table per entry of the register |
 | catalogue | `make features-catalogue` | one feature parquet per timeframe, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
-| status | `make features-status` | `store_status/features_status.json` |
+| status | `make features-status` | `store/status/features_status.json` |
 
 Every stage runs in a one-off container of the `features` runner: a per-asset
 stage one container per asset, `status` once. Each stage takes `--tickers`.
@@ -51,10 +51,10 @@ stage one container per asset, `status` once. Each stage takes `--tickers`.
 ## What it writes
 
 ```
-store_assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb     the aggregation tables, beside the canonical series
-store_assets_artifacts/<TICKER>/<TICKER>_features_<slot>.parquet   decision_ts and the catalogue's columns on that timeframe
-store_assets_artifacts/<TICKER>/<TICKER>_catalogue.json            the contract: grid, hierarchy, warm-up, columns, default set, parquet names
-store_status/features_status.json                                  the snapshot: the catalogue as the register presents it, each asset's row counts
+store/assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb     the aggregation tables, beside the canonical series
+store/assets_artifacts/<TICKER>/<TICKER>_features_<slot>.parquet   decision_ts and the catalogue's columns on that timeframe
+store/assets_artifacts/<TICKER>/<TICKER>_catalogue.json            the contract: grid, hierarchy, warm-up, columns, default set, parquet names
+store/status/features_status.json                                  the snapshot: the catalogue as the register presents it, each asset's row counts
 ```
 
 The manifest and what each file holds are in `../module_skills/glossary.md`
@@ -101,7 +101,7 @@ table, cited by its *responsibility* column and never repeated.
 | `indicators.py` | Pure numpy kernels — the recursive indicators and the rolling statistics — and the indicator register beside them, one record per token naming the kernel's invariants once (its docstring); a library, not a stage. | `config.py` imports the register and re-exports it, `catalogue.py` imports the kernels, `module_ml/labels.py` carries its own copies of `wilder_smoothing()`, `atr()` and `asof_index()` (twice by extraction), and it imports nothing of the module. | It reads no file and writes none, so nothing in it names a path — the same kernels run in whichever container imports them. | COMPUTE — one stage for one asset |
 | `catalogue.py` | FEATURE — the catalogue on the decision grid: every definition of `config.py` evaluated by folding its terms through the operators, every value from the last closed bar of its timeframe (its docstring; `skills/methodology_features.md`). | It imports `config.py`, `dataset.py` and `indicators.py`, reads the tables `bars.py` wrote and writes the parquets and the contract `<TICKER>_catalogue.json` that `module_ml/dataset.py` reads. | It runs one asset at a time in a one-off container of the `features` runner with `--tickers <TICKER>` (§ Stages) and writes at `features_parquet()` — the same argument and the same paths whatever host runs the container. | COMPUTE — one stage for one asset |
 | `dataset.py` | The parquet writer of this layer, `write_parquet()`, and its canonical JSON writer, `write_json()` — both twice by extraction, identical in `module_ml/dataset.py` (its docstring). | `catalogue.py` and `status.py` import it, and it imports `config.py` alone; nothing outside the module imports it. | It writes to the descriptor it is handed and builds no path of its own, so an artifact lands where a `config.py` says on whatever disk is mounted at `/store`. | STORAGE — research artifacts |
-| `status.py` | The stage that measures this module's own facts — the catalogue as the register presents it and each asset's row counts — published as `store_status/features_status.json` (its docstring). | It imports `config.py` and `dataset.py`, reads the parquets `catalogue.py` wrote, and writes the snapshot `ml.js` fetches for the catalogue frame. | It takes `--tickers` like every stage and runs once in a one-off container of the `features` runner, writing at `FEATURES_STATUS_JSON_PATH` under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
+| `status.py` | The stage that measures this module's own facts — the catalogue as the register presents it and each asset's row counts — published as `store/status/features_status.json` (its docstring). | It imports `config.py` and `dataset.py`, reads the parquets `catalogue.py` wrote, and writes the snapshot `ml.js` fetches for the catalogue frame. | It takes `--tickers` like every stage and runs once in a one-off container of the `features` runner, writing at `FEATURES_STATUS_JSON_PATH` under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
 | `__init__.py` | The package that makes `python -m module_features.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the register, the bars, the kernels, the catalogue, the contract and the snapshot, and imports nothing. | The same `python -m module_features.<stage> --tickers <TICKER>` runs in a one-off container of the `features` runner (§ Stages) — the launcher setting the five `STORE_*_DIR` — the command `docker compose run --rm -T features` carries unchanged whichever host starts it. | COMPUTE — one stage, one one-off process |
 | the module's documents — `README_module_features.md` and `skills/` | This orientation and the normative documents of `skills/`, filed by ownership (`../AGENTS.md` § The default choice). | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no process reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the task's code, seated beside its module |
 
@@ -112,7 +112,7 @@ table, cited by its *responsibility* column and never repeated.
 | `skills/skill_feature_taxonomy.md` | the timeframe register, the terms, the composition grammar, the scope nesting and the warm-up |
 | `skills/methodology_features.md` | every catalogued definition, equation by equation, with its histories and citations |
 
-Project-wide rules are in `../module_skills/`, the copy this repository carries, indexed by
+Project-wide rules are in `../module_skills/`, the canon beside the modules, indexed by
 [../module_skills/README.md](../module_skills/README.md); the market object it
 reads is defined by
 `module_data/skills/skill_candle_canonicalisation.md`;

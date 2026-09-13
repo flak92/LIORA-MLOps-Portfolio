@@ -6,7 +6,7 @@ complete. The v5 limit is 1000 candles, so a day is two 720-minute windows; the 
 sorted; rate limiting is retCode 10006.
 
 Output tree (Lean-exact, the same format as the Binance tree):
-  store_raw_1m/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
+  store/raw_1m/cryptofuture/bybit/minute/<symbol>/YYYYMMDD_trade.zip
     -> YYYYMMDD_<symbol>_minute_trade_perp.csv
        rows: offset_ms_from_utc_midnight,open,high,low,close,volume  (ascending)
 

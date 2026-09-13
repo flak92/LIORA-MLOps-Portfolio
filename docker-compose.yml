@@ -43,24 +43,24 @@ services:
     <<: *service
     volumes:
       - .:/app
-      - ./store_raw_1m:/store/raw_1m
-      - ./store_assets_artifacts:/store/assets_artifacts
-      - ./store_status:/store/status
+      - ./store/raw_1m:/store/raw_1m
+      - ./store/assets_artifacts:/store/assets_artifacts
+      - ./store/status:/store/status
   # the feature layer never asks about a venue: it reads the canonical series and writes beside it
   features:
     <<: *service
     volumes:
       - .:/app
-      - ./store_assets_artifacts:/store/assets_artifacts
-      - ./store_status:/store/status
+      - ./store/assets_artifacts:/store/assets_artifacts
+      - ./store/status:/store/status
   # the one task that needs the ceiling: HPO and XGBoost above DuckDB's 4GB memory_limit
   ml:
     <<: *service
     volumes:
       - .:/app
-      - ./store_assets_artifacts:/store/assets_artifacts
-      - ./store_trials:/store/trials
-      - ./store_status:/store/status
+      - ./store/assets_artifacts:/store/assets_artifacts
+      - ./store/trials:/store/trials
+      - ./store/status:/store/status
     deploy:
       resources:
         limits:
@@ -74,9 +74,9 @@ services:
       - "127.0.0.1:${PORT:-8900}:8900"
     volumes:
       - .:/app
-      - ./store_assets_artifacts:/store/assets_artifacts:ro
-      - ./store_run_records:/store/run_records:ro
-      - ./store_status:/store/status:ro
+      - ./store/assets_artifacts:/store/assets_artifacts:ro
+      - ./store/run_records:/store/run_records:ro
+      - ./store/status:/store/status:ro
 
   # an asset container reports itself and writes nothing
   asset-btc:
@@ -86,12 +86,13 @@ services:
       ASSET: BTC
     volumes:
       - .:/app
-      - ./store_assets_artifacts:/store/assets_artifacts:ro
-      - ./store_status:/store/status:ro
+      - ./store/assets_artifacts:/store/assets_artifacts:ro
+      - ./store/status:/store/status:ro
 
   # the one service that holds the docker socket, and the only one: its whole responsibility is docker management and
   # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It holds no store; its environment still
-  # carries the five store names only because module_monitoring/config.py reads three of them at import.
+  # carries the five store names from the anchor, because its server imports module_monitoring/config.py, which reads
+  # three of them at import.
   devops:
     <<: *service
     command: python -m module_monitoring.sub_module_devops.serve

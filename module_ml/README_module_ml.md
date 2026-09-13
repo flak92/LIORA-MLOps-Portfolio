@@ -35,7 +35,7 @@ and moving the decision timeframe means moving it in the same commit.
 
 ## Stages
 
-Run in order; `make ml-all` runs the chain, each stage in a one-off container of this module's image, and this repository's own Makefile runs one stage at a time in a venv. The four stages above `status` fan
+Run in order; `make ml-all` runs the chain, each stage in a one-off container of the `ml` runner, and a single stage is its own `ml-<stage>` target in the same runner, or the one-off process above run by hand in a shell that exports those variables (`../module_skills/glossary.md` § Stores). The four stages above `status` fan
 out one process per asset with its threads pinned to one; `status` runs once and
 aggregates the assets the launcher names — the whole basket.
 
@@ -45,7 +45,7 @@ aggregates the assets the launcher names — the whole basket.
 | hyper-parameter search | `make ml-hpo` | `<TICKER>_parameters.json` |
 | training | `make ml-train` | `<TICKER>_model_evaluation.json`, the out-of-sample predictions parquet |
 | strategy | `make ml-strategy` | `<TICKER>_strategy_evaluation.json` |
-| status | `make ml-status` | `store_status/ml_status.json`, `<TICKER>_README.md` |
+| status | `make ml-status` | `store/status/ml_status.json`, `<TICKER>_README.md` |
 | feature-set search — outside the chain, by a hand | `make ml-feature-set-search`, one process per asset of the basket, `ASSET=<TICKER>` narrowing it to one — detached on the host through the Makefile's `tmux-` twin, which requires `ASSET`; `make ml-status` after it | `<TICKER>_feature_set_search.json` |
 | promotion — outside the chain, by a hand, one asset at a time | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json`, then the chain's files anew |
 
@@ -58,7 +58,9 @@ every complete asset among them gets its `<TICKER>_README.md`.
 ## What it writes
 
 ```
-store_assets_artifacts/<TICKER>/
+store/assets_artifacts/<TICKER>/
+store/status/ml_status.json            the status snapshot the dashboard reads
+store/trials/<TICKER>/trials.sqlite3   the trial ledger, written by hpo.py alone
 ```
 
 One folder per asset, one file per artifact responsibility; the manifest and
@@ -89,7 +91,7 @@ table, cited by its *responsibility* column and never repeated.
 | `strategy.py` | STRATEGY — the research evaluation of the predictions on the canonical path, with explicit costs (`skills/methodology_ml.md` § 9), and it opens no connection to a venue; its threshold selection is one function the stage and the feature-set search both run. | The last stage of `ml-all` before `status`, importing `config.py`, `dataset.py` and `validation.py` and reading the predictions `train.py` wrote, and the trend definition on every timeframe from the catalogue columns `load_xy()` carries. | It writes `<TICKER>_strategy_evaluation.json` and trades nothing — the host that would is `../module_skills/skill_pre_aws_solution.md` § Module boundaries are extraction boundaries — so its one output keeps the path `strategy_evaluation_json()` builds. | COMPUTE — one stage for one asset |
 | `feature_set_search.py` | The feature-set search: stepwise on the validation folds under the frozen parameters, selected on the model's validation skill fold by fold, the strategy's numbers reported beside every trial, the ledger of every trial its state (its docstring; `skills/methodology_ml.md` § 4). | It imports `config.py`, `dataset.py`, `model.py`, `strategy.py` and `train.py` — the fit, the predictions and the selection are the stages' own functions, called as a library — and writes the one file `status.py` reads as `feature_set_search`. | It runs one asset per process, resumes by comparing its recorded inputs with the run's by equality, and rewrites `feature_set_search_json()` after every trial — the same path and the same bytes on any host, whether in the `ml` runner's container or detached on the host through the Makefile. | COMPUTE — one stage for one asset |
 | `feature_set_promote.py` | The promotion: a hand's choice copied into the asset's feature set — the proposal's columns and nothing else, the commit history the record of every promotion — and nothing computed (its docstring; `skills/methodology_ml.md` § 4). | It imports `config.py`, `dataset.py` and `feature_set_search.py` — the tuple form and the column differences are the search's own functions, called as a library — reads the feature-set search result and writes the one file `load_feature_columns()` reads before every fit. | It takes `--tickers` and `--proposal` and is never fanned out — one asset per hand, a one-off of the `ml` runner in the shape of `status` — and the Makefile reruns `ml-all` for that asset after it, so the promoted set is re-tuned at the same paths on any host. | COMPUTE — one stage, one one-off process |
-| `status.py` | The stage that measures this module's own artifacts — the basket snapshot and each asset's README, assembled from the three result files and computing nothing of their own (its docstring) — placed by `../AGENTS.md` § Architecture shape. | It imports `config.py`, `dataset.py` and `feature_set_search.py`, whose `build_search_inputs()` is the one definition of what a search is conditioned on, reads what `hpo.py`, `train.py`, `strategy.py`, `feature_set_search.py` and `feature_set_promote.py` wrote, and writes `store_status/ml_status.json` for `ml.js` to fetch and `<TICKER>_README.md` into the asset's folder. | It runs once in a one-off container of the `ml` runner and folds the tickers `--tickers` names — the launcher passes the whole basket (§ Stages; `../module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism), the snapshot at the one path `ML_STATUS_JSON_PATH` builds, under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
+| `status.py` | The stage that measures this module's own artifacts — the basket snapshot and each asset's README, assembled from the three result files and computing nothing of their own (its docstring) — placed by `../AGENTS.md` § Architecture shape. | It imports `config.py`, `dataset.py` and `feature_set_search.py`, whose `build_search_inputs()` is the one definition of what a search is conditioned on, reads what `hpo.py`, `train.py`, `strategy.py`, `feature_set_search.py` and `feature_set_promote.py` wrote, and writes `store/status/ml_status.json` for `ml.js` to fetch and `<TICKER>_README.md` into the asset's folder. | It runs once in a one-off container of the `ml` runner and folds the tickers `--tickers` names — the launcher passes the whole basket (§ Stages; `../module_skills/skill_pre_aws_solution.md` § The resident container is a local mechanism), the snapshot at the one path `ML_STATUS_JSON_PATH` builds, under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
 | `__init__.py` | The package that makes `python -m module_ml.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the feature set, the labels, the walk-forward, the model, the strategy simulation and the two reports, and imports nothing. | The same `python -m module_ml.<stage> --tickers <TICKER>` runs in a one-off container of the `ml` runner (§ Stages) — the launcher setting the five `STORE_*_DIR` — the command `docker compose run --rm -T ml` carries unchanged whichever host starts it. | COMPUTE — one stage, one one-off process |
 | the module's documents — `README_module_ml.md` and `skills/` | This orientation and the normative documents of `skills/`, filed by ownership (`../AGENTS.md` § The default choice). | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_ml/` that no process reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the task's code, seated beside its module |
 
@@ -99,7 +101,7 @@ table, cited by its *responsibility* column and never repeated.
 |---|---|
 | `skills/methodology_ml.md` | the research layer equation by equation, with its citations |
 
-Project-wide rules are in `../module_skills/`, the copy this repository carries, indexed by
+Project-wide rules are in `../module_skills/`, the canon beside the modules, indexed by
 [../module_skills/README.md](../module_skills/README.md); the market object it
 reads is defined by
 `module_data/skills/skill_candle_canonicalisation.md`,

@@ -176,21 +176,23 @@ key is in this register.
 ## Stores
 
 **The store is the boundary between compute and state.** Every stage reads and
-writes only the five stores, and learns where they are from the environment:
-one variable per store, set by the launcher (the Makefile on the host, the
+writes only the five stores, one folder each under `store/`, and learns where
+they are from the environment: one variable per store, set by the launcher (the Makefile on the host, the
 compose file inside a container) and read by each `config.py` as
 `Path(os.environ[...])` — a missing variable is the interpreter's own
 `KeyError`, not a guard. A module reads only the stores it touches, and no
 module writes into another module's source tree. The image carries the pins and
 the mounts carry the code and the stores each service touches, read-only where it
 only reads: `/store/<content>` is the one path a
-container has to a store, and `/app` holds the package alone.
+container addresses a store by; `/app` is the checkout, `store/` included, and
+`/app/store/<content>` is never an address (`AGENTS.md` § Canonical vocabulary,
+the store-paths row).
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the store contract: one environment variable per store, naming the directory that store is | `STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_TRIALS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`; on the host `$(CURDIR)/store_<content>`, in a container `/store/<content>` | — | — | a path derived from `__file__` two levels up (`REPO_ROOT`), a store named by a literal at the point of use, a second name for the same directory |
-| the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store_status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `features_status.json`, `ml_status.json` | the page's footer names all three files | a snapshot written into `module_monitoring/` or any other module's directory |
-| the trials store: every point the hyper-parameter search drew, one ledger per asset, written by `module_ml/hpo.py` alone — the one file that speaks mlflow — and read by no stage and no route; nothing prunes it, and a hand clears an asset's ledger as it clears the raw store and the run records. The point the search chose stands twice, as `best_params` and `best_logloss` in `<TICKER>_parameters.json` and as one run here — the one copy of an artifact's content this store carries, admitted because the artifact is the contract between stages, read by `train.py` and by `feature_set_search.py`, and this ledger is read by neither: the artifact decides, the ledger records. The feature-set search leaves nothing here — its trials are `<TICKER>_feature_set_search.json`, the stage's resume state and the source of its proposals, and one result has one carrier | `store_trials/`, `STORE_TRIALS_DIR`; `trials_sqlite()` in `module_ml/config.py`, one `trials.sqlite3` per asset as the market object is one file per asset; in a container `/store/trials` | — | — | `mlruns/`, mlflow's own default; an `MLFLOW_TRACKING_URI` in any environment; a tracking server, a model registry, a published port or a UI service; a mount on any service but the `ml` runner; a stage reading it back |
+| the store contract: one environment variable per store, naming the directory that store is | `STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_TRIALS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`; on the host `$(CURDIR)/store/<content>`, in a container `/store/<content>` | — | — | a path derived from `__file__` two levels up (`REPO_ROOT`), a store named by a literal at the point of use, a second name for the same directory |
+| the status store: where every module's snapshot lands, tracked so a fresh clone opens on real numbers | `store/status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write and read them | `data_status.json`, `features_status.json`, `ml_status.json` | the page's footer names all three files | a snapshot written into `module_monitoring/` or any other module's directory |
+| the trials store: every point the hyper-parameter search drew, one ledger per asset, written by `module_ml/hpo.py` alone — the one file that speaks mlflow — and read by no stage and no route; nothing prunes it, and a hand clears an asset's ledger as it clears the raw store and the run records. The point the search chose stands twice, as `best_params` and `best_logloss` in `<TICKER>_parameters.json` and as one run here — the one copy of an artifact's content this store carries, admitted because the artifact is the contract between stages, read by `train.py` and by `feature_set_search.py`, and this ledger is read by neither: the artifact decides, the ledger records. The feature-set search leaves nothing here — its trials are `<TICKER>_feature_set_search.json`, the stage's resume state and the source of its proposals, and one result has one carrier | `store/trials/`, `STORE_TRIALS_DIR`; `trials_sqlite()` in `module_ml/config.py`, one `trials.sqlite3` per asset as the market object is one file per asset; in a container `/store/trials` | — | — | `mlruns/`, mlflow's own default; an `MLFLOW_TRACKING_URI` in any environment; a tracking server, a model registry, a published port or a UI service; a mount on any service but the `ml` runner; a stage reading it back |
 | the name of one trial in the ledger: its place in the search that drew it | `log_trials(ticker, trials)` in `module_ml/hpo.py`, which mints `hpo_<n>` — `hpo` is the one search that writes the ledger and the second half of the make target that runs it, and `n` counts from one | — (no artifact carries it) | — (no page shows it) | mlflow's own minted name, an adjective and an animal; a ticker in the name, the experiment being the ticker; optuna's trial number, which counts from zero |
 | the snapshot route: the dashboard serving a status object by its file name | `STORE_STATUS_ROUTE_SEGMENT`, `GET /store_status/<name>` in `serve.py`, mapped onto `store_status_file(name)` under `STORE_STATUS_DIR` | — | — | a snapshot fetched from the page's own directory, a route per snapshot |
 
@@ -217,9 +219,9 @@ to every copy, by hand — the one named exception to `AGENTS.md` § The default
 choice, "no second copy to drift". Two rows are equal by value, not by tree: the
 units, which each module carries only where it uses them, and
 `TREND_GATE_FEATURE_DEFINITION`, derived in the feature layer and a literal in ML.
-There is no shared package: a sixth repository for a dozen lines would be a
-mechanism, and `AGENTS.md` § Architecture shape admits a new module — and so a
-new repository — only for a distinct responsibility.
+There is no shared package: a `common` for a dozen lines would be a mechanism,
+and `AGENTS.md` § Architecture shape admits a new module only for a distinct
+responsibility.
 
 | object | owners | why twice |
 |---|---|---|
@@ -248,7 +250,7 @@ and `git grep "from module_"` inside any module finds only the module itself.
 ## Artifacts
 
 **One file per distinct artifact responsibility; no duplicate representations
-of the same result.** One directory per ticker under `store_assets_artifacts/`;
+of the same result.** One directory per ticker under `store/assets_artifacts/`;
 every file carries the `<TICKER>_` prefix, a time series carries its grid in
 timeframe slots, and paths are built only by the descriptors of
 `module_features/config.py` (the feature parquets and the contract beside them) and `module_ml/config.py`
@@ -318,14 +320,13 @@ how a stage is run, never what it computes.
 | the one asset a container is | `ASSET` (environment) = `ticker` (code, key, folder); read by `serve.py` choosing its role and by nothing else — never by a stage module, never by a runner (the fan-out passes `--tickers <TICKER>` from `TICKER_LIST`), and never a substitute for the command's `--tickers`, which has no default | `ticker` (the endpoint envelope) | — | `TICKER`, `SYMBOL`, `ASSET_TICKER`, a per-asset `.env` |
 | the basket, as the launcher defines it | `TICKERS` in the orchestration `Makefile`, one `asset-<ticker>` block per ticker under the compose anchor; `TICKER_LIST` (`ASSET` narrows it; the `fanout` macro's list), `TICKERS_CSV` (the basket as one `--tickers` argument — the `basket` macro's, for the snapshots and the download, which `ASSET` never narrows), `ASSET_SERVICE_LIST` (the basket as the compose service names `make on` starts: `asset-` plus the ticker in lower case) | — | — | a basket in a module's `config.py`, a second list in compose, a stage that defaults to it |
 | a compose service that is one asset's container: resident, answering `/status`, computing nothing | `asset-<ticker lowercase>` — one service per ticker under the file's `x-server` anchor | — | — | `asset-BTC`, `container-btc`, a stage run inside it, a `restart:` policy, a published port |
-| the one service that holds the docker socket, and the only one | `devops` — the `x-service` anchor plus its own command, `group_add` and the one mount, the socket | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
+| the one service that holds the docker socket, and the only one | `devops` — the `x-service` anchor plus its own command, `group_add` and, beside the tree at `/app`, the socket — no store | `compose_project`, `own_project` | DevOps | the socket in the dashboard or an asset; a third-party socket proxy; a TCP daemon endpoint; a published port |
 | the host's docker group, so the one socket holder reads the socket without being root | `DOCKER_GID` of the Makefile (`getent group docker`), carried by `COMPOSE_ENV` into `group_add: ["${DOCKER_GID:-999}"]` on `devops` | — | — | `privileged`, `user: root`, a hardcoded gid, `group_add` on any other service |
 | the command the servers run — the server, its role by `ASSET`, on the internal port | the `x-server` anchor's `command:`; `CONTAINER_PORT` = 8900 and `BIND_ADDRESS` = `0.0.0.0` in `module_monitoring/config.py` | — | — | a per-service command, a port or a bind address read from the environment or the command line, `PORT` inside a container |
 | where the dashboard's proxy reads one asset's endpoint | `http://asset-<ticker>:8900/status`, built by `asset_status_url()` in `module_monitoring/config.py` | — | — | an IP, a published port |
 | the host port: the host side of the dashboard's mapping, measured at invocation, never hardcoded | `PORT` of the Makefile — the port the dashboard already publishes, else the first free port from 8900 upward; `PORT=n` overrides (`skill_asset_containers.md` § The topology); `${PORT:-8900}` in `docker-compose.yml` | — | — | `8900` as the page's address in a document, a command or a comment; a second variable for it; `PORT` inside a container (the row of the command the servers run); a measurement outside the Makefile |
-| the image a service runs — its module's | `image: liora-module-<domain>` beside `build: ./<9NN>-module_<domain>`: the runners `data`, `features`, `ml` each their module's, the three residents `liora-module-monitoring` | — | — | compose's `<project>-<service>` default, one image for every module, an image per asset |
 | the compose project — the one fixed name every container, network and volume of this project carries on every host | `name: liora` in `docker-compose.yml`; containers `liora-<service>-1`, the network `liora_default` | `compose_project`, `own_project` (the panel's keys) | — | a name derived from the checkout's directory; a project per ticker; two checkouts of the project up at once on one host (they share the name — run one, or set `COMPOSE_PROJECT_NAME`) |
-| a runner — a compose service that is a role and a one-off: no command of its own, `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>` supplies one and the container exits with the stage | `data`, `features`, `ml` — the `x-service` anchor plus the module's `build:` and `image:`; the `run`, `fanout` and `basket` macros of the Makefile | — | — | `pipeline` (one runner for every module), a stage run by `exec` inside a resident, a runner with a `command:` |
+| a runner — a compose service that is a role and a one-off: no command of its own, `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>` supplies one and the container exits with the stage | `data`, `features`, `ml` — the `x-service` anchor, which carries the one `build:` and `image:`; the `run`, `fanout` and `basket` macros of the Makefile | — | — | `pipeline` (one runner for every module), a stage run by `exec` inside a resident, a runner with a `command:` |
 | the memory ceiling of the one task that needs it — HPO and XGBoost above DuckDB's `4GB` | `deploy.resources.limits.memory` of the `ml` runner alone | — | — | `mem_limit` beside it, a CPU quota, a reservation; a ceiling on the anchor, so on the dashboard too |
 | how long a container lives: one-off — a `run --rm` process that exits with its stage — or resident — a server that stays up | the `lifetime` column of `skill_asset_containers.md` § The topology | — | — | one-shot, ephemeral, daemon, long-running; `task` or `job` for the one-off |
 | the presentation switch: the whole stack up with the page open, or everything down, in one word | `make on`, `make off` — the two bare lifecycle targets a presenter types | — | — | `start` / `stop` (the panel's verbs for one container), bare `up` / `down` (compose's), `run`, a third alias |
@@ -337,7 +338,7 @@ dashboard, `GET /status` on an asset container.
 
 | concept | artifact key | holds |
 |---|---|---|
-| the basket, as the dashboard serves it | `tickers` | the asset folders of `store_assets_artifacts/`, sorted — what is there, never a list of its own |
+| the basket, as the dashboard serves it | `tickers` | the asset folders of `store/assets_artifacts/`, sorted — what is there, never a list of its own |
 | how often the page asks | `poll_interval_seconds` | published by the server, never a literal in the page |
 | when the server of an asset container started — how long it has been up, for the tab | `started_at_utc` | one UTC string, beside the envelope's `generated_at_utc` |
 | the asset's data, as last measured | `data` with the snapshot's `generated_at_utc`, `row_count`, `last_observation_utc`, `db_bytes`, and `observation_lag_minutes`, `measurement_age_minutes`, `research_window_covered` | `null` when the snapshot has no row for the asset or the database it describes is gone, so `db_bytes` is a size and never `null`; is the market data behind, is anyone still measuring, does the grid cover the frozen window |
@@ -352,7 +353,7 @@ jump *DevOps*, and the ML Assets views *Labels & data*,
 
 ## Run record
 
-What one recorded run of the chain leaves in `store_run_records/<run_id>/` — one
+What one recorded run of the chain leaves in `store/run_records/<run_id>/` — one
 record for the whole basket and never one per asset, because a run of the chain
 is one event and every asset's stages belong to it — written by the repository's
 `record.py`, which wraps each make target of the chain from outside every
@@ -380,7 +381,7 @@ names — so it sorts chronologically and points at the code that ran.
 
 One file per stage, `<stage>.json`, written after the second listing so it never
 appears in its own difference; a run is the directory. None of it is committed;
-`.gitignore` covers `store_run_records/`.
+`.gitignore` covers `store/run_records/`.
 
 The routes: `GET /runs` lists the run ids newest first, `GET /runs/<run_id>`
 answers the run's stage records in the order the stages started.
@@ -419,10 +420,10 @@ carries one.
 | the rebuild condition: whether an asset's artifacts must be rebuilt from its canonical series, answered without launching anything | `is_artifact_set_complete()` is its completeness half; freshness has no predicate yet — its names when written: `has_new_market_data()`, `requires_canonical_rebuild()`, `requires_feature_rebuild()`, `requires_model_rebuild()`; until then the rerun table of `module_ml/skills/methodology_ml.md` § 11 is read by a human | — | — | a scheduler, a watcher, an event bus, a function that both detects new data and trains; `should_run()`, `check_update()`, `trigger()` |
 | the mapping table: where cloud proper nouns are spoken — what this repository has, beside the shape the same responsibility takes elsewhere | `skill_pre_aws_solution.md` § The mapping table | — | — | an adapter, a cloud config file, a proper noun outside the places `AGENTS.md` § Pre-AWS architectural direction lists; a path of the elsewhere column read as a proposal for a local directory |
 | the seat: the one paragraph of a local skill, or one bullet where the skill has no headings, that names the primitive its object answers to, in the mapping table's words with the proper noun in parentheses as the table spells it, and cites the skill for the rest | — (a word of four documents: `skill_asset_containers.md`, `skill_determinism.md`, `module_data/skills/skill_candle_canonicalisation.md` § 15, `module_monitoring/skills/skill_devops_panel.md`) | — | — | a second seat in one skill; a seat that restates a row or a ladder; a seat in a `README_module_<name>.md`, whose form is the design rationale; `target`, `cloud note`, `mapping section` |
-| the resource role: the name a cloud resource would carry — `<project>-<environment>-<resource-role>`, the role the seat's name in `skill_pre_aws_solution.md` § Infrastructure seats or the task a row of its § The mapping table names, lower case with `-` between its words (`task-host`, `store-volume`), the project the head the image names and the compose project already carry, `liora` | — (no identifier; `liora-module-<domain>` and `liora-<service>-1` are the names of that shape the tree holds, with no environment token) | — | — | a second list of roles; a role no seat or row names; `dev` or `prod` in a tracked name; a ticker in a resource name; an environment token on the image tag |
+| the resource role: the name a cloud resource would carry — `<project>-<environment>-<resource-role>`, the role the seat's name in `skill_pre_aws_solution.md` § Infrastructure seats or the task a row of its § The mapping table names, lower case with `-` between its words (`task-host`, `store-volume`), the project the head the image names and the compose project already carry, `liora` | — (no identifier; `liora-1m-pipeline` and `liora-<service>-1` are the names of that shape the tree holds, with no environment token) | — | — | a second list of roles; a role no seat or row names; `dev` or `prod` in a tracked name; a ticker in a resource name; an environment token on the image tag |
 | a state name: the state a stage would be — one per row of `skill_pre_aws_solution.md` § The Makefile is the developer interface, and PublishStores, the copy state no stage answers to; *Publish* in a state name means: write the object where its readers read it | — (a word of the elsewhere column; no identifier) | — | — | registering them one by one; a state name with "and" in it; *publish* as *make public* |
 | an instance: one Linux virtual machine of the elsewhere column — the host containers run on: the task host every asset's runs share, its store volume beside it, and the strategy host | — (a word of `skill_pre_aws_solution.md` § Infrastructure seats; no identifier) | — | — | `instance` or `host` for a container — a container is a *machine* in the DevOps panel; a host per asset; node |
-| the store volume: the task host's durable disk — the five stores at `/store/<content>`, each at the path its `STORE_*_DIR` names | the `./store_<content>` mounts of `docker-compose.yml`, read forward as `<volume>/<content>:/store/<content>` — no identifier carries it | — | — | asset volume; a volume per asset; a shared network filesystem; the volume as the copy; `data_volume` |
+| the store volume: the task host's durable disk — the five stores at `/store/<content>`, each at the path its `STORE_*_DIR` names | the `./store/<content>` mounts of `docker-compose.yml`, read forward as `<volume>/<content>:/store/<content>` — no identifier carries it | — | — | asset volume; a volume per asset; a shared network filesystem; the volume as the copy; `data_volume` |
 | the ladder: the three phases in which the runtime elsewhere becomes true, each named for what it changes — *the lift*, *the idiom*, *the image carries the code* | — (a word of `skill_pre_aws_solution.md` § The retrain runtime is a ladder; no identifier) | — | — | a letter or a number for a phase; a phase as a branch or an environment; `dev` / `prod`; a phase built here; rung |
 | the promotion threshold: a second concurrent writer or a cross-asset query — the one condition under which a managed database replaces an asset's embedded file | — (a word of `skill_pre_aws_solution.md` § The databases; no identifier) | — | — | a database process for one writer; a threshold in rows or bytes |
 | the active version: the one `<version>` of an asset's artifacts a reader reads, chosen where the reader is | — (`<version>` is the execution name, `run_id`; no identifier) | — | — | latest, current, prod; a mark inside a file |

@@ -51,7 +51,7 @@ USER_AGENT = "liora-module-data/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
-# the stores of the assembled workspace arrive as environment, one variable per store — the store contract every
+# the stores of this checkout arrive as environment, one variable per store — the store contract every
 # config.py reads; a module reads only the stores it touches, and a missing variable is the interpreter's own KeyError
 STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 # DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism
@@ -67,7 +67,7 @@ def symbol(ticker: str) -> str:
 
 
 def raw_symbol_dir(ticker: str, venue: str) -> Path:
-    """Lean-exact tree: store_raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
+    """Lean-exact tree: store/raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
     return STORE_RAW_1M_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 

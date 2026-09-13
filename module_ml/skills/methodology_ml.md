@@ -381,7 +381,7 @@ from `E₀` — a 15-minute sampling would report a 1.00 → 0.91 → 0.99 excur
 
 ## 10. Artifacts and modules
 
-Per asset in `store_assets_artifacts/<TICKER>/`, twelve files, registered file by
+Per asset in `store/assets_artifacts/<TICKER>/`, twelve files, registered file by
 file in `../../module_skills/glossary.md` § Artifacts: the feature layer's contract
 `<TICKER>_catalogue.json`, three per-timeframe catalogue parquets, the
 label-events and out-of-sample predictions parquets on the 15m decision grid,
@@ -399,7 +399,7 @@ carries **only what it computed** — no provenance envelope, no hashes. The
 settings a run used are `module_ml/config.py` at the commit that ran it — the
 commit is the record, and the parameters file carries only what the search
 chose. The experiment is identified once, globally, in
-`store_status/ml_status.json`: research window and seed.
+`store/status/ml_status.json`: research window and seed.
 Library versions are pinned once, in `requirements.txt`. Runs are reproducible
 by construction — fixed seed, `nthread = 1`, pinned versions — and that claim
 is not backed by a hash gate, because a gate proves the metadata, not the

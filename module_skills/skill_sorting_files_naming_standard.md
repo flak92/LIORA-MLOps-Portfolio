@@ -6,9 +6,15 @@ will land in, on any server, under any locale. *The repository shows the destina
 
 - **Taxonomic ordering: the category token leads the name, so a lexicographic
   listing groups siblings into one contiguous block.** `module_*` beside
-  `module_*`, `store_*` beside `store_*`, `skill_*` beside `skill_*`: the eye
-  takes the block for free, while a category scattered through the alphabet
-  charges a scan and a memory for every lookup.
+  `module_*`, `skill_*` beside `skill_*`: the eye takes the block for free,
+  while a category scattered through the alphabet charges a scan and a memory
+  for every lookup. The stores are a category that is also a folder: their
+  token is spoken once, by the parent `store/`, the container's
+  `/store` read back onto the host, and its children sort together inside it
+  (`AGENTS.md` § Architecture shape), with no `store_` repeated at the root or
+  beneath it. A
+  file keeps its category token inside its folder (`skills/skill_*.md`),
+  because a file is read detached from its folder.
 - **Digits sort before letters — build granularity order on that.** In ASCII
   the digits precede every letter, so a slot filled with a number beats a
   letter placeholder at the same position; the timeframe slot standard below
@@ -62,9 +68,10 @@ inactive slot keeps its unit letters as a placeholder.
 
 A filled slot beats a placeholder at the same position, so finer granularity
 always lists first; zero-padding keeps numeric order inside a slot; the fixed
-slot count keeps listings column-aligned. Two patterns, two jobs: a store has
-no siblings to order, so it takes the compact token the code and the schema
-already speak (`store_raw_1m/`, `ohlcv_1m_canonical`, `ANNUALISATION_PERIOD_15M_BARS`); the
+slot count keeps listings column-aligned. Two patterns, two jobs: a raw store has
+no sibling of another granularity to order — `raw_1m` is the one raw child of
+`store/` — so it takes the compact token the code and the schema
+already speak (`store/raw_1m/`, `ohlcv_1m_canonical`, `ANNUALISATION_PERIOD_15M_BARS`); the
 feature files of one asset are read as one block, so they take the slots
 (`BTC_features_ss-15-hh-dd-MM.parquet`, `…ss-mm-01-dd-MM…`, `…ss-mm-04-dd-MM…`).
 The slots govern filesystem names only: serialised schema — table names,

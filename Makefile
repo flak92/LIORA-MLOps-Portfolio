@@ -10,15 +10,16 @@ PORT := $(PORT)
 DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
 COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
 COMPOSE     := $(COMPOSE_ENV) docker compose
-# the five stores of this checkout, one variable per store — the store contract every config.py reads; facts, not settings:
-# docker-compose.yml mounts ./store_<content> by the same names, record.py lists the four pipeline stores among them by
-# these host paths, and every container sees /store/<content> in its own environment
-export STORE_RAW_1M_DIR := $(CURDIR)/store_raw_1m
-export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store_assets_artifacts
-export STORE_TRIALS_DIR := $(CURDIR)/store_trials
-export STORE_RUN_RECORDS_DIR := $(CURDIR)/store_run_records
-export STORE_STATUS_DIR := $(CURDIR)/store_status
-STORES := store_raw_1m store_assets_artifacts store_trials store_run_records store_status
+# the five stores of this checkout, one folder each under store/, one variable per store — the store contract every
+# config.py reads; facts, not settings: docker-compose.yml mounts ./store/<content> at /store/<content>, the same
+# <content> on both sides, record.py lists the four pipeline stores among them by these host paths, and every container
+# sees /store/<content> in its own environment
+export STORE_RAW_1M_DIR := $(CURDIR)/store/raw_1m
+export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store/assets_artifacts
+export STORE_TRIALS_DIR := $(CURDIR)/store/trials
+export STORE_RUN_RECORDS_DIR := $(CURDIR)/store/run_records
+export STORE_STATUS_DIR := $(CURDIR)/store/status
+STORES := store/raw_1m store/assets_artifacts store/trials store/run_records store/status
 # mlflow speaks at import: it opens a telemetry client and prints an agent hint unless told otherwise. Both are off
 # here and in docker-compose.yml, so a stage run in a venv is as quiet and as offline as one run in a container
 export MLFLOW_DISABLE_TELEMETRY := true
@@ -68,12 +69,12 @@ $(STORES):
 	@mkdir -p $@
 data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status ml-feature-set-search ml-feature-set-promote on all-record: | $(STORES)
 
-data-download:   ## raw 1m candles of both venues into store_raw_1m — one process per venue, a venue's rate limit being per process
+data-download:   ## raw 1m candles of both venues into store/raw_1m — one process per venue, a venue's rate limit being per process
 	$(call basket,data,module_data.download_binance)
 	$(call basket,data,module_data.download_bybit)
 data-ingest:     ## ZIPs -> one canonical series per asset, one asset at a time
 	$(call fanout,data,module_data.ingest,1)
-data-status:     ## data_status.json -> store_status
+data-status:     ## data_status.json -> store/status
 	$(call basket,data,module_data.status)
 data-all:        ## the data chain in order
 	$(MAKE) data-download data-ingest data-status
@@ -82,7 +83,7 @@ features-bars:   ## canonical 1m -> every timeframe of the register, in each ass
 	$(call fanout,features,module_features.bars,$(JOBS))
 features-catalogue: ## every catalogued column on the decision grid, one parquet per timeframe per asset, and <TICKER>_catalogue.json — the contract the ML layer reads
 	$(call fanout,features,module_features.catalogue,$(JOBS))
-features-status: ## features_status.json -> store_status: the catalogue's facts and each asset's row counts
+features-status: ## features_status.json -> store/status: the catalogue's facts and each asset's row counts
 	$(call basket,features,module_features.status)
 features-all:    ## the feature chain in order
 	$(MAKE) features-bars features-catalogue features-status
@@ -95,7 +96,7 @@ ml-train:        ## out-of-fold predictions + final-holdout report per asset
 	$(call fanout,ml,module_ml.train,$(JOBS))
 ml-strategy:     ## entry edge threshold on the validation folds, final-holdout PnL
 	$(call fanout,ml,module_ml.strategy,$(JOBS))
-ml-status:       ## ml_status.json -> store_status, and <TICKER>_README.md
+ml-status:       ## ml_status.json -> store/status, and <TICKER>_README.md
 	$(call basket,ml,module_ml.status)
 ml-all:          ## the ML chain in order
 	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
@@ -123,6 +124,6 @@ off:             ## the presentation switch: stop and remove every container of 
 btc-all: all     ## the single-asset chain by its ticker name; the alias goes when the basket grows
 # the stages of all, one make target each, measured from outside by record.py: the four pipeline stores before and after
 RECORDED_STAGES := data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status
-all-record: build ## one recorded run of the whole chain, every stage measured from outside by record.py -> store_run_records/<run_id>/<stage>.json
+all-record: build ## one recorded run of the whole chain, every stage measured from outside by record.py -> store/run_records/<run_id>/<stage>.json
 	@run_id=$(RUN_ID); for stage in $(RECORDED_STAGES); do RUN_ID=$$run_id python3 record.py $$stage $(MAKE) $$stage || exit $$?; done
 btc-lifecycle: all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows

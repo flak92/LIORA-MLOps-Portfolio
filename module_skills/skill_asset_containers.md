@@ -4,10 +4,10 @@ The asset is the primary object; its container is how a stage is run for it
 locally, and the engine is the support layer. One image, built from the root `Dockerfile`;
 three runners — `data`, `features`, `ml`, one per module of the chain, a role and a one-off
 each — and one resident container per ticker of the basket, differing only by
-`ASSET=<TICKER>`; every service written out in `docker-compose.yml` under three anchors: `x-store-environment` is
-the store contract every service carries — the five `STORE_*_DIR`, the thread cap and the three mlflow facts —, `x-service` is what
-every service is — the `build`, the `image`, `init`, `user` and that contract — each service adding the
-mounts of the stores it touches; and
+`ASSET=<TICKER>`; every service written out in `docker-compose.yml` under three anchors: `x-store-environment` carries
+the store contract every service reads — the five `STORE_*_DIR` — and beside it the thread cap and the three mlflow facts; `x-service` is what
+every service is — the `build`, the `image`, `init`, `user`, that environment and the tree mount `.:/app` — each service
+respelling its `volumes:` whole, the tree mount and the stores it touches, because a service's key replaces the anchor's; and
 `x-server` adds the one `command: python -m module_monitoring.serve` the dashboard and the
 assets share, which is why the runners stay outside it. The project is named `liora` in the file, so a
 container is `liora-<service>-1` on every host. The dashboard
@@ -32,10 +32,10 @@ Stated, not mitigated. The panel's own contract is
 
 | service | what it is | role | lifetime |
 |---|---|---|---|
-| `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor plus the stores its stages touch — `data` the raw tree, the artifacts and the status store, `features` the artifacts and the status store, `ml` those two and the trials store it alone writes — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
-| `dashboard` | the `x-server` anchor, plus `ports:` and three read-only mounts — the artifacts, the run records and the status store it reads | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
-| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>`, and the artifacts and the status store read-only | the same server in its asset role | resident |
-| `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and the one mount, the socket | the DevOps panel's server: the one container that holds the docker socket | resident |
+| `data`, `features`, `ml` — one runner per module of the chain | the `x-service` anchor with its `volumes:` respelled: the tree at `/app` and the stores its stages touch — `data` the raw tree, the artifacts and the status store, `features` the artifacts and the status store, `ml` those two and the trials store it alone writes — no `command:`, so `run --rm -T` supplies one; `ml` alone adds the `5g` ceiling | every stage of its module: a per-asset stage as one one-off container per asset through the `fanout` macro, a basket-wide stage once through `basket`, the one-asset promotion a hand starts with `ASSET=`; a download stays one process per venue because a venue's per-IP limit is budgeted per process | one-off |
+| `dashboard` | the `x-server` anchor, plus `ports:` and, beside the tree at `/app`, three read-only mounts — the artifacts, the run records and the status store it reads | the same server in its dashboard role, published on `127.0.0.1:${PORT}` only | resident |
+| `asset-<ticker>` × one per ticker of `TICKERS` | the `x-server` anchor, plus an `environment:` that merges `<<: *store_environment` with `ASSET: <TICKER>`, and, beside the tree at `/app`, the artifacts and the status store read-only | the same server in its asset role | resident |
+| `devops` | the `x-service` anchor, plus its own `command:`, `group_add:` and, beside the tree at `/app`, the socket — no store | the DevOps panel's server: the one container that holds the docker socket | resident |
 
 `init: true` on every service: a Python process as PID 1 has no SIGTERM
 handler, so `docker compose down` would wait out the stop timeout and kill a
@@ -47,17 +47,18 @@ under its own `memory_limit` and allocate nothing outside it, and the residents
 compute nothing. `build: .` and `image:` sit on the `x-service` anchor, so every service names the one
 image and a bare clone builds it instead of reaching for a registry; `docker images` shows one, and the
 `Dockerfile` installs the pins of `requirements.txt` onto `python:3.12-slim` and copies no code — the code
-arrives with the state, through `.:/app`.
+arrives through `.:/app`, the state through the `/store/<content>` mounts beside it.
 Concurrency is bounded by `JOBS`. One mechanism only — no
 `mem_limit` beside it, no reservation, no CPU quota, and no restart policy,
 because a failure is reported, not hidden. Each service mounts the stores it
-touches and no more, read-only where it only reads, beside the tree itself at `/app`: the code and the
-stores are what a container reaches on the host. The
+touches and no more, read-only where it only reads, beside the tree itself at `/app`: the code, the
+stores and, in `devops` alone, the docker socket are what a container reaches on the host. The
 five `STORE_*_DIR` stay on the anchor for every service — the variable is the name a service speaks,
 the mount the I/O it is granted — which is why `devops` carries the five names and no store, and takes
 the host's docker group through `group_add` so it reads the socket without being root. The raw store
-is `data`'s alone, central and Lean-exact; the three residents read and write nothing, so their mounts
-are `:ro`. The store contract is the env-named path, and code and state never share a mount (`skill_pre_aws_solution.md` § Docker is compute,
+is `data`'s alone, central and Lean-exact; the dashboard and each asset resident read their stores and write
+none, so their store mounts are `:ro`. The store contract is the env-named path: a container addresses state only at its `/store/<content>` mounts,
+never through the `/app/store/<content>` the tree mount also carries (`skill_pre_aws_solution.md` § Docker is compute,
 not storage). Every process binds
 `0.0.0.0` on the internal port 8900 — `CONTAINER_PORT` in `module_monitoring/config.py`, with no
 argument: the server is docker-only. `PORT` is only the host side of the
@@ -103,7 +104,7 @@ edit — the store mounts the volume, the one image the task's image, the `ml` r
 `module_monitoring/serve.py`, one file, two roles chosen by `ASSET`. Of the
 dashboard role's routes, two concern the asset containers: `GET /containers` —
 the registry: `generated_at_utc`, `poll_interval_seconds` and `tickers`, the
-asset folders of `store_assets_artifacts/` — and `GET /containers/<TICKER>/status`,
+asset folders of `store/assets_artifacts/` — and `GET /containers/<TICKER>/status`,
 proxied to `http://asset-<ticker>:8900/status`. The asset role answers
 `GET /status`. A folder without an `asset-<ticker>` block answers 503 through the
 proxy: the compose block is what makes a listed asset reachable.

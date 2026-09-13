@@ -29,7 +29,7 @@ price traceable to the venue that printed it.
 XGBoost, strategy selection, research simulation or any trading decision. In
 this project it does not own the 15m/1h/4h aggregations either — those
 tables live in the same database file but are written by `module_features/bars.py`,
-in the feature module's repository, downstream of this contract (§ 13, § 14).
+downstream of this contract (§ 13, § 14).
 
 Everything below the canonical object is source-neutral: no downstream stage
 knows which venue printed a given minute, and none needs venue-specific
@@ -66,7 +66,7 @@ Raw candles are kept as the evidence of one venue's observation, in a
 Lean-exact tree, one leaf per venue and symbol:
 
 ```
-store_raw_1m/cryptofuture/<venue>/minute/<symbol lowercase>/YYYYMMDD_trade.zip
+store/raw_1m/cryptofuture/<venue>/minute/<symbol lowercase>/YYYYMMDD_trade.zip
     └── YYYYMMDD_<symbol lowercase>_minute_trade_perp.csv
         headerless: offset_ms_from_utc_midnight,open,high,low,close,volume
 ```
@@ -370,7 +370,7 @@ divergence policy is a change to this contract, not a tuning decision.
 ```
 
 ```
-store_assets_artifacts/BTC/BTC_research_ohlcv.duckdb
+store/assets_artifacts/BTC/BTC_research_ohlcv.duckdb
 ```
 
 Inside it, tables — not separate database servers, not separate files:
@@ -426,7 +426,7 @@ prefix swap:
 
 | host | container |
 |---|---|
-| `store_assets_artifacts/BTC/BTC_research_ohlcv.duckdb` | `/store/assets_artifacts/BTC/BTC_research_ohlcv.duckdb` |
+| `store/assets_artifacts/BTC/BTC_research_ohlcv.duckdb` | `/store/assets_artifacts/BTC/BTC_research_ohlcv.duckdb` |
 
 Docker may start the process, give it a filesystem, cap its memory, cap its
 CPU and set its permissions. Docker may not define candle validity, the
@@ -435,15 +435,15 @@ Those belong to this document, and they hold identically when the same stage is
 run outside a container.
 
 **The seat.** On the one Linux container instance (Amazon ECS on Amazon EC2) the
-file sits at the same path under `/store`, on the volume mounted where the five
-`./store_<content>` mounts are today; the whole-file lock holds because that volume is a block device, not a
+file sits at the same path under `/store`, on the volume mounted where the
+`./store/<content>` mounts are today; the whole-file lock holds because that volume is a block device, not a
 network filesystem. After the run the file is copied whole to the asset's prefix
 in object storage (Amazon S3) — a copy, never a mount. The promotion threshold
 is `../../module_skills/skill_pre_aws_solution.md` § The databases.
 
 The rule this section instantiates for the database — a container is compute
 and never the owner of an asset's state — is project-wide and lives in
-`../../module_skills/skill_pre_aws_solution.md`, the canon copy this repository carries; this section stays its one
+`../../module_skills/skill_pre_aws_solution.md`, the canon beside the modules; this section stays its one
 statement for the market object.
 
 ## 16. Data-quality invariants
@@ -521,7 +521,7 @@ probe, idempotence by file presence — are `methodology_data.md` § 4.
 
 **Example only — an observed run, not an invariant.** These are the numbers of
 one BTC run of the window as it stood when this was read, from
-`store_status/data_status.json`. Nothing in the system may be coded
+`store/status/data_status.json`. Nothing in the system may be coded
 against them.
 
 ```

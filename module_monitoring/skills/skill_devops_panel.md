@@ -60,7 +60,7 @@ minimum, so upgrading the engine does not move the contract underneath the panel
 | `GET /devops/api/machines` | every container the daemon reports, this project's first and marked `own_project`; state, uptime, image, ports, restarts, and one stats sample |
 | `GET /devops/api/networks` | the networks, their driver and scope, and what is attached to each |
 | `GET /devops/api/volumes` | named volumes with the sizes only `/system/df` reports, and the bind mounts this project's containers carry |
-| `GET /devops/api/image` | the image this container runs — the monitoring module's, shared by the three residents — named by the panel's own container rather than by a literal |
+| `GET /devops/api/image` | the image this container runs — `liora-1m-pipeline`, the one image every service runs — named by the panel's own container rather than by a literal |
 | `GET /devops/api/events` | this project's own daemon events over a bounded window, newest first |
 | `POST /devops/api/machines/<id>/<action>` | `start`, `stop`, `restart` — the whole allowlist |
 
