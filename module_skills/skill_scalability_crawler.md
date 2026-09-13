@@ -133,7 +133,8 @@ files the list names; every other file in scope is measured and never reviewed.
 same pass in the tmux session `skills-crawl`, which outlives the terminal —
 `tmux attach -t skills-crawl` to watch it, Ctrl-C to stop it. A pass:
 
-1. stops, in one line, when the checkout is not clean — a file git does not
+1. stops, in one line, when an entry of `CRAWL_PATHSPECS` names no tracked file
+   — a misspelt path never empties the queue in silence — when the checkout is not clean — a file git does not
    track is work in progress, so scratch belongs in a gitignored path — when
    branch `scalability-crawler` holds a commit the checkout has not merged, or
    when the agent's command line is not on `PATH`;
@@ -159,10 +160,14 @@ same pass in the tmux session `skills-crawl`, which outlives the terminal —
    brief; then the batch is reverted, and the files the agent edited — every file
    of the batch, when no attempt answered — are `deferred` with the failure as
    their finding, while the others keep their verdict;
-6. commits each batch once — the kept amendments with the review record — and,
-   after the last batch, the snapshot alone; then removes the worktree and prints
-   the two commands a morning has: `git merge --no-ff --no-edit
-   scalability-crawler` or `git branch -D scalability-crawler`.
+6. commits each batch once — the kept amendments with the review record, the
+   commit's body its report: every file's verdict and findings, the proposals,
+   the turns and seconds of every attempt, the failure — and, after the last
+   batch, the snapshot alone, its body the sums of the pass and the listed files
+   left for the next one; then removes the worktree and prints the two commands a
+   morning has: `git merge --no-ff --no-edit scalability-crawler` or
+   `git branch -D scalability-crawler`. `git log scalability-crawler` is the
+   morning's report; a pass the probe skipped commits nothing.
 
 A launch of the agent that returns no result is a configuration error: the pass
 exits 1 with the agent's own error and writes no row. The checkout is never

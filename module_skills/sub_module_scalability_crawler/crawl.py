@@ -1,7 +1,7 @@
-"""One bounded pass of the review: the files whose verdict is missing or no longer current, reviewed by the agent one
-batch at a time in a worktree on branch scalability-crawler. An amendment is kept only when its scope, its syntax and the
-ratchet of the invariants hold; the amendments, the review record and the snapshot are committed on that branch, and the
-checkout is never touched. It gates nothing.
+"""One bounded pass of the review: the listed files whose verdict is missing or no longer current, reviewed by the agent
+one batch at a time in a worktree on branch scalability-crawler. An amendment is kept only when its scope, its syntax and
+the ratchet of the invariants hold; the amendments, the review record and the snapshot are committed on that branch, each
+commit's body its report, and the checkout is never touched. It gates nothing.
 
     python3 -B -m module_skills.sub_module_scalability_crawler.crawl            (make skills-crawl)
     python3 -B -m module_skills.sub_module_scalability_crawler.crawl --queue    the queue, and nothing run
@@ -26,6 +26,7 @@ from . import config, status
 
 QUEUE_CLASSES = ("unreviewed", "changed", "stale")
 FAILURE_RULE = "module_skills/skill_scalability_crawler.md § The pass"
+ANSWER_HEAD_CHARACTER_COUNT = 160
 AMENDMENT_RULE = (
     "Amend what the grammar derives without a decision — a verb outside the closed list, a quantity without its unit, "
     "a debt marker, a commented-out line, a missing row of {orientation} § Design rationale, the glossary row a rename in "
@@ -45,9 +46,8 @@ def to_checkout_relative(path: Path) -> str:
 
 def build_queue() -> list[dict]:
     """The files CRAWL_PATHSPECS names that want a review — unreviewed, changed since their verdict, stale under a newer
-    canon — in order: amendable
-    files first, by class, then by module in the chain's order, the orientation and config.py first inside a module;
-    the review-only files — the crawler's own, the canon, the root's — last."""
+    canon — in order: amendable files first, by class, then by module in the chain's order, the orientation and
+    config.py first inside a module; the review-only files — the crawler's own, the canon, the root's — last."""
     rows = {row["path"]: row for row in status.load_review_record()["files"]}
     blobs, canon = status.blob_ids(), status.canon_id()
     canon_paths = set(status.tracked_paths(*config.CANON_PATHSPECS))
@@ -105,14 +105,14 @@ def build_brief(batch: list[dict], prior_failure: str | None) -> str:
         amendment_rule=REVIEW_ONLY_RULE if batch[0]["review_only"] else AMENDMENT_RULE.format(orientation=orientation))
 
 
-def fetch_agent_answer(brief: str, worktree: Path) -> tuple[str | None, str | None]:
-    """The agent's result text, or the failure of the attempt. A launch that returns no result is a configuration
-    error and ends the pass."""
+def fetch_agent_envelope(brief: str, worktree: Path) -> tuple[dict, str | None]:
+    """The JSON envelope the agent's command line printed, and the failure of the attempt when there is one. A launch
+    that returns no envelope with a result is a configuration error and ends the pass."""
     try:
         completed = subprocess.run(config.AGENT_COMMAND, input=brief, cwd=worktree, capture_output=True, text=True,
                                    timeout=config.AGENT_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
-        return None, f"the agent ran past {config.AGENT_TIMEOUT_SECONDS} seconds"
+        return {}, f"the agent ran past {config.AGENT_TIMEOUT_SECONDS} seconds"
     try:
         envelope = json.loads(completed.stdout)
     except json.JSONDecodeError:
@@ -120,9 +120,12 @@ def fetch_agent_answer(brief: str, worktree: Path) -> tuple[str | None, str | No
     envelope = envelope if isinstance(envelope, dict) else {}
     if completed.returncode != 0 and "result" not in envelope:
         raise SystemExit(f"the agent did not run (exit {completed.returncode}): {completed.stderr.strip()}")
+    facts = f"{envelope.get('subtype')}, {envelope.get('num_turns')} turns"
     if envelope.get("is_error"):
-        return None, f"the agent reported an error: {envelope.get('result')}"
-    return envelope.get("result", ""), None
+        return envelope, f"the agent reported an error ({facts}): {envelope.get('result')}"
+    if not isinstance(envelope.get("result"), str):
+        return envelope, f"the agent returned no result ({facts})"
+    return envelope, None
 
 
 def is_answer_row(row) -> bool:
@@ -140,12 +143,14 @@ def is_proposal(proposal) -> bool:
 
 
 def parse_answer(result: str, batch: list[dict]) -> tuple[dict | None, str | None]:
-    """The answer the brief asks for — a row per file of the batch, and the proposals — or why it is not one."""
-    text = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", result or "")
+    """The answer the brief asks for — a row per file of the batch, and the proposals — or why it is not one, with the
+    head of what came back."""
+    text = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", result)
+    head = f"; the answer began {result[:ANSWER_HEAD_CHARACTER_COUNT]!r}"
     try:
         answer = json.loads(text)
     except json.JSONDecodeError as error:
-        return None, f"the answer is not JSON ({error.msg})"
+        return None, f"the answer is not JSON ({error.msg}){head}"
     files = answer.get("files") if isinstance(answer, dict) else None
     missing = [item["path"] for item in batch if not isinstance(files, dict) or item["path"] not in files]
     if missing:
@@ -194,8 +199,8 @@ def index_blob_ids(worktree: Path) -> dict[str, str]:
     return {entry.split("\t", 1)[1]: entry.split()[1] for entry in entries if entry}
 
 
-def build_review_rows(batch: list[dict], answer: dict | None, edited: set[str], failure: str | None, blobs: dict[str, str],
-                canon: str) -> list[dict]:
+def build_review_rows(batch: list[dict], answer: dict | None, edited: set[str], failure: str | None,
+                      blobs: dict[str, str], canon: str) -> list[dict]:
     """A row per file of the batch. A file the agent edited in a failed batch, or any file of a batch no attempt
     answered, is deferred with the failure as its finding; every other file keeps the agent's verdict."""
     rows = []
@@ -203,7 +208,7 @@ def build_review_rows(batch: list[dict], answer: dict | None, edited: set[str], 
         answer_row = answer["files"][item["path"]] if answer else None
         if failure and (item["path"] in edited or answer_row is None):
             verdict = {"verdict": "deferred", "self_explaining_level": None, "evidence": None,
-                       "findings": [{"rule": FAILURE_RULE, "finding": failure, "example": item["path"]}]}
+                       "findings": [{"rule": FAILURE_RULE, "finding": failure, "example": f"{item['path']}:1"}]}
         else:
             verdict = {"verdict": "amended" if item["path"] in edited
                        else "conformant" if answer_row["verdict"] == "amended" else answer_row["verdict"],
@@ -213,8 +218,17 @@ def build_review_rows(batch: list[dict], answer: dict | None, edited: set[str], 
     return rows
 
 
+def build_batch_report(rows: list[dict], proposal_count: int, attempts: list[str], failure: str | None) -> str:
+    """The body of a batch's commit: every file's verdict, the proposals, what each attempt cost, and the failure."""
+    lines = [f"{row['path']} — {row['verdict']}"
+             + (f", level {row['self_explaining_level']}" if row["self_explaining_level"] is not None else "")
+             + f", {len(row['findings'])} finding(s)" for row in rows]
+    lines += [f"proposals: {proposal_count}", "attempts: " + "; ".join(attempts)]
+    return "\n".join(lines + ([f"failure: {failure}"] if failure else []))
+
+
 def write_review_record(path: Path, record: dict, scope: set[str], canon: str) -> None:
-    """The one writer of the review record: rows sorted by path, proposals by pattern; a row whose file left the scope
+    """The one writer of the review record: rows sorted by path, proposals by pattern; a row whose file left the list
     and a proposal of another canon dropped; the file rewritten only when its content changes."""
     files = sorted((row for row in record["files"] if row["path"] in scope), key=lambda row: row["path"])
     proposals = sorted((proposal for proposal in record["proposals"] if proposal["canon_id"] == canon),
@@ -253,15 +267,17 @@ def newest_activity() -> tuple[float, str]:
     return newest, where
 
 
-def write_batch_review(worktree: Path, batch: list[dict], base: dict[str, int]) -> tuple[str | None, dict[str, int]]:
-    """One batch: at most CRAWL_ATTEMPT_COUNT_PER_BATCH attempts, then one commit of the kept amendments and the rows."""
-    answer, failure, changed = None, None, set()
+def write_batch_review(worktree: Path, batch: list[dict], base: dict[str, int]) -> tuple[str | None, dict[str, int], list[dict], int]:
+    """One batch: at most CRAWL_ATTEMPT_COUNT_PER_BATCH attempts, then one commit of the kept amendments and the rows,
+    its body the batch's report."""
+    answer, failure, changed, attempts = None, None, set(), []
     for attempt in range(1, config.CRAWL_ATTEMPT_COUNT_PER_BATCH + 1):
         status.git("checkout", "--", ".", root=worktree)
         status.git("clean", "-fdq", root=worktree)
-        result, failure = fetch_agent_answer(build_brief(batch, failure), worktree)
+        envelope, failure = fetch_agent_envelope(build_brief(batch, failure), worktree)
+        attempts.append(f"{envelope.get('num_turns', '-')} turns, {round((envelope.get('duration_ms') or 0) / 1000)} s")
         if failure is None:
-            parsed, failure = parse_answer(result, batch)
+            parsed, failure = parse_answer(envelope["result"], batch)
             answer = parsed or answer
         changed = changed_paths(worktree)
         failure = failure or scope_failure(batch, changed) or syntax_failure(worktree, changed)
@@ -269,7 +285,7 @@ def write_batch_review(worktree: Path, batch: list[dict], base: dict[str, int]) 
             measured = load_worktree_invariants(worktree)
             raised = sorted(metric for metric, value in measured.items() if value > base.get(metric, 0))
             failure = f"the amendment raised {', '.join(raised)}" if raised else None
-        print(f"  attempt {attempt}: {failure or 'kept'}", flush=True)
+        print(f"  attempt {attempt} ({attempts[-1]}): {failure or 'kept'}", flush=True)
         if failure is None:
             base = measured
             break
@@ -284,22 +300,26 @@ def write_batch_review(worktree: Path, batch: list[dict], base: dict[str, int]) 
     blobs = index_blob_ids(worktree)
     canon = status.canon_id(blobs)
     record = json.loads(record_path.read_text(encoding="utf-8"))
-    rows = {row["path"]: row for row in record["files"]}
-    rows.update((row["path"], row) for row in build_review_rows(batch, answer, edited, failure, blobs, canon))
-    proposals = {proposal["pattern"]: proposal for proposal in record["proposals"]}
-    if answer and failure is None:
-        proposals.update((proposal["pattern"], {**proposal, "canon_id": canon, "occurrence_count": len(proposal["occurrences"])})
-                         for proposal in answer.get("proposals", []))
-    write_review_record(record_path, {"files": list(rows.values()), "proposals": list(proposals.values())},
+    rows = build_review_rows(batch, answer, edited, failure, blobs, canon)
+    proposals = answer.get("proposals", []) if answer and failure is None else []
+    by_path = {row["path"]: row for row in record["files"]} | {row["path"]: row for row in rows}
+    by_pattern = {proposal["pattern"]: proposal for proposal in record["proposals"]} | {
+        proposal["pattern"]: {**proposal, "canon_id": canon, "occurrence_count": len(proposal["occurrences"])}
+        for proposal in proposals}
+    write_review_record(record_path, {"files": list(by_path.values()), "proposals": list(by_pattern.values())},
                         set(status.crawl_paths()), canon)
     status.git("add", "--", to_checkout_relative(config.SKILLS_REVIEW_JSON_PATH), root=worktree)
-    module = batch[0]["module"]
-    status.git("commit", "-q", "-m", f"{'Defer' if failure else 'Review'} {module}: {len(batch)} file(s)", root=worktree)
-    return failure, base
+    subject = f"{'Defer' if failure else 'Review'} {batch[0]['module']}: {len(batch)} file(s)"
+    status.git("commit", "-q", "-m", subject, "-m", build_batch_report(rows, len(proposals), attempts, failure), root=worktree)
+    return failure, base, rows, len(proposals)
 
 
 def main() -> int:
     mode = sys.argv[1] if len(sys.argv) > 1 else None
+    unmatched = [pathspec for pathspec in config.CRAWL_PATHSPECS if not status.tracked_paths(pathspec)]
+    if unmatched:
+        print(f"CRAWL_PATHSPECS names no tracked file: {', '.join(unmatched)}")
+        return 1
     if status.git("status", "--porcelain"):
         print("the checkout is not clean: a file git does not track is work in progress, and scratch belongs in a gitignored path")
         return 1
@@ -317,7 +337,7 @@ def main() -> int:
         print(f"{len(queue)} file(s) queued; this pass reviews {sum(map(len, batches))} in {len(batches)} batch(es)")
         return 0
     if not batches:
-        print("nothing to review: every file in scope carries a current verdict")
+        print("nothing to review: every listed file carries a current verdict")
         return 0
     if mode == "--brief":
         print(build_brief(batches[0], None))
@@ -337,20 +357,24 @@ def main() -> int:
         for number, batch in enumerate(batches, start=1):
             print(f"batch {number}/{len(batches)} — {batch[0]['module']}: "
                   f"{', '.join(item['path'] for item in batch)}", flush=True)
-            failure, base = write_batch_review(worktree, batch, base)
+            failure, base, rows, proposal_count = write_batch_review(worktree, batch, base)
             outcomes["deferred batches" if failure else "kept batches"] += 1
-            outcomes["files"] += len(batch)
+            outcomes.update(row["verdict"] for row in rows)
+            outcomes["proposals"] += proposal_count
             if status.git("status", "--porcelain"):
                 raise SystemExit("the checkout changed during the pass; the pass stops")
+        summary = (f"reviewed {sum(map(len, batches))} file(s) in {outcomes['kept batches']} kept and "
+                   f"{outcomes['deferred batches']} deferred batch(es): {outcomes['conformant']} conformant, "
+                   f"{outcomes['amended']} amended, {outcomes['deferred']} deferred; {outcomes['proposals']} proposal(s); "
+                   f"{len(queue) - sum(map(len, batches))} listed file(s) left for the next pass")
         load_worktree_invariants(worktree)
         if status.git("status", "--porcelain", root=worktree):
             status.git("add", "--", to_checkout_relative(config.SKILLS_STATUS_JSON_PATH), root=worktree)
             short = status.git("rev-parse", "--short", "HEAD", root=worktree).strip()
-            status.git("commit", "-q", "-m", f"Record the tree's counts at {short}", root=worktree)
+            status.git("commit", "-q", "-m", f"Record the tree's counts at {short}", "-m", summary, root=worktree)
     finally:
         status.git("worktree", "remove", "--force", str(worktree))
-    print(f"reviewed {outcomes['files']} file(s) in {outcomes['kept batches']} kept and {outcomes['deferred batches']} "
-          f"deferred batch(es) — git merge --no-ff --no-edit {config.CRAWL_BRANCH} | git branch -D {config.CRAWL_BRANCH}")
+    print(f"{summary} — git merge --no-ff --no-edit {config.CRAWL_BRANCH} | git branch -D {config.CRAWL_BRANCH}")
     return 0
 
 

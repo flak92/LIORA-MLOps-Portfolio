@@ -374,14 +374,14 @@
    "design_rationale_row_pct": 100.0,
    "file_count": 14,
    "files_reviewed_pct": null,
-   "function_count": 99,
+   "function_count": 100,
    "module": "module_skills",
    "module_docstring_pct": 100.0,
-   "public_function_docstring_pct": 40.4,
-   "python_line_count": 1372
+   "public_function_docstring_pct": 41.0,
+   "python_line_count": 1396
   }
  ],
- "python_line_count": 5618,
+ "python_line_count": 5642,
  "shape": [
   {
    "condition": "D01",

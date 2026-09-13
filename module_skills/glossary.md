@@ -480,7 +480,7 @@ counted against its contract. The rules are
 | why a file is queued, and the files one reviewer takes at once — one module, one mode | `build_queue()`, `queue_batches()`, `CRAWL_BATCH_FILE_COUNT`, `CRAWL_PASS_BATCH_COUNT`, `CRAWL_ATTEMPT_COUNT_PER_BATCH` | — | unreviewed / changed / stale | a chunk; dirty |
 | a file the reviewer judges and never edits: the crawler's own, the canon's, the root's | `review_only` | — | review-only | read-only, locked, frozen |
 | the brief a batch sends the reviewer | `crawl_brief_template.md`, `build_brief()` | — | — | a prompt per module; a rule restated in it |
-| the reviewer's command line — Claude Sonnet 5, the brief on stdin, one JSON envelope on stdout | `AGENT_COMMAND`, `AGENT_TIMEOUT_SECONDS`, `fetch_agent_answer()` | — | — | a model named outside the tuple; an interactive session |
+| the reviewer's command line — Claude Sonnet 5, the brief on stdin, one JSON envelope on stdout | `AGENT_COMMAND`, `AGENT_TIMEOUT_SECONDS`, `fetch_agent_envelope()` | — | — | a model named outside the tuple; an interactive session |
 | whether the checkout is quiet enough for a pass | `newest_activity()`, `QUIET_PROBE_SECONDS`, `PROBE_EXCLUDE` | — | skipped: activity at | a watcher, a lock, a sleep |
 | the blob a row reviewed — git's identity, read off the index | `index_blob_ids()` | `blob_id` | — | a commit as the identity of a verdict; a hash (as a key) |
 | the page's view of the count: the metrics by family, the modules, what the review record holds | `scalability.js`; `SKILLS_STATUS`, `SKILLS_REVIEW` | — | Scalability — METRICS, MODULES, REVIEW | a tab named for a tool; scale for a larger basket, which is `ASSET=<TICKER>` (`AGENTS.md` § Pre-AWS architectural direction) |
