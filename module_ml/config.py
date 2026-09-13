@@ -24,7 +24,7 @@ DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 
-# this module's alone, and outside the block above: the trials store, where both searches leave every point they drew
+# this module's alone, and outside the block above: the trials store, where hpo.py leaves every point it drew
 STORE_TRIALS_DIR = Path(os.environ["STORE_TRIALS_DIR"])
 
 

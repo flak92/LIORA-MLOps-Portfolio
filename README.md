@@ -86,8 +86,8 @@ The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` pe
 ticker of the basket, the monitoring image for all — only serve: no stage runs inside a
 resident, and no stage depends on it — a stage is the one-off
 `python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Five direct dependencies across
-the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `mlflow-skinny` (the searches'
-trial ledger: ml), `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
+the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `mlflow-skinny` (the hyper-parameter
+search's trial ledger: ml), `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
 (model: ml); `module_monitoring` is standard library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
 
 ```
@@ -130,7 +130,7 @@ object. Everything below it describes the method, not the data provider.
 | `store_raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
 | `store_assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
 | `store_run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
-| `store_trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point both searches drew; the `ml` runner alone writes it, and a hand clears it |
+| `store_trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point the hyper-parameter search drew; the `ml` runner alone writes it, and a hand clears it |
 | `store_status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
 
 The store is the boundary between compute and state. Every stage reads and writes only these five and learns where they
