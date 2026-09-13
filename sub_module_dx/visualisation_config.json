@@ -14,6 +14,7 @@
     "requirements.txt": "S1",
     "record.py": "S1",
     "AGENTS.md": "S2",
+    "CLAUDE.md": "S2",
     "README.md": "S2",
     "REPORT_pre_aws_minimalism.md": "S2",
     "REPORT_dashboard_data_minimalism.md": "S2",
@@ -142,6 +143,7 @@
     "default_story": "S1",
     "story_map": {
       "AGENTS.md": "S1",
+      "CLAUDE.md": "S1",
       "README.md": "S1",
       "REPORT_pre_aws_minimalism.md": "S1",
       "module_skills/": "S1",
@@ -436,6 +438,7 @@
       "module_skills/": "The canon: the cross-cutting skills and the name register (`module_skills/glossary.md`), — they travel with the code and deploy nowhere: not project code, not a primitive, and the contract of every boundary this picture draws.",
       "module_skills/skill_pre_aws_solution.md": "The mapping table this view draws: its left column is the other view of this page, its column *the same responsibility elsewhere* is these primitives — and § What the shape holds, and what it does not, says which of them this repository holds.",
       "AGENTS.md": "The contract of this repository, where every boundary on this picture was decided; it deploys nowhere and governs everything that does.",
+      "CLAUDE.md": "The door a session opens before the contract: the working path, the four modules by name and the documents that hold the rules. It deploys nowhere and states nothing of its own.",
       "README.md": "The overview of the project: the modules, the stores, the chain, and § Architectural direction, where this stance is stated in one paragraph.",
       "REPORT_pre_aws_minimalism.md": "The review of these seats for excess: what could be less, and whether it is; it deploys nowhere and names no primitive the table does not."
     },
