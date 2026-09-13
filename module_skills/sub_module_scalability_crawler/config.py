@@ -109,6 +109,34 @@ FAMILY_NAME_PATTERNS_BY_DIRECTORY = {
     "store/assets_artifacts/*": ("{folder}_*",),
 }
 
+# AGENTS.md § The shape, D03: where a skill lives — the canon, or the skills of the module it describes
+SKILL_DIRECTORY_PATTERNS = ("module_skills", "module_*/skills")
+# AGENTS.md § The shape, D05, and § Rejected vocabulary, a second compose file, a second Makefile
+LAUNCHER_PATHS = ("Makefile", "docker-compose.yml")
+LAUNCHER_NAME_PATTERNS = ("Makefile*", "*.mk", "docker-compose*.yml", "docker-compose*.yaml", "compose*.yml", "compose*.yaml")
+# the section whose rows the shape table reads, and each row's evidence: a metric the row holds by when that invariant
+# reads zero, or — where no count can say it — the target that proves it by hand
+SHAPE_SECTION_TITLE = "The shape — what holds the project together"
+SHAPE_EVIDENCE_BY_CONDITION = {
+    "D01": "root_python_outside_record_count",
+    "D02": "cross_module_import_count",
+    "D03": "skill_outside_owner_directory_count",
+    "D04": "make all, then make on, from a fresh clone",
+    "D05": "launcher_file_copy_count",
+    "D06": "git status --porcelain empty after make all",
+    "D07": "docker compose config --services: one asset-<ticker> per ticker, no service per stage",
+    "D08": "git ls-files ':(glob)module_*/sub_module_*/**'",
+    "D09": "artifact_key_without_glossary_row_count",
+    "D10": "README.md § Parity",
+    "D11": "README.md § Parity",
+    "D12": "requirements.txt, and trials_sqlite() in module_ml/config.py",
+    "D13": "make features-status",
+    "D14": "twice_by_extraction_drift_count",
+    "D15": "git ls-files store/",
+    "D16": "resident_exec_count",
+    "D17": "make skills-status",
+}
+
 EXAMPLES_PER_METRIC_COUNT = 5
 PCT_DECIMAL_COUNT = 1
 LEVEL_MEAN_DECIMAL_COUNT = 2

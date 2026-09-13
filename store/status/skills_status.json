@@ -37,6 +37,30 @@
   },
   {
    "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "skill_outside_owner_directory_count",
+   "rule": "AGENTS.md \u00a7 The shape, D03",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "launcher_file_copy_count",
+   "rule": "AGENTS.md \u00a7 The shape, D05; \u00a7 Rejected vocabulary, a second compose file, a second Makefile",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "resident_exec_count",
+   "rule": "AGENTS.md \u00a7 The shape, D16",
+   "value": 0
+  },
+  {
+   "examples": [],
    "family": "naming",
    "kind": "invariant",
    "metric": "function_verb_outside_grammar_count",
@@ -350,12 +374,99 @@
    "design_rationale_row_pct": 100.0,
    "file_count": 12,
    "files_reviewed_pct": 0.0,
-   "function_count": 74,
+   "function_count": 78,
    "module": "module_skills",
    "module_docstring_pct": 100.0,
-   "public_function_docstring_pct": 35.1,
-   "python_line_count": 910
+   "public_function_docstring_pct": 35.9,
+   "python_line_count": 976
   }
  ],
- "python_line_count": 5156
+ "python_line_count": 5222,
+ "shape": [
+  {
+   "condition": "D01",
+   "evidence": "root_python_outside_record_count",
+   "holds": true
+  },
+  {
+   "condition": "D02",
+   "evidence": "cross_module_import_count",
+   "holds": true
+  },
+  {
+   "condition": "D03",
+   "evidence": "skill_outside_owner_directory_count",
+   "holds": true
+  },
+  {
+   "condition": "D04",
+   "evidence": "make all, then make on, from a fresh clone",
+   "holds": null
+  },
+  {
+   "condition": "D05",
+   "evidence": "launcher_file_copy_count",
+   "holds": true
+  },
+  {
+   "condition": "D06",
+   "evidence": "git status --porcelain empty after make all",
+   "holds": null
+  },
+  {
+   "condition": "D07",
+   "evidence": "docker compose config --services: one asset-<ticker> per ticker, no service per stage",
+   "holds": null
+  },
+  {
+   "condition": "D08",
+   "evidence": "git ls-files ':(glob)module_*/sub_module_*/**'",
+   "holds": null
+  },
+  {
+   "condition": "D09",
+   "evidence": "artifact_key_without_glossary_row_count",
+   "holds": true
+  },
+  {
+   "condition": "D10",
+   "evidence": "README.md \u00a7 Parity",
+   "holds": null
+  },
+  {
+   "condition": "D11",
+   "evidence": "README.md \u00a7 Parity",
+   "holds": null
+  },
+  {
+   "condition": "D12",
+   "evidence": "requirements.txt, and trials_sqlite() in module_ml/config.py",
+   "holds": null
+  },
+  {
+   "condition": "D13",
+   "evidence": "make features-status",
+   "holds": null
+  },
+  {
+   "condition": "D14",
+   "evidence": "twice_by_extraction_drift_count",
+   "holds": true
+  },
+  {
+   "condition": "D15",
+   "evidence": "git ls-files store/",
+   "holds": null
+  },
+  {
+   "condition": "D16",
+   "evidence": "resident_exec_count",
+   "holds": true
+  },
+  {
+   "condition": "D17",
+   "evidence": "make skills-status",
+   "holds": null
+  }
+ ]
 }

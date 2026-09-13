@@ -103,6 +103,15 @@ file git does not track is not counted.
   counted where the register enacts it: a name in a backtick of a code cell, or a
   word of a UI label cell, of `glossary.md`.
 
+## The shape
+
+`shape` reads the rows of `AGENTS.md` § The shape at the measured commit, and
+no others. `SHAPE_EVIDENCE_BY_CONDITION` in `config.py` names each row's evidence
+once: a metric of `METRICS`, and the row holds when that invariant reads zero; or,
+where no count can say it, the target that proves the row by hand, and `holds` is
+then null. A row the contract adds is one entry there; a row with no entry shows
+no evidence.
+
 ## The review record
 
 `store/status/skills_review.json` holds one row per reviewed file — its `path`,

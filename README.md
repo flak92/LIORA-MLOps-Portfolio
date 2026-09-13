@@ -307,7 +307,7 @@ raw ZIP trees. Schema:
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
 - **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
 - **Scalability** — the tracked tree counted against `AGENTS.md` and the skills by `make skills-status`:
-  every metric by family with the places it found, the invariants marked, each module's size, argued
+  the conditions of `AGENTS.md` § The shape with their evidence, every metric by family with the places it found, the invariants marked, each module's size, argued
   placements and docstrings, and what the crawler's review record holds;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and

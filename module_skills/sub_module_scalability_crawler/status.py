@@ -275,6 +275,24 @@ def root_python_outside_record() -> list[str]:
     return [example(path, 1, path) for path in python_paths() if not path.startswith("module_") and path != config.RECORDER_PATH]
 
 
+def skills_outside_owner_directory() -> list[str]:
+    return [example(path, 1, path) for path in all_paths()
+            if re.fullmatch(r"(skill|methodology)_.*\.md", posixpath.basename(path))
+            and not any(fnmatch.fnmatch(posixpath.dirname(path), pattern) for pattern in config.SKILL_DIRECTORY_PATTERNS)]
+
+
+def launcher_file_copies() -> list[str]:
+    return [example(path, 1, path) for path in all_paths() if path not in config.LAUNCHER_PATHS
+            and any(fnmatch.fnmatch(posixpath.basename(path), pattern) for pattern in config.LAUNCHER_NAME_PATTERNS)]
+
+
+def resident_execs() -> list[str]:
+    """A command of the launcher that runs inside a resident rather than in a one-off container."""
+    return [example(config.MAKEFILE_PATH, line_number, "exec")
+            for line_number, line in enumerate(load_file_text(config.MAKEFILE_PATH).splitlines(), start=1)
+            if not line.lstrip().startswith("#") and re.search(r"\bexec\b", line)]
+
+
 def function_names() -> list[tuple[str, str, int]]:
     return [(path, node.name, node.lineno) for path in python_paths() for node in functions(python_tree(path))]
 
@@ -673,6 +691,11 @@ METRICS = (
      "AGENTS.md § Architecture shape, paths built only in a module's config.py", store_literals_outside_config),
     ("path_from_file_count", "modularity", "invariant", "AGENTS.md § Canonical vocabulary, the row store paths", paths_from_file),
     ("root_python_outside_record_count", "modularity", "invariant", "AGENTS.md § The shape, D01", root_python_outside_record),
+    ("skill_outside_owner_directory_count", "modularity", "invariant", "AGENTS.md § The shape, D03",
+     skills_outside_owner_directory),
+    ("launcher_file_copy_count", "modularity", "invariant",
+     "AGENTS.md § The shape, D05; § Rejected vocabulary, a second compose file, a second Makefile", launcher_file_copies),
+    ("resident_exec_count", "modularity", "invariant", "AGENTS.md § The shape, D16", resident_execs),
     ("function_verb_outside_grammar_count", "naming", "invariant",
      "AGENTS.md § Canonical vocabulary, the function rows; skill_self_explaining_naming.md § The closed list absorbs its synonyms",
      lambda: python_name_prefix_in(function_names(), prefixes=config.FUNCTION_VERB_FORBIDDEN_PREFIXES,
@@ -762,15 +785,30 @@ def module_block(module: str) -> dict:
     }
 
 
+def shape_block(metrics: list[dict]) -> list[dict]:
+    """The rows of AGENTS.md § The shape at the measured commit, each with its evidence: a row holds when the invariant
+    its evidence names reads zero; a row whose evidence is a target is proven by hand, and holds nothing here."""
+    text = load_file_text(config.CONTRACT_PATH)
+    span = section_span(text, config.SHAPE_SECTION_TITLE)
+    values = {row["metric"]: row["value"] for row in metrics}
+    conditions = [cell.strip() for header, _, start, _, cell in table_cells(text) if header == "#" and span[0] <= start < span[1]]
+    return [{"condition": condition, "evidence": config.SHAPE_EVIDENCE_BY_CONDITION.get(condition),
+             "holds": values[config.SHAPE_EVIDENCE_BY_CONDITION[condition]] == 0
+             if config.SHAPE_EVIDENCE_BY_CONDITION.get(condition) in values else None}
+            for condition in conditions]
+
+
 def build_skills_status() -> dict:
     snapshot = config.SKILLS_STATUS_JSON_PATH.relative_to(config.REPO_ROOT)
     commit, committed_at = git("log", "-1", "--format=%H %ct", "--", ".", f":(exclude){snapshot}").split()
+    metrics = [metric_block(*row) for row in METRICS]
     return {
         "measured_at_commit": commit,
         "measured_at_commit_utc": datetime.fromtimestamp(int(committed_at), tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "files_in_scope_count": len(scope_paths()),
         "python_line_count": sum(len(load_file_text(path).splitlines()) for path in python_paths()),
-        "metrics": [metric_block(*row) for row in METRICS],
+        "shape": shape_block(metrics),
+        "metrics": metrics,
         "modules": [module_block(module) for module in module_order()],
     }
 

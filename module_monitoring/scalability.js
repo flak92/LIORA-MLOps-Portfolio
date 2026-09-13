@@ -52,6 +52,21 @@ function renderScalabilityMeta(meta, status) {
   box.id = "scalability-meta";
 }
 
+/* the rows of AGENTS.md § The shape: a count that holds or not, or a target that proves the row by hand */
+function renderShape(host, status) {
+  const frame = buildFrame("SHAPE — what holds at every commit, AGENTS.md § The shape");
+  const values = Object.fromEntries(status.metrics.map((row) => [row.metric, row.value]));
+  frame.body.appendChild(buildTable(
+    ["condition", "holds", "evidence"],
+    status.shape.map((row) => [
+      row.condition,
+      row.holds === null ? "by hand" : [row.holds ? "yes" : "no", !row.holds],
+      row.evidence === null ? "-"
+        : buildExampleList([row.holds === null ? row.evidence : row.evidence + " = " + values[row.evidence]]),
+    ])));
+  host.appendChild(frame.frame);
+}
+
 function renderMetrics(host, status) {
   const frame = buildFrame("METRICS — the tree counted against the contract, by family");
   const table = buildTable(
@@ -121,6 +136,7 @@ function initScalability() {
       SKILLS_STATUS = status;
       SKILLS_REVIEW = review;
       const host = document.getElementById("scalability-detail");
+      renderShape(host, status);
       renderMetrics(host, status);
       renderModules(host, status);
       renderReview(host, review);
