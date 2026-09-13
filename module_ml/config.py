@@ -96,7 +96,9 @@ VALIDATION_FOLD_IDS = (2, 3, 4)
 FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 
 # ---- HPO (Optuna TPE, sequential, in-memory)
-HYPERPARAMETER_SEARCH_TRIAL_COUNT = 50
+# a handful of trials and short boosting: a run proves the chain works end to end, and the counts the research needs
+# are chosen once the method is final
+HYPERPARAMETER_SEARCH_TRIAL_COUNT = 3
 HYPERPARAMETER_SEARCH_SPACE = {
     "max_depth": ("int", 2, 6),
     "eta": ("log", 0.01, 0.3),
@@ -105,7 +107,7 @@ HYPERPARAMETER_SEARCH_SPACE = {
     "colsample_bytree": ("float", 0.5, 1.0),
     "lambda": ("log", 0.1, 10.0),
     "alpha": ("log", 0.01, 1.0),
-    "num_boost_round": ("int_step", 100, 800, 50),
+    "num_boost_round": ("int_step", 50, 100, 50),
 }
 XGBOOST_FIXED_PARAMETERS = {
     "objective": "multi:softprob",

@@ -278,11 +278,11 @@ model, call the same fold out-of-sample again.
 
 ## 7. Hyper-parameter search
 
-Optuna TPE (`seed = 42`), 50 sequential trials, in-memory study. Objective =
+Optuna TPE (`seed = 42`), 3 sequential trials, in-memory study. Objective =
 mean **uniqueness-weighted** multiclass log-loss over the three OOS validation
 folds F2–F4. Space: `max_depth` 2–6, `eta` log 0.01–0.3, `min_child_weight`
 1–50, `subsample` 0.5–1, `colsample_bytree` 0.5–1, `lambda` log 0.1–10,
-`alpha` log 0.01–1, `num_boost_round` 100–800 step 50. Fixed:
+`alpha` log 0.01–1, `num_boost_round` 50–100 step 50. Fixed:
 `multi:softprob`, `num_class = 3`, `tree_method = hist`, `nthread = 1`,
 `seed = 42`, no early stopping. Label parameters, costs and the entry-edge-threshold grid are **never** in the
 space. The `hyperparameter_search_result` section of `<TICKER>_parameters.json` keeps the
