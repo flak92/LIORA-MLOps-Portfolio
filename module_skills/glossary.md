@@ -430,7 +430,7 @@ carries one.
 | the tunnel: how a reader reaches the page on a host that is not theirs — `ssh -L <local>:127.0.0.1:<port> <host>` of `README.md` § Quickstart; elsewhere a port-forward, the elsewhere column's word | — (a command of the README; no identifier) | — | — | a public port; a load balancer |
 | read forward: a local object read as the same responsibility elsewhere — the mapping table's column — with nothing moved | — (a phrase of the documents; no identifier) | — | — | migrated, ported, deployed, in production |
 | the move: what a local thing's seat elsewhere costs it — a rename, one edit, or absent here — described; the fourth column of the mapping table | — (a word of `skill_pre_aws_solution.md` § The mapping table; no identifier) | — | — | migration, deployment, a plan, a roadmap |
-| an absent object — a primitive, an orchestration state, a skill — nothing local answers to and a document describes: a sentence ending, or a verdict reading, *absent here — described* | — (a phrase of the documents; no identifier) | — | — | planned, TODO, future, ghost, placeholder, missing |
+| an absent object — a primitive, an orchestration state, a skill — nothing local answers to and a document describes: a sentence ending, or a verdict reading, *absent here — described* | — (a phrase of the documents; no identifier) | — | — | planned, a debt marker, future, ghost, placeholder, missing |
 
 ## DevOps panel
 
