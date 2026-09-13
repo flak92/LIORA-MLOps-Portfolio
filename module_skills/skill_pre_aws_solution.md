@@ -41,7 +41,8 @@ second asset proves the architecture; the hundredth proves nothing more.
 Not built here, and not to be added because production would have it:
 
 - no full automated test suite, no linter, no coverage gate, no CI/CD, no
-  workflow, no framework;
+  workflow, no framework — the tree's count against its contract
+  (`skill_scalability_crawler.md`) gates nothing and is none of them;
 - no security hardening, no production IAM, no secrets architecture, no network
   isolation;
 - no high availability, no multi-AZ, no disaster recovery, no SLA, no
@@ -78,7 +79,7 @@ today:
 | MODEL | the two searches, the fit, the folds, the shared IO, and the hand's copy that fixes an asset's columns | `module_ml/hpo.py`, `module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py`, `module_ml/train.py`, `module_ml/model.py`, `module_ml/validation.py`, `module_ml/dataset.py` |
 | STRATEGY | the research evaluation of the predictions | `module_ml/strategy.py` |
 | ORCHESTRATION | ordering and launching the stages — the wall time between two stages is nobody's number, not the record's | the Makefile |
-| MONITORING | measuring the runtime and presenting what the modules measured | `module_data/status.py`, `module_features/status.py`, `module_ml/status.py`, `module_monitoring/serve.py`, `record.py`, the page scripts |
+| MONITORING | measuring the runtime and the tree, and presenting what was measured | `module_data/status.py`, `module_features/status.py`, `module_ml/status.py`, `module_skills/sub_module_scalability_crawler/status.py`, `module_monitoring/serve.py`, `record.py`, the page scripts |
 | STRATEGY EXECUTION | taking research artifacts and market data into a running strategy | absent here — described: `module_trading/`, its own container on the strategy host (§ Infrastructure seats) |
 | INFRASTRUCTURE | the image, the topology, the engine's own views | `Dockerfile`, `docker-compose.yml`, `module_monitoring/sub_module_devops/` |
 
@@ -113,7 +114,8 @@ sits on — never a cloud "service" of its own, and never a module named for one
 - `module_monitoring` — existing state → representation, and nothing of the
   research process (`module_monitoring/README_module_monitoring.md` § Where
   the responsibility stops). A status stage is MONITORING work owned by the
-  module whose state it measures: `AGENTS.md` § Architecture shape.
+  module whose state it measures: `AGENTS.md` § Architecture shape; the tree's
+  state against the canon is the canon's, measured by its sub-module.
 - QuantConnect Lean — a format here, not a runtime. `module_data/lean.py` is the
   one external-format boundary, and the raw tree is written Lean-exact so a Lean
   backtest could read it directly
@@ -292,7 +294,7 @@ built once, in `module_monitoring/config.py`.
 ## The volume is the home, the store is the copy
 
 Locally the working tree is the only home: the five `store/<content>/` folders,
-`store/status/` with the three snapshots among them, reached through their mounts;
+`store/status/` with the snapshots among them, reached through their mounts;
 nothing copies. Read forward the home is
 the store volume, the task host's durable disk at `/store`, as the
 `./store/<content>` mounts of the services that touch them are today, so every descriptor resolves unchanged; object storage is the copy after the
@@ -301,7 +303,7 @@ state, PublishStores, copies whole files to the five prefixes of § The asset
 folder is a prefix, read forward — the raw day files written once, as the raw
 tree already is (`module_data/skills/skill_candle_canonicalisation.md` § 3);
 the asset folder, database included, under the execution name as its version;
-the run record; the three snapshots; each asset's trial ledger. A stage never reads the copy: it knows a
+the run record; the snapshots and the crawler's review record; each asset's trial ledger. A stage never reads the copy: it knows a
 path, not a bucket, and `AGENTS.md` § Rejected vocabulary refuses the constant
 that would teach it one; the readers on the host read the home; only the
 strategy host reads the copy. PublishStores is absent here — described: its row
@@ -335,7 +337,8 @@ per-asset status object and a reader-side fold, not a lock.
 
 The Makefile is the local developer interface and never a scheduler. A stage is
 `<module>-<stage>`, run in a one-off container of its module's runner (`AGENTS.md`
-§ Canonical vocabulary, the grammar table); the order is the visible list in `all:`,
+§ Canonical vocabulary, the grammar table), and `skills-status`, the canon's
+measurement run on the host, is no stage; the order is the visible list in `all:`,
 `data-all:`, `features-all:` and `ml-all:` (`README.md` § Quickstart); no recipe
 branches on state, retries, sleeps or waits for a condition — the `JOBS`
 measurement decides how wide a stage runs, never whether. `JOBS`,
@@ -554,9 +557,9 @@ direction; a row whose move is absent here — described has no local counterpar
 | `<TICKER>_research_ohlcv.duckdb` | STORAGE — the canonical market object, one writer at a time | the same embedded file on the volume, opened by the same process under the same whole-file lock, copied whole to the asset's version prefix after the run — never a database process, never a shared network filesystem; a managed database (Amazon RDS) only past the threshold of § The databases | a rename |
 | the parquets and JSONs of the asset folder | STORAGE — research artifacts | artifact objects under the same version prefix | a rename |
 | a hand typing `make all`, `download_cadence_minutes` of `data_status.json` being the only cadence the tree names; the downloaders' day-presence skip and the rerun table of `module_ml/skills/methodology_ml.md` § 11, read by a human | ORCHESTRATION — the cadence and the rebuild condition, not yet code | a schedule that starts the machine once per `download_cadence_minutes`, a fixed offset after midnight UTC so that the day the download asks for is already full — `is_full_utc_day()` in `module_data/lean.py` (Amazon EventBridge Scheduler), and a condition state between BuildCanonicalData and AggregateBars that reads the volume and launches nothing (a Step Functions choice) — both absent | absent here — described |
-| `store/status/data_status.json`, `store/status/features_status.json`, `store/status/ml_status.json`, `store/run_records/<run_id>/`, `store/trials/<TICKER>/` | STORAGE — status, run and trial objects | the run record under `runs/<run_id>/`, the three snapshots under `status/` and each asset's trial ledger under `trials/<ticker>/`, copied from the store after the run, the page reading them from the status store as here — `store/status/` is already that prefix, read forward; the move off `module_monitoring/` turned the five points § What stays as it is, and why names, and answered the question `skill_status_prefix.md` asked (`AGENTS.md` § Skills absent here, described) | a rename |
+| `store/status/data_status.json`, `store/status/features_status.json`, `store/status/ml_status.json`, `store/status/skills_status.json`, `store/status/skills_review.json`, `store/run_records/<run_id>/`, `store/trials/<TICKER>/` | STORAGE — status, run and trial objects | the run record under `runs/<run_id>/`, the snapshots and the review record under `status/` and each asset's trial ledger under `trials/<ticker>/`, copied from the store after the run, the page reading them from the status store as here — `store/status/` is already that prefix, read forward; the move off `module_monitoring/` turned the five points § What stays as it is, and why names, and answered the question `skill_status_prefix.md` asked (`AGENTS.md` § Skills absent here, described) | a rename |
 | a stage's stdout, left in the terminal; no resource sampling at all | MONITORING — logs and resource metrics | log streams keyed by stage and metrics (Amazon CloudWatch) — no local counterpart: the run record holds time, exit code and store difference and nothing else | absent here — described |
-| the page files of `module_monitoring/`; the three snapshots are STORAGE (the row above) and reach the page through the `/store_status/<name>` route | MONITORING — the static dashboard | served by the reader service of the row below from the volume; static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) only when a reader outside the host appears — the front absent | absent here — described |
+| the page files of `module_monitoring/`; the snapshots are STORAGE (the row above), served by the `/store_status/<name>` route | MONITORING — the static dashboard | served by the reader service of the row below from the volume; static objects behind a content-delivery front (Amazon S3 with Amazon CloudFront) only when a reader outside the host appears — the front absent | absent here — described |
 | the `/containers`, `/runs`, `/store_status/<name>` and `/devops/*` routes; the tunnel, `ssh -L`, to the page | MONITORING — a small reader process | the `dashboard` service kept running on the instance, reaching the asset services and the panel by name as here, reached from outside by a port-forward where the tunnel stands today and by no public port | a rename |
 | the Lean-exact raw tree; no Lean runtime | STRATEGY EXECUTION — absent | a separate container running QuantConnect Lean on its own Linux instance (Amazon EC2) — the strategy host: a lean-backtest task, or a container that stays running and trades live, reading the raw and asset prefixes from the copy and never the volume, its brokerage credentials read from the secret below when it starts | absent here — described |
 | none — the venue downloads use public endpoints, and neither the dashboard nor the panel asks for a credential | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts | absent here — described |
@@ -609,7 +612,7 @@ that touches them, the code arriving beside them through the one tree mount
 `.:/app`; the orchestration outside the modules —
 one Makefile and one compose file at the root, which holds no stage; the
 contracts between modules as files instead of imports —
-`<TICKER>_catalogue.json`, the three snapshots, the run record, and the
+`<TICKER>_catalogue.json`, the three computational snapshots, the run record, and the
 registered copies of `glossary.md` § Twice by extraction; the asset as a
 parameter of the launcher alone, `TICKERS` and `--tickers`; and a recorder that
 measures what a stage wrote off the stores, knowing no module. They hold nothing
@@ -628,7 +631,7 @@ The tree as it stands, in four columns; a row disappears with the line it names.
 |---|---|---|---|
 | `module_features/bars.py` opens `module_data`'s database read-write; every open downstream is read-only | one stored object, two writing modules, across the storage → feature-compute line | one durable writer at a time, sequenced by `features-all` and enforced by the whole-file lock; the aggregation tables are a pure, idempotent function of `ohlcv_1m_canonical`; a second database is forbidden by `module_data/skills/skill_candle_canonicalisation.md` § 13 | no — described |
 | every status stage takes `--tickers` and folds the assets the launcher named — the whole basket, once in its module's runner | one object per basket, safe only because it has one writer | a basket-wide object is produced only by the one-off vehicle, never fanned out; a per-asset object and a reader-side fold if the basket grows | no — described |
-| the three snapshots are written into `store/status/` and tracked | status objects live in their own store beside the other four under `store/`, never under a `module_*` | moved: STORAGE produced by DATA, FEATURE and ML compute, tracked as a property of the demonstration so a fresh clone opens on real numbers; the move turned the five points — the two path constants (`DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` under `STORE_STATUS_DIR`), the directory `serve.py` serves (its own package), the two literal fetches (under `/store_status/`) — and met the prerequisite of narrowing the mount; the third snapshot arrived by the same route; `skill_status_prefix.md` (`AGENTS.md` § Skills absent here, described) is thereby answered and no longer listed | yes — done |
+| the snapshots are written into `store/status/` and tracked | status objects live in their own store beside the other four under `store/`, never under a `module_*` | moved: STORAGE produced by DATA, FEATURE and ML compute and by the canon's measurement, tracked as a property of the demonstration so a fresh clone opens on real numbers; the move turned the five points — the two path constants (`DATA_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` under `STORE_STATUS_DIR`), the directory `serve.py` serves (its own package), the two literal fetches (under `/store_status/`) — and met the prerequisite of narrowing the mount; the third snapshot arrived by the same route and the fourth by its path constant alone; `skill_status_prefix.md` (`AGENTS.md` § Skills absent here, described) is thereby answered and no longer listed | yes — done |
 | the root `Dockerfile` installs the pins of `requirements.txt` and copies no code; the code and the stores arrive as mounts | the image is a dependency layer, not a compute artifact; the tree mount is the code and the store mounts are the state | a dependency layer and the store mounts each service touches, the phase *the image carries the code* of § The retrain runtime is a ladder staying elsewhere; `skill_image_contents.md` (`AGENTS.md` § Skills absent here, described) is thereby answered and no longer listed | yes — done |
 | `record.py` measures a stage from outside — its time, its exit code, and the difference of the four pipeline stores | no stage → artifact map anywhere: what a stage wrote is read off the store, so measurement knows no module | the recorder is the repository's, beside the Makefile that runs the stages, and lists exactly what a task scheduler records about a task; the stage order stays the Makefile's | yes — done |
 | a recorded run stops at the first stage that exits non-zero and keeps that stage's record | the verdict is the exit codes, which are in the record | the same judgement an execution record makes anywhere: no probe, no finaliser, nothing that needs `docker` or `git` on the host — a clause of `skill_stage_state_machine.md` (`AGENTS.md` § Skills absent here, described) | yes — done |

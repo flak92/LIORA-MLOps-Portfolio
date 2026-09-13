@@ -115,6 +115,11 @@ tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
 	@tmux has-session -t $(FEATURE_SET_SEARCH_SESSION) 2>/dev/null && echo '$(FEATURE_SET_SEARCH_SESSION) is already running — tmux attach -t $(FEATURE_SET_SEARCH_SESSION)' || tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make ml-feature-set-search ASSET=$(ASSET)'
 
+# the canon's measurement, on the host: python3 and git alone, the canon having no runner and no dependency — it gates
+# nothing, and no target of the chain depends on it
+skills-status:   ## skills_status.json -> store/status: the tracked tree counted against AGENTS.md and the skills
+	python3 -B -m module_skills.sub_module_scalability_crawler.status
+
 # the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page
 on: build        ## the presentation switch: the dashboard, the DevOps panel and the asset residents up, the page's address printed and opened

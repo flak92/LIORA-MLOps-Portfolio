@@ -12,7 +12,7 @@ purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
-the canon of rules that cross them. The governing contract — minimalism, minimum requirements,
+the canon of rules that cross them, with the one sub-module that counts the tree against those rules. The governing contract — minimalism, minimum requirements,
 KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, and what holds the project
 together — is [AGENTS.md](AGENTS.md). Each module carries its own rules in its
 `skills/` and its front door in `README_module_<name>.md`; the naming register
@@ -32,8 +32,8 @@ make off                   # stop and remove every container of this project
 make help                  # every target with its one-line purpose
 ```
 
-`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`
-and the opener `make on` prints through — are the whole requirement of the host;
+`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
+`make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
 `tmux` joins them for the detached search.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
@@ -133,7 +133,7 @@ object. Everything below it describes the method, not the data provider.
 | `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, and `<TICKER>_feature_set.json` once promoted |
 | `store/run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
 | `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — one ledger per asset, every point every hyper-parameter search drew, a rerun appending a search of its own; `module_ml/hpo.py` alone writes it, the `ml` runner the one service that mounts it, and a hand clears it |
-| `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the three snapshots, so a fresh clone opens on real numbers |
+| `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the four snapshots and the crawler's review record, so a fresh clone opens on real numbers |
 
 The store is the boundary between compute and state (`module_skills/glossary.md`
 § Stores). Every stage reads and writes only these five and learns where they
@@ -199,7 +199,9 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 ## Skills
 
 `AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
-and the rules that cross modules. A module's own rules live under that module, in
+and the rules that cross modules, and the one sub-module that counts the tree
+against them — `make skills-status` writes `store/status/skills_status.json` and
+gates nothing (`module_skills/skill_scalability_crawler.md`). A module's own rules live under that module, in
 `module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
 them. Each rule is written exactly once, where it is owned, and no document
 restates another (`AGENTS.md` § The default choice).
@@ -218,7 +220,7 @@ Every number here is reproducible. The proof, repeatable on any host:
    parameters, the out-of-fold predictions, the model and strategy evaluations,
    the asset README — byte-identical to the reference list;
    `BTC_catalogue.json`, the one new file, identical between two runs;
-4. the three snapshots identical after dropping `generated_at_utc` from each and
+4. the three computational snapshots identical after dropping `generated_at_utc` from each and
    `assets[].artifacts.model_evaluation_modified_utc` from `ml_status.json` (a
    file time).
 

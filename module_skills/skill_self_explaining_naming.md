@@ -2,7 +2,8 @@
 
 Every name in this repository — a variable, a parameter, a function, a key, a
 directory — must explain itself, so an agent never has to guess. *The repository shows the destination, not the road*:
-the names carry the discipline; no check stands behind them.
+the names carry the discipline; no check gates them, and the crawler counts where
+they drift (`skill_scalability_crawler.md`).
 
 - **The name carries the information.** What a thing is, what it measures and
   in what unit are readable from the identifier alone, without opening another

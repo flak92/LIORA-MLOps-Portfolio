@@ -407,19 +407,20 @@ mathematics. No booster is persisted: nothing in this repo performs inference,
 so the numbers are the product.
 
 Module layout — four runtime modules, in the order the data moves, and
-`module_skills`, which carries no dataflow: `module_data` (sources → normalised
+`module_skills`, the canon, whose one sub-module measures the tree and joins no
+dataflow of the chain: `module_data` (sources → normalised
 raw 1m → one canonical DuckDB per asset) · `module_features` (the bars of the
 register and the feature catalogue — `module_features/skills/`) · `module_ml`
 (this document) · `module_monitoring` (presentation of what each module measured
-about itself, and the server). Inside `module_ml`: `module_ml/config` (frozen
+about itself, and the server). Inside `module_ml`: `module_ml/config.py` (frozen
 constants of the research layer — the window and the folds its own, the register
 and the grid read per asset from the feature layer's contract,
-`<TICKER>_catalogue.json`) · `module_ml/validation`,
-`module_ml/model` (pure numpy / xgboost kernels) · `module_ml/dataset` (artifact
+`<TICKER>_catalogue.json`) · `module_ml/validation.py`,
+`module_ml/model.py` (pure numpy / xgboost kernels) · `module_ml/dataset.py` (artifact
 IO: X/Y loading, canonical JSON, its own parquet writer — twice by extraction, identical in `module_features/dataset.py`) ·
-`module_ml/labels`, `module_ml/hpo`, `module_ml/train`, `module_ml/strategy`,
-`module_ml/status` (CLI stages, `python -m module_ml.<stage> --tickers <TICKERS>`) ·
-`module_ml/feature_set_search`, `module_ml/feature_set_promote` (the two hand
+`module_ml/labels.py`, `module_ml/hpo.py`, `module_ml/train.py`, `module_ml/strategy.py`,
+`module_ml/status.py` (CLI stages, `python -m module_ml.<stage> --tickers <TICKERS>`) ·
+`module_ml/feature_set_search.py`, `module_ml/feature_set_promote.py` (the two hand
 stages outside the chain, `python -m module_ml.<stage> --tickers <TICKER>`, the
 promotion also `--proposal <n>`).
 Constant convention: **experiment-semantic constants live in

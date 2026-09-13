@@ -1,0 +1,361 @@
+{
+ "files_in_scope_count": 76,
+ "measured_at_commit": "3278dea19ca4140841c18fb61c869644bfa0f80e",
+ "measured_at_commit_utc": "2026-09-13 19:10:37",
+ "metrics": [
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "cross_module_import_count",
+   "rule": "AGENTS.md \u00a7 Architecture shape, no module imports another",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "store_literal_outside_config_count",
+   "rule": "AGENTS.md \u00a7 Architecture shape, paths built only in a module's config.py",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "path_from_file_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, the row store paths",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "modularity",
+   "kind": "invariant",
+   "metric": "root_python_outside_record_count",
+   "rule": "AGENTS.md \u00a7 The shape, D01",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "invariant",
+   "metric": "function_verb_outside_grammar_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, the function rows; skill_self_explaining_naming.md \u00a7 The closed list absorbs its synonyms",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "invariant",
+   "metric": "js_function_verb_outside_grammar_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, the row JavaScript functions at file scope",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "invariant",
+   "metric": "local_abbreviation_crossing_boundary_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, local abbreviations never cross a function boundary",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "invariant",
+   "metric": "css_class_outside_bem_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, the row CSS",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "invariant",
+   "metric": "make_target_outside_grammar_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, the row Makefile targets",
+   "value": 0
+  },
+  {
+   "examples": [
+    "module_data/config.py:44 \u2014 BINANCE_KLINE_REQUEST_LIMIT",
+    "module_data/config.py:48 \u2014 BYBIT_KLINE_REQUEST_LIMIT",
+    "module_ml/config.py:129 \u2014 MINIMUM_AGREEING_TREND_TIMEFRAMES",
+    "module_ml/config.py:63 \u2014 SEED",
+    "module_ml/config.py:73 \u2014 ATR_BARRIER_MULTIPLIER"
+   ],
+   "family": "naming",
+   "kind": "observation",
+   "metric": "numeric_constant_without_unit_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, unless the name already says what is counted",
+   "value": 11
+  },
+  {
+   "examples": [],
+   "family": "naming",
+   "kind": "observation",
+   "metric": "british_spelling_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, British spelling throughout the prose",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "vocabulary",
+   "kind": "invariant",
+   "metric": "debt_marker_count",
+   "rule": "AGENTS.md \u00a7 Values, no debt marker in a tracked file",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "vocabulary",
+   "kind": "invariant",
+   "metric": "rejected_path_segment_count",
+   "rule": "AGENTS.md \u00a7 Rejected vocabulary, directories and path segments",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "vocabulary",
+   "kind": "invariant",
+   "metric": "rejected_key_name_count",
+   "rule": "AGENTS.md \u00a7 Rejected vocabulary, key names",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "vocabulary",
+   "kind": "invariant",
+   "metric": "cloud_noun_outside_seat_count",
+   "rule": "AGENTS.md \u00a7 Pre-AWS architectural direction, where a cloud proper noun is spoken",
+   "value": 0
+  },
+  {
+   "examples": [
+    "module_monitoring/asset.js:249 \u2014 load",
+    "module_monitoring/data.js:116 \u2014 load",
+    "module_monitoring/ml.js:267 \u2014 load",
+    "module_monitoring/page.js:3 \u2014 load",
+    "module_monitoring/run.js:112 \u2014 load"
+   ],
+   "family": "vocabulary",
+   "kind": "observation",
+   "metric": "rejected_interface_word_count",
+   "rule": "AGENTS.md \u00a7 Rejected vocabulary, interface words",
+   "value": 8
+  },
+  {
+   "examples": [],
+   "family": "self-explaining",
+   "kind": "invariant",
+   "metric": "file_without_design_rationale_row_count",
+   "rule": "AGENTS.md \u00a7 Pre-AWS architectural direction, every placement is argued",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "self-explaining",
+   "kind": "invariant",
+   "metric": "artifact_key_without_glossary_row_count",
+   "rule": "AGENTS.md \u00a7 The shape, D09",
+   "value": 0
+  },
+  {
+   "examples": [
+    "store/status/data_status.json:31 \u2014 venues",
+    "store/status/ml_status.json:195 \u2014 assets[].strategy.validation",
+    "store/status/ml_status.json:244 \u2014 assets[].validation",
+    "store/status/ml_status.json:264 \u2014 assets[].validation_importance",
+    "store/status/ml_status.json:266 \u2014 assets[].validation_importance.fold_2.gain_importance"
+   ],
+   "family": "self-explaining",
+   "kind": "observation",
+   "metric": "data_keyed_container_outside_by_grammar_count",
+   "rule": "module_skills/glossary.md \u00a7 Data quality, one share per venue, keyed by it",
+   "value": 10
+  },
+  {
+   "examples": [],
+   "family": "self-explaining",
+   "kind": "invariant",
+   "metric": "path_reference_unresolved_count",
+   "rule": "AGENTS.md \u00a7 Architecture shape, a reference is a path in backticks",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "self-explaining",
+   "kind": "invariant",
+   "metric": "skill_without_index_row_count",
+   "rule": "AGENTS.md \u00a7 The default choice, the index links every skill",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "sorting",
+   "kind": "invariant",
+   "metric": "filename_outside_family_token_count",
+   "rule": "module_skills/skill_sorting_files_naming_standard.md, taxonomic ordering",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "sorting",
+   "kind": "invariant",
+   "metric": "twice_by_extraction_drift_count",
+   "rule": "AGENTS.md \u00a7 The shape, D14",
+   "value": 0
+  },
+  {
+   "examples": [
+    "AGENTS.md:111 \u2014 two modules",
+    "AGENTS.md:138 \u2014 modules: module_data, module_features, module_ml",
+    "AGENTS.md:144 \u2014 modules: module_data, module_features, module_ml, module_monitoring",
+    "AGENTS.md:154 \u2014 four pipeline stores",
+    "AGENTS.md:155 \u2014 three snapshots"
+   ],
+   "family": "documents",
+   "kind": "observation",
+   "metric": "enumeration_incomplete_count",
+   "rule": "AGENTS.md \u00a7 Canonical vocabulary, rule-derived structure over repeated project knowledge",
+   "value": 47
+  },
+  {
+   "examples": [],
+   "family": "documents",
+   "kind": "observation",
+   "metric": "normative_document_without_motto_count",
+   "rule": "AGENTS.md \u00a7 Values, destination, not road",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "files_reviewed_pct",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0.0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "changed_since_review_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "stale_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "conformant_file_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "amended_file_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "deferred_file_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "finding_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "proposal_count",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": 0
+  },
+  {
+   "examples": [],
+   "family": "review",
+   "kind": "observation",
+   "metric": "self_explaining_level_mean",
+   "rule": "module_skills/skill_scalability_crawler.md \u00a7 The review record",
+   "value": null
+  }
+ ],
+ "modules": [
+  {
+   "class_count": 0,
+   "design_rationale_row_pct": 100.0,
+   "file_count": 10,
+   "files_reviewed_pct": 0.0,
+   "function_count": 35,
+   "module": "module_data",
+   "module_docstring_pct": 100.0,
+   "public_function_docstring_pct": 57.1,
+   "python_line_count": 869
+  },
+  {
+   "class_count": 0,
+   "design_rationale_row_pct": 100.0,
+   "file_count": 10,
+   "files_reviewed_pct": 0.0,
+   "function_count": 48,
+   "module": "module_features",
+   "module_docstring_pct": 100.0,
+   "public_function_docstring_pct": 72.9,
+   "python_line_count": 694
+  },
+  {
+   "class_count": 0,
+   "design_rationale_row_pct": 100.0,
+   "file_count": 14,
+   "files_reviewed_pct": 0.0,
+   "function_count": 113,
+   "module": "module_ml",
+   "module_docstring_pct": 100.0,
+   "public_function_docstring_pct": 55.0,
+   "python_line_count": 1839
+  },
+  {
+   "class_count": 7,
+   "design_rationale_row_pct": 100.0,
+   "file_count": 20,
+   "files_reviewed_pct": 0.0,
+   "function_count": 62,
+   "module": "module_monitoring",
+   "module_docstring_pct": 100.0,
+   "public_function_docstring_pct": 57.6,
+   "python_line_count": 749
+  },
+  {
+   "class_count": 0,
+   "design_rationale_row_pct": 100.0,
+   "file_count": 12,
+   "files_reviewed_pct": 0.0,
+   "function_count": 74,
+   "module": "module_skills",
+   "module_docstring_pct": 100.0,
+   "public_function_docstring_pct": 35.1,
+   "python_line_count": 910
+  }
+ ],
+ "python_line_count": 5156
+}
