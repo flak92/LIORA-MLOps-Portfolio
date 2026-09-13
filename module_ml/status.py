@@ -1,4 +1,4 @@
-"""The ML reports: store_status/ml_status.json for the dashboard, and each asset's byte-reproducible
+"""The ML reports: store/status/ml_status.json for the dashboard, and each asset's byte-reproducible
 <TICKER>_README.md — assembled from the three per-asset result files, computing nothing of their own."""
 
 from __future__ import annotations
@@ -309,7 +309,7 @@ The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this fil
 
 
 def main() -> int:
-    args = config.build_ticker_parser("aggregate ML artifacts -> store_status/ml_status.json").parse_args()
+    args = config.build_ticker_parser("aggregate ML artifacts -> store/status/ml_status.json").parse_args()
     # the payload folds over the tickers the launcher named; every complete asset among them gets its README
     tickers = config.parse_tickers(args.tickers)
 

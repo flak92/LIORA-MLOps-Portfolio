@@ -3,7 +3,8 @@ and the cadences — the one place this module builds a path or a URL.
 
 A run record belongs to the basket, not to one asset: one directory per run under the run-records store, one file per
 stage, written from outside every container by `record.py` and read here. The cgroup and procfs paths
-are the exception AGENTS.md names and stay in `serve.py`, beside the syscalls that read them; the per-asset artifact
+are an external format's own file names, the one exception to building paths here, and stay with their adapter,
+`serve.py`, beside the syscalls that read them; the per-asset artifact
 paths stay in the configs of the modules that produce them — this module reads the artifacts store only to list its
 asset folders and to size an asset's database.
 """
@@ -35,8 +36,9 @@ BYTES_PER_KIBIBYTE = 1024
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
 # twice by extraction — the two store reads below are identical in module_data/config.py, module_features/config.py and
 # module_ml/config.py, and the two snapshot paths are the writers' own, module_data/config.py and module_ml/config.py, read
-# here; each writer names the snapshot it writes, and this reader the ones it serves
-STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])   # the registry lists its asset folders
+# here; each writer names the snapshot it writes, and this reader the ones it serves. The registry lists the asset
+# folders of the first
+STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"
 ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"

@@ -14,7 +14,9 @@ from .indicators import INDICATORS  # re-exported: the indicator register, one r
 
 # twice by extraction — identical in module_data/config.py and module_ml/config.py, changed on every side in one
 # commit: the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
-# stage shares; a change to one copy is a change to every copy, by hand
+# stage shares — the two store reads identical in module_monitoring/config.py as well, and the browser's own
+# MILLISECONDS_PER_SECOND in module_monitoring/page.js and MILLISECONDS_PER_MINUTE in
+# module_monitoring/sub_module_devops/containers.js; a change to one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000

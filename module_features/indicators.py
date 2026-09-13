@@ -102,8 +102,8 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
     return idx
 
 
-# the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries
-# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, the bar columns it reads
+# the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries,
+# the warm-up it needs in multiples of that parameter, the bar columns it reads
 # when its inputs are fixed, and the range it outputs when that range is bounded; an indicator without `inputs` takes
 # any series, close by default, and one without `output_range` is unbounded, so no normaliser can be written on it.
 # A second parameter, when an indicator needs one, extends the record and the name grammar in the same commit.

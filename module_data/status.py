@@ -1,4 +1,4 @@
-"""Data-layer quality report: stdout tables + store_status/data_status.json, one sequential process over the
+"""Data-layer quality report: stdout tables + store/status/data_status.json, one sequential process over the
 asset databases; every alias a scan publishes is the key it becomes.
 
 Each venue is measured on its own, the canonical series the venues were merged into is measured beside them,
@@ -210,7 +210,7 @@ def print_canonical_table(canonical: list[dict]) -> None:
 
 
 def main() -> int:
-    args = config.build_ticker_parser("data & database monitoring -> stdout + store_status/data_status.json").parse_args()
+    args = config.build_ticker_parser("data & database monitoring -> stdout + store/status/data_status.json").parse_args()
     requested = config.parse_tickers(args.tickers)
     venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
     canonical_rows = {}

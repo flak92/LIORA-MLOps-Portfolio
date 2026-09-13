@@ -1,4 +1,4 @@
-"""The feature layer's report: store_status/features_status.json for the dashboard — the catalogue as the register presents
+"""The feature layer's report: store/status/features_status.json for the dashboard — the catalogue as the register presents
 it (the facts of config.py: the hierarchy, the warm-up, every definition with its terms and histories, the nesting) and,
 per asset, the row counts of the catalogue parquets — computing nothing of its own."""
 
@@ -84,7 +84,7 @@ def asset_block(ticker: str) -> dict:
 
 
 def main() -> int:
-    args = config.build_ticker_parser("the feature layer's snapshot -> store_status/features_status.json").parse_args()
+    args = config.build_ticker_parser("the feature layer's snapshot -> store/status/features_status.json").parse_args()
     tickers = config.parse_tickers(args.tickers)
     assets = [asset_block(ticker) for ticker in tickers if has_catalogue(ticker)]
     payload = {

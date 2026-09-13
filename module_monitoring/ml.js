@@ -1,5 +1,5 @@
-/* ML Research and ML Assets tabs: two fetches — store_status/ml_status.json and
-   store_status/features_status.json (the catalogue frame) — feed the cross-section
+/* ML Research and ML Assets tabs: two fetches — /store_status/ml_status.json and
+   /store_status/features_status.json (the catalogue frame) — feed the cross-section
    table, the catalogue frame, the five summary views and — through
    asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
    appendRows, renderTable, buildMeter, buildTickerLink, formatCount,

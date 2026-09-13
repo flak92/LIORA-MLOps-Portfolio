@@ -3,8 +3,10 @@
    status page and the DevOps panel both load it and neither inherits the other's markup. */
 "use strict";
 
-/* twice by extraction — the browser's own copies of the units module_data/config.py, module_ml/config.py and
-   module_monitoring/config.py carry; no config module reaches a page, so these change with them by hand */
+/* twice by extraction — the browser's own copies of two units: BYTES_PER_KIBIBYTE identical in module_data/config.py,
+   module_ml/config.py and module_monitoring/config.py, MILLISECONDS_PER_SECOND in module_data/config.py,
+   module_features/config.py and module_ml/config.py; no config module reaches a page, so these change with them by
+   hand. SECONDS_PER_MINUTE is the page's own */
 const BYTES_PER_KIBIBYTE = 1024;
 const MILLISECONDS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;

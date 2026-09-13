@@ -19,7 +19,7 @@
   </nav>
 
   <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
-    <div id="meta" class="box">loading store_status/data_status.json&hellip;</div>
+    <div id="meta" class="box">loading /store_status/data_status.json&hellip;</div>
     <div id="flow" class="box"></div>
     <table id="pipeline" hidden>
       <thead></thead>
@@ -48,7 +48,7 @@
   </section>
 
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
-    <div id="ml-meta" class="box">loading store_status/ml_status.json + features_status.json&hellip;</div>
+    <div id="ml-meta" class="box">loading /store_status/ml_status.json + features_status.json&hellip;</div>
     <table id="ml-assets" hidden>
       <thead></thead>
       <tbody></tbody>
@@ -66,7 +66,7 @@
   </section>
 
   <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
-    <div id="asset-meta" class="box">loading store_status/ml_status.json&hellip;</div>
+    <div id="asset-meta" class="box">loading /store_status/ml_status.json&hellip;</div>
 
     <div class="frame">
       <div class="frame__head">
@@ -108,7 +108,7 @@
       Nothing a stage says about itself enters the record.</p>
   </section>
 
-  <p class="foot">static page &middot; data from <code>store_status/data_status.json</code> / <code>store_status/features_status.json</code> / <code>store_status/ml_status.json</code>
+  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code>
     (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code>) &middot; the containers, the networks
     and the volumes are the <strong>DevOps</strong> panel</p>
   <script src="page.js"></script>

@@ -1,8 +1,9 @@
 """Stepwise feature-set search on the validation folds under the asset's frozen hyper-parameters, selecting on the
 model's own validation objective: a forward move adds the column that raises the relative log-loss skill of every
 validation fold, a backward move drops a column at no worse skill on every fold, until a pass accepts nothing. A
-trial's strategy numbers are reported beside it and never selected on. The ledger of every scored trial is the state,
-written after each, so an interrupted run resumes without a refit and a finished run is read, not rewritten.
+trial's strategy numbers are reported beside it and never selected on. Every scored trial, recorded in
+`<TICKER>_feature_set_search.json`, is the state, written after each, so an interrupted run resumes without a refit and
+a finished run is read, not rewritten.
 Promotes nothing: the proposals are read by a hand and copied by feature_set_promote."""
 
 from __future__ import annotations
@@ -42,8 +43,8 @@ def to_tuples(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> dict:
     return {timeframe: tuple(columns_by_timeframe[timeframe]) for timeframe in timeframes}
 
 
-def ledger_key(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> tuple:
-    """A set as the ledger indexes it: timeframe-major, independent of how a dict was built or read back."""
+def set_key(columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> tuple:
+    """A set as the scored-trial index keys it: timeframe-major, independent of how a dict was built or read back."""
     return tuple((timeframe, tuple(columns_by_timeframe[timeframe])) for timeframe in timeframes)
 
 
@@ -126,8 +127,8 @@ def write_state(ticker: str, state: dict, timeframes: tuple[str, ...]) -> None:
 
 def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, cat: dict) -> dict:
     """What a search is conditioned on: the frozen window with its warm-up, the parameters it holds fixed, the
-    catalogue it draws from and the set it starts at — recorded in the ledger, compared by equality on a rerun,
-    and compared again by status.py to say whether a recorded search still describes the asset."""
+    catalogue it draws from and the set it starts at — recorded in the search's state file, compared by equality on a
+    rerun, and compared again by status.py to say whether a recorded search still describes the asset."""
     return {
         "research_window": {"start_utc": config.RESEARCH_START_UTC, "end_utc": config.RESEARCH_END_UTC,
                             "seed": config.SEED, "warmup_top_timeframe_bars": cat["warmup_top_timeframe_bars"]},
@@ -158,29 +159,29 @@ def main() -> int:
         active = dataset.load_feature_columns(ticker, cat)
         inputs = dataset.to_json_safe(build_search_inputs(best, active, cat))
 
-        # the state: the recorded run when its inputs are the inputs of this one, else a fresh ledger
+        # the state: the recorded run when its inputs are the inputs of this one, else a fresh state
         path = config.feature_set_search_json(ticker)
         state = dataset.load_json(path) if path.exists() else None
         if state is None or state["inputs"] != inputs:
             state = {"inputs": inputs, "trials": [], "champion_trial": None, "pass_count": 0, "search_converged": False}
         trials = state["trials"]
-        ledger = {}
+        trial_index_by_set = {}
         for index, row in enumerate(trials, start=1):
             row["columns_by_timeframe"] = to_tuples(row["columns_by_timeframe"], timeframes)
-            ledger[ledger_key(row["columns_by_timeframe"], timeframes)] = index
+            trial_index_by_set[set_key(row["columns_by_timeframe"], timeframes)] = index
         if state["search_converged"]:
             print(f"{ticker}: the search converged after {state['pass_count']} passes and {len(trials)} trials — "
                   f"{len(state['proposals'])} proposals in {path.name}", flush=True)
             continue
 
         def score(columns_by_timeframe: dict, move: str | None) -> int:
-            """The trial index of a set: the ledger's when it was scored before, else a new trial scored now."""
-            key = ledger_key(columns_by_timeframe, timeframes)
-            if key in ledger:
-                return ledger[key]
+            """The trial index of a set: its earlier trial's when it was scored before, else a new trial scored now."""
+            key = set_key(columns_by_timeframe, timeframes)
+            if key in trial_index_by_set:
+                return trial_index_by_set[key]
             row = trial_result(xy, y_cls, best, close_1m, columns_by_timeframe)
             trials.append({**row, "pass": state["pass_count"] + 1 if move else 0, "move": move})
-            ledger[key] = len(trials)
+            trial_index_by_set[key] = len(trials)
             write_state(ticker, state, timeframes)
             return len(trials)
 

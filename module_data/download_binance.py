@@ -4,7 +4,7 @@ Keyless public API, stdlib only. The unit of work is one full UTC day = one ZIP;
 skipped, so the same command performs the initial backfill and any later top-up.
 
 Output tree (Lean-exact):
-  store_raw_1m/cryptofuture/binance/minute/<symbol>/YYYYMMDD_trade.zip
+  store/raw_1m/cryptofuture/binance/minute/<symbol>/YYYYMMDD_trade.zip
     -> YYYYMMDD_<symbol>_minute_trade_perp.csv
        rows: offset_ms_from_utc_midnight,open,high,low,close,volume  (ascending)
 

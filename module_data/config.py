@@ -17,8 +17,10 @@ QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
 SOURCE_CANDLE_INTERVAL = "1m"
 # twice by extraction — the units below (each module the ones it uses), the ceiling, the store reads, their descriptors
-# and the --tickers parser are identical in module_features/config.py and module_ml/config.py: no module imports another,
-# so a change here is a change to every copy, by hand
+# and the --tickers parser are identical in module_features/config.py and module_ml/config.py; the reads of the
+# artifacts and status stores in module_monitoring/config.py too, and the browser's own MILLISECONDS_PER_SECOND in
+# module_monitoring/page.js and MILLISECONDS_PER_MINUTE in module_monitoring/sub_module_devops/containers.js: no module
+# imports another, so a change here is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
@@ -51,7 +53,7 @@ USER_AGENT = "liora-module-data/1.0"
 
 SOURCE_VENUES = ("binance", "bybit")
 
-# the stores of the assembled workspace arrive as environment, one variable per store — the store contract every
+# the stores of this checkout arrive as environment, one variable per store — the store contract every
 # config.py reads; a module reads only the stores it touches, and a missing variable is the interpreter's own KeyError
 STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 # DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism
@@ -67,7 +69,7 @@ def symbol(ticker: str) -> str:
 
 
 def raw_symbol_dir(ticker: str, venue: str) -> Path:
-    """Lean-exact tree: store_raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
+    """Lean-exact tree: store/raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
     return STORE_RAW_1M_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 

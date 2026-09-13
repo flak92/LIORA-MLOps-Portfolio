@@ -29,8 +29,9 @@ this file, the change is wrong.
   per module; repeated logic becomes one function, not three copies.
 - **UCAS — Useless Click Avoiding System.** Manual steps, clicks and context
   switches that can be automated, are: `make all` runs the whole pipeline
-  from a fresh recursive clone, every stage is idempotent, the dashboard opens
-  itself.
+  from a fresh clone, every stage is idempotent in what it derives — the
+  trial ledger alone accumulates, each search appending its `hpo_<n>` runs,
+  until a hand clears it — and the dashboard opens itself.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the seven
   guards the mathematics requires: causality invariants (`indicators.asof_index`) and
@@ -66,7 +67,7 @@ this file, the change is wrong.
 
 ## Architecture shape
 
-`module_*` is a top-level project responsibility; `store_*` is persisted or
+`module_*` is a top-level project responsibility; `store/` is persisted or
 generated state. Four modules — one Python package `module_<domain>` each, in
 the order the data moves through them — and, around them, the launcher that runs
 them and carries no dataflow of its own:
@@ -76,7 +77,7 @@ module_data/         sources → normalised raw 1m → one canonical DuckDB per 
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
 module_monitoring/   presentation of what the three computational modules measured about themselves and of what record.py measured around every stage, and the server that serves it — in an asset container, the container reporting itself
-the root             the Makefile and docker-compose.yml that run the four, record.py, the five stores, and the canon: this contract and the overview beside it
+the root             the Makefile and docker-compose.yml that run the four, the Dockerfile, its .dockerignore and requirements.txt that build their one image, the .gitignore that decides which store files are tracked, record.py, the five stores, one folder each under store/, and the canon: this contract and the overview beside it
 ```
 
 Each module holds its package under one directory; nothing above it belongs to
@@ -106,11 +107,13 @@ one parquet per timeframe that any model could read and the contract that names
 them, and nothing above it in the dataflow imports it.
 
 Each `module_*` is an **extracted bounded context**: its domain rules, its
-orientation and its code sit together in its own repository, so its meaning is
-never reconstructed from documentation that stayed elsewhere. It builds its own
-image from its own tree alone (`docker build` in the repository, outside any
-workspace), runs standalone against the stores its `Makefile` is pointed at
-(`make setup`, then `make <module>-<stage> ASSET=<TICKER>` in a venv), and knows
+orientation and its code sit together under its own directory, so its meaning is
+never reconstructed from documentation that stayed elsewhere. It runs standalone
+against the `store/<content>/` folders it touches, each named by the launcher (a
+computational module as `python -m <module>.<stage> --tickers <TICKER>`, in a venv
+with the `STORE_*_DIR` it reads exported or in a one-off container of its runner;
+`module_monitoring` as `python -m module_monitoring.serve`, its role chosen by
+`ASSET`), and knows
 nothing of the others: they share the store contract, the files it names and the
 copies the register lists, and nothing between them speaks over a network.
 
@@ -124,35 +127,35 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   detailed sorting grammar is § Sorting and the timeframe slots;
 - one obvious responsibility per module; no wrappers without logic of their own;
 - analogous names for analogous objects (`download_binance.py` ↔
-  `download_bybit.py`, `store_assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>`
+  `download_bybit.py`, `store/assets_artifacts/<TICKER>/<TICKER>_<artifact>.<ext>`, `ml-<stage>`
   targets); each computational module (`module_data`,
   `module_features`, `module_ml`) measures its own domain state in `status.py`,
   and `module_monitoring` presents their snapshots;
 - **taxonomic ordering — the category token comes first, so siblings sort
   together.** A listing is read by eye before it is parsed: at the root
   `module_data`, `module_features`, `module_ml`,
-  `module_monitoring` — the chain in its own order, the
-  module's position in the chain at the time it was seated; a new module takes
-  the next free number and nothing is ever renumbered — then
-  `store_assets_artifacts`, `store_raw_1m`,
-  `store_run_records`, `store_status`, `store_trials`: blocks, not scattered entries. If
+  `module_monitoring` — the chain in its own order — then the one folder
+  `store/`, whose five children — `assets_artifacts`, `raw_1m`, `run_records`,
+  `status`, `trials` — sort together inside it, the category token spoken once,
+  by their parent: blocks, not scattered entries. If
   renaming would put things of one category next to each other, rename them;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
   file names, built by its adapter (`module_data/lean.py` for the Lean tree,
   `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
-  `record.py` for the four pipeline stores it lists)
+  `record.py` for the four pipeline stores it lists, every store but `store/trials/`)
   — and the browser, which has no config module and fetches its three snapshots
   (`data_status.json`, `features_status.json`, `ml_status.json`) under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal
   name; one asset is one folder,
-  `store_assets_artifacts/<TICKER>/`, one file per distinct artifact
+  `store/assets_artifacts/<TICKER>/`, one file per distinct artifact
   responsibility. The artifact folder is the ticker in capitals, the raw tree
   is the symbol in lower case because Lean demands it — that difference is a
-  boundary, not an inconsistency to tidy away. A top-level path constant
-  begins with the exact canonical root token, so the name predicts the
-  directory it names — on the host `STORE_RAW_1M_DIR` → `store_raw_1m/`,
-  `STORE_RUN_RECORDS_DIR` → `store_run_records/`, in a container the same
+  boundary, not an inconsistency to tidy away. A store's variable spells the
+  exact canonical tokens of its path, the parent folder's first and then its
+  child's, so the name predicts the
+  directory it names — on the host `STORE_RAW_1M_DIR` → `store/raw_1m/`,
+  `STORE_RUN_RECORDS_DIR` → `store/run_records/`, in a container the same
   variables → `/store/raw_1m`, `/store/run_records`;
 - one convention per language: BEM in CSS, snake_case in Python and JSON,
   the same hierarchy everywhere, no accidental exceptions.
@@ -166,7 +169,7 @@ standard equivalents on Amazon Web Services (AWS) — an object store, a contain
 runtime, a stage orchestrator. No cloud is used and none is planned; the mapping
 is described here and built nowhere.
 
-- **Academic, not AWS.** The runtime is local — one image per module under
+- **Academic, not AWS.** The runtime is local — one image for the tree under
   docker compose, driven by a Makefile — and the goal is a correct dataflow with visible
   responsibilities: a demonstrator, not a deployment.
 - **Every boundary decision weighs the future mapping.** Where a function lives,
@@ -175,7 +178,7 @@ is described here and built nowhere.
   nothing is implemented for the cloud.
 - **No cloud complexity without an academic need.** A mechanism that exists only
   because production would require it, and that the research logic does not
-  need, is described in the skill as its future equivalent and never built here.
+  need, is described in this section as its future equivalent and never built.
   Stated, not mitigated.
 - **The asset is the namespace.** `ASSET=<TICKER>` — `--tickers` at the process
   boundary — selects every datum and artifact; no code, file, function or
@@ -187,13 +190,14 @@ is described here and built nowhere.
 - **Compute owns no state.** A stage reads a store, writes a store and exits; it
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
   no resident peer.
-- **Storage is separate from compute.** Pipeline state lives in the five stores
-  — the `store_*` roots, named to every `config.py` by its
-  `STORE_*_DIR` and mounted at `/store/<content>` into each service that touches
-  them, read-only where a service only reads — never
-  inside a container and never inside a repository's tree; the image carries the
+- **Storage is separate from compute.** Pipeline state lives in the five stores,
+  one folder each under `store/`, named to every `config.py` by its
+  `STORE_*_DIR` and mounted from `store/<content>/` at `/store/<content>` into
+  each service that touches them, read-only where a service only reads — never
+  inside a container and never inside a module's source tree; the image carries the
   pins and nothing else, the code and the state arrive as mounts, and the three
-  snapshots are the one store that is tracked.
+  snapshots are the one store tracked whole, beside the tracked remnant of the
+  artifacts store (D15).
 - **Modules are built by ownership and lifetime.** A function sits beside the
   functions that write the same state and live as long as it does, never beside
   what happened to be written with it; every object is classified before it is
@@ -256,7 +260,7 @@ assets, venues, timeframes, paths, artifact files, payload keys, pipeline stages
 rather than copying the same list into several files: `TICKERS` in the
 orchestration `Makefile` — the launcher — is the one definition the fan-out and
 every `--tickers` derive from; a module is told its assets and never defines
-them, and the `/containers` registry lists the asset folders the store holds.
+them, and the `/containers` registry lists the asset folders of `store/assets_artifacts/`.
 The limit is equally binding: no generator,
 no metaprogramming, no abstraction layer for a one-off value — and none for a
 file whose whole value is being read. `docker-compose.yml` spells its asset
@@ -286,11 +290,11 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is § The feature grammar | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note, run in its venv with `ASSET=<TICKER>` — by `python3` where the module has no dependency — beside `setup` and `help` | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
-| directories | `<category>_<detail>/`; a raw store names its granularity with the compact timeframe token, `store_raw_<timeframe>/` at the time it was seated — a new module takes the next free number and nothing is ever renumbered | `module_*`, `store_*`, `store_raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, a renumbered checkout, `repository_module_<domain>/` |
-| images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, one image for every module |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; only the lifecycle targets and the repository's own tools go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
+| directories | `<category>_<detail>/` for a module; the stores are one folder `store/` whose children are `<content>/` — the container's `/store/<content>` read back onto the host; a raw store names its granularity with the compact timeframe token, `store/raw_<timeframe>/` | `module_*`, `store/`, `store/raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, `repository_module_<domain>/`, `store_<content>/` at the root, a child that repeats its parent's token (`store/store_raw_1m/`) |
+| images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, an image per module |
 | compose services | a runtime role, never an image or a ticker in code — the runners `data`, `features`, `ml`, the residents `dashboard`, `asset-<ticker>`, `devops` | `ml`, `asset-btc` | `pipeline`, a service named for an image or a tool, a service per asset stage |
-| store paths | `store_<content>/` on the host, `/store/<content>` inside a container, `STORE_<CONTENT>_DIR` the variable that names the one to the other | `store_raw_1m/`, `/store/raw_1m`, `STORE_RAW_1M_DIR` | a path derived from `__file__`, `/app/store_*` as an address, a store literal at the point of use |
+| store paths | `store/<content>/` on the host, `/store/<content>` inside a container, `STORE_<CONTENT>_DIR` the variable that names the one to the other | `store/raw_1m/`, `/store/raw_1m`, `STORE_RAW_1M_DIR` | a path derived from `__file__`, `/app/store/<content>` as an address, a store literal at the point of use |
 | artifact files of one timeframe family | `<asset>_<artifact>_<timeframe-slot>.<ext>`, slots per the standard `ss-mm-hh-dd-MM` (§ Sorting and the timeframe slots) | `BTC_features_ss-15-hh-dd-MM.parquet`, `BTC_features_ss-mm-04-dd-MM.parquet` | `BTC_features_15m.parquet` — siblings that no listing orders by granularity |
 | CSS | BEM `block__element--modifier`, the class named for what it marks | `frame__head`, `pill--active`, `final-holdout` | `.red`, `.diag` |
 | JavaScript functions at file scope | lowerCamelCase, verb from the closed list `build<Object>` (returns a DOM node), `render<Section>` (writes into the page), `format<Value>` (value → string), `append<Child>` (mutates a parent), `select<Target>`, `init<Component>`, `fetch<Object>` (network, returns a promise); a quantity or a descriptor carries no verb | `buildMeter`, `renderStrategy`, `formatBytes`, `appendCell`, `fetchContainerStatus`, `mean`, `validationFolds` | `makeTable`, `pollContainers`, a bare noun for a builder (`cell()`, `sparkline()`) |
@@ -371,7 +375,7 @@ the finest granularity to the coarsest, which `15m`, `1h`, `4h` would not.
 **Two patterns, two jobs.** The slots name files on a filesystem; the compact
 token — `1m`, `15m`, `1h`, `4h` — names timeframes inside code, schemas and
 payload keys, where nothing sorts and the short form reads better. That is why
-the raw store is `store_raw_1m/` and not a slot string: a store names its
+the raw store is `store/raw_1m/` and not a slot string: a store names its
 granularity, it does not order siblings by it.
 
 ### The feature grammar
@@ -465,7 +469,7 @@ persists, the body is split at the store.
 
 The same inputs produce the same bytes, and **bit parity is the proof** — the
 standard any change that should not alter results is measured against
-(`README.md` § Parity is the procedure).
+(`README.md` § Parity).
 
 - **the thread caps are correctness, not settings.** `SET threads=1` at every
   DuckDB connection, `nthread=1` for XGBoost, `OMP_NUM_THREADS=1` in every
@@ -505,8 +509,7 @@ already binds that are worth steering away from on sight.
 - **directories and path segments:** `src`, `core`, `lib`, `common`, `utils`,
   `helpers`, `manager`, `service`, `assets`, `artifacts`, `data`, `db`,
   `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder;
-  `repository_module_<domain>`, a numbered package directory,
-  renumbered
+  `repository_module_<domain>`, a numbered package directory
 - **module and file stems:** `module_compose`, `module_docker`,
   `module_capsule`, `module_asset`, `module_viz`; `dashboard.py`, `proxy.py`,
   `server.py` beside `serve.py`; a strategy file per asset, a parameters file
@@ -584,7 +587,7 @@ is wrong.
 | D09 | a payload key and the identifier that produced it carry one name, and a key added, dropped or renamed moves every reader of it in the same commit — the feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block of `features_status.json` beside `assets[].row_count_by_timeframe`, and the `ticker` key in every row of `data_status.json` |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (§ Determinism) |
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three normalised snapshots byte for byte against the reference list `README.md` § Parity names. A change that reshapes a snapshot re-bases that snapshot's line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
-| D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host, and `mlflow` writes a tracking URI built in `module_ml/config.py` under `STORE_TRIALS_DIR`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
+| D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host, and `mlflow` writes only into the ledger `trials_sqlite()` builds in `module_ml/config.py` under `STORE_TRIALS_DIR`, a local file `module_ml/hpo.py` addresses as `sqlite:///`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
 | D14 | every copy carried by extraction is marked `# twice by extraction` where it is defined, names its counterparts in that same comment, and is changed on every side at once |
 | D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the three snapshots are tracked, so a fresh clone opens on real numbers |

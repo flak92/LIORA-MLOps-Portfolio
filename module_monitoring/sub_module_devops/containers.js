@@ -3,8 +3,9 @@
    The routes are root-relative because this page is served from a subdirectory. */
 "use strict";
 
-/* twice by extraction — the browser's own copy of a unit module_data/config.py carries; the panel imports no
-   config module, so it changes with it by hand */
+/* twice by extraction — MILLISECONDS_PER_MINUTE, the browser's own copy of the unit module_data/config.py,
+   module_features/config.py and module_ml/config.py carry; the panel imports no config module, so it changes with
+   them by hand. MINUTES_PER_HOUR and HOURS_PER_DAY are the panel's own */
 const MILLISECONDS_PER_MINUTE = 60000;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
