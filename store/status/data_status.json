@@ -2,16 +2,16 @@
  "canonical_source": [
   {
    "ffill_bars": 0,
-   "last_observation_utc": "2026-09-04 23:59",
+   "last_observation_utc": "2026-09-12 23:59",
    "longest_ffill_run_minutes": 0,
    "longest_flat_run_minutes": 0,
    "max_abs_return_1m": 0.063069,
    "max_abs_return_at_switch": 0.004821,
    "ohlc_violation_count": 0,
    "relative_divergence_max": 0.08059981,
-   "relative_divergence_p99": 0.00124725,
+   "relative_divergence_p99": 0.00124588,
    "repeated_candle_count": 1,
-   "row_count": 2985120,
+   "row_count": 2996640,
    "source_share_pct_by_venue": {
     "binance": 99.994,
     "bybit": 0.006
@@ -23,7 +23,7 @@
   }
  ],
  "download_cadence_minutes": 1440,
- "generated_at_utc": "2026-09-07 14:13:32",
+ "generated_at_utc": "2026-09-13 15:24:15",
  "source_venues": [
   "binance",
   "bybit"
@@ -38,9 +38,9 @@
     "gap_count": 0,
     "gap_count_after_first_observation": 0,
     "invalid_row_count": 0,
-    "last_close": 79616.1,
-    "last_observation_utc": "2026-09-04 23:59",
-    "row_count": 2985120,
+    "last_close": 77242.8,
+    "last_observation_utc": "2026-09-12 23:59",
+    "row_count": 2996640,
     "symbol": "BTCUSDT",
     "ticker": "BTC",
     "zero_volume_bars": 181
@@ -55,9 +55,9 @@
     "gap_count": 0,
     "gap_count_after_first_observation": 0,
     "invalid_row_count": 0,
-    "last_close": 79621.0,
-    "last_observation_utc": "2026-09-04 23:59",
-    "row_count": 2985120,
+    "last_close": 77244.7,
+    "last_observation_utc": "2026-09-12 23:59",
+    "row_count": 2996640,
     "symbol": "BTCUSDT",
     "ticker": "BTC",
     "zero_volume_bars": 92
