@@ -116,7 +116,7 @@ tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<
 
 # the canon's crawler, on the host: python3 and gum, git only for the commit a report entry names, the canon having no
 # runner and no dependency — it gates nothing, and no target of the chain depends on it
-skills-crawl:    ## the crawler's menu: crawl chosen listed files, add or remove a path — one action, then it closes; run it in a terminal
+skills-crawl:    ## the crawler's menu: crawl chosen listed files with an active vendor, add or remove a path — one action, then it closes; run it in a terminal
 	python3 -B -m module_skills.sub_module_scalability_crawler.crawl
 skills-status:   ## skills_status.json -> store/status: every listed file with the date of its last report
 	python3 -B -m module_skills.sub_module_scalability_crawler.status

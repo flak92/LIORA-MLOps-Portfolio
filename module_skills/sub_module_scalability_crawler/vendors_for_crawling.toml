@@ -1,0 +1,18 @@
+# The vendors the crawler's menu crawls with, one table per vendor, in menu order: a vendor is added by adding its
+# table and removed by deleting it. Its command line must be installed on this host's PATH and logged in with its
+# user's own account — the menu checks the PATH, never the login — and no API key is ever written here.
+# What the keys mean, the command line a table builds and when a vendor is active:
+# module_skills/skill_scalability_crawler.md § The list, the mission, the report.
+
+[claude]
+active = true
+model = "claude-sonnet-5"
+command = ["claude", "-p", "--output-format", "text", "--max-turns", "1", "--strict-mcp-config",
+           "--no-session-persistence", "--setting-sources", "project"]
+permissions = ["--tools", ""]
+
+[codex]
+active = true
+model = "gpt-5.6-luna"
+command = ["codex", "exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check", "--color", "never"]
+permissions = ["--sandbox", "read-only"]

@@ -33,3 +33,13 @@ Comment placement alternates between a block comment above a group of identifier
 
 departures: 8
 
+
+## crawled 2026-09-14 10:33 UTC · gpt-5.6-luna · 5ce2f1c
+AGENTS.md § Canonical vocabulary — constants: lines 37 and 41, `BINANCE_KLINE_REQUEST_LIMIT` / `BYBIT_KLINE_REQUEST_LIMIT`, `<what>_<unit>` is required for numeric counts; propose `BINANCE_KLINE_REQUEST_LIMIT_ROWS` / `BYBIT_KLINE_REQUEST_LIMIT_ROWS`.
+
+What the file leaves unexplained: `USDS-M`, `Linear`, and “failover” in the line 13 comment are not defined by the file or supplied rules.
+
+Pattern not governed: endpoint constants `*_KLINE_URL` occur on lines 36 and 39; this would forbid endpoint constants whose naming grammar is not specified.
+
+departures: 2
+
