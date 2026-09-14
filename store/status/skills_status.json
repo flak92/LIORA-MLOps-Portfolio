@@ -5,6 +5,12 @@
    "last_crawled_utc": "2026-09-14 07:38",
    "path": "AGENTS.md",
    "report": "reports_after_crawled_files/AGENTS.md.md"
+  },
+  {
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 09:28",
+   "path": "module_data/config.py",
+   "report": "reports_after_crawled_files/module_data/config.py.md"
   }
  ]
 }
