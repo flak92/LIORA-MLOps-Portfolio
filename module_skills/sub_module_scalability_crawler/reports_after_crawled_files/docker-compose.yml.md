@@ -12,3 +12,19 @@ I checked every service, anchor, mount, environment variable, and literal agains
 
 4. conformant
 
+
+## crawled 2026-09-14 07:47 UTC · claude-sonnet-5 · 20ac2db
+Reviewing `docker-compose.yml` against `AGENTS.md`, `module_skills/glossary.md`, `skill_agent_first_development.md`, `skill_asset_containers.md`, `skill_determinism.md`, `skill_pre_aws_solution.md`, `skill_scalability_crawler.md`, `skill_self_explaining_naming.md`, and `skill_sorting_files_naming_standard.md`.
+
+1. Departures from a rule
+None found. The two anchors, the five services, their store mounts, the `5g` ceiling on `ml` alone, the port mapping `127.0.0.1:${PORT:-8900}:8900`, the socket mount confined to `devops`, `group_add: ["${DOCKER_GID:-999}"]`, `init: true`, `user: "${UID:-1000}:${GID:-1000}"`, the `name: liora` project pin, and the store-variable order (`STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_TRIALS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`) each match `skill_asset_containers.md` § The topology and `module_skills/glossary.md` § Stores / § Asset containers verbatim, including the per-service subset of mounts each runner and resident is given.
+
+2. What the file leaves unexplained
+- Line ~63 (`devops` comment): "its environment still carries the five store names from the anchor, because its server imports `module_monitoring/config.py`, which reads two of them at import." Which two `STORE_*_DIR` are read is asserted but not named, and no rule in this file's scope (`AGENTS.md` § Twice by extraction only names `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_STATUS_DIR` as read by `module_monitoring/config.py`, matching "two" — but a reader of this file plus the cited rules alone cannot confirm the count without reading that config module).
+- The specific mlflow variable spellings `MLFLOW_DISABLE_TELEMETRY` / `MLFLOW_DISABLE_AGENT_HINT` are asserted by inline comment to be mlflow's own vocabulary, but no rule here names them, so a reader cannot confirm they are mlflow-skinny's real switches rather than invented names — only the file's own prose vouches for them.
+
+3. A pattern seen twice or more that no rule governs
+The two YAML anchor identifiers, `&store_environment` (from `x-store-environment`) and `&service` (from `x-service`), are each derived by stripping the `x-` prefix and turning `-` into `_`. No grammar row in `AGENTS.md` § Canonical vocabulary or `skill_self_explaining_naming.md` governs YAML anchor names; a third anchor minted without following this silent pattern (e.g. an anchor named arbitrarily unrelated to its `x-key`) would go unflagged by any written rule.
+
+4. conformant
+
