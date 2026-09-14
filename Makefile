@@ -114,14 +114,10 @@ tmux-ml-feature-set-search: ## the search detached in tmux session feature-set-<
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
 	@tmux has-session -t $(FEATURE_SET_SEARCH_SESSION) 2>/dev/null && echo '$(FEATURE_SET_SEARCH_SESSION) is already running — tmux attach -t $(FEATURE_SET_SEARCH_SESSION)' || tmux new-session -d -s $(FEATURE_SET_SEARCH_SESSION) -c $(CURDIR) 'make ml-feature-set-search ASSET=$(ASSET)'
 
-# the canon's crawler, on the host: python3 alone, git only for the commit a report entry names, the canon having no
+# the canon's crawler, on the host: python3 and gum, git only for the commit a report entry names, the canon having no
 # runner and no dependency — it gates nothing, and no target of the chain depends on it
-skills-crawl:    ## every path of to_crawl.txt through one fresh CLI session each, the answer appended to its report, then skills-status
+skills-crawl:    ## the crawler's menu: crawl chosen listed files, add or remove a path — one action, then it closes; run it in a terminal
 	python3 -B -m module_skills.sub_module_scalability_crawler.crawl
-# the detached twin: the same crawl in a tmux session that outlives the terminal, started in this checkout with this shell's
-# PATH, where the agent's command line lives; a plain make, not $(MAKE), for the reason the search's twin gives
-tmux-skills-crawl: ## the crawl detached in tmux session skills-crawl; tmux attach -t skills-crawl to watch, Ctrl-C stops, a rerun continues from the list
-	@tmux has-session -t skills-crawl 2>/dev/null && echo 'skills-crawl is already running — tmux attach -t skills-crawl' || tmux new-session -d -s skills-crawl -e PATH="$$PATH" -c $(CURDIR) 'make skills-crawl'
 skills-status:   ## skills_status.json -> store/status: every listed file with the date of its last report
 	python3 -B -m module_skills.sub_module_scalability_crawler.status
 

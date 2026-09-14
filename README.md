@@ -34,8 +34,8 @@ make help                  # every target with its one-line purpose
 
 `git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
 `make skills-crawl`, `make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
-`tmux` joins them for the detached search and the detached crawl, and the Claude Code command line
-for the crawler's agent.
+`tmux` joins them for the detached search, and gum 2 for the crawler's menu beside the Claude Code
+command line for the crawler's agent.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
 vocabulary): two words for a presenter to remember.
@@ -82,7 +82,7 @@ at invocation — the port the dashboard already publishes, else the first free 
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
 derives, so a rerun fetches and rebuilds only what its contract says — the trial
 ledger alone grows, one search more per `ml-hpo`, and beside the chain the crawler's reports
-grow one entry per crawl. The dashboard is
+grow one entry per file crawled. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 Five direct dependencies across
@@ -198,7 +198,7 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 
 `AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
 and the rules that cross modules, and the one sub-module that reads listed files
-against them — `make skills-crawl` sends every file of its list to an agent and appends the answer to that file's report, and
+against them — `make skills-crawl` opens the crawler's menu, which sends the files a hand chooses from its list to an agent and appends each answer to that file's report, or adds or removes a path of the list, and
 `make skills-status` dates the reports in `store/status/skills_status.json`; it gates nothing (`module_skills/skill_scalability_crawler.md`). A module's own rules live under that module, in
 `module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
 them. Each rule is written exactly once, where it is owned, and no document

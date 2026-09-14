@@ -1,12 +1,15 @@
-"""The crawl: every file to_crawl.txt lists goes, with crawlers_mission.md and the rules, to one fresh session of the
-agent's command line, and the answer is appended verbatim to the file's report; then the snapshot. It reads, asks and
-writes its reports — it edits no file it crawls and commits nothing. The first failure of the agent ends it.
+"""The crawler's menu: a hand chooses one action in gum — crawl chosen listed files, add a path to to_crawl.txt or remove
+one — and the program closes after it. A crawl sends each chosen file, with crawlers_mission.md and the rules, to one fresh
+session of the agent's command line and appends the answer verbatim to the file's report. It edits no file but its list
+and commits nothing; no answer in the menu or its prompt ends it with nothing written, and the first failure of the
+agent ends it.
 
     python3 -B -m module_skills.sub_module_scalability_crawler.crawl      (make skills-crawl)
 """
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -32,14 +35,58 @@ def write_report_entry(path: str, heading: str, answer: str) -> None:
         handle.write(f"\n{heading}\n{answer}" + ("\n" if answer.endswith("\n") else "\n\n"))
 
 
+def write_list(lines: list[str]) -> None:
+    """to_crawl.txt as the menu leaves it: its lines in their order, each ending in a newline."""
+    config.TO_CRAWL_TXT_PATH.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+
+
+def _gum(*arguments: str) -> str | None:
+    """A hand's answer in one gum prompt, off its stdout (gum draws on stderr); None when there is none — Esc, Ctrl-C, no
+    terminal, or nothing chosen or typed."""
+    answer = subprocess.run(("gum", *arguments), stdout=subprocess.PIPE, text=True)
+    return (answer.stdout.strip() or None) if answer.returncode == 0 else None
+
+
 def main() -> int:
-    paths, rules = status.load_crawl_paths(), load_rules_text()
-    mission = config.CRAWLERS_MISSION_MD_PATH.read_text(encoding="utf-8")
+    if not shutil.which("gum"):
+        raise SystemExit("gum is not on PATH — the crawler's menu needs gum 2: https://github.com/charmbracelet/gum#installation")
+    if not shutil.which(config.AGENT_COMMAND[0]):
+        raise SystemExit(f"{config.AGENT_COMMAND[0]} is not on PATH — the agent's command line")
+    rows = status.build_skills_status()["files"]
     model = config.AGENT_COMMAND[config.AGENT_COMMAND.index("--model") + 1]
+    subprocess.run(("gum", "style", "--border", "normal", "--padding", "0 1", "Scalability crawler",
+                    f"{len(rows)} file(s) listed · {model}"))
+    action = _gum("choose", "--header", "action", "crawl", "add a path", "remove a path")
+    if action is None:
+        return 0
+    if action != "crawl":
+        lines = config.TO_CRAWL_TXT_PATH.read_text(encoding="utf-8").splitlines()
+        entries = [line.strip() for line in lines]
+        if action == "add a path":
+            entry = _gum("input", "--placeholder", "module_data/config.py  or  module_data")
+            if entry is None:
+                return 0
+            status.load_entry_paths(entry)
+            if str(Path(entry)) in {str(Path(listed)) for listed in entries if listed}:
+                return 0
+            write_list(lines + [entry])
+        else:
+            entry = _gum("choose", "--header", "path to remove", *filter(None, entries))
+            if entry is None:
+                return 0
+            del lines[entries.index(entry)]
+            write_list(lines)
+        return status.main()
+    chosen = _gum("choose", "--no-limit", "--header", "files to crawl", "--selected", "*",
+                  *(f"{row['path']} · {row['last_crawled_utc'] or 'never'} · {row['crawl_count']}" for row in rows))
+    if chosen is None:
+        return 0
+    paths, rules = [line.partition(" · ")[0] for line in chosen.splitlines()], load_rules_text()
+    mission = config.CRAWLERS_MISSION_MD_PATH.read_text(encoding="utf-8")
     commit = subprocess.run(("git", "rev-parse", "--short", "HEAD"), capture_output=True, text=True, check=True).stdout.strip()
     try:
-        for number, path in enumerate(paths, start=1):
-            print(f"{number}/{len(paths)}  {path}", flush=True)
+        for path in paths:
+            print(f"crawling {path}", flush=True)
             try:
                 completed = subprocess.run(config.AGENT_COMMAND, input=build_message(mission, rules, path), capture_output=True,
                                            text=True, timeout=timedelta(minutes=config.AGENT_TIMEOUT_MINUTES).total_seconds())

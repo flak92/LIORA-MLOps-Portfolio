@@ -15,7 +15,8 @@ the working path.) If a change conflicts with this file, the change is wrong.
   stands beside the chain: the scalability crawler,
   `module_skills/sub_module_scalability_crawler/`, reads the files a hand lists
   against the written rules, writes a report a hand reads, and its snapshot;
-  it gates nothing, edits nothing, commits nothing.
+  a hand runs it in a terminal, one action per run, and nothing schedules it;
+  it gates nothing, edits no file but its list, commits nothing.
 - **Minimalism.** Every line, file, module and dependency has a concrete
   purpose. If its purpose cannot be named, it goes.
 - **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
@@ -26,7 +27,11 @@ the working path.) If a change conflicts with this file, the change is wrong.
   the stack's equivalent would be a private reimplementation of it: § Canonical
   vocabulary's preference for an established name over a local synonym, read
   forward from names to instruments. `mlflow-skinny` is the one such addition
-  and the trial ledger the one such responsibility. `requirements.txt` declares
+  and the trial ledger the one such responsibility. By the same reading the
+  host admits `gum`, the field's own instrument for a responsibility this
+  project names — a hand's choice in a terminal, the crawler's menu — where
+  the alternative would be a private chooser over curses: a binary of the host,
+  no pin of `requirements.txt`. `requirements.txt` declares
   the project's direct dependencies only, one pinned version each.
 - **KISS / YAGNI / DRY / SOLID.** The simplest correct implementation, built
   for the need that exists, never for a hypothetical one. One responsibility
@@ -36,7 +41,7 @@ the working path.) If a change conflicts with this file, the change is wrong.
   from a fresh clone, every stage is idempotent in what it derives — the
   trial ledger alone accumulates, each search appending its `hpo_<n>` runs,
   until a hand clears it, and beside the chain the crawler's reports, one entry
-  appended per crawl — and the dashboard opens itself.
+  appended per file crawled — and the dashboard opens itself.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the seven
   guards the mathematics requires: causality invariants (`indicators.asof_index`) and
@@ -311,7 +316,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; `skills-crawl` and `skills-status` for the canon's crawler and its snapshot, run by `python3` on the host because the canon has no runner, and `tmux-skills-crawl` the detached twin of the crawl; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `skills-status`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; `skills-crawl` and `skills-status` for the canon's crawler and its snapshot, run by `python3` on the host because the canon has no runner; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `skills-status`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
 | directories | `<category>_<detail>/` for a module; the stores are one folder `store/` whose children are `<content>/` — the container's `/store/<content>` read back onto the host; a raw store names its granularity with the compact timeframe token, `store/raw_<timeframe>/` | `module_*`, `store/`, `store/raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, `repository_module_<domain>/`, `store_<content>/` at the root, a child that repeats its parent's token (`store/store_raw_1m/`) |
 | images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, an image per module |
 | compose services | a runtime role, never an image or a ticker — the runners `data`, `features`, `ml`, the residents `dashboard`, `devops` | `ml`, `dashboard` | `pipeline`, a service named for an image or a tool, a service per asset stage |
@@ -360,7 +365,7 @@ argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/confi
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-module included), docker compose (`Makefile`,
 `docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`,
 `module_monitoring/sub_module_devops/config.py` and both downloaders), a stage's
-command line over `subprocess` (`record.py`), the git command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, for the commit a report entry names), the agent's command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, named in its `config.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
+command line over `subprocess` (`record.py`), the git command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, for the commit a report entry names), the agent's command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, named in its `config.py`), the gum command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, the crawler's menu), `http.server` (`module_monitoring/serve.py` and the panel's own),
 `socket` and the Docker Engine API over its
 unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four pipeline stores
 (`record.py`). A
@@ -478,8 +483,8 @@ is wrong.
 | D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
 | D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the four snapshots are tracked, so a fresh clone opens on real numbers |
 | D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
-| D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the list and the reports; the reports by `module_skills.sub_module_scalability_crawler.crawl` alone |
-| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it, and it writes only its reports and its snapshot |
+| D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the list and the reports; the reports by `module_skills.sub_module_scalability_crawler.crawl` alone, and `to_crawl.txt` by a hand, in the file or through that module's menu |
+| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it; it writes only its list, its reports and its snapshot, and a hand alone runs it |
 
 ## Skills absent here, described
 
