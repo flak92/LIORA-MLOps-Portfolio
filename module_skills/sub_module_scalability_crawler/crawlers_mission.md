@@ -22,4 +22,5 @@ Report, in this order, with `none` under an empty section:
    migration cost.
 4. One closing line: `conformant`, or `departures: <n>` with n the number of lines of section 1.
 
-Quote a rule's deciding clause, never paraphrase it. Propose, never decide. Do not rewrite the file.
+Mark a section with its bold label, never a Markdown heading: the entry already sits under the
+report's own heading. Quote a rule's deciding clause, never paraphrase it. Propose, never decide. Do not rewrite the file.

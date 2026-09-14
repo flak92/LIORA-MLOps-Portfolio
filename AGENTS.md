@@ -333,7 +333,8 @@ Constants that carry a numeric quantity — a count, a rate, a duration, a
 size, an interval — are named `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>`, and the
 unit is explicit — `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_ROWS`,
 `_FOLD_ID`, `_RATE`, `_COUNT` — unless the name already says what is counted
-(`MINIMUM_TRADES_PER_VALIDATION_FOLD`). Enumerations, paths and names carry no
+(`MINIMUM_TRADES_PER_VALIDATION_FOLD`); a setting handed to a tool as text carries its unit in the value, not in the
+name (`DUCKDB_MEMORY_LIMIT = "4GB"`). Enumerations, paths and names carry no
 unit; a collection whose values are quantities keeps theirs
 (`TIMEFRAME_DURATION_MS`, `FOLD_BOUNDS_MS`, `VALIDATION_FOLD_IDS`). No name is
 invented just to satisfy the schema. The parameter word follows the mechanics

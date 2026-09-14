@@ -443,7 +443,7 @@ lists, read against the written rules. The rules are
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the crawler: the canon's sub-module that reads the files a hand lists against the written rules, writes a report a hand reads, and its snapshot | `sub_module_scalability_crawler`; `make skills-crawl` | — | — | a linter, a check, a gate, a CI step; a web crawler, walking sites or services to gather what they hold |
+| the crawler: the canon's sub-module that reads the files a hand lists against the written rules, writes a report a hand reads, and its snapshot — a crawler because it walks the listed files as a crawler walks pages, and scalability because it keeps what makes the code scale, the generic, algorithmic conventions | `sub_module_scalability_crawler`; `make skills-crawl` | — | — | a linter, a check, a gate, a CI step; a web crawler, walking sites or services to gather what they hold; conformance, review — names that tell a reader nothing |
 | the list: a path from the root per line, a folder every file under it but `__pycache__` and the reports; its order is the crawl's queue | `to_crawl.txt`, `TO_CRAWL_TXT_PATH`, `load_crawl_paths()`, `load_entry_paths()`, `write_list()` | — | — | a list derived from the tree; the whole tree by default |
 | the mission: what the agent reports of one file, and how | `crawlers_mission.md`, `CRAWLERS_MISSION_MD_PATH` | — | — | a rule restated in it; a work order or a plan |
 | the rules sent with a file, each under its path: the canon, then the orientation and the skills of the module its first path segment names | `RULE_PATHS`, `MODULE_RULE_PATHS`, `load_rules_text()` | — | — | a rule summarised for the message; a list of rules kept per module |
