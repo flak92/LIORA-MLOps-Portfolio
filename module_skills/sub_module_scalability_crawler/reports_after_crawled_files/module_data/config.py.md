@@ -103,3 +103,75 @@ None observed.
 
 departures: 9
 
+
+## crawled 2026-09-14 16:07 UTC · claude · claude-opus-5 · high · no tools · 9c67f3e
+**1. Departures**
+
+- `AGENTS.md` § The shape — what holds the project together, D14 — "every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects"
+  - **Lines:** 19–24, 32, 58, 59, 60, 73, 78, 83, 90.
+  - **Current form:** one marker above a block, `# twice by extraction — the units below (each module the ones it uses), the ceiling, the store reads, their descriptors` / `# and the --tickers parser are identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md` / `# § Twice by extraction): a change here is a change to every copy, by hand`, over `MILLISECONDS_PER_SECOND = 1000`, `MILLISECONDS_PER_MINUTE = 60_000`, `MILLISECONDS_PER_DAY = 86_400_000`. These registered objects carry no marker of their own: `def to_utc_ms(day: str) -> int:`, `DUCKDB_MEMORY_LIMIT = "4GB"`, `STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])`, `STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])`, `def artifact_dir(ticker: str) -> Path:`, `def research_ohlcv_duckdb(ticker: str) -> Path:`, `def build_ticker_parser(description: str) -> argparse.ArgumentParser:`, `def parse_tickers(tickers_csv: str) -> list[str]:`.
+  - **Derived form:** lines 19–21 removed, and `# twice by extraction` on its own line directly above each of lines 22, 23, 24, 32, 58, 59, 60, 73, 78, 83 and 90.
+
+- `AGENTS.md` § Canonical vocabulary, the constant comments row — "the `# twice by extraction` marker explains nothing and stands where D14 places it"; "a block comment directly above the lines it explains when they are several constants"; forbids "a block comment above a one-line constant it alone explains".
+  - **Lines:** 19–21, 25–26, 54–56, 57–58, 59–60.
+  - **Current form:**
+    - The markers carry explanations: `# twice by extraction — the units below (each module the ones it uses), …` and `# twice by extraction — identical in module_ml/config.py, and the browser's own in module_monitoring/page.js` / `# (module_skills/glossary.md § Twice by extraction)`.
+    - `# the stores of this checkout arrive as environment, one variable per store — …` stands directly above `STORE_RAW_1M_DIR` alone, while it explains lines 56, 59 and 60. Lines 57–58 separate them.
+    - `# DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism` is a block comment above the one-line `DUCKDB_MEMORY_LIMIT = "4GB"`, which it alone explains.
+  - **Derived form:**
+    - Each marker is bare: `# twice by extraction`.
+    - `STORE_ASSETS_ARTIFACTS_DIR` and `STORE_STATUS_DIR` sit directly under `STORE_RAW_1M_DIR`, beneath the block comment of 54–55.
+    - `DUCKDB_MEMORY_LIMIT = "4GB"   # DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism` is placed outside that block.
+
+- `AGENTS.md` § Canonical vocabulary — "Write "QuantConnect Lean" on its first use in a file, code comments included, and "Lean" afterwards."
+  - **Line:** 17.
+  - **Current form:** `# Lean security-type folder name (USDS-M perpetuals)`.
+  - **Derived form:** `# QuantConnect Lean security-type folder name (USDS-M perpetuals)`. Line 69's `Lean-exact tree` then stands as the later use.
+
+- `AGENTS.md` § Canonical vocabulary — "A one-letter name is legal because of its semantic role, never merely because it is local: loop indices, the symbols of a published equation inside its tight kernel, and SVG geometry may stay short"
+  - **Lines:** 95, 97.
+  - **Current form:** `def rounded(x, ndigits: int):`, `return None if x is None else round(float(x), ndigits)`.
+  - **Derived form:** `def rounded(value, ndigits: int):`, `return None if value is None else round(float(value), ndigits)`. Change it in `module_ml/config.py` in the same commit (D14).
+
+**2. Unexplained**
+
+- **Line 18, `SOURCE_CANDLE_INTERVAL = "1m"`.**
+  - **Problem:** The block comment of 14–15 does not explain it. No line of this message names its reader. `skill_candle_canonicalisation.md` § 2 gives Bybit's interval as `interval=1`, so a reader cannot tell whose spelling `"1m"` is.
+  - **Missing sentence:** an inline comment, `# the interval of every venue candle the raw tree stores, in Binance's REST spelling; Bybit's downloader asks the same minute as interval=1`. Or, if no call reads it, the line goes (§ Values, *Minimalism*).
+- **Line 58, `DUCKDB_MEMORY_LIMIT = "4GB"`.**
+  - **Problem:** A size with no unit in its name. § Canonical vocabulary asks a size to carry `_<UNIT>`, and nothing here says why this one is exempt.
+  - **Missing sentence:** an inline comment, `# DuckDB's own memory_limit string, unit inside the value; the name is the setting's, the external vocabulary of the DuckDB SQL boundary`.
+- **Lines 17 and 70.**
+  - **Problem:** The QuantConnect Lean tree's `cryptofuture` segment is a named constant, `LEAN_SECURITY_TYPE_FOLDER`, while its `"minute"` segment is an inline literal in `raw_symbol_dir()`. Nothing says why one is named and the other is not.
+  - **Missing sentence:** an addition to the docstring of line 69, `the resolution folder "minute" is the tree's own literal, fixed by SOURCE_CANDLE_INTERVAL, and is not a setting`. Or a `LEAN_RESOLUTION_FOLDER = "minute"` beside line 17.
+
+**3. Proposed conventions**
+
+none
+
+departures: 4
+
+
+## crawled 2026-09-14 16:11 UTC · codex · gpt-5.6-luna · high · no tools · 9c67f3e
+## Departures
+
+- `AGENTS.md § Architecture shape`; “A reference is a path in backticks, always.” Lines 20, 26, 54, 94 contain unbackticked references such as `"module_features/config.py"`, `"module_skills/glossary.md"` and `"config.py"`; derive backticked path references.
+
+- `AGENTS.md § Canonical vocabulary`; “Write "QuantConnect Lean" on its first use in a file, code comments included, and "Lean" afterwards.” Line 17 says `"Lean security-type folder name"`; derive `"QuantConnect Lean security-type folder name"`.
+
+- `AGENTS.md § Canonical vocabulary`; “the `# twice by extraction` marker explains nothing and stands where D14 places it.” Lines 19, 25–26 and 94 include explanatory text with the marker, e.g. `"# twice by extraction — identical in module_ml/config.py"`; derive a standalone `# twice by extraction` marker with explanation separate.
+
+- `AGENTS.md § The shape — what holds the project together (D14)`; “every object ... is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects.” Line 19 marks the block at lines 22–24; line 25 is separated from line 27 by line 26; lines 32, 58–60, 73, 78, 83, 90 and 95 lack their own markers. Derive one directly adjacent marker for each shared object.
+
+- `AGENTS.md § Canonical vocabulary`; “a domain object ... carries its semantic name even inside a function.” Lines 85 and 95 use `"ap = argparse.ArgumentParser(...)"` and `"def rounded(x, ndigits: int):"`; derive semantic names such as `argument_parser` and `value`.
+
+## Unexplained
+
+none
+
+## Proposed conventions
+
+none
+
+departures: 5
+
