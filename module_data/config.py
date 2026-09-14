@@ -92,7 +92,7 @@ def parse_tickers(tickers_csv: str) -> list[str]:
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
-# twice by extraction — identical in module_ml/config.py and module_skills/sub_module_scalability_crawler/config.py
+# twice by extraction — identical in module_ml/config.py
 def rounded(x, ndigits: int):
     """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
     return None if x is None else round(float(x), ndigits)

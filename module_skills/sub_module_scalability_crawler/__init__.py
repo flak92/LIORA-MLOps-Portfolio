@@ -1,1 +1,1 @@
-"""The scalability crawler: the tracked tree counted against AGENTS.md and the skills, into store/status/skills_status.json."""
+"""The scalability crawler: every file to_crawl.txt lists, read against the written rules by the agent into its report, and the reports' dates in store/status/skills_status.json."""
