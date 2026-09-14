@@ -8,8 +8,7 @@
     POST /api/machines/<id>/<action>   start / stop / restart — this project's containers only
 
 The socket lives in this container and in no other. The dashboard reaches these routes by
-service name over the compose network, exactly as it reaches an asset's /status, and holds
-no socket of its own.
+service name over the compose network and holds no socket of its own.
 """
 
 from __future__ import annotations

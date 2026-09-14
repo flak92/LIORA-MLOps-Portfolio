@@ -1,6 +1,5 @@
 /* The DevOps panel: the Docker Engine views, proxied through the dashboard at /devops/api/*.
-   Classic script using the formatters, cells and tables of page.js. The asset-container view
-   beside it is containers.js, which reads the assets' own endpoints instead of the engine. */
+   Classic script using the formatters, cells and tables of page.js. */
 "use strict";
 
 /* the two answers the engine gives that are not a plain success: an ownership refusal, and an action
@@ -95,7 +94,7 @@ function buildMachineMemoryCell(machine) {
   return wrap;
 }
 
-/* the engine reports a counter, not a rate; the rate is this page's arithmetic over two polls, as for an asset */
+/* the engine reports a counter, not a rate; the rate is this page's arithmetic over two polls */
 function buildMachineCpuCell(machine) {
   const sample = MACHINE_SAMPLES[machine.container_id];
   if (!sample || sample.cpuRate === null || sample.cpuRate === undefined) return "-";

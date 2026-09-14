@@ -14,8 +14,8 @@ from pathlib import Path
 
 # twice by extraction — identical in module_data/config.py and module_features/config.py (module_skills/glossary.md
 # § Twice by extraction): the units, the ceiling, the two stores every module of the chain touches and their
-# descriptors, and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py and
-# module_monitoring/config.py; a change to one copy is a change to every copy, by hand
+# descriptors, and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py; a change to
+# one copy is a change to every copy, by hand
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 BYTES_PER_KIBIBYTE = 1024
@@ -179,8 +179,7 @@ def catalogue_feature_ids(cat: dict) -> tuple[str, ...]:
 # ---- the asset folder paths: every per-asset file carries the <TICKER>_ prefix, a time series its grid in
 # timeframe slots (module_skills/skill_sorting_files_naming_standard.md), the decision slot read off the contract;
 # built here and nowhere else — the feature parquets named by the contract itself
-# twice by extraction — identical in module_monitoring/config.py, the reader (module_skills/glossary.md § Twice by extraction)
-ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"
+ML_STATUS_JSON_PATH = STORE_STATUS_DIR / "ml_status.json"   # the snapshot this module writes; the dashboard reads it there
 
 
 def features_parquet(ticker, cat, timeframe):

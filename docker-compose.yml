@@ -1,15 +1,14 @@
-# one image, three anchors, six services — a service is a role, not an image. x-store-environment is the store contract:
+# one image, two anchors, five services — a service is a role, not an image. x-store-environment is the store contract:
 # the five STORE_*_DIR every config.py reads, one variable per store, plus the thread cap and the three mlflow facts
-# that are correctness, not settings. x-service is what every service of this file is; x-server adds the one command
-# the dashboard and the assets share. The three runners — data, features, ml — carry no command: a stage is `docker
-# compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>`, one one-off container per asset or one
-# for the whole basket, and exits; the three residents serve.
-# environment: and volumes: REPLACE an anchor's key rather than extend it, so a service that adds a variable merges the
-# store map with <<: (asset-btc) and a service respells its mounts whole. Every service mounts the tree at /app — store/
-# rides in it, an address no service uses — and at /store/<content> the stores it touches, read-only where it only
-# reads, and no other. The project name is fixed:
-# liora-dashboard-1, liora-asset-btc-1, liora-devops-1 on every host — two checkouts on one host share it, so run one at
-# a time or override COMPOSE_PROJECT_NAME.
+# that are correctness, not settings. x-service is what every service of this file is. The three runners — data,
+# features, ml — carry no command: a stage is `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers
+# <TICKER>`, one one-off container per asset or one for the whole basket, and exits; the two residents — dashboard and
+# devops — serve, each under its own command.
+# volumes: REPLACES an anchor's key rather than extending it, so every service respells its mounts whole. Every service
+# mounts the tree at /app — store/ rides in it, an address no service uses — and at /store/<content> the stores it
+# touches, read-only where it only reads, and no other. The project name is fixed:
+# liora-dashboard-1, liora-devops-1 on every host — two checkouts on one host share it, so run one at a time or override
+# COMPOSE_PROJECT_NAME.
 name: liora
 
 x-store-environment: &store_environment
@@ -33,10 +32,6 @@ x-service: &service
   environment: *store_environment
   volumes:
     - .:/app
-
-x-server: &server
-  <<: *service
-  command: python -m module_monitoring.serve
 
 services:
   # the data layer writes the raw tree and the asset databases, and its own snapshot
@@ -67,33 +62,22 @@ services:
         limits:
           memory: 5g
 
-  # the dashboard serves and never writes, so its stores are read-only; it mounts no raw store: nothing it serves is
-  # measured there.
+  # the dashboard serves and never writes, so its stores are read-only; it mounts the two it serves from, the run
+  # records and the snapshots, and no other: nothing it serves is read anywhere else.
   dashboard:
-    <<: *server
+    <<: *service
+    command: python -m module_monitoring.serve
     ports:
       - "127.0.0.1:${PORT:-8900}:8900"
     volumes:
       - .:/app
-      - ./store/assets_artifacts:/store/assets_artifacts:ro
       - ./store/run_records:/store/run_records:ro
-      - ./store/status:/store/status:ro
-
-  # an asset container reports itself and writes nothing
-  asset-btc:
-    <<: *server
-    environment:
-      <<: *store_environment
-      ASSET: BTC
-    volumes:
-      - .:/app
-      - ./store/assets_artifacts:/store/assets_artifacts:ro
       - ./store/status:/store/status:ro
 
   # the one service that holds the docker socket, and the only one: its whole responsibility is docker management and
   # monitoring. It publishes no port — the dashboard proxies /devops/* to it. It addresses no store; its environment
   # still carries the five store names from the anchor, because its server imports module_monitoring/config.py, which
-  # reads three of them at import.
+  # reads two of them at import.
   devops:
     <<: *service
     command: python -m module_monitoring.sub_module_devops.serve

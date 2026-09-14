@@ -93,17 +93,3 @@ td:first-child, th:first-child { text-align: left; }
 .spark__line { fill: none; stroke: #0a7a0a; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .spark__base { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .final-holdout { font-weight: bold; }
-
-/* DevOps panel: a badge is the compact element carrying one variable of an asset's state;
-   --warn marks a state the reader should look at — a stale observation or measurement, an uncovered
-   research window, a threshold that fell back; --down a container that did not answer, or was not
-   asked yet */
-.badge {
-  display: inline-block;
-  border: 1px solid #111;
-  background: #fff;
-  padding: 0.15em 0.6em;
-  margin: 0 0.4em 0.4em 0;
-}
-.badge--warn { background: #fff3b0; }
-.badge--down { background: #111; color: #fff; }

@@ -28,8 +28,7 @@ convention is `../../AGENTS.md` § The default choice.
 
 `/var/run/docker.sock` is mounted in `devops` and in no other container.
 The dashboard holds no socket and makes no Engine call: it proxies `/devops/*`
-to `devops` by service name over the compose network, the same mechanism
-and the same `(status, body)` shape as `/containers/<TICKER>/status`. The scoped
+to `devops` by service name over the compose network. The scoped
 repeal of the socket rule lives with the topology it changes,
 `../../module_skills/skill_asset_containers.md`.
 
@@ -65,9 +64,11 @@ minimum, so upgrading the engine does not move the contract underneath the panel
 | `POST /devops/api/machines/<id>/<action>` | `start`, `stop`, `restart` — the whole allowlist |
 
 A daemon that does not answer is answered for: every route above returns
-**503 with no body**, the shape and the reading
-`../../module_skills/skill_asset_containers.md` § The endpoint contract already fixes
-for an asset's endpoint. The page decides on the status alone and clears the
+**503 with no body**, and so does the dashboard's proxy when `devops` itself does
+not — it cannot connect, the name does not resolve, or the exchange fails after the
+request is sent — with `Cache-Control: no-store`. A stopped `devops` is answered for
+once Docker's resolver gives up on the vanished name, not at the socket timeout —
+stated, not mitigated. The page decides on the status alone and clears the
 views it can no longer vouch for, so an unreachable Engine is never rendered as
 an empty host. Having reached no cadence to poll on, it retries once the tab is
 next looked at.
@@ -91,7 +92,7 @@ every other, with the reason in the body:
 
 The project is read from the panel's own container labels at start, never
 written as a literal: a host may run a sibling project whose services carry the
-same names — `dashboard`, `asset-btc` — and only the `com.docker.compose.project`
+same names — `dashboard`, `devops` — and only the `com.docker.compose.project`
 label separates them, and the read happens once — a daemon silent at that moment
 leaves the panel read-only for the life of the process and `/api/events`
 answering 503 rather than an empty tail, because an empty tail would read as a
@@ -106,50 +107,18 @@ a 304 cannot — so the page reads the status and says the action changed nothin
 Not offered, each needing its own decision: `rm`, `exec`, `prune`, image
 operations, compose up/down from the browser, log streaming.
 
-## The views, and which number is the truer one
+## The views
 
-An asset container is measured twice, and the panel says which to believe. The
-**asset containers** section reads each container's own `/status` through the
-dashboard's proxy — the cgroup accounting measured from inside, page cache
-included, against the ceiling that container actually runs under. The
-**containers on this host** table reads the Engine's own accounting for every
-container including foreign ones. For an asset, the cgroup figures are the truer
-ones; the Engine's are what exists for a container that reports nothing.
-
-Five more sections sit below those two — **networks**, **volumes**, **bind
+The **containers on this host** table reads the Engine's own accounting for every
+container the daemon reports, foreign ones included — the one measurement of a
+container's memory and CPU. Five more sections sit below it — **networks**, **volumes**, **bind
 mounts**, **image** and **events** — each a flat table of what its route
 answered — **image** a key-value box, the one row its route answers with — with no arithmetic of the page's own. Their keys are registered in
 `../../module_skills/glossary.md` § DevOps panel and are not restated here.
 
-The asset-container columns and badges:
-
-| column / badge | label | source |
-|---|---|---|
-| asset | the ticker | a link into the selector |
-| container | `up` / `down` | the proxy's status code |
-| up since | `up since` | `started_at_utc` |
-| memory | `memory` | `footprint.memory_bytes` against `memory_limit_bytes`, as a bar |
-| peak | `peak` | `footprint.memory_peak_bytes` |
-| CPU | `CPU` | two `cpu_usage_seconds` of one container run over the wall time between polls, over `cpu_count`; a dash until the second poll |
-| data | `data` | the overview: `observation_lag_minutes`; the badge: `data.last_observation_utc` and the lag |
-| rows | `rows` | `data.row_count`, `data.db_bytes` |
-| window | `covered` / `not covered` | `data.research_window_covered` |
-| trained | `trained <date>` | `artifacts.model_evaluation_modified_utc`; `artifacts no run yet` while the ML snapshot has no block, or the folder no longer holds the set |
-| threshold | `met` / `fallback` | `artifacts.entry_edge_threshold_constraint_met` |
-| measured | `measured` | `data.measurement_age_minutes` |
-| cpu (badge) | `cpu <seconds>s on <n> cpus` | `footprint.cpu_usage_seconds`, `cpu_count` — the container's total so far |
-| a symbol with no row, or an asset with no database | `no data yet` | `data: null` — never `down` |
-
-`badge--warn` marks three conditions: an observation or a measurement older than
-`download_cadence_minutes` from the data snapshot — never a literal in the page —
-a research window the asset's grid does not cover, and an entry threshold that
-fell back rather than meeting its trade floor. `badge--down` marks a container
-whose endpoint did not answer 200, and a container not asked yet.
-
 ## What the panel owes the reader
 
-A container that does not answer renders `down` with dashes and never a previous
-number. The engine reports counters, not
+The engine reports counters, not
 rates: a CPU rate is this page's arithmetic over two polls, a dash until the
 second, and a counter that went backwards is a container that restarted rather
 than a negative rate. An action never renders optimistically — the panel re-reads

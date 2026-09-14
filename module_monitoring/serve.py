@@ -1,11 +1,8 @@
-"""The one server of module_monitoring, its role chosen by ASSET.
+"""The one server of module_monitoring: the dashboard.
 
-    dashboard role (ASSET unset)   the static page; GET /store_status/<name>, one snapshot as its writer left it;
-                                   GET /containers, the registry; GET /containers/<TICKER>/status, one asset proxied;
-                                   GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
-                                   GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket
-    asset role (ASSET=<TICKER>)    GET /status — the container reporting itself: its rows of the snapshots, the size of the database
-                                   in its folder, its own cgroup — served as it lies there; this module imports no other
+    the static page; GET /store_status/<name>, one snapshot as its writer left it;
+    GET /runs, the recorded runs; GET /runs/<run_id>, one run as its stages left it;
+    GET and POST /devops/*, the DevOps panel's API proxied to the one container that holds the socket
 """
 
 from __future__ import annotations
@@ -13,110 +10,23 @@ from __future__ import annotations
 import functools
 import http.client
 import json
-import os
 import urllib.error
 import urllib.request
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from . import config
 
-CGROUP_MOUNT_PATH = Path("/sys/fs/cgroup")
-OWN_CGROUP_PROC_PATH = Path("/proc/self/cgroup")
-HOST_MEMORY_PROC_PATH = Path("/proc/meminfo")
-
 
 def to_json_bytes(payload: dict) -> bytes:
     return json.dumps(payload, indent=1).encode("utf-8")
 
 
-def minutes_since(then: datetime) -> int:
-    return max(0, (datetime.now(tz=UTC) - then) // timedelta(minutes=1))
-
-
 # twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
-
-
-def load_text(path: Path) -> str | None:
-    return path.read_text(encoding="utf-8").strip() if path.exists() else None
-
-
-def load_cgroup_dir() -> Path:
-    """The container's own cgroup: under cgroup v2 /proc/self/cgroup holds one line, 0::/<path>."""
-    return CGROUP_MOUNT_PATH / load_text(OWN_CGROUP_PROC_PATH).rpartition("::")[2].lstrip("/")
-
-
-def load_host_memory_bytes() -> int:
-    """MemTotal, the first line of /proc/meminfo — the ceiling when the cgroup sets none."""
-    return int(load_text(HOST_MEMORY_PROC_PATH).split()[1]) * config.BYTES_PER_KIBIBYTE
-
-
-def snapshot_row(rows: list[dict], ticker: str) -> dict | None:
-    """The row of the asset — every row of the data snapshot names its ticker, so nothing is derived here."""
-    return next((row for row in rows if row["ticker"] == ticker), None)
-
-
-def data_block(ticker: str, data_status: dict, ml_status: dict) -> dict | None:
-    """The asset's row of the data snapshot with the two ages the tab judges them by; None while the snapshot
-    has no row for it, or the folder holds no database for that row. The research window comes from the ML
-    snapshot — the endpoint reads what the modules published and computes nothing of its own."""
-    canonical_row = snapshot_row(data_status["canonical_source"], ticker)
-    databases = config.asset_databases(ticker)
-    if canonical_row is None or not databases:
-        return None
-    last_observation = config.to_utc_datetime(canonical_row["last_observation_utc"])
-    research_window = ml_status["research_window"]
-    research_end = config.to_utc_datetime(research_window["end_utc"])
-    return {
-        "generated_at_utc": data_status["generated_at_utc"],
-        "row_count": canonical_row["row_count"],
-        "last_observation_utc": canonical_row["last_observation_utc"],
-        "observation_lag_minutes": minutes_since(last_observation),
-        "measurement_age_minutes": minutes_since(config.to_utc_datetime(data_status["generated_at_utc"])),
-        "db_bytes": sum(database.stat().st_size for database in databases),
-        # the grid has no holes, so its two ends decide coverage of the half-open research window
-        "research_window_covered": (config.to_utc_datetime(data_status["window_start_utc"]) <= config.to_utc_datetime(research_window["start_utc"])
-                                    and last_observation >= research_end - timedelta(minutes=1)),
-    }
-
-
-def artifacts_block(ticker: str, ml_status: dict) -> dict | None:
-    """The folder's facts the tab shows; None while the ML snapshot has no block for the asset — the snapshot
-    folds only the assets whose artifact set was complete when it was written, and that is what is served."""
-    for asset in ml_status["assets"]:
-        if asset["ticker"] == ticker:
-            return {**asset["artifacts"],
-                    "entry_edge_threshold_constraint_met": asset["strategy"]["entry_edge_threshold_constraint_met"]}
-    return None
-
-
-def footprint_block() -> dict:
-    """The container's own cgroup accounting: memory.current is what the kernel charges it, page cache included."""
-    own = load_cgroup_dir()
-    memory_max = load_text(own / "memory.max")
-    cpu_stat = dict(line.split() for line in load_text(own / "cpu.stat").splitlines())
-    return {
-        "memory_bytes": config.to_int(load_text(own / "memory.current")),
-        "memory_peak_bytes": config.to_int(load_text(own / "memory.peak")),
-        "memory_limit_bytes": load_host_memory_bytes() if memory_max == "max" else config.to_int(memory_max),
-        "cpu_usage_seconds": round(int(cpu_stat["usage_usec"]) / config.MICROSECONDS_PER_SECOND, 3),
-        "cpu_count": os.cpu_count(),
-    }
-
-
-def status_payload(server: StatusServer, data_status: dict, ml_status: dict) -> dict:
-    return {
-        "ticker": server.ticker,
-        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
-        "started_at_utc": server.started_at_utc,
-        "data": data_block(server.ticker, data_status, ml_status),
-        "artifacts": artifacts_block(server.ticker, ml_status),
-        "footprint": footprint_block(),
-    }
 
 
 def load_run_ids() -> list[str]:
@@ -141,37 +51,9 @@ def runs_payload() -> dict:
     return {"generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)), "run_ids": load_run_ids()}
 
 
-def load_tickers() -> list[str]:
-    """The basket as the store shows it: one folder per asset under the artifacts store, sorted — the registry never reads
-    the launcher's list and derives nothing; a fresh clone already holds the tracked residue of every asset, and a new
-    asset appears here at its first ingest."""
-    store = config.STORE_ASSETS_ARTIFACTS_DIR
-    return sorted(path.name for path in store.iterdir() if path.is_dir()) if store.exists() else []
-
-
-def registry_payload() -> dict:
-    return {
-        "generated_at_utc": config.to_utc_text(datetime.now(tz=UTC)),
-        "poll_interval_seconds": config.CONTAINER_POLL_INTERVAL_SECONDS,
-        "tickers": load_tickers(),
-    }
-
-
-def fetch_asset_status(ticker: str) -> tuple[int, bytes]:
-    """One asset's endpoint as (status code, body): an HTTP answer forwarded as it came, 503 with no body when the container does not answer."""
-    try:
-        with urllib.request.urlopen(config.asset_status_url(ticker),
-                                    timeout=config.ASSET_STATUS_FETCH_TIMEOUT_SECONDS) as answer:
-            return answer.status, answer.read()
-    except urllib.error.HTTPError as error:
-        return error.code, error.read()
-    except (OSError, http.client.HTTPException):
-        return HTTPStatus.SERVICE_UNAVAILABLE, b""
-
-
 def fetch_panel(method: str, route: str) -> tuple[int, bytes]:
-    """The DevOps panel's API as (status code, body), forwarded as it came — the same shape and the same
-    failure as an asset's endpoint. The socket the panel holds stays in the panel: this process never opens it."""
+    """The DevOps panel's API as (status code, body): an HTTP answer forwarded as it came, 503 with no body when the
+    panel does not answer. The socket the panel holds stays in the panel: this process never opens it."""
     request = urllib.request.Request(config.devops_api_url(route), method=method,
                                      data=b"" if method == "POST" else None)
     try:
@@ -194,38 +76,19 @@ def write_response(handler: BaseHTTPRequestHandler, status: int, body: bytes = b
     handler.wfile.write(body)
 
 
-class AssetStatusHandler(BaseHTTPRequestHandler):
-    """The asset role: one route, the container reporting itself."""
-
-    def do_GET(self):
-        if self.path != "/status":
-            write_response(self, HTTPStatus.NOT_FOUND)
-            return
-        data_status = load_json(config.DATA_STATUS_JSON_PATH)
-        ml_status = load_json(config.ML_STATUS_JSON_PATH)
-        write_response(self, HTTPStatus.OK, to_json_bytes(status_payload(self.server, data_status, ml_status)))
-
-
 class DashboardHandler(SimpleHTTPRequestHandler):
-    """The dashboard role: the static page, the registry, and the proxies — one asset's endpoint, and the
-    DevOps panel's API. It holds no docker socket and makes no Engine call; the panel does both, alone."""
+    """The dashboard: the static page, the snapshots, the recorded runs, and the proxy to the DevOps panel's API.
+    It holds no docker socket and makes no Engine call; the panel does both, alone."""
 
     def do_GET(self):
         segments = self.path.split("?")[0].split("/")
         if self.path.startswith(config.DEVOPS_ROUTE_PREFIX + "/"):
             write_response(self, *fetch_panel("GET", self.path.removeprefix(config.DEVOPS_ROUTE_PREFIX)))
-        elif self.path == "/containers":
-            write_response(self, HTTPStatus.OK, to_json_bytes(registry_payload()))
         elif self.path == "/runs":
             write_response(self, HTTPStatus.OK, to_json_bytes(runs_payload()))
         elif len(segments) == 3 and segments[1] == "runs":
             if segments[2] in load_run_ids():
                 write_response(self, HTTPStatus.OK, to_json_bytes(run_payload(segments[2])))
-            else:
-                write_response(self, HTTPStatus.NOT_FOUND)
-        elif len(segments) == 4 and segments[1] == "containers" and segments[3] == "status":
-            if segments[2] in load_tickers():
-                write_response(self, *fetch_asset_status(segments[2]))
             else:
                 write_response(self, HTTPStatus.NOT_FOUND)
         elif len(segments) == 3 and segments[1] == config.STORE_STATUS_ROUTE_SEGMENT:
@@ -244,21 +107,10 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             write_response(self, HTTPStatus.NOT_FOUND)
 
 
-class StatusServer(ThreadingHTTPServer):
-    """The one server; its role is the presence of ASSET, its start the tab's `up since`."""
-
-    def __init__(self, ticker: str | None):
-        handler = (AssetStatusHandler if ticker
-                   else functools.partial(DashboardHandler, directory=str(config.MODULE_MONITORING_DIR)))
-        super().__init__((config.BIND_ADDRESS, config.CONTAINER_PORT), handler)
-        self.ticker = ticker
-        self.started_at_utc = config.to_utc_text(datetime.now(tz=UTC))
-
-
 def main() -> int:
-    ticker = os.environ.get("ASSET")
-    server = StatusServer(ticker)
-    print(f"{'asset ' + ticker if ticker else 'dashboard'} role at http://{config.BIND_ADDRESS}:{config.CONTAINER_PORT}/", flush=True)
+    handler = functools.partial(DashboardHandler, directory=str(config.MODULE_MONITORING_DIR))
+    server = ThreadingHTTPServer((config.BIND_ADDRESS, config.CONTAINER_PORT), handler)
+    print(f"dashboard at http://{config.BIND_ADDRESS}:{config.CONTAINER_PORT}/", flush=True)
     server.serve_forever()
     return 0
 

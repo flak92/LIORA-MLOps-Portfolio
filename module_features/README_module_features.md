@@ -83,7 +83,7 @@ set is the frozen experiment's; a set chosen for one asset is the feature-set
 search's and a hand's promotion
 (`module_ml/skills/methodology_ml.md` § 4). A new asset is not an extension
 of this module at all: it is a ticker in `TICKERS` of the Makefile
-and an `asset-<ticker>` block in its `docker-compose.yml` (`README.md` § The basket); nothing changes here, and both stages follow it
+(`README.md` § The basket); nothing changes here, and both stages follow it
 without an edit.
 
 ## Design rationale

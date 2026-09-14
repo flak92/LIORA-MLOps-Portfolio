@@ -1,7 +1,7 @@
 """Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
 reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
 shares, and the null-tolerant rounding the two status reports share. The basket is not here: the launcher names it
-(`TICKERS` in the Makefile, one `asset-<ticker>` block in docker-compose.yml) and every stage is told its assets."""
+(`TICKERS` in the Makefile) and every stage is told its assets."""
 
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ SOURCE_CANDLE_INTERVAL = "1m"
 MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 MILLISECONDS_PER_DAY = 86_400_000
-# twice by extraction — identical in module_ml/config.py and module_monitoring/config.py, and the browser's own in
-# module_monitoring/page.js (module_skills/glossary.md § Twice by extraction)
+# twice by extraction — identical in module_ml/config.py, and the browser's own in module_monitoring/page.js
+# (module_skills/glossary.md § Twice by extraction)
 BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 
@@ -58,7 +58,6 @@ STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 DUCKDB_MEMORY_LIMIT = "4GB"
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
-# twice by extraction — identical in module_monitoring/config.py, the reader (module_skills/glossary.md § Twice by extraction)
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"   # the snapshot this module writes; the dashboard reads it there
 
 

@@ -1,6 +1,6 @@
-/* The toolkit every page of this dashboard shares: formatters, cells, tables, frames, pills,
-   and the one fetch of the data snapshot. It writes into no page-specific element, so the
-   status page and the DevOps panel both load it and neither inherits the other's markup. */
+/* The toolkit every page of this dashboard shares: formatters, cells, tables, frames and pills.
+   It writes into no page-specific element, so the status page and the DevOps panel both load it
+   and neither inherits the other's markup. */
 "use strict";
 
 /* twice by extraction — the browser's own copies of the units the configs carry (module_skills/glossary.md § Twice by
@@ -117,7 +117,7 @@ function buildFootnote(text) {
   return paragraph;
 }
 
-/* a ticker as a link into a selector: selectAsset on the ML Assets tab, selectContainer on the panel */
+/* a ticker as a link into a selector: selectAsset on the ML Assets tab */
 function buildTickerLink(ticker, select) {
   const button = document.createElement("button");
   button.className = "ticker-link";
@@ -131,7 +131,6 @@ function buildTickerLink(ticker, select) {
    matching data-key. Groups without static panels drive a hook instead, so
    pills injected after a fetch work through event delegation. */
 const PILL_HOOKS = {};
-let DATA_STATUS = null;
 
 function initPills(root) {
   root.querySelectorAll("[data-pills]").forEach((group) => {
@@ -152,11 +151,3 @@ function initPills(root) {
 }
 
 initPills(document);
-
-/* The data snapshot both pages read, fetched once. Root-relative, because the panel is served
-   from a subdirectory. It resolves to the status or to the Error, never rejecting: a page that
-   needs only the cadence must not fail on a snapshot another page renders. */
-const DATA_STATUS_LOADED = fetch("/store_status/data_status.json", { cache: "no-store" })
-  .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
-  .then((status) => { DATA_STATUS = status; return status; })
-  .catch((error) => error);

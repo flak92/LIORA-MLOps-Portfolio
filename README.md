@@ -27,7 +27,7 @@ module's own skills → code`; this README is the general overview.
 git clone https://github.com/flak92/LIORA-MLOps-Portfolio.git
 cd LIORA-MLOps-Portfolio
 make all                   # the whole chain from a fresh clone, every stage in a one-off container: build -> data-all -> features-all -> ml-all
-make on                    # build the image if needed, start the dashboard, the DevOps panel and the asset containers, print the page's address and open it
+make on                    # build the image if needed, start the dashboard and the DevOps panel, print the page's address and open it
 make off                   # stop and remove every container of this project
 make help                  # every target with its one-line purpose
 ```
@@ -69,8 +69,7 @@ Two personas, two doors, both behind `make on`:
   `make on` prints: *Pipeline*, *Data
   Quality*, *ML Research*, *ML Assets*, *Scalability* and *Lifecycle* — the results,
   the tree counted against its contract and the cost of producing them (§ Dashboard below);
-- **DevOps** — the **DevOps** control opens the panel: the asset containers as
-  they report themselves, every container on the host with its ports, the
+- **DevOps** — the **DevOps** control opens the panel: every container on the host with its ports, the
   networks, volumes, bind mounts, the image and the engine's events, with
   start / stop / restart offered for this project's own containers alone.
 
@@ -86,10 +85,7 @@ ledger alone grows, one search more per `ml-hpo`, and beside the chain the crawl
 grow one entry per crawl. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
-The asset residents, `asset-<ticker>` — one service of `docker-compose.yml` per
-ticker of the basket, on the one image, `liora-1m-pipeline`, like every service — only serve: no stage runs inside a
-resident, and no stage depends on it — a stage is the one-off
-`python -m <module>.<stage> --tickers <TICKER>` its module's runner container carries. Five direct dependencies across
+Five direct dependencies across
 the four modules and nothing else — `duckdb` (storage and query: data, features, ml), `mlflow-skinny` (the hyper-parameter
 search's trial ledger: ml), `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
 (model: ml); `module_monitoring` is standard library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
@@ -154,8 +150,8 @@ on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
 `record.py`, which lists the four pipeline stores — every store but
 `store/trials/`, a search's own account of itself — before and after and writes
-`store/run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1`,
-`liora-devops-1` and `liora-asset-<ticker>-1`: the compose project is named
+`store/run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1` and
+`liora-devops-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
 run one at a time, or set `COMPOSE_PROJECT_NAME`.
 
@@ -169,13 +165,13 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | feature-set search | `make ml-feature-set-search` | the catalogue parquets, Y and the frozen parameters → `<TICKER>_feature_set_search.json` | stepwise on the validation folds only, selected on the model's validation skill fold by fold; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-feature-set-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | promotion | `make ml-feature-set-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
-| dashboard | `make on`              | snapshots → six-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the container, run, snapshot and `/devops` routes | no external resources; the asset containers are reached only through its proxy |
+| dashboard | `make on`              | snapshots → six-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the run, snapshot and `/devops` routes | no external resources |
 
 ## Extending
 
 | to add | change | where |
 |---|---|---|
-| an asset | one ticker in `TICKERS` and one `asset-<ticker>` block in `docker-compose.yml`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
+| an asset | one ticker in `TICKERS`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
 | a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `module_<domain>/`, then here |
 | a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | `module_features/` |
 | a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | `module_features/` |
@@ -222,9 +218,7 @@ Every number here is reproducible. The proof, repeatable on any host:
    parameters, the out-of-fold predictions, the model and strategy evaluations,
    the asset README — byte-identical to the reference list;
    `BTC_catalogue.json`, the one new file, identical between two runs;
-4. the three computational snapshots identical after dropping `generated_at_utc` from each and
-   `assets[].artifacts.model_evaluation_modified_utc` from `ml_status.json` (a
-   file time).
+4. the three computational snapshots identical after dropping `generated_at_utc` from each.
 
 Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 `OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make
@@ -248,8 +242,7 @@ the endpoints:
 
 One uniform market — USDT-margined perpetual futures. The active basket is a
 single asset, `BTC`: one reference asset carries the whole path end to end, and the
-basket grows by extending `TICKERS` in the `Makefile` and adding one asset service
-per ticker in `docker-compose.yml` — every stage is told its assets by
+basket grows by extending `TICKERS` in the `Makefile` — every stage is told its assets by
 `--tickers`, and no module changes.
 
 The window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC
@@ -300,7 +293,8 @@ raw ZIP trees. Schema:
 
 ## Dashboard
 
-- **Pipeline** — canonical rows, real-data share and forward-filled bars per asset;
+- **Pipeline** — canonical rows, real-data share and forward-filled bars per asset,
+  its observation lag and measurement age, each warned past the download cadence;
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
   zero-volume bars per provider, then canonical construction: source shares,
   switches, the largest 1m move at a switch, cross-source divergence;
@@ -316,11 +310,8 @@ raw ZIP trees. Schema:
 
 One control in the top right leaves the page, for the DevOps persona:
 
-- **DevOps** — the panel: one row per asset container, live through the
-  dashboard's proxy (up or down, up since, memory against its ceiling, peak, CPU
-  share over the last poll, the observation lag and the measurement age, then one
-  container as it reports itself), and beside it every container, network and
-  volume the daemon reports, with `start` / `stop` / `restart` offered for this
+- **DevOps** — the panel: every container, network and volume the daemon
+  reports, with `start` / `stop` / `restart` offered for this
   project's own containers alone.
 
 ## ML research layer

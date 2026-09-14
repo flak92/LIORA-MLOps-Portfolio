@@ -3,14 +3,13 @@
 ## In short
 
 The mapping is minimal against its own rule — *the seat of each thing is the
-cheapest that keeps its boundary* — and, at three cells, less than it. Elsewhere
+cheapest that keeps its boundary* — and, at two cells, less than it. Elsewhere
 holds two services at the lift (the instance and its volume), five more at the
 idiom (the service that runs the tasks, the state machine, the schedule, the
 copy after the run, the log streams and metrics), one more when the image
 carries the code (the registry); three seats stand only on their condition, and
-nine forms are refused. Nothing is built for any of them. Three cells find less:
-the resident asset service, whose footprint elsewhere is an idle server's; the
-metrics half of the log row, which the non-goals would let go first; and the
+nine forms are refused. Nothing is built for any of them. Two cells find less:
+the metrics half of the log row, which the non-goals would let go first, and the
 *governs* column of the absent skills, which says in one line what its cited
 section says at length. One seat, the copy after the run, is kept for a reader
 that is absent here, and the report says so. The count is § The count, the
@@ -19,7 +18,7 @@ argument seat by seat is § Seat by seat: what could be less, and whether it is.
 The Pre-AWS mapping of `module_skills/skill_pre_aws_solution.md` names, for
 every local boundary, the standard primitive it would become on Amazon Web
 Services (AWS). This report reads that mapping against one question: for a
-project that is one host, one asset, one image and six services, is each
+project that is one host, one asset, one image and five services, is each
 seat the cheapest that keeps its boundary — no service that names nothing, no
 two things doing one job, nothing described without the one condition under
 which it would stand? *The repository shows the destination, not the road*:
@@ -75,8 +74,7 @@ with none of the six.
 | the copy after the run | no copy: the volume alone, its durability the provider's copies of the disk | no, on one reason: a copy of the disk versions the disk, not the asset — the raw day object written once and never restated, the asset folder under its execution name, the run record under its id are objects, and only object storage gives them a key a reader off the host can read; the copy is one orchestration state and no stage's write; but its one reader, the strategy host, is absent here — see below | § The volume is the home, the store is the copy; § Correlatable artifacts, without a version scheme |
 | the copy's five prefixes | one prefix, the whole working tree copied as it is | no: the five prefixes are the five `store/<content>/` folders the tree already keeps apart — raw, artifacts, runs, status with the three snapshots, trials — copied whole with their keys the descriptors' own paths; one prefix would blur the one family written once and never keyed by a run, the raw tree, with the two keyed by the run, the one keyed by the asset, and the one, `status/`, rewritten by it | § The asset folder is a prefix, read forward |
 | log streams and metrics | stdout left in the instance's own log, read through the tunnel; no metrics at all | half: a task that exits leaves no terminal, so the streams are where a container's output goes when nobody is watching, keyed by stage as the run record is; there are no metrics to read forward — the run record holds a stage's time, exit code and store difference, and the sampling this seat would need is the half of it that § Non-goals, and the one rule behind them, *no full observability platform*, would let go first — no alarm, no history past the run record's own | § The mapping table, the logs row; `module_skills/glossary.md` § Run record |
-| the resident asset service | none elsewhere — the task run per asset needs no resident, the panel already reads the Engine for every container, and the dashboard already serves the snapshots the `data` and `artifacts` blocks are read from | **yes, it could**: `/status` is the asset reporting itself, the contract of `module_skills/skill_asset_containers.md` § The endpoint contract, seated by the compose services row; elsewhere the resident computes nothing, so its footprint is an idle server's, and the reason the skill once gave it — the tab measuring the container doing the work — has already gone here, the panel measuring the one-off instead; what travels is the `data` and `artifacts` blocks, which the dashboard could serve from the snapshots it already reads | § The resident container is a local mechanism; § The mapping table, the compose services row; `module_skills/skill_asset_containers.md` § The topology |
-| the DevOps panel beside the provider's console | the console alone — it lists the same containers | no: the panel is a rename of a container that exists, holds the one socket under the guard the repository already wrote, and shows the asset's `data` and `artifacts` blocks the console cannot; the console is named as its equivalent, not replaced, and nothing is built for either | `module_monitoring/skills/skill_devops_panel.md` § The one socket, and what containment means, and its seat paragraph |
+| the DevOps panel beside the provider's console | the console alone — it lists the same containers | no: the panel is a rename of a container that exists and holds the one socket under the guard the repository already wrote; the console is named as its equivalent, not replaced, and nothing is built for either | `module_monitoring/skills/skill_devops_panel.md` § The one socket, and what containment means, and its seat paragraph |
 | the tunnel | an open port on the instance | no: a port is a security layer to describe and a reader to refuse; loopback is the page's one address here, the tunnel a remote reader's reach to it and a port-forward the same reach elsewhere, and it keeps the front absent until a reader outside the host exists | `README.md` § Quickstart; § Rejected forms, the managed web service row |
 | the strategy host and its secret | nothing — they are absent | no: they enter with `module_trading/`, its own container beside `module_ml`, and the secret enters with the first credential; neither has a local counterpart, and the mapping says so rather than pretending a seat | § Module boundaries are extraction boundaries; `AGENTS.md` § Skills absent here, described |
 | the managed database | nothing — it is a threshold | no: one file under one lock serves one writer and no query across assets; a database process before its threshold is § The chief antipattern in its purest form | § The databases |
@@ -84,24 +82,17 @@ with none of the six.
 
 ## What a stranger would still ask, and the answer
 
-Two seats stand on something other than a boundary the demonstration runs, and
-the report names them so nobody mistakes them for what elsewhere needs: the
-resident carries a local mechanism forward; the copy describes one that has no
-local form.
+One seat stands on something other than a boundary the demonstration runs, and
+the report names it so nobody mistakes it for what elsewhere needs: the copy
+describes a mechanism that has no local form.
 
-- The resident asset service exists elsewhere for `/status` alone; every stage
-  runs as a task, and the `fanout` macro's `run --rm` is
-  already that task run. If the panel ever took the asset's
-  `data` and `artifacts` blocks from the snapshots the dashboard serves and its
-  footprint from the Engine it already reads, the resident is the first seat to
-  go, and no stage notices.
-- The copy after the run has one reader, the strategy host, which reads an
-  artifact by its execution name, and it is absent here. The copy stands because
-  it is the cheapest form in which the raw tree is written once and the
-  artifacts are versioned by the name the run already has. It is the one seat of
-  the idiom whose condition the demonstration never meets, and § The retrain
-  runtime is a ladder seats it at the idiom all the same: the one row of the
-  count this report cannot call the cheapest that keeps its boundary.
+The copy after the run has one reader, the strategy host, which reads an
+artifact by its execution name, and it is absent here. The copy stands because
+it is the cheapest form in which the raw tree is written once and the artifacts
+are versioned by the name the run already has. It is the one seat of the idiom
+whose condition the demonstration never meets, and § The retrain runtime is a
+ladder seats it at the idiom all the same: the one row of the count this report
+cannot call the cheapest that keeps its boundary.
 
 Everything else names exactly one boundary, costs one service, and moves as a
 rename; the forms that would have added a layer without a boundary
@@ -110,11 +101,11 @@ public front, a function on an event — are refused where they are named.
 
 ## Verdict
 
-The mapping is minimal against its own rule and, at three cells, less than it:
+The mapping is minimal against its own rule and, at two cells, less than it:
 one service per boundary at the idiom, two at the lift, nothing built for any
-of them, and every refused form refused where its reason stands. Three cells
-find less — the resident's footprint elsewhere, the metrics half of the log
-row, and the *governs* column of the absent skills — and one seat, the copy
-after the run, is kept for a reader that is absent here. All four are named in
-the skill as what they are; that each stands on one reason and would go with
-it is this report's finding, not the skill's.
+of them, and every refused form refused where its reason stands. Two cells
+find less — the metrics half of the log row and the *governs* column of the
+absent skills — and one seat, the copy after the run, is kept for a reader that
+is absent here. All three are named in the skill as what they are; that each
+stands on one reason and would go with it is this report's finding, not the
+skill's.

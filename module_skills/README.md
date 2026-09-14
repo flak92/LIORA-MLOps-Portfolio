@@ -16,7 +16,7 @@ once, and a skill is named below by the path it holds in the tree.
 |---|---|
 | [glossary.md](glossary.md) | the name register: one concept, one name, in code, artifacts and interface — and the register of the duplicates no module may import across |
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this project — subtract, don't add |
-| [skill_asset_containers.md](skill_asset_containers.md) | the compose topology — one image, three runners, three residents —, the container endpoint and the scoped socket rule: the runtime contract every module runs inside |
+| [skill_asset_containers.md](skill_asset_containers.md) | the compose topology — one image, three runners, two residents — and the scoped socket rule: the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seat paragraphs, the ladder, the non-goals, what the shape holds and what it does not, and why none of it is built |
 | [skill_scalability_crawler.md](skill_scalability_crawler.md) | the scalability crawler: the list, the mission, the reports and the snapshot that dates them |

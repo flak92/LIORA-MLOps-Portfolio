@@ -24,16 +24,15 @@ STORES := store/raw_1m store/assets_artifacts store/trials store/run_records sto
 # here and in docker-compose.yml, so a stage run in a venv is as quiet and as offline as one run in a container
 export MLFLOW_DISABLE_TELEMETRY := true
 export MLFLOW_DISABLE_AGENT_HINT := 1
-# the basket — the one definition; the asset-<ticker> residents of docker-compose.yml follow it, one block per ticker.
-# ASSET=<TICKER> on the make line narrows every per-asset stage to one asset; make exports ASSET into every recipe's
-# environment, which is harmless: the residents carry their own ASSET and a runner is told its assets by --tickers
+# the basket — the one definition. ASSET=<TICKER> on the make line narrows every per-asset stage to one asset; make
+# exports ASSET into every recipe's environment, which is harmless: no service reads it, and a runner is told its assets
+# by --tickers
 TICKERS     := BTC
 TICKER_LIST := $(if $(ASSET),$(ASSET),$(TICKERS))
 # the basket as one argument — --tickers takes a comma-separated value, printf/xargs take one ticker per line. It goes to
 # the basket-wide stages, which ASSET never narrows: a snapshot of one asset would silently drop the rest of the basket
 # from the page, and the download is one process per venue for the whole basket
 TICKERS_CSV := $(shell echo $(TICKERS) | tr ' ' ,)
-ASSET_SERVICE_LIST := $(addprefix asset-,$(shell echo $(TICKER_LIST) | tr A-Z a-z))
 # one process per asset with its threads pinned to 1; the width is min(cores, available GiB), at least 1
 JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
                 g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
@@ -128,8 +127,8 @@ skills-status:   ## skills_status.json -> store/status: every listed file with t
 
 # the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page
-on: build        ## the presentation switch: the dashboard, the DevOps panel and the asset residents up, the page's address printed and opened
-	$(COMPOSE) up -d dashboard devops $(ASSET_SERVICE_LIST)
+on: build        ## the presentation switch: the dashboard and the DevOps panel up, the page's address printed and opened
+	$(COMPOSE) up -d dashboard devops
 	@python3 -c "import webbrowser; url = 'http://127.0.0.1:$(PORT)/'; print('dashboard at', url); webbrowser.open(url)"
 off:             ## the presentation switch: stop and remove every container of this project
 	$(COMPOSE) down

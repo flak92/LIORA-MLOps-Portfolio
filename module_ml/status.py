@@ -126,12 +126,6 @@ def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_t
     }
 
 
-def artifacts_block(ticker: str) -> dict:
-    """A fact of the folder, not of the experiment: it goes to the payload, never to the timestamp-free README."""
-    modified = config.model_evaluation_json(ticker).stat().st_mtime
-    return {"model_evaluation_modified_utc": datetime.fromtimestamp(modified, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")}
-
-
 # the rounding of each importance as the page shows it: gain is a sum of gains, the SHAP value a margin
 IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6}
 
@@ -159,7 +153,6 @@ def asset_report(ticker: str, cat: dict, hyperparameter_search_result: dict, met
         "feature_set_search": feature_set_search_block(ticker, hyperparameter_search_result["best_params"],
                                                        feature_set["columns_by_timeframe"], cat),
         "strategy": strategy_block(strategy),
-        "artifacts": artifacts_block(ticker),
     }
 
 
