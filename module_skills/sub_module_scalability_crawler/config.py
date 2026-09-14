@@ -21,5 +21,5 @@ REPORTS_AFTER_CRAWLED_FILES_DIR = SUB_MODULE_DIR / "reports_after_crawled_files"
 RULE_PATHS = ("AGENTS.md", "module_skills/glossary.md", "module_skills/skill_*.md")   # the canon, sent with every file
 MODULE_RULE_PATHS = ("{module}/README_{module}.md", "{module}/skills/*.md")  # {module}: the file's first path segment
 AGENT_TIMEOUT_MINUTES = 30
-# twice by extraction — the unit below (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 SECONDS_PER_MINUTE = 60

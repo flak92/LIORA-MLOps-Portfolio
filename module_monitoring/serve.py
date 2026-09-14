@@ -24,7 +24,7 @@ def to_json_bytes(payload: dict) -> bytes:
     return json.dumps(payload, indent=1).encode("utf-8")
 
 
-# twice by extraction — identical in module_ml/dataset.py (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 

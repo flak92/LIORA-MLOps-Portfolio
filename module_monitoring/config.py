@@ -24,8 +24,7 @@ PANEL_FETCH_TIMEOUT_SECONDS = 10         # the panel answers after many Engine e
 # the two stores this module reads arrive as environment, one variable per store — the store contract; the snapshots
 # are read where the modules that measured themselves wrote them, and served under one route prefix
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
-# twice by extraction — the store read below is identical in module_data/config.py, module_features/config.py and
-# module_ml/config.py (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 STORE_STATUS_ROUTE_SEGMENT = "store_status"          # the dashboard route /store_status/<name>: a snapshot served by its file name
 MODULE_MONITORING_DIR = Path(__file__).resolve().parent   # the static page: this module's own directory is the web root

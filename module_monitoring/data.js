@@ -29,8 +29,9 @@ function realDataPct(canonicalRow) {
     ? (100 * (canonicalRow.row_count - canonicalRow.ffill_bars)) / canonicalRow.row_count : 0;
 }
 
-/* twice by extraction — the browser's own units, each holder the ones it uses (module_skills/glossary.md § Twice by extraction) */
+/* twice by extraction */
 const MINUTES_PER_HOUR = 60;
+/* twice by extraction */
 const HOURS_PER_DAY = 24;
 
 function formatDuration(minutes) {

@@ -12,32 +12,39 @@ from pathlib import Path
 
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
-# twice by extraction — identical in module_data/config.py and module_ml/config.py (module_skills/glossary.md § Twice by
-# extraction): the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
-# stage shares; a change to one copy is a change to every copy, by hand
+# twice by extraction
 MILLISECONDS_PER_SECOND = 1000
+# twice by extraction
 MILLISECONDS_PER_MINUTE = 60_000
+# twice by extraction
 MILLISECONDS_PER_DAY = 86_400_000
+# twice by extraction
 DUCKDB_MEMORY_LIMIT = "4GB"
+# twice by extraction
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+# twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 
 
+# twice by extraction
 def to_utc_ms(day: str) -> int:
     """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
     return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
 
 
+# twice by extraction
 def artifact_dir(ticker: str) -> Path:
     """One directory per ticker; inside it one file per artifact, named for it."""
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
+# twice by extraction
 def research_ohlcv_duckdb(ticker: str) -> Path:
     """The asset's own database — the market object's one home, resident in the asset folder."""
     return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
 
 
+# twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
     ap = argparse.ArgumentParser(description=description)
@@ -45,19 +52,25 @@ def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     return ap
 
 
+# twice by extraction
 def parse_tickers(tickers_csv: str) -> list[str]:
+    """The --tickers value as a basket: split on commas, trimmed, upper case, an empty item dropped."""
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
 MINUTES_PER_HOUR = 60
 MILLISECONDS_PER_HOUR = MINUTES_PER_HOUR * MILLISECONDS_PER_MINUTE
 
-# ---- frozen research window (later data top-ups do not change this experiment) — twice by extraction: identical in
-# module_ml/config.py, where it bounds the labels and the folds. The start repeats module_data's DATA_WINDOW_START_UTC on
-# purpose rather than importing it: the download window may be widened without moving an experiment already run against it.
+# ---- frozen research window (later data top-ups do not change this experiment). The start repeats module_data's
+# DATA_WINDOW_START_UTC on purpose rather than importing it: the download window may be widened without moving an
+# experiment already run against it.
+# twice by extraction
 RESEARCH_START_UTC = "2021-01-01"   # inclusive
+# twice by extraction
 RESEARCH_END_UTC = "2026-08-26"     # exclusive
+# twice by extraction
 RESEARCH_START_MS = to_utc_ms(RESEARCH_START_UTC)
+# twice by extraction
 RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 
 # ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
@@ -137,7 +150,7 @@ def feature_definition_name(definition: dict) -> str:
     return f"{normaliser}_{name}" if normaliser else name
 
 
-# twice by extraction — identical in module_ml/config.py: the grammar of skills/skill_feature_taxonomy.md, restated where X's columns are named
+# twice by extraction
 def feature_id(definition_name: str, timeframe: str) -> str:
     """The column of X and the key of an importance: the definition aligned to the decision grid on one timeframe."""
     return f"{definition_name}_{timeframe}"
@@ -179,7 +192,8 @@ DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME = {
                      if definition["definition_in_default_set"] and timeframe in definition["timeframes"])
     for timeframe in HIERARCHY_TIMEFRAMES
 }
-TREND_GATE_FEATURE_DEFINITION = feature_definition_name(FEATURE_CATALOGUE[0])   # the strategy reads it on every timeframe, set or no set — module_ml/config.py carries the same name as a literal (twice by extraction, equal by value)
+# twice by extraction
+TREND_GATE_FEATURE_DEFINITION = feature_definition_name(FEATURE_CATALOGUE[0])   # the strategy reads it on every timeframe, set or no set — module_ml/config.py carries the same name as a literal
 TREND_GATE_TIMEFRAME = HIERARCHY_TIMEFRAMES[-1]                                  # the top timeframe that vetoes a side
 
 
@@ -191,7 +205,7 @@ def features_parquet(ticker: str, timeframe: str):
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts
 
 
-# twice by extraction — identical in module_ml/config.py, the reader (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 def catalogue_json(ticker: str):
     """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"

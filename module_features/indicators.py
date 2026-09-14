@@ -16,8 +16,7 @@ def ema(x: np.ndarray, span_bars: int) -> np.ndarray:
     return out
 
 
-# twice by extraction — wilder_smoothing, atr and asof_index are identical in module_ml/labels.py (module_skills/glossary.md
-# § Twice by extraction): the label defines its own barrier scale
+# twice by extraction
 def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     """Wilder's recursive average: seeded with the SMA of the first period."""
     out = np.full_like(x, np.nan)
@@ -41,6 +40,7 @@ def rsi(close: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     return np.concatenate(([np.nan], out))    # delta[i] describes close[i + 1]
 
 
+# twice by extraction
 def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
         smoothing_period_bars: int) -> np.ndarray:
     prev_close = np.concatenate(([close[0]], close[:-1]))
@@ -91,7 +91,7 @@ def rolling_zscore(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     return out
 
 
-# twice by extraction — identical in module_ml/labels.py
+# twice by extraction
 def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
                timeframe_duration_ms: int) -> np.ndarray:
     """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says

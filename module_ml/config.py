@@ -12,36 +12,42 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-# twice by extraction — identical in module_data/config.py and module_features/config.py (module_skills/glossary.md
-# § Twice by extraction): the units, the ceiling, the two stores every module of the chain touches and their
-# descriptors, and the one CLI every stage shares — BYTES_PER_KIBIBYTE the copy of module_data/config.py; a change to
-# one copy is a change to every copy, by hand
+# twice by extraction
 MILLISECONDS_PER_SECOND = 1000
+# twice by extraction
 MILLISECONDS_PER_MINUTE = 60_000
+# twice by extraction
 BYTES_PER_KIBIBYTE = 1024
+# twice by extraction
 DUCKDB_MEMORY_LIMIT = "4GB"
+# twice by extraction
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+# twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 
-# this module's alone, and outside the block above: the trials store, where hpo.py leaves every point it drew
+# this module's alone: the trials store, where hpo.py leaves every point it drew
 STORE_TRIALS_DIR = Path(os.environ["STORE_TRIALS_DIR"])
 
 
+# twice by extraction
 def to_utc_ms(day: str) -> int:
     """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
     return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
 
 
+# twice by extraction
 def artifact_dir(ticker: str) -> Path:
     """One directory per ticker; inside it one file per artifact, named for it."""
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
+# twice by extraction
 def research_ohlcv_duckdb(ticker: str) -> Path:
     """The asset's own database — the market object's one home, resident in the asset folder."""
     return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
 
 
+# twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
     ap = argparse.ArgumentParser(description=description)
@@ -49,24 +55,28 @@ def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     return ap
 
 
+# twice by extraction
 def parse_tickers(tickers_csv: str) -> list[str]:
+    """The --tickers value as a basket: split on commas, trimmed, upper case, an empty item dropped."""
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
-# twice by extraction — identical in module_data/config.py
-# (module_skills/glossary.md § Twice by extraction)
-def rounded(x, ndigits: int):
+# twice by extraction
+def rounded(value, ndigits: int):
     """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
-    return None if x is None else round(float(x), ndigits)
+    return None if value is None else round(float(value), ndigits)
 
 
 SEED = 42
 
-# ---- the frozen research window — twice by extraction: identical in module_features/config.py, where it bounds the bars
-# and the catalogue, and here, where it bounds the labels and the folds; a later top-up of the data moves neither
+# ---- the frozen research window: here it bounds the labels and the folds; a later top-up of the data moves neither
+# twice by extraction
 RESEARCH_START_UTC = "2021-01-01"   # inclusive
+# twice by extraction
 RESEARCH_END_UTC = "2026-08-26"     # exclusive
+# twice by extraction
 RESEARCH_START_MS = to_utc_ms(RESEARCH_START_UTC)
+# twice by extraction
 RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 
 # ---- label contract: triple barrier resolved on the 1m path
@@ -136,11 +146,11 @@ FEATURE_SET_SEARCH_MOVE_BACKWARD = "backward"
 # ---- the feature layer's contract, per asset: <TICKER>_catalogue.json, written by module_features.catalogue and read once
 # per stage by dataset.load_catalogue — carried as `cat` (xy["catalogue"]) into every helper below; a helper reads the
 # dict and builds a path, and never reads a file
-# twice by extraction — equal by value to the first catalogue record of module_features/config.py (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 TREND_GATE_FEATURE_DEFINITION = "ema20_minus_ema50_over_atr14"   # the definition the strategy reads on every timeframe, by name, set or no set
 
 
-# twice by extraction — identical in module_features/config.py, the writer (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 def catalogue_json(ticker: str):
     """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"
@@ -165,7 +175,7 @@ def trend_gate_timeframe(cat: dict) -> str:
     return timeframes(cat)[-1]
 
 
-# twice by extraction — identical in module_features/config.py: the grammar of module_features/skills/skill_feature_taxonomy.md
+# twice by extraction
 def feature_id(definition_name: str, timeframe: str) -> str:
     """The column of X and the key of an importance: the definition aligned to the decision grid on one timeframe."""
     return f"{definition_name}_{timeframe}"

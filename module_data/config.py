@@ -1,6 +1,6 @@
 """Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
 reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
-shares, and the null-tolerant rounding the two status reports share. The basket is not here: the launcher names it
+shares, and the null-tolerant rounding the two snapshots share. The basket is not here: the launcher names it
 (`TICKERS` in the Makefile) and every stage is told its assets."""
 
 from __future__ import annotations
@@ -14,21 +14,20 @@ from pathlib import Path
 # USDT-margined perpetuals; Binance USDS-M primary, Bybit Linear failover; every asset has Binance 1m history
 # before the window start (probed before every download), Bybit joins whenever its listing starts
 QUOTE_ASSET = "USDT"
-LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # Lean security-type folder name (USDS-M perpetuals)
-SOURCE_CANDLE_INTERVAL = "1m"
-# twice by extraction — the units below (each module the ones it uses), the ceiling, the store reads, their descriptors
-# and the --tickers parser are identical in module_features/config.py and module_ml/config.py (module_skills/glossary.md
-# § Twice by extraction): a change here is a change to every copy, by hand
+LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # QuantConnect Lean security-type folder name (USDS-M perpetuals)
+SOURCE_CANDLE_INTERVAL = "1m"   # the venue candle's interval, in Binance's REST spelling
+# twice by extraction
 MILLISECONDS_PER_SECOND = 1000
+# twice by extraction
 MILLISECONDS_PER_MINUTE = 60_000
+# twice by extraction
 MILLISECONDS_PER_DAY = 86_400_000
-# twice by extraction — identical in module_ml/config.py, and the browser's own in module_monitoring/page.js
-# (module_skills/glossary.md § Twice by extraction)
+# twice by extraction
 BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 
 
-
+# twice by extraction
 def to_utc_ms(day: str) -> int:
     """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
     return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
@@ -54,32 +53,39 @@ SOURCE_VENUES = ("binance", "bybit")
 # the stores of this checkout arrive as environment, one variable per store — the store contract every
 # config.py reads; a module reads only the stores it touches, and a missing variable is the interpreter's own KeyError
 STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
-# DuckDB spills to disk above this ceiling; the thread cap beside it in every connection is determinism
-DUCKDB_MEMORY_LIMIT = "4GB"
+# twice by extraction
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+# twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 DATA_STATUS_JSON_PATH = STORE_STATUS_DIR / "data_status.json"   # the snapshot this module writes; the dashboard reads it there
+# twice by extraction
+DUCKDB_MEMORY_LIMIT = "4GB"   # DuckDB spills to disk above it; every connection pins threads=1 beside it
 
 
 def symbol(ticker: str) -> str:
+    """The venue symbol of a ticker: the ticker, then the quote asset — `BTC` is `BTCUSDT`."""
     return f"{ticker}{QUOTE_ASSET}"
 
 
 def raw_symbol_dir(ticker: str, venue: str) -> Path:
-    """Lean-exact tree: store/raw_1m/cryptofuture/<venue>/minute/<symbol>/"""
+    """Lean-exact tree: `store/raw_1m/cryptofuture/<venue>/minute/<symbol>/` — `minute` is the format's own resolution
+    folder, a literal of the tree and not a setting."""
     return STORE_RAW_1M_DIR / LEAN_SECURITY_TYPE_FOLDER / venue / "minute" / symbol(ticker).lower()
 
 
+# twice by extraction
 def artifact_dir(ticker: str) -> Path:
     """One directory per ticker; inside it one file per artifact, named for it."""
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
+# twice by extraction
 def research_ohlcv_duckdb(ticker: str) -> Path:
     """The asset's own database — the market object's one home, resident in the asset folder."""
     return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
 
 
+# twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
     ap = argparse.ArgumentParser(description=description)
@@ -87,11 +93,13 @@ def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     return ap
 
 
+# twice by extraction
 def parse_tickers(tickers_csv: str) -> list[str]:
+    """The --tickers value as a basket: split on commas, trimmed, upper case, an empty item dropped."""
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
-# twice by extraction — identical in module_ml/config.py
-def rounded(x, ndigits: int):
+# twice by extraction
+def rounded(value, ndigits: int):
     """round() that tolerates None: the NULL a scan reports when no row qualifies, the None a fold without trades reports."""
-    return None if x is None else round(float(x), ndigits)
+    return None if value is None else round(float(value), ndigits)

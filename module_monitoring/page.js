@@ -3,10 +3,11 @@
    and neither inherits the other's markup. */
 "use strict";
 
-/* twice by extraction — the browser's own copies of the units the configs carry (module_skills/glossary.md § Twice by
-   extraction); no config module reaches a page */
+/* twice by extraction */
 const BYTES_PER_KIBIBYTE = 1024;
+/* twice by extraction */
 const MILLISECONDS_PER_SECOND = 1000;
+/* twice by extraction */
 const SECONDS_PER_MINUTE = 60;
 
 /* the snapshots and the recorder write UTC as "YYYY-MM-DD HH:MM", with ":SS" where they carry seconds */
