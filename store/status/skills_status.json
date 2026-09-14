@@ -1,32 +1,32 @@
 {
  "files": [
   {
-   "crawl_count": 0,
-   "last_crawled_utc": null,
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 04:53",
    "path": "AGENTS.md",
    "report": "reports_after_crawled_files/AGENTS.md.md"
   },
   {
-   "crawl_count": 0,
-   "last_crawled_utc": null,
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 04:55",
    "path": "CLAUDE.md",
    "report": "reports_after_crawled_files/CLAUDE.md.md"
   },
   {
-   "crawl_count": 0,
-   "last_crawled_utc": null,
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 04:59",
    "path": "Dockerfile",
    "report": "reports_after_crawled_files/Dockerfile.md"
   },
   {
-   "crawl_count": 0,
-   "last_crawled_utc": null,
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 04:58",
    "path": "Makefile",
    "report": "reports_after_crawled_files/Makefile.md"
   },
   {
-   "crawl_count": 0,
-   "last_crawled_utc": null,
+   "crawl_count": 1,
+   "last_crawled_utc": "2026-09-14 05:03",
    "path": "docker-compose.yml",
    "report": "reports_after_crawled_files/docker-compose.yml.md"
   }
