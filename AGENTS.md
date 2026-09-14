@@ -104,7 +104,7 @@ file in a store instead — the five `STORE_*_DIR` the launcher names
 four snapshots — the three each computational module writes about itself and the crawler's —
 which the dashboard serves, the run record `record.py` writes around every stage — or as a copy
 registered in `module_skills/glossary.md` § Twice by extraction, identical to the
-byte on every side. The basket is the launcher's: `TICKERS` in the
+byte on every side unless its row there says equal by value. The basket is the launcher's: `TICKERS` in the
 `Makefile`; every stage is told its assets by `--tickers` and defines
 none. A new `module_<domain>` is justified only by a
 distinct responsibility with a stable input/output boundary; until then the
@@ -149,8 +149,9 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   renaming would put things of one category next to each other, rename them;
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the one exception is an external format's own
-  file names, built by its adapter (`module_data/lean.py` for the Lean tree,
-  `record.py` for the four pipeline stores it lists, every store but `store/trials/`)
+  file names, built by its adapter (`module_data/lean.py` builds the QuantConnect
+  Lean tree's file names, `record.py` those of the four pipeline stores it lists,
+  every store but `store/trials/`)
   — and the browser, which has no config module and fetches its four snapshots
   (`data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json`) under
   `/store_status/` and the run and `/devops/api/*` routes by literal
@@ -299,6 +300,7 @@ from its layer's grammar, never invented:
 | layer | grammar | in this repo | what it forbids |
 |---|---|---|---|
 | constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `ATR_WILDER_SMOOTHING_PERIOD_BARS` | `RSI_N` |
+| constant comments | a comment that explains a Python module-level constant takes one of PEP 8's two forms, by what it explains: an inline comment on the line of the one constant it explains; a block comment directly above the lines it explains when they are several constants, or one constant whose value spans several lines; the `# twice by extraction` marker explains nothing and stands where D14 places it; a file that departs moves its comments with its next change | `BYBIT_KLINE_REQUEST_LIMIT = 1000   # < 1440 -> …`; the block comments above `BINANCE_KLINE_URL` and above `VENUE_SCAN` | a block comment above a one-line constant it alone explains; an inline comment that explains the lines under it |
 | external I/O functions | `<verb>_<object>`, verb from the closed list `fetch_` (network), `load_` (storage → memory), `write_` (persist), `parse_` (bytes → values) | `fetch_klines`, `load_xy`, `write_parquet`, `parse_zip` | `get_`, `process_`, `handle_` |
 | conversions | `to_<representation>` | `to_class`, `to_json_safe` | ambiguous `convert` |
 | composite constructors | `build_<object>` | `build_x` | `make_stuff` |
@@ -352,13 +354,13 @@ loop indices, the symbols of a published equation inside its tight kernel, and
 SVG geometry may stay short — a domain object (a ticker, an asset, a status
 payload, a strategy, a metrics block) carries its semantic name even inside a
 function. Write
-"QuantConnect Lean" on first use, "Lean" afterwards. British spelling
+"QuantConnect Lean" on its first use in a file, code comments included, and "Lean" afterwards. British spelling
 throughout the prose (`-ise`, `-isation`); language keywords keep their own spelling. At an
 external-format or external-library boundary the external vocabulary wins
 inside the call that speaks it, and project names begin at the return value.
-The boundaries, each with the file that owns it: the QuantConnect Lean tree
+The boundaries, each with the file that owns it: the Lean tree
 (`module_data/lean.py`), the Binance and Bybit REST parameters
-(`download_binance.py`, `download_bybit.py`), xgboost and optuna
+(`download_binance.py`, `download_bybit.py`, and `module_data/config.py` for the venue constants that carry the REST word `KLINE`), xgboost and optuna
 (`module_ml/model.py`, `module_ml/hpo.py`), mlflow (`module_ml/hpo.py`), numpy (every module that computes),
 argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/config.py` — the one parser, twice by extraction —,
 `module_ml/feature_set_promote.py`), DuckDB SQL (every module that queries), the SVG
@@ -480,7 +482,7 @@ is wrong.
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three computational snapshots, normalised, byte for byte against the reference list `README.md` § Parity names. A change that reshapes one of them re-bases its line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
 | D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host but two calls — the venues' public endpoints the two downloaders read, and the command line of a vendor of the crawler, chosen in its menu, in its user's own login, outside the chain and gating nothing — and `mlflow` writes only into the ledger `trials_sqlite()` builds in `module_ml/config.py` under `STORE_TRIALS_DIR`, a local file `module_ml/hpo.py` addresses as `sqlite:///`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
-| D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
+| D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects — and changed on every side at once |
 | D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the four snapshots are tracked, so a fresh clone opens on real numbers |
 | D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
 | D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the list and the reports; the reports by `module_skills.sub_module_scalability_crawler.crawl` alone, and `to_crawl.txt` by a hand, in the file or through that module's menu |

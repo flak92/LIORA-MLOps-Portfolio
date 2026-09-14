@@ -23,17 +23,20 @@ def load_active_vendors() -> dict[str, dict]:
     return vendors
 
 
-def load_rules_text() -> str:
-    """Every file RULE_PATHS names under the root, under its path: the patterns in order, each one's matches sorted."""
-    root = config.REPO_ROOT
-    paths = [str(found.relative_to(root)) for pattern in config.RULE_PATHS for found in sorted(root.glob(pattern))]
-    return "\n".join(f"## {path}\n{(root / path).read_text(encoding='utf-8').rstrip('\n')}" for path in paths)
+def load_rules_text(path: str) -> str:
+    """The rules of one listed file, each under its path: RULE_PATHS, then MODULE_RULE_PATHS with the file's first path
+    segment as {module} — a root file gets the canon alone; the patterns in order, each one's matches sorted."""
+    root, module = config.REPO_ROOT, Path(path).parts[0]
+    patterns = [*config.RULE_PATHS, *(pattern.format(module=module) for pattern in config.MODULE_RULE_PATHS)]
+    paths = [str(found.relative_to(root)) for pattern in patterns for found in sorted(root.glob(pattern))]
+    return "\n".join(f"## {rule}\n{(root / rule).read_text(encoding='utf-8').rstrip('\n')}" for rule in paths)
 
 
 def build_message(mission: str, rules: str, path: str) -> str:
-    """The mission, the rules, then the file under review: everything the agent reads, in one message."""
-    text = (config.REPO_ROOT / path).read_text(encoding="utf-8")
-    return f"{mission.rstrip('\n')}\n\n# Rules\n{rules}\n\n# File under review: {path}\n{text}"
+    """The mission, the rules, then the file under review, each line after its number: all the agent reads, in one."""
+    lines = (config.REPO_ROOT / path).read_text(encoding="utf-8").splitlines()
+    text = "\n".join(f"{number:>4}  {line}" for number, line in enumerate(lines, 1))
+    return f"{mission.rstrip('\n')}\n\n# Rules\n{rules}\n\n# File under review: {path}\n{text}\n"
 
 
 def write_report_entry(path: str, fields: list[str], answer: str) -> None:
@@ -99,20 +102,22 @@ def main() -> int:
     built = build_command(vendors[name]) if name else None
     if built is None:
         return 0
-    rows = status.build_skills_status()["files"]
+    rows = {row["path"]: row for row in status.build_skills_status()["files"]}
     chosen = _gum("choose", "--no-limit", "--header", "files to crawl", "--selected", "*",
-                  *(f"{row['path']} · {row['last_crawled_utc'] or 'never'} · {row['crawl_count']}" for row in rows))
+                  *(f"{path} · {rows[path]['last_crawled_utc'] or 'never'} · {rows[path]['crawl_count']}"
+                    for path in dict.fromkeys(status.load_crawl_paths())))
     if chosen is None:
         return 0
     command, labels = built
-    mission, rules = config.CRAWLERS_MISSION_MD_PATH.read_text(encoding="utf-8"), load_rules_text()
+    mission = config.CRAWLERS_MISSION_MD_PATH.read_text(encoding="utf-8")
     commit = subprocess.check_output(("git", "-C", config.REPO_ROOT, "rev-parse", "--short", "HEAD"), text=True).strip()
     try:
         for path in (line.partition(" · ")[0] for line in chosen.splitlines()):
             print(f"crawling {path} · {name}", flush=True)
             try:
-                answer = subprocess.run(command, input=build_message(mission, rules, path), stdout=subprocess.PIPE,
-                                        text=True, timeout=config.AGENT_TIMEOUT_MINUTES * config.SECONDS_PER_MINUTE)
+                answer = subprocess.run(command, input=build_message(mission, load_rules_text(path), path),
+                                        stdout=subprocess.PIPE, text=True,
+                                        timeout=config.AGENT_TIMEOUT_MINUTES * config.SECONDS_PER_MINUTE)
             except subprocess.TimeoutExpired:
                 raise SystemExit(f"{path}: the agent ran past {config.AGENT_TIMEOUT_MINUTES} minutes")
             if answer.returncode != 0 or not answer.stdout.strip():

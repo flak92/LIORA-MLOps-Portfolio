@@ -23,7 +23,7 @@ confirmation; the rest of the concept column states what the name means.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the external minute-bar format the raw store is byte-compatible with | Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
+| the external minute-bar format the raw store is byte-compatible with | QuantConnect Lean — `module_data/lean.py` | — (the raw tree only) | — | QC, quantconnect-format, `lean` lower-case mid-sentence; a project-cased spelling of its tree |
 | the studied series, and the only series below the ingest boundary | `ohlcv_1m_canonical` and its aggregates | — (tables of the asset's own DuckDB; no copy of the series is published) | canonical dataset | fused series, index, blended price |
 | which asset a database holds | the file name, `<TICKER>_research_ohlcv.duckdb`, and nothing inside it | `symbol` — a key of data_status.json only | — | a `symbol` column in any table, a `WHERE symbol = …` predicate, a `GROUP BY symbol` |
 | the timeframe hierarchy — the experiment's literal, finest first: every timeframe the repository builds from the canonical 1m series, the one definition the bars, the parquets, the catalogue's offered timeframes, the decision grid and the trend gate derive from (`module_features/skills/skill_feature_taxonomy.md` § The timeframe register) | `HIERARCHY_TIMEFRAMES` = ("15m", "1h", "4h"), `module_features/config.py` | `catalogue.timeframes` — `timeframe`, `duration_ms`, `bars_per_day`, `ratio_to_lower`, `slot` | 15m / 1h / 4h | levels, LEVELS, a hierarchy derived from a dict, a second list of timeframes anywhere |
@@ -206,25 +206,24 @@ together).
 | a module: its package, its orientation and its own skills under one directory | `module_<domain>/` holding `<file>.py`, `README_module_<domain>.md` and `skills/` | — | — | a numbered directory; a package split across two places; a module's rule filed outside it |
 | the project's one image | `liora-1m-pipeline`, built by `docker compose build` from the root `Dockerfile` onto `python:3.12-slim` | — | — | an image per module; an image per asset; compose's `<project>-<service>` default |
 | a path written `module_<domain>/…` in the contract or a skill | the package as it lies at the root | — | — | a `../module_<x>` relative path; a path built at the point of use |
+| a comment that explains a Python module-level constant, placed by what it explains (`AGENTS.md` § Canonical vocabulary, the constant comments row) | inline comment — PEP 8's word for a comment on its statement's own line; block comment — PEP 8's word for the comment lines directly above the code they apply to | — | — | trailing comment, end-of-line comment, side comment |
 
 ## Twice by extraction
 
 **No module imports another** — `module_monitoring` included: it reads what the
 snapshots publish and what lies in the stores. Each of the objects below
-therefore has two or more full owners, identical to the byte where a copy is a
-copy: the copy is registered here, named where it is defined on every side
-(`# twice by extraction — identical in …`), and a change to one copy is a change
-to every copy, by hand — the one named exception to `AGENTS.md` § The default
-choice, "no second copy to drift". Two rows are equal by value, not by tree: the
-units, which each module carries only where it uses them, and
-`TREND_GATE_FEATURE_DEFINITION`, derived in the feature layer and a literal in ML.
-There is no shared package: a `common` for a dozen lines would be a mechanism,
+therefore has two or more full owners, identical to the byte unless its row says
+equal by value: the copy is registered here, marked on every side
+(`# twice by extraction`, placed by `AGENTS.md` § The shape —
+what holds the project together, D14), and a change to one copy is a
+change to every copy, by hand — the one named exception to `AGENTS.md` § The
+default choice, "no second copy to drift". There is no shared package: a `common` for a dozen lines would be a mechanism,
 and `AGENTS.md` § Architecture shape admits a new module only for a distinct
 responsibility.
 
 | object | owners | why twice |
 |---|---|---|
-| the units, each holder the ones it uses: `MILLISECONDS_PER_SECOND`, `MILLISECONDS_PER_MINUTE`, `MILLISECONDS_PER_DAY` in Python; `MILLISECONDS_PER_SECOND` and `SECONDS_PER_MINUTE` in the page, `MINUTES_PER_HOUR` and `HOURS_PER_DAY` in the Pipeline tab; `SECONDS_PER_MINUTE` in the crawler | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_skills/sub_module_scalability_crawler/config.py`; the browser's own in `module_monitoring/page.js` and `module_monitoring/data.js`, which import no config | a unit is a unit; importing one across a boundary would drag the module behind it |
+| the units, equal by value, each holder the ones it uses: `MILLISECONDS_PER_SECOND`, `MILLISECONDS_PER_MINUTE`, `MILLISECONDS_PER_DAY` in Python; `MILLISECONDS_PER_SECOND` and `SECONDS_PER_MINUTE` in the page, `MINUTES_PER_HOUR` and `HOURS_PER_DAY` in the Pipeline tab; `SECONDS_PER_MINUTE` in the crawler | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_skills/sub_module_scalability_crawler/config.py`; the browser's own in `module_monitoring/page.js` and `module_monitoring/data.js`, which import no config | a unit is a unit; importing one across a boundary would drag the module behind it |
 | `BYTES_PER_KIBIBYTE` | `module_data/config.py`, `module_ml/config.py`; the browser's own in `module_monitoring/page.js` | the same |
 | `DUCKDB_MEMORY_LIMIT` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | every connection of every module pins the same ceiling beside `threads=1` |
 | the store reads `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_STATUS_DIR` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`; `STORE_STATUS_DIR` also `module_monitoring/config.py` | the two stores every module of the chain touches, and the one the dashboard serves, each read as `Path(os.environ[...])` where it is used |
@@ -232,18 +231,17 @@ responsibility.
 | `load_json()` | `module_ml/dataset.py`, `module_monitoring/serve.py` | two readers of the same JSON files |
 | `to_utc_ms()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the window literals of two modules are turned into milliseconds by the same function |
 | `build_ticker_parser()`, `parse_tickers()` | `module_data/config.py`, `module_features/config.py`, `module_ml/config.py` | the one CLI every stage shares; `module_monitoring` runs no stage and parses no ticker argument |
-| `rounded()` | `module_data/config.py`, `module_ml/config.py` | the status reports round the same way |
+| `rounded()` | `module_data/config.py`, `module_ml/config.py` | the snapshots round the same way |
 | `RESEARCH_START_UTC`, `RESEARCH_END_UTC` (and their `_MS`) | `module_features/config.py` (the bars and the catalogue), `module_ml/config.py` (the labels and the folds) | the frozen window is the experiment's; each layer that bounds by it owns the literal |
 | `catalogue_json()` | `module_features/config.py`, `module_ml/config.py` | the writer names the contract it writes, the reader the contract it reads |
 | `feature_id()` | `module_features/config.py`, `module_ml/config.py` | the grammar of `module_features/skills/skill_feature_taxonomy.md`, two lines, restated where X's columns are named |
-| `TREND_GATE_FEATURE_DEFINITION` | `module_features/config.py` (the first record of the catalogue), `module_ml/config.py` (the same name as a literal) | the strategy reads the trend definition by name from the contract's columns |
+| `TREND_GATE_FEATURE_DEFINITION`, equal by value | `module_features/config.py` (the first record of the catalogue), `module_ml/config.py` (the same name as a literal) | the strategy reads the trend definition by name from the contract's columns |
 | `to_json_safe()`, `write_json()` | `module_features/dataset.py`, `module_ml/dataset.py` | the one canonical JSON form every published object takes — the contract, the snapshots, the artifacts |
 | `write_parquet()` | `module_features/dataset.py`, `module_ml/dataset.py` | the repr round-trip that makes a parquet byte-reproducible |
 | `wilder_smoothing()`, `atr()`, `asof_index()` | `module_features/indicators.py`, `module_ml/labels.py` | the label defines its own barrier scale, and aligns to the last closed bar the same way the catalogue does |
 
-The gate at every commit: the bodies of every pair the table marks identical
-compare equal as syntax trees, the two value-equal rows compare equal as values,
-and `git grep "from module_"` inside any module finds only the module itself.
+The gate at every commit: the rows equal by value compare equal as values, the
+bodies of every other copy as syntax trees, and `git grep "from module_"` inside any module finds only the module itself.
 
 ## Artifacts
 
@@ -446,10 +444,10 @@ lists, read against the written rules. The rules are
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the crawler: the canon's sub-module that reads the files a hand lists against the written rules, writes a report a hand reads, and its snapshot | `sub_module_scalability_crawler`; `make skills-crawl` | — | — | a linter, a check, a gate, a CI step; a web crawler, walking sites or services to gather what they hold |
-| the list: a path from the root per line, a folder every file under it but `__pycache__` and the reports | `to_crawl.txt`, `TO_CRAWL_TXT_PATH`, `load_crawl_paths()`, `load_entry_paths()`, `write_list()` | — | — | a list derived from the tree; the whole tree by default |
+| the list: a path from the root per line, a folder every file under it but `__pycache__` and the reports; its order is the crawl's queue | `to_crawl.txt`, `TO_CRAWL_TXT_PATH`, `load_crawl_paths()`, `load_entry_paths()`, `write_list()` | — | — | a list derived from the tree; the whole tree by default |
 | the mission: what the agent reports of one file, and how | `crawlers_mission.md`, `CRAWLERS_MISSION_MD_PATH` | — | — | a rule restated in it; a work order or a plan |
-| the rules sent with every file, each under its path | `RULE_PATHS`, `load_rules_text()` | — | — | a rule summarised for the message |
-| one file's message: the mission, the rules, the file | `build_message()` | — | — | a prompt per module |
+| the rules sent with a file, each under its path: the canon, then the orientation and the skills of the module its first path segment names | `RULE_PATHS`, `MODULE_RULE_PATHS`, `load_rules_text()` | — | — | a rule summarised for the message; a list of rules kept per module |
+| one file's message: the mission, the rules, the file with every line after its number | `build_message()` | — | — | a prompt per module; a line number the agent has to count |
 | the sub-module's folder and the checkout's root: where its own files are read, and where a listed path and a rule are | `SUB_MODULE_DIR`, `REPO_ROOT` | — | — | a host path; a listed path read from the working directory |
 | a vendor: an agent's command line the menu crawls with — one table of `vendors_for_crawling.toml`, one fresh session per chosen file | `vendors_for_crawling.toml` with `active`, `command` and its forms; `VENDORS_FOR_CRAWLING_TOML_PATH`, `load_active_vendors()`, `AGENT_TIMEOUT_MINUTES` | — | vendor | an API key; a vendor named in the code; an interactive session; a vendor active before one run on one file showed it answers from the message alone |
 | a form: a choice asked after the vendor — `model`, `effort`, `permissions`, in that order — a list of options, each a `label` shown and the `args` appended to the command line, the first preselected | `build_command()`; `model`, `effort`, `permissions` with `label`, `args` | — | model; effort; permissions | a flag known to the code; a remembered choice; a form asked that the vendor's table lacks; a first `permissions` option that lets the agent use a tool |

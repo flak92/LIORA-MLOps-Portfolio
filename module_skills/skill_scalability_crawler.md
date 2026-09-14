@@ -20,7 +20,10 @@ where one file stands from it.
   of one file, and how.
 - **The vendors** are `vendors_for_crawling.toml`, kept by hand (§ Vendors).
 - **The message** for a file is the mission, then `# Rules` with every file of
-  `RULE_PATHS` under its path, then `# File under review: <path>` and the file.
+  `RULE_PATHS` and of `MODULE_RULE_PATHS` under its path — the canon, then the
+  orientation and the skills of the module the file's first path segment names,
+  of which a root file, or one under `module_skills/`, has none — then `# File under review: <path>` and the
+  file, each line after its number.
   It carries everything, so the agent needs no tool and answers in one turn of text.
 - **The agent** is the command line `build_command()` built: one fresh session per
   chosen file, one after another, in its user's own login, its stderr on the
@@ -57,8 +60,9 @@ headed *action*, and the prompts of the action a hand chooses.
   `load_active_vendors()` in the file's order. Without the vendor's command line
   on the `PATH` the program ends in one line, `<cli> is not on PATH — install it
   and log in`, exit 1; with it, the vendor's forms (§ Vendors), then
-  `gum choose --no-limit` headed *files to crawl*, every listed file preselected,
-  each line `<path> · <last_crawled_utc or never> · <crawl_count>` off
+  `gum choose --no-limit` headed *files to crawl*, every listed file preselected
+  in the list's order — the queue a hand keeps — each line
+  `<path> · <last_crawled_utc or never> · <crawl_count>` off
   `build_skills_status()`. Each chosen file in turn prints
   `crawling <path> · <vendor>` and goes with the mission and the rules to the
   agent, its answer appended to its report.
