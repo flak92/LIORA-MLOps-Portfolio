@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 # ---- the dashboard's server, and the panel it proxies to
-CONTAINER_PORT = 8900                    # the port every compose service listens on; PORT is only the host side of the dashboard mapping, measured by the Makefile
+CONTAINER_PORT = 8900                    # the port a server listens on inside its container; PORT is only the host side of the dashboard mapping, measured by the Makefile
 BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's own namespace; compose publishes the dashboard on 127.0.0.1
 DEVOPS_SERVICE = "devops"                # the one compose service that holds the docker socket
 DEVOPS_ROUTE_PREFIX = "/devops"          # the dashboard route the panel's API is proxied under
@@ -42,7 +42,7 @@ def run_dir(run_id: str) -> Path:
     return STORE_RUN_RECORDS_DIR / run_id
 
 
-# ---- the compose services and their addresses
+# ---- the panel's address
 def devops_api_url(route: str) -> str:
     """The DevOps panel's API as the dashboard's proxy reaches it: service name, internal port."""
     return f"http://{DEVOPS_SERVICE}:{CONTAINER_PORT}{route}"

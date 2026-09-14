@@ -413,7 +413,7 @@ already binds that are worth steering away from on sight.
   page's address in a document, a command or a comment — the host port is measured, the
   page's address the one `make on` prints (`module_skills/skill_asset_containers.md`
   § The topology). `CONTAINER_PORT` is a different fact and may be written as itself: the
-  port every service listens on inside its own namespace, and the left-hand side of a
+  port a server listens on inside its own namespace, and the left-hand side of a
   reader's own forward; `TODO`, `FIXME`,
   `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow, hook,
   generator, framework; `authority`, `single source of truth`; `one-shot` for a
