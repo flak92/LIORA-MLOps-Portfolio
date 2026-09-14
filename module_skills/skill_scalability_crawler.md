@@ -13,60 +13,69 @@ where one file stands from it.
   menu: a path from the root per line, a blank line skipped, a folder every
   file under it in byte order but `__pycache__` and the reports. An entry is read
   as a path, so `./x` and `x/` are `x`. An entry that names nothing, or a file
-  that is not UTF-8, ends the program in one line; the menu's header counts the
-  listed files, so such an entry stops the program before the menu, and a hand
-  fixes it in the file.
+  that is not UTF-8, ends the program in one line when it is read — by a crawl,
+  an add or the snapshot; the menu's header counts the list's entries without
+  reading them, so such an entry is removed in the menu.
 - **The mission** is `crawlers_mission.md`, kept by hand: what the agent reports
   of one file, and how.
-- **The vendors** are `vendors_for_crawling.toml`, kept by hand: one table per
-  vendor, in menu order, with `active`, `model`, `command` and `permissions`; the
-  file's header says what a vendor's CLI must be. Its command line is `command`,
-  then `--model <model>`, then `permissions`, and `model` is the one its report
-  heading names. Its `permissions` are its own flags that keep it writing nothing
-  and holding no key; it is `active` once one run of its command line on one file
-  showed it answering from the message alone, with no command run.
+- **The vendors** are `vendors_for_crawling.toml`, kept by hand (§ Vendors).
 - **The message** for a file is the mission, then `# Rules` with every file of
   `RULE_PATHS` under its path, then `# File under review: <path>` and the file.
   It carries everything, so the agent needs no tool and answers in one turn of text.
-- **The agent** is the chosen vendor's command line: one fresh session per chosen
-  file, one after another, in its user's own login. The first failure, an exit
-  other than zero or `AGENT_TIMEOUT_MINUTES` passed, ends the crawl with a line
-  naming the file and the agent's exit code and error, or the minutes it ran
-  past, and exit 1; the reports already written stay.
+- **The agent** is the command line `build_command()` built: one fresh session per
+  chosen file, one after another, in its user's own login, its stderr on the
+  screen as it runs. The first failure — an exit other than zero, an empty answer
+  or `AGENT_TIMEOUT_MINUTES` passed — ends the crawl with one line naming the
+  file, `the agent gave no answer` or the minutes it ran past, and exit 1; the
+  reports already written stay.
 - **The report** of a file is `reports_after_crawled_files/<path>.md`. A crawl
-  appends a blank line, the heading `## crawled <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>`,
-  its model the vendor's `model`, the answer as it came and a blank line, and
-  never overwrites or summarises. The heading's commit is the one call of git in
-  the sub-module.
+  appends a blank line, the heading `## crawled <YYYY-MM-DD HH:MM> UTC · <vendor> · <labels> · <short commit>`,
+  its labels the options chosen in the vendor's forms, the answer as it came and
+  a blank line, and never overwrites or summarises. `REPO_ROOT` and the heading's
+  commit are the sub-module's two calls of git.
+
+## Vendors
+
+`vendors_for_crawling.toml` holds one table per vendor, in the menu's order; its
+header says what a table holds. After the vendor the menu asks each form its
+table has — `model`, `effort`, `permissions`, in that order — and
+`build_command()` appends to `command` the `args` of the option chosen in each.
+The first option is preselected, so a crawl with the defaults is an Enter per
+form, and a form the table lacks is not asked. The code knows no vendor and no
+flag: a vendor, a model or a flag is a line of the file. The first `permissions`
+option lets the agent use no tool — a crawl is one message and one answer — and
+a vendor is `active` once one run of its command line on one file showed it
+answering from the message alone.
 
 ## The menu
 
 `make skills-crawl` opens the crawler's menu: a `gum style` header,
-*Scalability crawler* over `<n> file(s) listed`, then `gum choose`
-headed *action*, and one prompt for the action a hand chooses.
+*Scalability crawler* over `<n> path(s) listed`, then `gum choose`
+headed *action*, and the prompts of the action a hand chooses.
 
-- **`crawl · <vendor>`** — one per active vendor, off `load_active_vendors()` in
-  the file's order. Without the vendor's command line on the `PATH` the program
-  ends in one line, `<cli> is not on PATH — install it and log in`, exit 1,
-  before the prompt; with it, `gum choose --no-limit` headed *files to crawl*,
-  every listed file preselected, each line
-  `<path> · <last_crawled_utc or never> · <crawl_count>` off
-  `build_skills_status()`. Each chosen file in turn prints `crawling <path>` and
-  goes with the mission and the rules to the vendor's command line, its answer
-  appended to its report.
-- **add a path** — `gum input`: an entry `status.load_entry_paths()` refuses ends
-  the program in one line, exit 1, nothing written; an entry already listed
-  writes nothing; any other is appended through `write_list()`.
+- **crawl** — `gum choose` headed *vendor*, one line per active vendor off
+  `load_active_vendors()` in the file's order. Without the vendor's command line
+  on the `PATH` the program ends in one line, `<cli> is not on PATH — install it
+  and log in`, exit 1; with it, the vendor's forms (§ Vendors), then
+  `gum choose --no-limit` headed *files to crawl*, every listed file preselected,
+  each line `<path> · <last_crawled_utc or never> · <crawl_count>` off
+  `build_skills_status()`. Each chosen file in turn prints
+  `crawling <path> · <vendor>` and goes with the mission and the rules to the
+  agent, its answer appended to its report.
+- **add a path** — `gum input`: an entry already listed writes nothing; any other
+  that `status.load_entry_paths()` refuses ends the program in one line, exit 1,
+  nothing written; the rest is appended through `write_list()`.
 - **remove a path** — `gum choose` headed *path to remove*, among the list's
-  entries: the first line that matches leaves `to_crawl.txt` through
+  entries: every line equal to it leaves `to_crawl.txt` through
   `write_list()`, and no report is removed.
 
 `_gum()` reads a hand's answer off gum's stdout, gum drawing on stderr. No answer
-in the menu or its prompt — Esc, Ctrl-C, no terminal, nothing chosen or typed — ends the
+in the menu or any prompt after it — Esc, Ctrl-C, no terminal, nothing chosen or typed — ends the
 program with exit 0 and nothing written, not even the snapshot.
 
 Without gum on the `PATH` (`AGENTS.md` § Values, *Minimum requirements*) the
-program ends in one line that says where to install gum 2, exit 1.
+program ends in one line that says where to install gum 2, exit 1; a
+`vendors_for_crawling.toml` with no active vendor ends it the same way.
 
 After a run `git status` shows the reports that grew, the list if a path was
 added or removed, and the snapshot; a hand reads them and commits them.
@@ -91,8 +100,8 @@ architectural direction).
 | object | why here | why beside these | why this boundary | answers to |
 |---|---|---|---|---|
 | `__init__.py` | The package that makes `crawl` and `status` commands of `python3 -m`. | It imports nothing; `module_skills/` stays a folder of documents. | The commands run from the checkout's root. | no row — a reading of the tree that travels with the canon |
-| `config.py` | The one surface of configuration (its docstring). | `crawl.py` and `status.py` import it; `STORE_STATUS_DIR` comes from the environment, as in every `config.py`, and every other path is relative to the root. | A rule document swapped is one line; a vendor is a table of `vendors_for_crawling.toml`, not a line here. | no row — a reading of the tree that travels with the canon |
-| `crawl.py` | The menu and the crawl (its docstring). | It imports `config.py` and `status.py`, reads the active vendors through `load_active_vendors()`, and runs gum, git once and the chosen vendor's command line over `subprocess`. | It writes the reports, the list through `write_list()` and, through `status.py`, the snapshot — nothing else. | no row — a reading of the tree that travels with the canon |
+| `config.py` | The one surface of configuration (its docstring). | `crawl.py` and `status.py` import it; `STORE_STATUS_DIR` comes from the environment, as in every `config.py`; the sub-module's own files are read from `SUB_MODULE_DIR`, a listed path and a rule from `REPO_ROOT`. | A rule document swapped is one line; a vendor is a table of `vendors_for_crawling.toml`, not a line here. | no row — a reading of the tree that travels with the canon |
+| `crawl.py` | The menu and the crawl (its docstring). | It imports `config.py` and `status.py`, reads the active vendors through `load_active_vendors()`, builds the agent's command line through `build_command()`, and runs gum, git once and that command line over `subprocess`. | It writes the reports, the list through `write_list()` and, through `status.py`, the snapshot — nothing else. | no row — a reading of the tree that travels with the canon |
 | `status.py` | The snapshot (its docstring). | It imports `config.py`, reads the list and the reports, and writes `skills_status.json`; its `load_entry_paths()` is the list's one rule, which the menu's add also uses. | A function of the list and the reports. | no row — a reading of the tree that travels with the canon |
 | `to_crawl.txt` + `crawlers_mission.md` + `vendors_for_crawling.toml` | The three inputs a hand keeps. | Beside the code that reads them. | `to_crawl.txt` edited by a hand in the file or in the menu, `crawlers_mission.md` and `vendors_for_crawling.toml` by hand alone; never by a crawl. | no row — a reading of the tree that travels with the canon |
 | `reports_after_crawled_files/` | The reports, one per listed file, its path the file's. | Beside the crawler and tracked: documents a hand reads, not state of the chain (`AGENTS.md` § Pre-AWS architectural direction, *Storage is separate from compute*). | Appended by a crawl, committed by a hand. | no row — a reading of the tree that travels with the canon |

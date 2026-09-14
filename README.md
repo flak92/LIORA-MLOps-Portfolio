@@ -34,8 +34,8 @@ make help                  # every target with its one-line purpose
 
 `git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
 `make skills-crawl`, `make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
-`tmux` joins them for the detached search, and gum 2 for the crawler's menu beside the command line
-of each active vendor in `module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml`, installed and logged in, for the crawler's agent.
+`tmux` joins them for the detached search, and gum 2 for the crawler's menu beside at least one command line
+of `module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml`, installed and logged in, for the crawler's agent.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
 vocabulary): two words for a presenter to remember.
@@ -64,12 +64,12 @@ make ml-feature-set-promote ASSET=BTC PROPOSAL=1   # copy proposal 1's columns i
 The canon's crawler, outside the chain, by hand in a terminal (`module_skills/skill_scalability_crawler.md`):
 
 ```bash
-make skills-crawl     # the gum menu: crawl · <vendor> for each active vendor, add a path or remove a path — one action, then it closes; Esc writes nothing
+make skills-crawl     # the gum menu: crawl (vendor, model, effort, permissions, then files — each first option and every file preselected), add a path or remove a path — one action, then it closes; Esc writes nothing
 make skills-status    # the snapshot of the list's reports, without the menu — the Scalability tab reads it
 ```
 
 Its list, vendors and prompt are `to_crawl.txt`, `vendors_for_crawling.toml` and `crawlers_mission.md` in
-`module_skills/sub_module_scalability_crawler/`, each kept by hand; a vendor is one table, its CLI installed and logged in.
+`module_skills/sub_module_scalability_crawler/`, each kept by hand; a vendor is one table whose forms are data, its CLI installed and logged in.
 
 `tmux` is a tool of the host beside `docker` and `git`, never of an image.
 

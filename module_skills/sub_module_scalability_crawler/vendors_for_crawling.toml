@@ -1,18 +1,55 @@
-# The vendors the crawler's menu crawls with, one table per vendor, in menu order: a vendor is added by adding its
-# table and removed by deleting it. Its command line must be installed on this host's PATH and logged in with its
-# user's own account — the menu checks the PATH, never the login — and no API key is ever written here.
-# What the keys mean, the command line a table builds and when a vendor is active:
-# module_skills/skill_scalability_crawler.md § The list, the mission, the report.
+# One table per vendor, in the menu's order. `active` offers it in the menu; `command` is its CLI, reading the message
+# on stdin and writing the answer on stdout. Each form asked after the vendor — `model`, `effort`, `permissions`, in
+# that order — is a list of options: `label` is shown, `args` are the exact arguments appended to the command line,
+# the first option is preselected, and a form the table lacks is not asked. The CLI is on PATH, logged in with its
+# user's own account (the menu checks the PATH, never the login); no API key is ever written here.
 
 [claude]
 active = true
-model = "claude-sonnet-5"
 command = ["claude", "-p", "--output-format", "text", "--max-turns", "1", "--strict-mcp-config",
            "--no-session-persistence", "--setting-sources", "project"]
-permissions = ["--tools", ""]
+# claude --help: --model <model> "Provide an alias for the latest model ... or a model's full name" — the full name,
+# so a report's heading names the model that wrote it
+model = [
+    { label = "claude-opus-5", args = ["--model", "claude-opus-5"] },
+    { label = "claude-sonnet-5", args = ["--model", "claude-sonnet-5"] },
+]
+# claude --help: --effort <level> "Effort level for the current session (low, medium, high, xhigh, max)"
+effort = [
+    { label = "high", args = ["--effort", "high"] },
+    { label = "low", args = ["--effort", "low"] },
+    { label = "medium", args = ["--effort", "medium"] },
+    { label = "xhigh", args = ["--effort", "xhigh"] },
+    { label = "max", args = ["--effort", "max"] },
+]
+# claude --help: --tools <tools...> "Use \"\" to disable all tools, \"default\" to use all tools, or specify tool names"
+permissions = [
+    { label = "no tools", args = ["--tools", ""] },
+    { label = "read-only", args = ["--tools", "Read,Grep,Glob"] },
+]
 
 [codex]
 active = true
-model = "gpt-5.6-luna"
 command = ["codex", "exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check", "--color", "never"]
-permissions = ["--sandbox", "read-only"]
+# codex exec --help: -m, --model <MODEL> "Model the agent should use"; the slugs are those of `codex`'s model list
+model = [
+    { label = "gpt-5.6-luna", args = ["--model", "gpt-5.6-luna"] },
+    { label = "gpt-6-astra", args = ["--model", "gpt-6-astra"] },
+    { label = "gpt-5.6-sol", args = ["--model", "gpt-5.6-sol"] },
+]
+# codex exec --help: -c, --config <key=value> "Override a configuration value that would otherwise be loaded from
+# ~/.codex/config.toml" — model_reasoning_effort; the levels all three models list (low, medium, high, xhigh, max)
+effort = [
+    { label = "high", args = ["-c", 'model_reasoning_effort="high"'] },
+    { label = "low", args = ["-c", 'model_reasoning_effort="low"'] },
+    { label = "medium", args = ["-c", 'model_reasoning_effort="medium"'] },
+    { label = "xhigh", args = ["-c", 'model_reasoning_effort="xhigh"'] },
+    { label = "max", args = ["-c", 'model_reasoning_effort="max"'] },
+]
+# codex exec --help: -s, --sandbox <SANDBOX_MODE> "[possible values: read-only, workspace-write, danger-full-access]";
+# --disable <FEATURE> "Equivalent to `-c features.<name>=false`" — the tool features `codex features list` shows enabled
+permissions = [
+    { label = "no tools", args = ["--sandbox", "read-only", "--disable", "shell_tool", "--disable", "unified_exec",
+                                  "--disable", "view_image", "--disable", "browser_use", "--disable", "computer_use"] },
+    { label = "read-only", args = ["--sandbox", "read-only"] },
+]

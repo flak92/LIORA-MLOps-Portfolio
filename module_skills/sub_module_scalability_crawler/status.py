@@ -11,20 +11,22 @@ from pathlib import Path
 
 from . import config
 
-REPORT_HEADING_PREFIX = "## crawled "   # then <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>, as crawl.py writes it
+REPORT_HEADING_PREFIX = "## crawled "   # then <YYYY-MM-DD HH:MM> UTC · <vendor> · <labels> · <commit> (crawl.py)
 
 
 def load_entry_paths(entry: str) -> list[str]:
-    """The files one entry of to_crawl.txt names: a folder stands for every file under it, in byte order, but the bytecode
-    of __pycache__ and the reports this crawler wrote. An entry that names nothing, or a file that is not UTF-8, ends the
-    program in one line."""
-    if not (Path(entry).is_dir() or Path(entry).is_file()):
+    """The files one entry of to_crawl.txt names, relative to the root: a folder stands for every file under it, in byte
+    order, but the bytecode of __pycache__ and the reports this crawler wrote. An entry that names nothing, or a file
+    that is not UTF-8, ends the program in one line."""
+    named = config.REPO_ROOT / entry
+    if not (named.is_dir() or named.is_file()):
         raise SystemExit(f"to_crawl.txt: {entry} names nothing")
-    found = sorted(str(path) for path in Path(entry).rglob("*") if path.is_file() and "__pycache__" not in path.parts
-                   and config.REPORTS_AFTER_CRAWLED_FILES_DIR not in path.parents) if Path(entry).is_dir() else [str(Path(entry))]
+    found = sorted(str(path.relative_to(config.REPO_ROOT)) for path in named.rglob("*") if path.is_file()
+                   and "__pycache__" not in path.parts and config.REPORTS_AFTER_CRAWLED_FILES_DIR not in path.parents) \
+        if named.is_dir() else [str(named.relative_to(config.REPO_ROOT))]
     for path in found:
         try:
-            Path(path).read_text(encoding="utf-8")
+            (config.REPO_ROOT / path).read_text(encoding="utf-8")
         except UnicodeDecodeError:
             raise SystemExit(f"to_crawl.txt: {entry} — {path} is not UTF-8")
     return found
@@ -47,7 +49,7 @@ def build_skills_status() -> dict:
         lines = report.read_text(encoding="utf-8").splitlines() if report.is_file() else []
         stamps = [line[len(REPORT_HEADING_PREFIX):len(REPORT_HEADING_PREFIX) + len("YYYY-MM-DD HH:MM")] for line in lines
                   if line.startswith(REPORT_HEADING_PREFIX)]
-        rows.append({"path": path, "report": str(report.relative_to(config.REPORTS_AFTER_CRAWLED_FILES_DIR.parent)),
+        rows.append({"path": path, "report": str(report.relative_to(config.SUB_MODULE_DIR)),
                      "crawl_count": len(stamps), "last_crawled_utc": stamps[-1] if stamps else None})
     return {"files": rows}
 
