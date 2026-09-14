@@ -25,7 +25,6 @@ effort = [
 # claude --help: --tools <tools...> "Use \"\" to disable all tools, \"default\" to use all tools, or specify tool names"
 permissions = [
     { label = "no tools", args = ["--tools", ""] },
-    { label = "read-only", args = ["--tools", "Read,Grep,Glob"] },
 ]
 
 [codex]
