@@ -100,14 +100,11 @@
 
 
   <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
-    <div id="scalability-meta" class="box">loading /store_status/skills_status.json + skills_review.json&hellip;</div>
+    <div id="scalability-meta" class="box">loading /store_status/skills_status.json&hellip;</div>
     <div id="scalability-detail"></div>
-    <p class="foot">the tracked tree counted against AGENTS.md and the skills by the crawler of <code>module_skills/</code>,
-      which gates nothing. A marked cell is an invariant, whose only correct value is zero; every other number is an
-      observation, read against its previous reading. The rules each metric reads by are skill_scalability_crawler.md;
-      regenerate with <code>make skills-status</code>. <code>make tmux-skills-crawl</code> runs a review pass on branch
-      scalability-crawler, which a hand keeps with <code>git merge --no-ff --no-edit scalability-crawler</code> or
-      drops with <code>git branch -D scalability-crawler</code>.</p>
+    <p class="foot">every file the crawler's list names, read against AGENTS.md and the skills, with the date of its
+      last report; the age is that date against this browser's clock &middot; <code>make skills-crawl</code> &middot;
+      <code>make skills-status</code> &middot; <code>reports_after_crawled_files/</code></p>
   </section>
 
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
