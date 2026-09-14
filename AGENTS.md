@@ -11,13 +11,11 @@ the working path.) If a change conflicts with this file, the change is wrong.
 
 - **Destination, not road.** *The repository shows the destination, not the road*. No tests, no security
   layers, no CI, no precautionary guardrails; the only guards are the ones the
-  mathematics requires, and a stage proves itself by running. One measurement
-  stands beside the chain and gates nothing: the scalability crawler,
-  `module_skills/sub_module_scalability_crawler/`, counts the tracked tree
-  against this contract into `store/status/skills_status.json`, and nothing
-  waits on its numbers. Its review pass hands batches of the tree to an agent
-  in a worktree on branch `scalability-crawler` and keeps an amendment only on
-  that branch, for a hand to merge or delete.
+  mathematics requires, and a stage proves itself by running. One crawler
+  stands beside the chain: the scalability crawler,
+  `module_skills/sub_module_scalability_crawler/`, reads the files a hand lists
+  against the written rules, writes a report a hand reads, and its snapshot;
+  it gates nothing, edits nothing, commits nothing.
 - **Minimalism.** Every line, file, module and dependency has a concrete
   purpose. If its purpose cannot be named, it goes.
 - **Minimum requirements.** Python 3.12.x with `venv` and `pip`; the container
@@ -37,8 +35,8 @@ the working path.) If a change conflicts with this file, the change is wrong.
   switches that can be automated, are: `make all` runs the whole pipeline
   from a fresh clone, every stage is idempotent in what it derives — the
   trial ledger alone accumulates, each search appending its `hpo_<n>` runs,
-  until a hand clears it, and beside the chain the crawler's review record keeps
-  each file's last verdict — and the dashboard opens itself.
+  until a hand clears it, and beside the chain the crawler's reports, one entry
+  appended per crawl — and the dashboard opens itself.
 - **Main = clean working logic.** No test frameworks, security layers,
   validation frameworks or precautionary guards. What stays are the seven
   guards the mathematics requires: causality invariants (`indicators.asof_index`) and
@@ -52,8 +50,7 @@ the working path.) If a change conflicts with this file, the change is wrong.
   the one-line message of a status stage with nothing to report, naming the
   stage to run first, and a venue's own error code surfaced as it came. A test suite, a linter,
   a coverage gate, a workflow or a merge block does not belong here. No debt
-  marker in a tracked file — this contract and the crawler's `config.py`, which
-  lists them for the count, name the forbidden form — and no code left inside a comment: a marker is a
+  marker in a tracked file — this contract names the forbidden form — and no code left inside a comment: a marker is a
   postponed decision, a commented-out line is a version git already holds.
   Thread caps (`nthread=1`, `OMP_NUM_THREADS=1`) are part of correctness, not
   a setting.
@@ -84,8 +81,8 @@ them and carries no dataflow of its own:
 module_data/         sources → normalised raw 1m → one canonical DuckDB per asset
 module_features/     canonical DuckDB → the bars of the register → the feature catalogue, one parquet per timeframe, the per-asset contract and its snapshot
 module_ml/           the catalogue and the canonical path → X, Y → search → model → research simulation
-module_monitoring/   presentation of what the three computational modules measured about themselves, of what record.py measured around every stage and of what the canon's crawler counted of the tree, and the server that serves it — in an asset container, the container reporting itself
-the root             the Makefile and docker-compose.yml that run the four, record.py, the five stores, one folder each under store/, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills, the index of every module's own, and the one sub-module that counts the tree against them (module_skills/sub_module_scalability_crawler/)
+module_monitoring/   presentation of what the three computational modules measured about themselves, of what record.py measured around every stage and of the dates of the canon's crawler's reports, and the server that serves it — in an asset container, the container reporting itself
+the root             the Makefile and docker-compose.yml that run the four, record.py, the five stores, one folder each under store/, and the canon: this contract, the name register (module_skills/glossary.md), the cross-cutting skills, the index of every module's own, and the one sub-module that reads listed files against them (module_skills/sub_module_scalability_crawler/)
 ```
 
 Each module holds its package, its orientation `README_module_<domain>.md` and
@@ -94,13 +91,13 @@ alone. `make all` from a fresh clone runs the chain. A reference is a path in
 backticks, always.
 
 `module_skills` participates in no runtime import and in no dataflow of the chain:
-its one sub-module reads the tracked tree and writes one snapshot about it. **No module
+its one sub-module reads the files a hand lists and writes their reports and one snapshot about them. **No module
 imports another.** What would cross a module boundary as an import crosses it as a
 file in a store instead — the five `STORE_*_DIR` the launcher names
 (`module_skills/glossary.md` § Stores), the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
-snapshots each computational module writes about itself and the one the crawler
-writes about the tree, which the dashboard serves, the run record `record.py` writes around every stage — or as a copy
+four snapshots — the three each computational module writes about itself and the crawler's —
+which the dashboard serves, the run record `record.py` writes around every stage — or as a copy
 registered in `module_skills/glossary.md` § Twice by extraction, identical to the
 byte on every side. The basket is the launcher's: `TICKERS` in the
 `Makefile`, and one `asset-<ticker>` service per ticker in its
@@ -156,7 +153,7 @@ recognisable by eye before it is parsed (neuro-optical consistency):
   `module_monitoring/serve.py` for the cgroup and procfs paths of its boundary,
   `record.py` for the four pipeline stores it lists, every store but `store/trials/`)
   — and the browser, which has no config module and fetches its four snapshots
-  (`data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json`) and the crawler's review record under
+  (`data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json`) under
   `/store_status/` and the container, run and `/devops/api/*` routes by literal
   name; one asset is one folder,
   `store/assets_artifacts/<TICKER>/`, one file per distinct artifact
@@ -208,9 +205,10 @@ and built nowhere.
   (`module_skills/skill_asset_containers.md` § The topology) — never
   inside a container and never inside a module's source tree; the image carries the
   pins and nothing else, the code and the state arrive as mounts, and the four
-  snapshots with the crawler's review record are the one store tracked whole,
+  snapshots are the one store tracked whole,
   beside the tracked remnant of the
-  artifacts store (D15).
+  artifacts store (D15). The crawler's reports lie beside the crawler, tracked,
+  because they are documents a hand reads and not state of the chain.
 - **Modules are built by ownership and lifetime.** A function sits beside the
   functions that write the same state and live as long as it does, never beside
   what happened to be written with it; every object is classified before it is
@@ -255,9 +253,7 @@ the edge of a local rule, the one seat paragraph of
 (its last bullet, the skill having no headings),
 `module_data/skills/skill_candle_canonicalisation.md` § 15 and
 `module_monitoring/skills/skill_devops_panel.md`, each naming the primitive in
-the table's words and citing the skill for the rest; and the list of nouns in
-`module_skills/sub_module_scalability_crawler/config.py`, which lists them for
-the count. Never in a make target, a
+the table's words and citing the skill for the rest. Never in a make target, a
 compose service, an environment variable, a payload key, a code comment, an
 identifier, or a tracked path but the `pre_aws` stem. The non-goals, the twelve
 classes, the review of what stays local and the mapping table are
@@ -326,7 +322,7 @@ from its layer's grammar, never invented:
 | artifact keys | snake_case, the same word as the identifier that produced it; a count is `<what>_count`, a quantity with a unit `<what>_<unit>`, a share `_pct`, a formatted UTC string `_utc`, epoch milliseconds `_ms` | `scored_row_count`, `ffill_bars`, `coverage_pct`, `generated_at_utc` | a separate vocabulary for JSON; a bare plural (`gaps`) or an adjective (`ambiguous`) as a count; `n_`; `ret` for return |
 | features | `[<normaliser>_]<term>{_<operator>_<term>}_<timeframe>`, a term `[<series>_]<indicator><parameter>` or a bare series, read off the catalogue record — the rest is `module_features/skills/skill_feature_taxonomy.md` | `ema20_minus_ema50_over_atr14_4h`, `centered_rsi14_1h`, `range_position20_15m`, `close_minus_sma200_over_atr14_4h` | `feature_3`, `f_rsi`, `rsi_14`, `sma_200`, `trend_4h` |
 | stored columns | the quantity for OHLCV, `<what>_<unit>` for anything derived, `<subject>_<predicate>` for a boolean — and a column and the key that publishes it carry **one** name | `timestamp_ms`, `ffill_bars`, `zero_volume_bars`, `binance_valid` | `n_ffill`, a column and key that disagree |
-| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; `skills-<measurement>` for a measurement of the canon's sub-module, run by `python3` on the host because the canon has no runner, and `tmux-skills-crawl` the detached twin of its review pass, which goes on from its record; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `skills-status`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
+| Makefile targets | `<module>-<stage>` for a stage of a runtime module — run in a one-off container of that module's runner — and `<module>-all` for its chain; `tmux-<module>-<stage>` for the detached twin of a stage that outlives the terminal — only a stage that resumes may have one; `skills-crawl` and `skills-status` for the canon's crawler and its snapshot, run by `python3` on the host because the canon has no runner, and `tmux-skills-crawl` the detached twin of the crawl; only the lifecycle targets go bare (`all`, `build`, `help`, `on`, `off`, `all-record`), `on` / `off` being the presentation switch, and a ticker alias of a lifecycle target carries its own sunset note | `data-ingest`, `ml-hpo`, `features-all`, `tmux-ml-feature-set-search`, `skills-status`, `on` | a bare stage (`ingest`), a `docker-` twin of a stage (there is one way to run a stage), a target named after the tool (`docker-run`), a detached twin of a stage that cannot resume, a second switch pair (`start` / `stop`, `up` / `down`), a second Makefile carrying stage order of its own |
 | directories | `<category>_<detail>/` for a module; the stores are one folder `store/` whose children are `<content>/` — the container's `/store/<content>` read back onto the host; a raw store names its granularity with the compact timeframe token, `store/raw_<timeframe>/` | `module_*`, `store/`, `store/raw_1m` | a kind scattered through the alphabet, a store spelling its timeframe in sorting slots, `repository_module_<domain>/`, `store_<content>/` at the root, a child that repeats its parent's token (`store/store_raw_1m/`) |
 | images | `liora-1m-pipeline`, one for the tree, built from the root `Dockerfile` | `liora-1m-pipeline` | compose's `<project>-<service>` default, an image per service, an image per asset, an image per module |
 | compose services | a runtime role, never an image or a ticker in code — the runners `data`, `features`, `ml`, the residents `dashboard`, `asset-<ticker>`, `devops` | `ml`, `asset-btc` | `pipeline`, a service named for an image or a tool, a service per asset stage |
@@ -375,7 +371,7 @@ argparse (`module_data/config.py`, `module_features/config.py`, `module_ml/confi
 and DOM attributes (every `*.js` of `module_monitoring`, its sub-module included), docker compose (`Makefile`,
 `docker-compose.yml`), tmux (`Makefile`), `urllib` (`module_monitoring/serve.py`,
 `module_monitoring/sub_module_devops/config.py` and both downloaders), a stage's
-command line over `subprocess` (`record.py`), the git command line over `subprocess` (`module_skills/sub_module_scalability_crawler/config.py`, its `status.py` and `crawl.py`), the agent's command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, named in its `config.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
+command line over `subprocess` (`record.py`), the git command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, for the commit a report entry names), the agent's command line over `subprocess` (`module_skills/sub_module_scalability_crawler/crawl.py`, named in its `config.py`), `http.server` (`module_monitoring/serve.py` and the panel's own),
 cgroup v2 and procfs (`module_monitoring/serve.py`), `socket` and the Docker Engine API over its
 unix socket (`module_monitoring/sub_module_devops/`), and the file listing of the four pipeline stores
 (`record.py`). A
@@ -387,7 +383,7 @@ tolerate.
 The rejected vocabulary stays as a list of words that steers the repository
 toward a lower level of vectors, guiding AI agents toward useful embeddings for
 solving problems in a concrete and minimally correct way. No check gates
-it; the crawler counts some of it and gates nothing. The last column of the grammar table holds the forms bound to one
+it. The last column of the grammar table holds the forms bound to one
 rule and the register's `never` columns the synonyms bound to one concept; this
 list gathers the words bound to neither, and repeats the few the register
 already binds that are worth steering away from on sight.
@@ -460,8 +456,8 @@ route, and the page reaches the browser as a static file instead; the panel adds
 one route for its API alone, because an API is not a file, and the socket it holds
 is the reason it is a service of its own rather than a role of `serve.py`. The
 scalability crawler is `module_skills/sub_module_scalability_crawler/`, nested in
-the canon because what it measures is the tree against the canon, and owned by no
-runtime module because it measures every one of them.
+the canon because it reads files against the canon, and owned by no
+runtime module because a hand may list a file of any of them.
 `sub_module_*` does not enter the directory grammar above: two occurrences are a
 coincidence, and a convention is minted only at the third.
 
@@ -482,20 +478,19 @@ is wrong.
 | D03 | a module's skills live under that module and nowhere else; a rule that crosses modules lives in `module_skills/` |
 | D04 | a fresh `git clone` followed by `make all` and `make on` is a working project |
 | D05 | one `docker-compose.yml` carries the whole topology, and one `Makefile` the stage order and the fan-out |
-| D06 | no module writes into another's source tree: what a stage writes lands in a store; the crawler's review pass writes source only on branch `scalability-crawler`, in a worktree beside the checkout, for a hand to merge or delete |
+| D06 | no module writes into another's source tree: what a stage writes lands in a store |
 | D07 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never an image or a service definition of its own |
 | D08 | neither the panel nor the crawler is a module: `module_monitoring/sub_module_devops/` is the monitoring module's, `module_skills/sub_module_scalability_crawler/` the canon's |
 | D09 | artifact names and keys move only with the register: every key of every payload has a row in `module_skills/glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe`, the `ticker` key in every row of `data_status.json`, and that snapshot's own measurement set — which `REPORT_dashboard_data_minimalism.md` argues field by field — are each registered there |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
 | D11 | parity: the chain on the frozen raw store reproduces the nine BTC artifacts and the three computational snapshots, normalised, byte for byte against the reference list `README.md` § Parity names. A change that reshapes one of them re-bases its line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
-| D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host but the agent's command line of the crawler's review pass — outside the chain, gating nothing — and `mlflow` writes only into the ledger `trials_sqlite()` builds in `module_ml/config.py` under `STORE_TRIALS_DIR`, a local file `module_ml/hpo.py` addresses as `sqlite:///`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
+| D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host but two calls — the venues' public endpoints the two downloaders read, and the crawler's agent command line in its user's own session, outside the chain and gating nothing — and `mlflow` writes only into the ledger `trials_sqlite()` builds in `module_ml/config.py` under `STORE_TRIALS_DIR`, a local file `module_ml/hpo.py` addresses as `sqlite:///`, never a network location; the five pins of `requirements.txt` are the project's, and a sixth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
 | D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` where it is defined, and changed on every side at once |
-| D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the four snapshots with the crawler's review record are tracked, so a fresh clone opens on real numbers |
+| D15 | the tracked remnant of the artifacts store — `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once promoted, `<TICKER>_feature_set.json` — and the four snapshots are tracked, so a fresh clone opens on real numbers |
 | D16 | the fan-out and the detached search run through `docker compose run --rm`; nothing is `exec`'d into a resident |
-| D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the tracked tree; `skills_review.json` is written by `module_skills.sub_module_scalability_crawler.crawl` alone, and read by `status.py` and the page |
-| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it, and its review pass writes only branch `scalability-crawler` and a worktree beside the checkout |
-| D19 | which files the crawler may review is a list kept by hand, `CRAWL_PATHSPECS`, and which of them it reviews is git's answer — a missing row, a changed blob, a changed canon; a pass is bounded, goes on from the review record, and is started by a hand or by a host's own timer, never by the tree |
+| D17 | `skills_status.json` is written by `module_skills.sub_module_scalability_crawler.status` alone, a function of the list and the reports; the reports by `module_skills.sub_module_scalability_crawler.crawl` alone |
+| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it, and it writes only its reports and its snapshot |
 
 ## Skills absent here, described
 

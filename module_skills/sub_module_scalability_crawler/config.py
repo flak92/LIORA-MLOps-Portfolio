@@ -12,7 +12,7 @@ TO_CRAWL_TXT_PATH = Path("module_skills/sub_module_scalability_crawler/to_crawl.
 CRAWLERS_MISSION_MD_PATH = Path("module_skills/sub_module_scalability_crawler/crawlers_mission.md")   # the prompt
 REPORTS_AFTER_CRAWLED_FILES_DIR = Path("module_skills/sub_module_scalability_crawler/reports_after_crawled_files")
 # the rules sent with every file: each pattern's matches in byte order, the patterns in this order
-RULE_PATHS = ("AGENTS.md", "module_skills/skill_*.md")
+RULE_PATHS = ("AGENTS.md", "module_skills/glossary.md", "module_skills/skill_*.md")
 # the agent's command line: Claude Sonnet 5 in its user's own CLI session, no tools, so the message carries everything and
 # the answer is one turn of plain text; every flag is in `claude --help` of 2.1.270 but --max-turns, which it accepts
 AGENT_COMMAND = ("claude", "-p", "--model", "claude-sonnet-5", "--output-format", "text", "--max-turns", "1", "--tools", "",

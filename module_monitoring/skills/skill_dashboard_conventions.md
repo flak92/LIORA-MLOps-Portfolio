@@ -32,11 +32,9 @@ linter, no build step, no framework.
   single-class utility blocks stay single-class.
 - Magnitudes are shown as **bars, not colours**; colour marks category, bold
   marks the final-holdout row. Sparklines are inline SVG with a dashed reference.
-  One category is marked that way on the data views and the Scalability tab: `invariant`,
-  on the cells of a column — on the Scalability tab, of the rows whose `kind` names it —
-  whose only correct value is zero
-  (`../../module_data/skills/skill_candle_canonicalisation.md` § 16;
-  `../../module_skills/skill_scalability_crawler.md` § The registry),
+  One category is marked that way on the data views: `invariant`,
+  on the cells of a column whose only correct value is zero
+  (`../../module_data/skills/skill_candle_canonicalisation.md` § 16),
   so a reader can tell the numbers he may be alarmed by from the ones a change of data
   provider is expected to move. Such columns are named by their header in the render
   function, never counted by position.
@@ -46,21 +44,20 @@ linter, no build step, no framework.
   builds one frame per asset; `index.html` carries the host element, not the parts. A
   provider added to the pipeline therefore changes no file of this module.
 - The page reads four committed snapshots (`data_status.json`, `features_status.json`,
-  `ml_status.json`, `skills_status.json`) and the crawler's review record into `DATA_STATUS`,
-  `FEATURES_STATUS`, `ML_STATUS`, `SKILLS_STATUS` and `SKILLS_REVIEW` and renders
-  everything client-side; a snapshot carries only fields the page reads, and the review
-  record, beside them, the identities `status.py` reads. The DevOps panel reads the live
+  `ml_status.json`, `skills_status.json`) into `DATA_STATUS`,
+  `FEATURES_STATUS`, `ML_STATUS` and `SKILLS_STATUS` and renders
+  everything client-side; a snapshot carries only fields the page reads. The DevOps panel reads the live
   endpoints through the dashboard's proxy into `CONTAINER_REGISTRY` and
   `CONTAINER_STATUS`, and the Lifecycle tab reads the newest recorded run through
   `GET /runs` and `GET /runs/<run_id>` and renders it as it arrives. The DevOps panel
-  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — nine
+  adds its own two, `PANEL_MACHINES` and `MACHINE_SAMPLES`, on its own page — eight
   state globals across the two pages; the pill-hook registry `PILL_HOOKS`, the load
   promise `DATA_STATUS_LOADED` and the latches `CONTAINER_POLL_IN_FLIGHT`,
   `PANEL_POLL_IN_FLIGHT` and `MACHINE_ACTION_IN_FLIGHT` are not state.
   The panel's behaviour is `skill_devops_panel.md`.
 - The page computes no domain or model results — only presentation arithmetic
   over already measured values (shares, a cross-fold mean, a difference of two
-  reported metrics, a CPU rate from two polls of `cpu_usage_seconds`). Moving
+  reported metrics, a CPU rate from two polls of `cpu_usage_seconds`, a report's age against the clock). Moving
   those into the payload would grow it without adding a fact.
 - The status page carries exactly one jump out of itself, a `.jump` control in the top right, for
   the persona beyond the business one: **DevOps** opens the panel at `sub_module_devops/index.html`. It reaches the

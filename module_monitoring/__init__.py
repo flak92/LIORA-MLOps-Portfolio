@@ -1,1 +1,1 @@
-"""Presentation of what the three runtime modules measured about themselves, of what record.py measured around every stage and of what the canon's crawler counted of the tree, and the one server that serves it — in an asset container, the container reporting itself."""
+"""Presentation of what the three runtime modules measured about themselves, of what record.py measured around every stage and of the dates of the canon's crawler's reports, and the one server that serves it — in an asset container, the container reporting itself."""
