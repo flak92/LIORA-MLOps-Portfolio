@@ -104,8 +104,9 @@
   <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
     <div id="scalability-meta" class="box">loading /store_status/skills_status.json&hellip;</div>
     <div id="scalability-detail"></div>
-    <p class="foot">every file skills_status.json lists, with the date of its last report; the age is that date against
-      this browser's clock</p>
+    <p class="foot">every file the crawler's list names, read against AGENTS.md and the skills, with the date of its
+      last report; the age is that date against this browser's clock &middot; <code>make skills-crawl</code> &middot;
+      <code>make skills-status</code> &middot; <code>reports_after_crawled_files/</code></p>
   </section>
 
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
@@ -118,7 +119,7 @@
   </section>
 
   <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code> / <code>store/status/skills_status.json</code>
-    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code>; <code>skills_status.json</code> written outside this repository) &middot; the containers, the networks
+    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code> / <code>make skills-status</code>) &middot; the containers, the networks
     and the volumes are the <strong>DevOps</strong> panel</p>
   <script src="page.js"></script>
   <script src="data.js"></script>

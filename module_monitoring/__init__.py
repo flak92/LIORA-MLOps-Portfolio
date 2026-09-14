@@ -1,1 +1,1 @@
-"""Presentation of what the three runtime modules measured about themselves, of what record.py measured around every stage and of the dates skills_status.json holds, and the one server that serves it."""
+"""Presentation of what the three runtime modules measured about themselves, of what record.py measured around every stage and of the dates of the canon's crawler's reports, and the one server that serves it."""

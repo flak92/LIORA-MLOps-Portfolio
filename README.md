@@ -12,7 +12,7 @@ purged walk-forward XGBoost → research strategy simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
-the canon of rules that cross them. The governing contract — minimalism, minimum requirements,
+the canon of rules that cross them, with the one sub-module that reads listed files against those rules. The governing contract — minimalism, minimum requirements,
 KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, and what holds the project
 together — is [AGENTS.md](AGENTS.md). Each module carries its own rules in its
 `skills/` and its front door in `README_module_<name>.md`; the naming register
@@ -32,9 +32,10 @@ make off                   # stop and remove every container of this project
 make help                  # every target with its one-line purpose
 ```
 
-`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`
-and the opener `make on` prints through — are the whole requirement of the host;
-`tmux` joins them for the detached search.
+`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
+`make skills-crawl`, `make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
+`tmux` joins them for the detached search, and gum 2 for the crawler's menu beside the command line
+of each active vendor in `module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml`, installed and logged in, for the crawler's agent.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
 vocabulary): two words for a presenter to remember.
@@ -60,6 +61,16 @@ Assets*; a hand promotes one — one asset at a time — and the chain reruns:
 make ml-feature-set-promote ASSET=BTC PROPOSAL=1   # copy proposal 1's columns into BTC_feature_set.json, then ml-all for BTC
 ```
 
+The canon's crawler, outside the chain, by hand in a terminal (`module_skills/skill_scalability_crawler.md`):
+
+```bash
+make skills-crawl     # the gum menu: crawl · <vendor> for each active vendor, add a path or remove a path — one action, then it closes; Esc writes nothing
+make skills-status    # the snapshot of the list's reports, without the menu — the Scalability tab reads it
+```
+
+Its list, vendors and prompt are `to_crawl.txt`, `vendors_for_crawling.toml` and `crawlers_mission.md` in
+`module_skills/sub_module_scalability_crawler/`, each kept by hand; a vendor is one table, its CLI installed and logged in.
+
 `tmux` is a tool of the host beside `docker` and `git`, never of an image.
 
 Two personas, two doors, both behind `make on`:
@@ -80,7 +91,8 @@ at invocation — the port the dashboard already publishes, else the first free 
 (`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
 derives, so a rerun fetches and rebuilds only what its contract says — the trial
-ledger alone grows, one search more per `ml-hpo`. The dashboard is
+ledger alone grows, one search more per `ml-hpo`, and beside the chain the crawler's reports
+grow one entry per file crawled. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 Five direct dependencies across
@@ -195,7 +207,9 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 ## Skills
 
 `AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
-and the rules that cross modules. A module's own rules live under that module, in
+and the rules that cross modules, and the one sub-module that reads listed files
+against them — `make skills-crawl` opens the crawler's menu, which sends the files a hand chooses from its list to an agent and appends each answer to that file's report, or adds or removes a path of the list, and
+`make skills-status` dates the reports in `store/status/skills_status.json`; it gates nothing (`module_skills/skill_scalability_crawler.md`). A module's own rules live under that module, in
 `module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
 them. Each rule is written exactly once, where it is owned, and no document
 restates another (`AGENTS.md` § The default choice).
@@ -298,7 +312,7 @@ raw ZIP trees. Schema:
   catalogue: every definition the repository computes, its terms, the history
   each covers on each timeframe, the warm-up it needs and the nesting of the levels;
 - **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
-- **Scalability** — every file `skills_status.json` lists, with its last crawl, its age, its crawl count and its report;
+- **Scalability** — every file the crawler's list names, with its last crawl, its age, its crawl count and its report, from `make skills-status`;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and
   removed in the four pipeline stores, then every file it touched, by store and path. Nothing

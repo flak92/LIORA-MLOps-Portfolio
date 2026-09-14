@@ -6,7 +6,8 @@ rule of its own, so nothing here can disagree with the document it points at.
 
 Ownership decides location, and `AGENTS.md` § The default choice holds the rule:
 a module's own skills live in that module's `skills/`, the skills that cross
-modules live here, in `module_skills/` — the canon. Each is written exactly
+modules live here, in `module_skills/` — the canon, with its one sub-module, the
+scalability crawler, which reads the files a hand lists against it. Each is written exactly
 once, and a skill is named below by the path it holds in the tree.
 
 ## Cross-cutting — the skills in this directory
@@ -18,6 +19,7 @@ once, and a skill is named below by the path it holds in the tree.
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology — one image, three runners, two residents — and the scoped socket rule: the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps and where speed is allowed to come from |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the Pre-AWS direction: which local boundary answers to which standard cloud primitive, the twelve classes, the four seat paragraphs, the ladder, the non-goals, what the shape holds and what it does not, and why none of it is built |
+| [skill_scalability_crawler.md](skill_scalability_crawler.md) | the scalability crawler: the list, the mission, the reports and the snapshot that dates them |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
 
