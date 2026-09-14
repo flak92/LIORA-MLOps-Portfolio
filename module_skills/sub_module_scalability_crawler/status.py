@@ -7,12 +7,11 @@ when last — a function of the list and the reports, read off the reports' head
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 from . import config
 
-REPORT_HEADING_PATTERN = re.compile(r"^## (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) UTC · \S+ · [0-9a-f]+$", re.M)
+REPORT_HEADING_PREFIX = "## crawled "   # then <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>, as crawl.py writes it
 
 
 def load_crawl_paths() -> list[str]:
@@ -31,7 +30,7 @@ def load_crawl_paths() -> list[str]:
             except UnicodeDecodeError:
                 raise SystemExit(f"to_crawl.txt: {entry} — {path} is not UTF-8")
         paths += found
-    return list(dict.fromkeys(paths))
+    return paths
 
 
 def report_path(path: str) -> Path:
@@ -42,7 +41,9 @@ def build_skills_status() -> dict:
     rows = []
     for path in sorted(load_crawl_paths()):
         report = report_path(path)
-        stamps = REPORT_HEADING_PATTERN.findall(report.read_text(encoding="utf-8")) if report.is_file() else []
+        lines = report.read_text(encoding="utf-8").splitlines() if report.is_file() else []
+        stamps = [line[len(REPORT_HEADING_PREFIX):len(REPORT_HEADING_PREFIX) + len("YYYY-MM-DD HH:MM")] for line in lines
+                  if line.startswith(REPORT_HEADING_PREFIX)]
         rows.append({"path": path, "report": str(report.relative_to(config.REPORTS_AFTER_CRAWLED_FILES_DIR.parent)),
                      "crawl_count": len(stamps), "last_crawled_utc": stamps[-1] if stamps else None})
     return {"files": rows}

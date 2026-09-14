@@ -15,7 +15,7 @@ from . import config, status
 
 
 def load_rules_text() -> str:
-    paths = dict.fromkeys(path for pattern in config.RULE_PATHS for path in sorted(map(str, Path().glob(pattern))))
+    paths = [path for pattern in config.RULE_PATHS for path in sorted(map(str, Path().glob(pattern)))]
     return "\n".join(f"## {path}\n{Path(path).read_text(encoding='utf-8').rstrip(chr(10))}" for path in paths)
 
 
@@ -50,7 +50,7 @@ def main() -> int:
                 print(f"{path}: the agent exited {completed.returncode}\n{completed.stderr or completed.stdout}")
                 return 1
             stamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
-            write_report_entry(path, f"## {stamp} UTC · {model} · {commit}", completed.stdout)
+            write_report_entry(path, f"{status.REPORT_HEADING_PREFIX}{stamp} UTC · {model} · {commit}", completed.stdout)
     finally:
         status.main()
     return 0

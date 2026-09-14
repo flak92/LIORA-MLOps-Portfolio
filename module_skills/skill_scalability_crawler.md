@@ -22,7 +22,7 @@ and a report says where one file stands from it.
   an exit other than zero, or `AGENT_TIMEOUT_MINUTES` passed — ends the crawl
   with the agent's error; the reports already written stay.
 - **The report** of a file is `reports_after_crawled_files/<path>.md`. A crawl
-  appends a blank line, the heading `## <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>`,
+  appends a blank line, the heading `## crawled <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>`,
   the answer as it came and a blank line, and never overwrites or summarises. The
   heading's commit is the one call of git in the sub-module.
 
