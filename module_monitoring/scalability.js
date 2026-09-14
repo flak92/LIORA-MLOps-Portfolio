@@ -6,12 +6,8 @@
 let SKILLS_STATUS = null;
 const SECONDS_PER_DAY = 86400;
 
-/* the snapshot writes UTC as "YYYY-MM-DD HH:MM" */
 function formatAgeDays(utcText) {
-  const [day, clock] = utcText.split(" ");
-  const [year, month, dayOfMonth] = day.split("-").map(Number);
-  const [hour, minute] = clock.split(":").map(Number);
-  const seconds = (Date.now() - Date.UTC(year, month - 1, dayOfMonth, hour, minute)) / MILLISECONDS_PER_SECOND;
+  const seconds = (Date.now() - millisecondsSinceEpoch(utcText)) / MILLISECONDS_PER_SECOND;
   return formatNumber(seconds / SECONDS_PER_DAY, 1);
 }
 

@@ -4,14 +4,6 @@
    by record.py — when it started, how it exited, what it added, changed and removed. */
 "use strict";
 
-/* the recorder writes UTC as "YYYY-MM-DD HH:MM:SS" */
-function secondsSinceEpoch(utcText) {
-  const [day, clock] = utcText.split(" ");
-  const [year, month, dayOfMonth] = day.split("-").map(Number);
-  const [hour, minute, second] = clock.split(":").map(Number);
-  return Date.UTC(year, month - 1, dayOfMonth, hour, minute, second) / 1000;
-}
-
 function formatSeconds(seconds) {
   if (seconds === null || seconds === undefined) return "-";
   if (seconds < SECONDS_PER_MINUTE) return seconds.toFixed(1) + "s";
@@ -29,7 +21,8 @@ function buildRunHeader(record) {
   const first = stages[0];
   const last = stages[stages.length - 1];
   const failed = stages.filter((stage) => stage.exit_code !== 0);
-  const wallSeconds = secondsSinceEpoch(last.ended_at_utc) - secondsSinceEpoch(first.started_at_utc);
+  const wallSeconds = (millisecondsSinceEpoch(last.ended_at_utc) - millisecondsSinceEpoch(first.started_at_utc))
+    / MILLISECONDS_PER_SECOND;
   const stageSeconds = stages.reduce((total, stage) => total + stage.duration_seconds, 0);
   return buildKeyValueBox([
     ["run", record.run_id],

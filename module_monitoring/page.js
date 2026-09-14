@@ -1,5 +1,5 @@
-/* The toolkit every page of this dashboard shares: formatters, cells, tables, frames and pills.
-   It writes into no page-specific element, so the status page and the DevOps panel both load it
+/* The toolkit every page of this dashboard shares: the one parser of a payload's UTC text, formatters, cells, tables,
+   frames and pills. It writes into no page-specific element, so the status page and the DevOps panel both load it
    and neither inherits the other's markup. */
 "use strict";
 
@@ -8,6 +8,14 @@
 const BYTES_PER_KIBIBYTE = 1024;
 const MILLISECONDS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
+
+/* the snapshots and the recorder write UTC as "YYYY-MM-DD HH:MM", with ":SS" where they carry seconds */
+function millisecondsSinceEpoch(utcText) {
+  const [day, clock] = utcText.split(" ");
+  const [year, month, dayOfMonth] = day.split("-").map(Number);
+  const [hour, minute, second = 0] = clock.split(":").map(Number);
+  return Date.UTC(year, month - 1, dayOfMonth, hour, minute, second);
+}
 
 function formatCount(value) {
   return value === null || value === undefined ? "-" : value.toLocaleString("en-US");

@@ -6,7 +6,8 @@ linter, no build step, no framework.
 - Plain HTML + CSS + JS only — no frameworks, no build step, no external
   resources (fonts, CDNs, trackers). Everything ships in `module_monitoring/`.
 - **The toolkit is one file, the sections are their own.** `page.js` holds what
-  every page shares — formatters, cells, tables, frames and pills — and writes
+  every page shares — the one parser of a payload's UTC text, formatters, cells,
+  tables, frames and pills — and writes
   into no page-specific element, so a second
   page loads it without inheriting the first page's markup. `data.js`, `ml.js`,
   `asset.js`, `run.js` and `scalability.js` render the status page's sections; `devops.js`

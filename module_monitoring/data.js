@@ -33,15 +33,6 @@ function realDataPct(canonicalRow) {
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 
-/* the snapshot writes UTC as "YYYY-MM-DD HH:MM", its envelope with ":SS" */
-function minutesSince(utcText) {
-  const [day, clock] = utcText.split(" ");
-  const [year, month, dayOfMonth] = day.split("-").map(Number);
-  const [hour, minute, second = 0] = clock.split(":").map(Number);
-  const then = Date.UTC(year, month - 1, dayOfMonth, hour, minute, second);
-  return Math.max(0, Math.floor((Date.now() - then) / (MILLISECONDS_PER_SECOND * SECONDS_PER_MINUTE)));
-}
-
 function formatDuration(minutes) {
   if (minutes < MINUTES_PER_HOUR) return minutes + "m";
   const hours = Math.floor(minutes / MINUTES_PER_HOUR);
@@ -52,7 +43,8 @@ function formatDuration(minutes) {
 /* an age against this browser's clock, a warning when it is older than the download cadence the snapshot publishes */
 function ageCell(utcText, cadenceMinutes) {
   if (!utcText) return "-";
-  const minutes = minutesSince(utcText);
+  const minutes = Math.max(0, Math.floor((Date.now() - millisecondsSinceEpoch(utcText))
+    / (MILLISECONDS_PER_SECOND * SECONDS_PER_MINUTE)));
   return [formatDuration(minutes), minutes > cadenceMinutes];
 }
 
