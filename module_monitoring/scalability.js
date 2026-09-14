@@ -1,6 +1,6 @@
-/* Scalability tab: how current the crawler's reports are — /store_status/skills_status.json, every file to_crawl.txt
-   lists with the count and the last date of its report's entries. Classic script over the page.js toolkit; the page
-   computes nothing but a file's age, the last crawl against the browser's clock. */
+/* Scalability tab: how current the reports are that /store_status/skills_status.json dates — every file it lists with
+   the count and the last date of its report's entries. Classic script over the page.js toolkit; the page computes
+   nothing but a file's age, the last crawl against the browser's clock. */
 "use strict";
 
 let SKILLS_STATUS = null;
@@ -12,7 +12,7 @@ function formatAgeDays(utcText) {
 }
 
 function renderCrawlActuality(host, status) {
-  const frame = buildFrame("CRAWL ACTUALITY — every file to_crawl.txt lists, and its last report");
+  const frame = buildFrame("CRAWL ACTUALITY — every file skills_status.json lists, and its last report");
   frame.body.appendChild(buildTable(
     ["file", "last crawl (UTC)", "age (days)", "crawls", "report"],
     status.files.map((file) => [
@@ -35,7 +35,7 @@ function initScalability() {
       meta.hidden = true;
     })
     .catch((error) => {
-      meta.textContent = "could not fetch skills_status.json (" + error.message + ") — run `make skills-status`";
+      meta.textContent = "could not fetch skills_status.json (" + error.message + ")";
       meta.className = "box err";
     });
 }

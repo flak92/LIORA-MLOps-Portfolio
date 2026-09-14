@@ -1,6 +1,6 @@
 # Glossary — one concept, one name
 
-*The repository shows the destination, not the road*: the register confirms; the crawler reads it and gates nothing.
+*The repository shows the destination, not the road*: the register confirms.
 Every concept below has exactly one name in the code, one key in the artifacts
 and one label in the interface. Names that are standard
 in the field (`fold`, `purge`, `embargo`, out-of-sample, Sharpe) appear as
@@ -152,11 +152,11 @@ and is named for what the scan measured.
 ## Payload structure
 
 The container and envelope keys of the three computational snapshots, so that every published
-key is in this register; the crawler's own are § Scalability crawler.
+key is in this register; `skills_status.json`'s are § Scalability tab.
 
 | concept | artifact key | holds |
 |---|---|---|
-| when the snapshot is written | `generated_at_utc` | the one timestamp of a payload; the crawler's snapshot carries none |
+| when the snapshot is written | `generated_at_utc` | the one timestamp of a payload; `skills_status.json` carries none |
 | the frozen experiment, once, globally | `research_window` with `start_utc`, `end_utc`, `seed` | the window and the seed, published once — no per-asset copy |
 | the per-asset reports of ml_status.json | `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, `best_logloss`, `trial_count`), `validation`, `final_holdout`, `feature_columns`, `feature_set` (`source`, `columns_by_timeframe`), `validation_importance`, `feature_set_search` (`null` while no search has run; else `trial_count`, `pass_count`, `search_converged`, `inputs_current`, `proposals`), `strategy` | the experiment flow, sample → search → validation → holdout → attribution → the feature-set search → strategy |
 | the classes of the supervised population | `class_counts` with `short`, `neutral`, `long` | counts, named by class |
@@ -190,7 +190,7 @@ the store-paths row).
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
 | the store contract: one environment variable per store, naming the directory that store is | `STORE_RAW_1M_DIR`, `STORE_ASSETS_ARTIFACTS_DIR`, `STORE_TRIALS_DIR`, `STORE_RUN_RECORDS_DIR`, `STORE_STATUS_DIR`; on the host `$(CURDIR)/store/<content>`, in a container `/store/<content>` | — | — | a path derived from `__file__` two levels up, a store named by a literal at the point of use, a second name for the same directory |
-| the status store: where every snapshot lands, tracked so a fresh clone opens on real numbers | `store/status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write them, `SKILLS_STATUS_JSON_PATH` in the crawler's | `data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json` | the page's footer names the four snapshots | a snapshot written into `module_monitoring/` or any other module's directory |
+| the status store: where every snapshot lands, tracked so a fresh clone opens on real numbers | `store/status/`, `STORE_STATUS_DIR`; `DATA_STATUS_JSON_PATH`, `FEATURES_STATUS_JSON_PATH`, `ML_STATUS_JSON_PATH` in the configs of the modules that write them | `data_status.json`, `features_status.json`, `ml_status.json`, `skills_status.json` | the page's footer names the four snapshots | a snapshot written into `module_monitoring/` or any other module's directory |
 | the trials store: every point the hyper-parameter search drew, one ledger per asset, written by `module_ml/hpo.py` alone — the one file that speaks mlflow — and read by no stage and no route; nothing prunes it, and a hand clears an asset's ledger as it clears the raw store and the run records. The point the search chose stands twice, as `best_params` and `best_logloss` in `<TICKER>_parameters.json` and as one run here — the one copy of an artifact's content this store carries, admitted because the artifact is the contract between stages, read by `train.py` and by `feature_set_search.py`, and this ledger is read by neither: the artifact decides, the ledger records. The feature-set search leaves nothing here — its trials are `<TICKER>_feature_set_search.json`, the stage's resume state and the source of its proposals, and one result has one carrier | `store/trials/`, `STORE_TRIALS_DIR`; `trials_sqlite()` in `module_ml/config.py`, one `trials.sqlite3` per asset as the market object is one file per asset; in a container `/store/trials` | — | — | `mlruns/`, mlflow's own default; an `MLFLOW_TRACKING_URI` in any environment; a tracking server, a model registry, a published port or a UI service; a mount on any service but the `ml` runner; a stage reading it back |
 | the name of one trial in the ledger: its place in the search that drew it | `log_trials(ticker, trials)` in `module_ml/hpo.py`, which mints `hpo_<n>` — `hpo` is the one search that writes the ledger and the second half of the make target that runs it, and `n` counts from one | — (no artifact carries it) | — (no page shows it) | mlflow's own minted name, an adjective and an animal; a ticker in the name, the experiment being the ticker; optuna's trial number, which counts from zero |
 | the snapshot route: the dashboard serving a status object by its file name | `STORE_STATUS_ROUTE_SEGMENT`, `GET /store_status/<name>` in `serve.py`, mapped onto `store_status_file(name)` under `STORE_STATUS_DIR` | — | — | a snapshot fetched from the page's own directory, a route per snapshot |
@@ -377,7 +377,7 @@ choice holds the rule; these are the names it uses.
 | the door a session opens before the contract: the working path, the modules by name and the documents that hold the rules — it points and holds none | `CLAUDE.md` at the root | — | — | a rule written in it; a per-module `CLAUDE.md`; `CLAUDE.local.md` or `.claude/` inside the tree |
 | one module's reader-facing front door | `module_<name>/README_module_<name>.md` | — | — | `module_<name>/README.md`; a front door that restates a skill or a decision table |
 | a review report: the tree reviewed against one question, kept at the root beside the contract and the overview — `REPORT_pre_aws_minimalism.md` asks whether each seat of the mapping is the cheapest that keeps its boundary | `REPORT_<subject>.md` | — | — | a report inside a module; a report that restates a rule instead of citing it; a work order or a plan kept in the tree |
-| the design rationale: the section of a module's orientation that says, per object or analogous pair or the module's documents, why here, why beside these, why this boundary and which mapping row it answers to — the fourth the test of the first three | `## Design rationale` of each `README_module_<name>.md`, and of `module_skills/skill_scalability_crawler.md` for the canon's sub-module | — | — | a decision table; a rule restated; an object with no row or two; ADR, decision record, decision log, `docs/` |
+| the design rationale: the section of a module's orientation that says, per object or analogous pair or the module's documents, why here, why beside these, why this boundary and which mapping row it answers to — the fourth the test of the first three | `## Design rationale` of each `README_module_<name>.md` | — | — | a decision table; a rule restated; an object with no row or two; ADR, decision record, decision log, `docs/` |
 
 ## Pre-AWS direction
 
@@ -437,23 +437,12 @@ tabs *Pipeline*, *Data Quality*, *ML Research*, *ML Assets*, *Scalability*, *Lif
 jump *DevOps*, and the ML Assets views *Labels & data*,
 *Classification*, *Strategy*, *Search*, *Feature set*.
 
-## Scalability crawler
+## Scalability tab
 
-The names of `module_skills/sub_module_scalability_crawler` — the files a hand
-lists, read against the written rules. The rules are
-`module_skills/skill_scalability_crawler.md`.
+The names the Scalability tab reads and draws.
 
 | concept | code | artifact key | UI label | never |
 |---|---|---|---|---|
-| the crawler: the canon's sub-module that reads the files a hand lists against the written rules, writes a report a hand reads, and its snapshot | `sub_module_scalability_crawler`; `make skills-crawl` | — | — | a linter, a check, a gate, a CI step; a web crawler, walking sites or services to gather what they hold |
-| the list: a path from the root per line, a folder every file under it but `__pycache__` and the reports | `to_crawl.txt`, `TO_CRAWL_TXT_PATH`, `load_crawl_paths()`, `load_entry_paths()`, `write_list()` | — | — | a list derived from the tree; the whole tree by default |
-| the mission: what the agent reports of one file, and how | `crawlers_mission.md`, `CRAWLERS_MISSION_MD_PATH` | — | — | a rule restated in it; a work order or a plan |
-| the rules sent with every file, each under its path | `RULE_PATHS`, `load_rules_text()` | — | — | a rule summarised for the message |
-| one file's message: the mission, the rules, the file | `build_message()` | — | — | a prompt per module |
-| a vendor: an agent's command line the menu crawls with — one table of `vendors_for_crawling.toml`, one fresh session per chosen file | `vendors_for_crawling.toml` with `active`, `model`, `command`, `permissions`; `VENDORS_FOR_CRAWLING_TOML_PATH`, `load_active_vendors()`, `AGENT_TIMEOUT_MINUTES` | — | `crawl · <vendor>` | an API key; a model named outside its table; an interactive session; `permissions` that let it write; a vendor active before one run on one file showed it answers from the message alone |
-| a file's report: one entry per crawl, the heading `## crawled <YYYY-MM-DD HH:MM> UTC · <model> · <short commit>` and the answer as it came | `reports_after_crawled_files/<path>.md`, `REPORTS_AFTER_CRAWLED_FILES_DIR`, `report_path()`, `write_report_entry()`, `REPORT_HEADING_PREFIX` | `report` | report | a report overwritten or summarised; a report in a store; a dated review of the root, `REPORT_<subject>.md` (§ Documentation ownership) |
-| the menu: the gum header, the choice of one action and the one prompt after it | `main()` and `_gum()` in `crawl.py`; `make skills-crawl` | — | Scalability crawler; action; `crawl · <vendor>`, add a path, remove a path; files to crawl; path to remove | a second menu after the action — the program ends; a remembered choice, a theme or colour beyond the header, a spinner, a crawl scheduled or detached |
-| gum: the terminal instrument the menu speaks | `gum` | — | — | a Python dependency, a chooser over curses written here, a gum configuration in the tree |
-| the snapshot: every listed file, how often it was crawled and when last, read off its report's headings | `SKILLS_STATUS_JSON_PATH`, `build_skills_status()` in `status.py`; `make skills-status` | `skills_status.json`: `files` with `path`, `report`, `crawl_count`, `last_crawled_utc` | file, crawls, last crawl (UTC) | a clock in the snapshot; a snapshot that reads itself back |
+| the snapshot: every listed file, its report — a path in the tool's own tree, opened there, never here — and how often it was crawled and when last | — (written by a tool outside this repository) | `skills_status.json`: `files` with `path`, `report`, `crawl_count`, `last_crawled_utc` | file, last crawl (UTC), crawls, report | a clock in the snapshot; a writer of it inside this repository |
 | a file's age: its last crawl against the browser's clock, drawn and never stored | `formatAgeDays()` in `scalability.js` | — | age (days) | a stored age |
 | the page's view of the reports | `scalability.js`; `SKILLS_STATUS` | — | Scalability — CRAWL ACTUALITY | a tab named for a tool; scale for a larger basket, which is `ASSET=<TICKER>` (`AGENTS.md` § Pre-AWS architectural direction) |

@@ -407,12 +407,11 @@ mathematics. No booster is persisted: nothing in this repo performs inference,
 so the numbers are the product.
 
 Module layout — four runtime modules, in the order the data moves, and
-`module_skills`, the canon, whose one sub-module measures the tree and joins no
-dataflow of the chain: `module_data` (sources → normalised
+`module_skills`, the canon, which holds documents only: `module_data` (sources → normalised
 raw 1m → one canonical DuckDB per asset) · `module_features` (the bars of the
 register and the feature catalogue — `module_features/skills/`) · `module_ml`
 (this document) · `module_monitoring` (presentation of what each module measured
-about itself and of the dates of the crawler's reports, and the server). Inside `module_ml`: `module_ml/config.py` (frozen
+about itself and of the dates `skills_status.json` holds, and the server). Inside `module_ml`: `module_ml/config.py` (frozen
 constants of the research layer — the window and the folds its own, the register
 and the grid read per asset from the feature layer's contract,
 `<TICKER>_catalogue.json`) · `module_ml/validation.py`,
