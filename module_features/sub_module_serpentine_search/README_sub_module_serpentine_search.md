@@ -30,13 +30,10 @@ method, its thresholds and their limits are `module_features/skills/methodology_
   — the loops a round runs, and the asset's noise sigma, `path_cagr_noise_standard_deviation`: `null` on the asset's
   first searches, the calibration runs, whose last turn prints the estimate a hand may draft into the file.
 - **The promotion** — `make features-serpentine-search-promote ASSET=<TICKER>`, one asset and never fanned out —
-  copies the proposal's columns into `<TICKER>_feature_set.json` and its barrier geometry into
-  `<TICKER>_barriers.json` (`promote.py`), and nothing else, then runs `ml-all` for the asset. A search proposes one
-  state at most, its champion, so there is none to choose. That chain tunes the hyper-parameters anew: `ml-hpo` draws
-  its own `best_params` for the promoted columns and geometry — the point the search evaluated, even one its hpo loop
-  found, is not copied — the result is evaluated again on the validation folds F2–F4, and F5 is read after and never
-  steers. What is kept is the proposal's columns and geometry, not the model the search evaluated, so the realised
-  result differs from the search's. A search that proposes nothing has ended correctly, with nothing to promote, and
+  copies the proposal's whole state, its columns into `<TICKER>_feature_set.json`, its barrier geometry into
+  `<TICKER>_barriers.json` and its hyper-parameter point into `<TICKER>_hyperparameter_point.json` (`promote.py`),
+  and nothing else, then runs `ml-all` for the asset, whose study starts from that point. A search proposes one
+  state at most, its champion, so there is none to choose; a search that proposes nothing has ended correctly, and
   the promotion refuses it in one line (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
 - **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` — removes `<TICKER>_serpentine_search.json`,
   `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_score_request.json`, `<TICKER>_score_response.json` and

@@ -54,7 +54,7 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   that session and Ctrl-C stop it, as `make help` says, and a rerun resumes.
 - **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, whose plan shows the
   state it promotes: the asset, the proposal's trial, the coordinates it moves and what it writes,
-  `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — then the line
+  `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json` — then the line
   `command  make features-serpentine-search-promote ASSET=<TICKER>` and the gate `promote the proposal of <TICKER>?`.
   A search proposes one state at most, so nothing is chosen before the gate. The target copies the proposal and
   reruns the asset's ML chain, `ml-all`, whose lines stay on the screen and which computes the final holdout; the

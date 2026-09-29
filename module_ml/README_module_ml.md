@@ -87,11 +87,12 @@ while the turn leaves a question, `tmux-features-serpentine-search` is its
 detached twin, `features-serpentine-search-reset` removes an asset's search and
 its `score_trials` partition, and
 `features-serpentine-search-promote ASSET=<TICKER>` copies the proposal's
-columns into `<TICKER>_feature_set.json` and its barrier geometry into
-`<TICKER>_barriers.json`, then reruns `ml-all` for the asset. That rerun tunes
-the hyper-parameters anew: the promoted state is evaluated again on the
-validation folds F2–F4, F5 is read after them and steers no parameter, and what
-is kept is the state, not the model the search evaluated.
+columns into `<TICKER>_feature_set.json`, its barrier geometry into
+`<TICKER>_barriers.json` and its hyper-parameter point into
+`<TICKER>_hyperparameter_point.json`, then reruns `ml-all` for the asset. That
+rerun's study starts from the promoted point: the promoted state is evaluated
+again on the validation folds F2–F4, the point kept is worth at least the
+proposal's path CAGR, and F5 is read after them and steers no parameter.
 
 ## What it writes
 
@@ -112,12 +113,12 @@ with what each holds, is the Files table of its `<TICKER>_README.md`, written by
 `status.py`; the names are registered in `module_skills/skill_glossary.md`
 § Artifacts. Of what this module writes, `<TICKER>_README.md` and
 `<TICKER>_parameters.json` are tracked — beside the serpentine search's profile,
-state and ledger and, once a hand has promoted one, `<TICKER>_feature_set.json`
-and `<TICKER>_barriers.json`, which `module_features` writes and this module
-reads — so a folder reads, and rebuilds, without a run; the parameters are tuned
-for the promoted state, so they travel together. The README and the parameters
-are derived and never hand-edited; the feature set and the barriers are a hand's
-decisions, written by the promotion and never derived. The partitions, the two
+state and ledger and, once a hand has promoted one, `<TICKER>_feature_set.json`,
+`<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, which
+`module_features` writes and this module reads — so a folder reads, and rebuilds,
+without a run; the parameters are tuned for the promoted state, so they travel
+together. The README and the parameters are derived and never hand-edited; the
+promoted state is a hand's decision, written by the promotion and never derived. The partitions, the two
 evaluations, the request and the response and the trials store are not tracked.
 
 ## Extending

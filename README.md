@@ -87,10 +87,11 @@ make features-serpentine-search ASSET=BTC        # a new search
 A search proposes one state at most, its champion. A search that finds nothing better than where it
 started proposes nothing, and that is a correct result — the promotion then refuses in one line.
 When it proposes, a hand promotes the proposal — one asset at a time — and the ML chain tunes the
-promoted state again, so the result that counts is the rerun's on the validation folds:
+promoted state again, its study starting from the proposal's point, so the result that counts is the rerun's
+on the validation folds:
 
 ```bash
-make features-serpentine-search-promote ASSET=BTC   # the proposal's columns into BTC_feature_set.json and its barrier geometry into BTC_barriers.json, then ml-all for BTC
+make features-serpentine-search-promote ASSET=BTC   # the proposal's state into BTC_feature_set.json, BTC_barriers.json and BTC_hyperparameter_point.json, then ml-all for BTC
 ```
 
 The canon, outside the chain, on the host — every rule a row of one workbook, `module_skills/skills_sheet.xlsx`,
@@ -168,7 +169,7 @@ object. Everything below it describes the method, not the data provider.
 | store | variable | in a container | tracked |
 |---|---|---|---|
 | `store/raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
-| `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only, in the asset's folder `ticker=<TICKER>/`: `<TICKER>_README.md`, `<TICKER>_parameters.json`, `<TICKER>_serpentine_search_profile.json` once drafted, the serpentine search's state `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` once a search has run, and `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` once promoted |
+| `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only, in the asset's folder `ticker=<TICKER>/`: `<TICKER>_README.md`, `<TICKER>_parameters.json`, `<TICKER>_serpentine_search_profile.json` once drafted, the serpentine search's state `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` once a search has run, and `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json` once promoted |
 | `store/run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
 | `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — two ledger families, one JSON object a line, appended and never rewritten |
 | `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the four snapshots, so a fresh clone opens on real numbers |
@@ -196,7 +197,7 @@ and no database file exists. One stage writes each family and each file:
 | the search's state and ledger | `ticker=<TICKER>/<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_trials.jsonl` | `features-serpentine-turn` | yes |
 | the question | `ticker=<TICKER>/<TICKER>_score_request.json` | `features-serpentine-turn` | no |
 | the answer | `ticker=<TICKER>/<TICKER>_score_response.json` | `ml-score` | no |
-| the promotion | `ticker=<TICKER>/<TICKER>_feature_set.json`, `<TICKER>_barriers.json` | `features-serpentine-search-promote` | yes, once promoted |
+| the promotion | `ticker=<TICKER>/<TICKER>_feature_set.json`, `<TICKER>_barriers.json`, `<TICKER>_hyperparameter_point.json` | `features-serpentine-search-promote` | yes, once promoted |
 | `hpo_trials` | `hpo_trials/ticker=<TICKER>/hpo_trials.jsonl`, every point `ml-hpo` drew | `ml-hpo` alone | no |
 | `score_trials` | `score_trials/ticker=<TICKER>/score_trials.jsonl`, every point the studies a question asks for drew | `ml-score` alone | no |
 | the snapshots | `{data,features,ml}_status.json` | the status stages | yes |
@@ -243,7 +244,7 @@ to its tmux session and puts before the session's name.
 | features status | `make features-status` | the catalogue's partitions and each asset's serpentine search → `store/status/features_status.json` | read-only; the catalogue's facts, each asset's row counts and its search as it last wrote itself |
 | serpentine search | `make features-serpentine-search ASSET=<TICKER>` | the profile, the catalogue, Y and the parameters → `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` | outside the chain: `make features-serpentine-turn` leaves a question, `<TICKER>_score_request.json`, `make ml-score` answers it on the validation folds, and the loop runs while a question stands; resumes where the files stand; promotes nothing; its detached twin `make tmux-features-serpentine-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | reset | `make features-serpentine-search-reset ASSET=<TICKER>` | the search's state, ledger, question, answer and `score_trials` partition → gone | runs no stage; the inputs and the profile stay — a new experiment starts from the files the chain left |
-| promotion | `make features-serpentine-search-promote ASSET=<TICKER>` | the proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset, which tunes it again | a hand's choice, one asset at a time; a search that proposes none refused in one line; the same proposal twice changes nothing; the commit history is the record |
+| promotion | `make features-serpentine-search-promote ASSET=<TICKER>` | the proposal's columns → `<TICKER>_feature_set.json`, its barrier geometry → `<TICKER>_barriers.json` and its hyper-parameter point → `<TICKER>_hyperparameter_point.json`, then `ml-all` for that asset, whose study starts from that point | a hand's choice, one asset at a time; a search that proposes none refused in one line; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
 | dashboard | `make on`              | the snapshots and the run records → the seven-tab page on `127.0.0.1:<port>`, the address `make on` prints, served by `module_monitoring/serve.py` in the `dashboard` container under three prefixes — the page's own files, `status/` and `run_records/` | no external resources; every other path 404, and no directory listed |
 
@@ -315,7 +316,8 @@ Every number here is reproducible. The proof, repeatable on any host:
    past `RESEARCH_END_UTC`, and moves with every top-up by design.
 
 The files a hand drafts stand outside this proof — `<TICKER>_serpentine_search_profile.json` and, once
-promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`: no stage of the chain derives them, and
+promoted, `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`: no
+stage of the chain derives them, and
 the one program that writes each writes the same bytes for the same decisions. The serpentine search's own
 files are outside it too, being a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`,
 where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored
@@ -324,7 +326,7 @@ is that a search reset and run again over the same inputs gives the same bytes i
 search stopped — Ctrl-C in its tmux session — and run again ends on the same state and ledger; its
 `score_trials` partition may then hold a study twice, the lines a stop between a study and its answer
 left and the rerun appends again (AGENTS.md D11).
-`<TICKER>_README.md` lists the two files a promotion writes and measures neither — listed, not measured,
+`<TICKER>_README.md` lists the three files a promotion writes and measures none — listed, not measured,
 because their size moves with the hand and not with the chain. The search's state and ledger are tracked
 even so: `features_status.json` is inside the proof and reads them, so a clone without them could not
 reproduce the snapshot that quotes them.
@@ -445,7 +447,7 @@ walk-forward path, then by its Calmar ratio, then by its profit factor, and keep
 move only when the child's CAGR beats its parent's on every fold. It proposes its
 champion only when the champion beats the state it started from by more than the noise
 of the whole search; a search that proposes nothing has still answered. A promotion
-copies the proposal and reruns the ML chain, which tunes it again. The noise margin is a
+copies the proposal's whole state and reruns the ML chain, whose study starts from its point. The noise margin is a
 heuristic, not a guarantee: `module_features/skills/methodology_features.md`.
 
 Every per-asset stage runs `JOBS` assets side by side, one by default, one process

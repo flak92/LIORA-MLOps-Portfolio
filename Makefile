@@ -137,10 +137,10 @@ features-serpentine-search: ## the serpentine search per asset: a turn, then ml-
 tmux-features-serpentine-search: ## the serpentine search of one asset detached in tmux session features-serpentine-search-<ticker>, <project>-features-serpentine-search-<ticker> under COMPOSE_PROJECT_NAME=<project>, alive after the terminal closes and gone with the search; tmux attach -t <session> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
 	$(one_asset)
 	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) '$(if $(COMPOSE_PROJECT_NAME),COMPOSE_PROJECT_NAME=$(COMPOSE_PROJECT_NAME) )make features-serpentine-search ASSET=$(ASSET)'
-# a hand's decision for one asset, never fanned out: the proposal's columns and barrier geometry become the asset's own,
-# and its ML chain runs again, tuning it anew — the search's evaluated point is not what is kept. A search proposes one
-# state at most, so there is none to choose, and a search that proposes none is refused in one line. ASSET= is required
-features-serpentine-search-promote: ## copy the proposal of one asset's serpentine search into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain, which tunes it again — a search that proposes none refused in one line; ASSET= is required
+# a hand's decision for one asset, never fanned out: the proposal's whole state becomes the asset's own, and its ML chain
+# runs again, its study starting from the promoted point. A search proposes one state at most, so there is none to
+# choose, and a search that proposes none is refused in one line. ASSET= is required
+features-serpentine-search-promote: ## copy the proposal of one asset's serpentine search into <TICKER>_feature_set.json, <TICKER>_barriers.json and <TICKER>_hyperparameter_point.json, then rerun its ML chain, whose study starts from that point — a search that proposes none refused in one line; ASSET= is required
 	$(one_asset)
 	$(call stage,features,module_features.sub_module_serpentine_search.promote,$(ASSET))
 	$(MAKE) ml-all ASSET=$(ASSET)

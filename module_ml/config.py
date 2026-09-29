@@ -47,11 +47,12 @@ CONFIGURABLES = (
      "tui": True, "experiment_identity": True, "requires_rerun": "ml-all, features-serpentine-search",
      "risk": "another label and another trade for every asset without a promotion"},
     {"name": "HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT", "value": 5, "class": "DEFAULT", "unit": "trials",
-     "meaning": "the trials TPE draws at random before it models, completed and pruned alike", "tui": False,
+     "meaning": "the trials a study runs before TPE models, completed and pruned alike — each drawn at random but "
+                "the promoted point the chain's study starts from", "tui": False,
      "experiment_identity": True, "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
      "risk": "at or above the trial count the study is a random search wearing TPE's name"},
     {"name": "HYPERPARAMETER_SEARCH_TRIAL_COUNT", "value": 8, "class": "DEFAULT", "unit": "trials",
-     "meaning": "the trials one study draws — the stage's and each beam parent's in the serpentine search",
+     "meaning": "the trials one study runs — the stage's and each beam parent's in the serpentine search",
      "tui": False, "experiment_identity": True,
      "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
      "risk": "a budget below the method's own: the chosen point is noise"},
@@ -384,6 +385,13 @@ def feature_set_json(ticker):
 def barriers_json(ticker):
     """The asset's promoted barrier geometry — absent, the frozen constants above are the asset's."""
     return artifact_dir(ticker) / f"{ticker}_barriers.json"
+
+
+# twice by extraction
+def hyperparameter_point_json(ticker):
+    """The asset's promoted hyper-parameter point — the first trial of the chain's study; absent, the study draws
+    every point."""
+    return artifact_dir(ticker) / f"{ticker}_hyperparameter_point.json"
 
 
 def asset_readme_md(ticker):

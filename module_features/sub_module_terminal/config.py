@@ -80,6 +80,12 @@ def barriers_json(ticker: str) -> Path:
     return artifact_dir(ticker) / f"{ticker}_barriers.json"
 
 
+# twice by extraction
+def hyperparameter_point_json(ticker: str) -> Path:
+    """The asset's promoted hyper-parameter point — what the promotion writes and the ML chain's study starts from."""
+    return artifact_dir(ticker) / f"{ticker}_hyperparameter_point.json"
+
+
 # the loops of a round in the order a round runs them, and the geometry a coordinate stands at without a promotion —
 # the point a draft pins an unsearched coordinate to
 # twice by extraction

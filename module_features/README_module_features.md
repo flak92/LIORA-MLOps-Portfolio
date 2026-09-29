@@ -66,7 +66,7 @@ make line says `JOBS=n`; the promotion runs for the one asset `ASSET` names, and
 | catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
 | status | `make features-status` | `store/status/features_status.json` |
 | serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_trials.jsonl` and the next question `<TICKER>_score_request.json`, or a finished search |
-| promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`, then the asset's ML chain |
+| promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, then the asset's ML chain |
 
 Every stage runs in a one-off container of the `features` runner: a per-asset
 stage one container per asset, `status` once. Each stage takes `--tickers`.
@@ -91,6 +91,7 @@ Outside the chain, in the asset's folder `store/assets_artifacts/ticker=<TICKER>
 <TICKER>_serpentine_search_profile.json   what a hand asks the search to look at — drafted, never derived
 <TICKER>_feature_set.json                 the promoted columns — the promotion
 <TICKER>_barriers.json                    the promoted barrier geometry — the promotion
+<TICKER>_hyperparameter_point.json        the promoted hyper-parameter point — the promotion
 ```
 
 The manifest and what each file holds are in `module_skills/skill_glossary.md`

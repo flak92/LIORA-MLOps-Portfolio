@@ -146,3 +146,9 @@ def feature_set_json(ticker):
 def barriers_json(ticker):
     """The asset's promoted barrier geometry — absent, the frozen constants of the module that labels are."""
     return features_config.artifact_dir(ticker) / f"{ticker}_barriers.json"
+
+
+# twice by extraction
+def hyperparameter_point_json(ticker):
+    """The asset's promoted hyper-parameter point — the first trial of the ML chain's study."""
+    return features_config.artifact_dir(ticker) / f"{ticker}_hyperparameter_point.json"

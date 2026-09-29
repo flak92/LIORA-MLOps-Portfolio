@@ -189,15 +189,16 @@ the skill is reported beside it so a state that wins on CAGR while losing skill
 is visible by eye.
 
 **A promotion** (`make features-serpentine-search-promote ASSET=<TICKER>`, one
-asset at a time, never fanned out) copies the proposal's
-columns into `<TICKER>_feature_set.json` and its barrier geometry into
-`<TICKER>_barriers.json` — those and nothing else; the commit history is the
-record of every promotion — and reruns `ml-all` for the asset, `ml-hpo` included,
-which tunes the hyper-parameters anew: the promoted state is evaluated again on
-F2–F4 under the point that study chooses, and F5 is read after it and steers no
-parameter. What is promoted is a state's columns and geometry, not the exactly
-evaluated model, so the realised result differs from the search's. A search that
-proposes nothing has returned a correct result.
+asset at a time, never fanned out) copies the proposal's whole state — its
+columns into `<TICKER>_feature_set.json`, its barrier geometry into
+`<TICKER>_barriers.json` and its hyper-parameter point into
+`<TICKER>_hyperparameter_point.json`, and nothing else; the commit history is the
+record of every promotion — and reruns `ml-all` for the asset, `ml-hpo` included.
+That study takes the promoted point as its first trial: on the promoted state's
+own X and Y, with the same fits and the same threshold rule, the trial scores the
+proposal's path CAGR, so the point the stage keeps is worth at least that on
+F2–F4, and F5 is read after it and steers no parameter. A search that proposes
+nothing has returned a correct result.
 
 ## 5. Labels
 
@@ -421,9 +422,11 @@ the gate's story on one line. The state is read from `trial.state` and never
 inferred from the value: Optuna records the last reported intermediate value as a
 pruned trial's value.
 
-**The stage draws no point to start from.** It is a function of X, Y and the
-frozen constants, so `<TICKER>_parameters.json` is a function of the raw store
-and this code and never of its own last value: a derived artifact that read
+**The stage starts from no point but a promoted one.** It is a function of X,
+Y, the frozen constants and the point a hand promoted,
+`<TICKER>_hyperparameter_point.json`, its study's first trial when the file
+exists, so `<TICKER>_parameters.json` is a function of the raw store, the files a
+hand drafted and this code, and never of its own last value: a derived artifact that read
 itself would make the chain a fixed-point iteration, and two runs of `ml-all`
 would not have to agree until it settled. What a study is compared against
 belongs to the serpentine search's hyper-parameter family below, where a beam
@@ -646,7 +649,8 @@ store, the asset's partitions of
 contract `<TICKER>_catalogue.json` and the catalogue partitions it names, the
 `bars` partitions, the asset's partition of `ohlcv_1m_canonical` — the market
 object every stage reads — and, once a hand has promoted them,
-`<TICKER>_feature_set.json` and `<TICKER>_barriers.json`. The data files are
+`<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and
+`<TICKER>_hyperparameter_point.json`. The data files are
 regenerable; `<TICKER>_parameters.json` and `<TICKER>_README.md` are tracked,
 beside the serpentine search's profile, state and ledger and the promoted state
 that `module_features` writes, because they are what makes the rest readable —

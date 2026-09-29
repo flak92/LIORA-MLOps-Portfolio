@@ -210,8 +210,9 @@ def _path_rows(search: dict, trials: list[dict]) -> list[dict]:
 
 def _moved(trial: dict, search: dict) -> str:
     """What one trial changes against the asset's own state the serpentine search was run on, as its inputs record
-    it — the columns it holds that the state does not and the ones it drops, and each barrier coordinate whose value is
-    not the state's. Membership and equality on the two files' own values: no number is computed."""
+    it — the columns it holds that the state does not and the ones it drops, each barrier coordinate whose value is not
+    the state's, and the hyper-parameter point when it is not. Membership and equality on the two files' own values: no
+    number is computed."""
     active_columns, active_barriers = (search["inputs"]["active_columns_by_timeframe"],
                                        search["inputs"]["active_barriers"])
     columns = [f"+{name}_{timeframe}" for timeframe, names in sorted(trial["columns_by_timeframe"].items())
@@ -220,7 +221,8 @@ def _moved(trial: dict, search: dict) -> str:
                 for name in names if name not in trial["columns_by_timeframe"][timeframe]]
     barriers = [f"{name} {trial[name]}" for name in sorted(config.GRID_BY_COORDINATE_DEFAULT)
                 if trial[name] != active_barriers[name]]
-    return " ".join(columns + barriers) or "—"
+    point = ["best_params"] if trial["best_params"] != search["inputs"]["best_params"] else []
+    return " ".join(columns + barriers + point) or "—"
 
 
 # ---- the actions ----------------------------------------------------------------------------------------
@@ -412,7 +414,8 @@ def _write_promoted_proposal(ticker: str, search: dict | None) -> int:
                    {"parameter": "trial", "value": trial_index},
                    {"parameter": "coordinates moved", "value": _moved(trials[trial_index - 1], search)},
                    {"parameter": "writes",
-                    "value": f"{config.feature_set_json(ticker).name}, {config.barriers_json(ticker).name}"}])
+                    "value": f"{config.feature_set_json(ticker).name}, {config.barriers_json(ticker).name}, "
+                             f"{config.hyperparameter_point_json(ticker).name}"}])
     print(f"command         {shlex.join(command)}")
     print()
     decision = tui.gum_choose(f"promote the proposal of {ticker}?", _option_rows("promote", "cancel"), "option")

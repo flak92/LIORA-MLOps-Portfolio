@@ -9,6 +9,7 @@ store/assets_artifacts/**
 !store/assets_artifacts/ticker=*/*_README.md
 !store/assets_artifacts/ticker=*/*_feature_set.json
 !store/assets_artifacts/ticker=*/*_barriers.json
+!store/assets_artifacts/ticker=*/*_hyperparameter_point.json
 !store/assets_artifacts/ticker=*/*_serpentine_search_profile.json
 !store/assets_artifacts/ticker=*/*_serpentine_search.json
 !store/assets_artifacts/ticker=*/*_serpentine_search_trials.jsonl

@@ -113,7 +113,6 @@ def serpentine_search_block(ticker: str) -> dict | None:
     if not path.exists():
         return None
     search = dataset.load_json(path)
-    best_params = dataset.load_json(serpentine_search_config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
     cat = dataset.load_json(config.catalogue_json(ticker))
     profile_path = serpentine_search_config.serpentine_search_profile_json(ticker)
     ledger = serpentine_search_config.serpentine_search_trials_jsonl(ticker)
@@ -122,7 +121,8 @@ def serpentine_search_block(ticker: str) -> dict | None:
     # here — the page, the terminal and the state file show one number because one of them computed it
     trials = dataset.load_jsonl(ledger) if ledger.exists() else []
     inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
-        serpentine_search.build_search_inputs(best_params, serpentine_search.active_columns(ticker, cat),
+        serpentine_search.build_search_inputs(serpentine_search.active_best_params(ticker),
+                                              serpentine_search.active_columns(ticker, cat),
                                               serpentine_search.active_barriers(ticker), cat,
                                               dataset.load_json(profile_path)))
     return {

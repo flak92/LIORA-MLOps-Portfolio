@@ -364,7 +364,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `relative_logloss_skill`
   - Ui label: skill (`rel. skill`, `val skill F<n>`, `mean val skill`, `holdout skill` in the tables)
   - Never: accuracy, edge
-- HPO — the search for model hyper-parameters, and the stage that runs it: a function of X, Y and the frozen constants, drawing no point to start from
+- HPO — the search for model hyper-parameters, and the stage that runs it: a function of X, Y, the frozen constants and the point a hand promoted, its first trial when there is one
   - Code: HPO — `module_ml/hpo.py`, `make ml-hpo`; `search_hyperparameters()`
   - Artifact key: `hyperparameter_search_result`
   - Never: tuning, optimisation, autoML; a derived artifact that reads its own last value; `HPO` spelled out mid-document after its first use; `search` alone for the serpentine search
@@ -436,11 +436,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `search_converged`
   - Ui label: converged
   - Never: done, finished, stopped; optimal, without saying in what
-- the promotion — a hand's copy of one proposal's columns and barrier geometry into the asset's own state, followed by its ML chain, which tunes it again: its realised result differs from the search's, and the same proposal twice changes nothing
+- the promotion — a hand's copy of one proposal's whole state — its columns, its barrier geometry and its hyper-parameter point — into the asset's own, followed by its ML chain, whose study starts from that point, so the point it keeps is worth at least the proposal's path CAGR; the same proposal twice changes nothing
   - Code: `module_features/sub_module_serpentine_search/promote.py`, `make features-serpentine-search-promote ASSET=<TICKER>`
-  - Artifact key: `<TICKER>_feature_set.json` with `columns_by_timeframe` and `<TICKER>_barriers.json` with the four of `BARRIER_COORDINATE_NAMES`, and nothing else
+  - Artifact key: `<TICKER>_feature_set.json` with `columns_by_timeframe`, `<TICKER>_barriers.json` with the four of `BARRIER_COORDINATE_NAMES` and `<TICKER>_hyperparameter_point.json` with `best_params`, and nothing else
   - Ui label: promote (the features terminal's action); the page shows a promotion only as the set's `source`
-  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history; a rank on the make line or the command line, a search holding one proposal at most
+  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history; a rank on the make line or the command line, a search holding one proposal at most; a part of the state left behind
 - the feature set source — the promoted file when it exists, else the default set of the catalogue
   - Code: `feature_set_block()`
   - Artifact key: `feature_set` with `source` = `default` / `promoted`, `columns_by_timeframe`
@@ -675,7 +675,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the asset's folder: its non-tabular files, one file per artifact responsibility, named `<TICKER>_<artifact>.<ext>`, at the segment `ticker=<TICKER>/` of the artifacts store
   - Code: `store/assets_artifacts/ticker=<TICKER>/`; `artifact_dir()` in `module_features/config.py`, `module_ml/config.py` and `module_features/sub_module_terminal/config.py`; one descriptor per file in the `config.py` of the module that writes it
   - Never: a Parquet file in the asset's folder; a file without the `<TICKER>_` prefix; `<TICKER>/` without its key; a path assembled at the point of use
-  - Holds: its tracked remnant: `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once written, `<TICKER>_serpentine_search_profile.json`, `<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_feature_set.json`, `<TICKER>_barriers.json`; every other file the chain rebuilds
+  - Holds: its tracked remnant: `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once written, `<TICKER>_serpentine_search_profile.json`, `<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_feature_set.json`, `<TICKER>_barriers.json`, `<TICKER>_hyperparameter_point.json`; every other file the chain rebuilds
 - the asset: the one a per-asset process is run for, and the namespace every partition and every per-asset file is selected by
   - Code: `ticker` — in code, in a key, and as the partition value `ticker=<TICKER>`; `--tickers` of a stage's command line, `build_ticker_parser()` with no default; `ASSET=<TICKER>` on the make line narrowing `TICKER_LIST`, read by no stage
   - Never: `TICKER`, `SYMBOL`, `ASSET_TICKER` as its name; a per-asset `.env`; a module, a file, a function, a compose service or an image named for a ticker; `ASSET` read by a stage
@@ -813,9 +813,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `parameters_json()` — equal by value
   - Code: `module_ml/config.py`, over its own `artifact_dir()`; `module_features/sub_module_serpentine_search/config.py`, over its module's
   - Why twice: the ML chain writes the tuned parameters the serpentine search starts from; the writer and the reader of a boundary name one artifact
-- `feature_set_json()`, `barriers_json()` — equal by value
+- `feature_set_json()`, `barriers_json()`, `hyperparameter_point_json()` — equal by value
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`, `module_features/sub_module_terminal/config.py`, each over its own `artifact_dir()` or its module's
-  - Why twice: the promotion writes the two, the ML chain and the serpentine search read them, and the features terminal names them on its promotion screen; the writer and the reader of a boundary must name one artifact, and the terminal cannot import the sub-module's `config.py`, which imports numpy through the module's
+  - Why twice: the promotion writes the three, the ML chain reads them and the serpentine search the first two, and the features terminal names them on its promotion screen; the writer and the reader of a boundary must name one artifact, and the terminal cannot import the sub-module's `config.py`, which imports numpy through the module's
 - `theta()`, `state_key()` — identical
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py`, `module_ml/score.py`
   - Why twice: the serpentine search keys a state to know whether it has scored it, and the module that scores names the parent of a study by the same key: one differing separator and every answer would look like the answer to another question
@@ -943,7 +943,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
   - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full window of every validation fold and of the final holdout; metrics score only the supervised subset; untracked
 - `<TICKER>_README.md`
-  - Code: `module_ml/status.py` writes it, `asset_readme_md()`; its file list `file_manifest()`, the two files of `HAND_STAGE_FILE_DESCRIPTORS` listed with no size
+  - Code: `module_ml/status.py` writes it, `asset_readme_md()`; its file list `file_manifest()`, the three files of `HAND_STAGE_FILE_DESCRIPTORS` listed with no size
   - Holds: what the folder holds and what came out of it; no timestamp; tracked
 - `<TICKER>_barriers.json`
   - Code: `module_features/sub_module_serpentine_search/promote.py` writes it; `barriers_json()`; `load_barriers()` in `module_ml/dataset.py` reads it
@@ -954,6 +954,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `<TICKER>_feature_set.json`
   - Code: `module_features/sub_module_serpentine_search/promote.py` writes it; `feature_set_json()`
   - Holds: `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's; tracked once promoted, like the parameters it conditions
+- `<TICKER>_hyperparameter_point.json`
+  - Code: `module_features/sub_module_serpentine_search/promote.py` writes it; `hyperparameter_point_json()`; `hpo.main()` in `module_ml/hpo.py` reads it
+  - Holds: `best_params` — the promoted hyper-parameter point, a hand's choice: the first trial of the chain's study, and nothing else; absent, the study draws every point; tracked once promoted, like the feature set and the geometry beside it
 - `<TICKER>_model_evaluation.json`
   - Code: `module_ml/train.py` writes it; `model_evaluation_json()`
   - Holds: `validation` — a `fold_<id>` per fold of `VALIDATION_FOLD_IDS` — and `final_holdout`, each `prior_logloss`, `model_logloss`, `relative_logloss_skill`, `scored_row_count`; `validation_importance`, a `fold_<id>` per validation fold, each `gain_importance` and `mean_abs_shap_importance` per column; `feature_columns`; `class_counts`, `labels`, `segments`; untracked

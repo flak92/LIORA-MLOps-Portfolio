@@ -274,6 +274,11 @@ def active_barriers(ticker: str) -> dict:
             for name, start in config.START_BY_COORDINATE_DEFAULT.items()}
 
 
+def active_best_params(ticker: str) -> dict:
+    """The asset's hyper-parameter point: the one its ML chain chose last."""
+    return dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
+
+
 # ---- the question and the answer -------------------------------------------------------------------------
 
 def result_key(kind: str, result: dict) -> str:
@@ -356,7 +361,7 @@ def turn(ticker: str) -> None:
     profile = dataset.load_json(config.serpentine_search_profile_json(ticker))
     # the asset's noise sigma, or None on the calibration run that measures it
     noise_sigma = profile["path_cagr_noise_standard_deviation"]
-    best = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
+    best = active_best_params(ticker)
     cat = dataset.load_json(features_config.catalogue_json(ticker))
     timeframes = config.timeframes(cat)
     columns, barriers = active_columns(ticker, cat), active_barriers(ticker)

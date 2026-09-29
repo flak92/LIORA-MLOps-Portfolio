@@ -183,7 +183,7 @@ Every object is classified before it is placed, and grouped by who writes its st
 | STORAGE | where state lives, and the descriptors that name it | the five `store/<content>/` folders; every path descriptor of a `config.py` |
 | FEATURE | the catalogue, a pure function of the canonical series, and the contract that names it | `module_features/catalogue.py`, `module_features/indicators.py` |
 | LABEL | Y, resolved on the canonical path | `module_ml/labels.py` |
-| MODEL | the searches, the fit, the folds, the shared IO, and the promotion that fixes an asset's columns and barriers | `module_ml/hpo.py`, `score.py`, `train.py`, `model.py`, `validation.py`, `dataset.py`; the serpentine search, `module_features/sub_module_serpentine_search/`, which sits with the feature set it moves |
+| MODEL | the searches, the fit, the folds, the shared IO, and the promotion that fixes an asset's columns, barriers and hyper-parameter point | `module_ml/hpo.py`, `score.py`, `train.py`, `model.py`, `validation.py`, `dataset.py`; the serpentine search, `module_features/sub_module_serpentine_search/`, which sits with the feature set it moves |
 | STRATEGY | the research evaluation of the predictions | `module_ml/strategy.py` |
 | ORCHESTRATION | ordering and launching the stages | the Makefile |
 | MONITORING | measuring the runtime, dating the crawler's reports, and presenting what was measured | the three modules' `status.py` and the crawler's, `record.py`, `module_monitoring/serve.py` and the page |
@@ -358,7 +358,7 @@ Six things, each a seat above:
 - the stores, explicit and outside compute, mounted at `/store/<content>` beside the one tree mount;
 - the orchestration outside the modules, in one Makefile and one compose file;
 - the contracts between modules as files, never imports: `<TICKER>_catalogue.json`, the serpentine search's question
-  and answer, the promoted feature set and barriers, the snapshots, the run record, and the copies registered in
+  and answer, the promoted state, the snapshots, the run record, and the copies registered in
   `module_skills/skill_glossary.md` § Twice by extraction;
 - the asset as a parameter of the launcher alone;
 - a recorder that reads off the stores what a stage wrote.

@@ -128,9 +128,9 @@ def asset_report(ticker: str, cat: dict, hyperparameter_search_result: dict, met
     }
 
 
-# the files of a hand's stage — the two a promotion writes. A file of a hand's stage is listed, not measured: its size
+# the files of a hand's stage — the three a promotion writes. A file of a hand's stage is listed, not measured: its size
 # moves with the hand, not with the chain, and the README is promised byte-reproducible by the chain alone
-HAND_STAGE_FILE_DESCRIPTORS = (config.barriers_json, config.feature_set_json)
+HAND_STAGE_FILE_DESCRIPTORS = (config.barriers_json, config.feature_set_json, config.hyperparameter_point_json)
 
 
 def file_manifest(ticker: str, cat: dict) -> list[tuple]:
@@ -146,6 +146,7 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
         (config.barriers_json(ticker), "the promoted barrier geometry: the two multipliers of a trade, the label's own and the horizon token — a hand's choice; absent, the frozen constants are the asset's"),
         (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their slots, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
         (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
+        (config.hyperparameter_point_json(ticker), "the promoted hyper-parameter point: the first trial of the search, a hand's choice — absent, the search draws every point"),
         (config.model_evaluation_json(ticker), "classification metrics per fold"),
         (config.parameters_json(ticker), "the one parameters file: what the search chose"),
         (config.strategy_evaluation_json(ticker), "threshold, PnL and the equity curve"),
@@ -212,10 +213,10 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
     feature_set_source = ("The default set of the catalogue — no promoted file" if feature_set["source"] == "default"
                           else f"A promoted set — `{config.feature_set_json(ticker).name}`, a hand's choice; "
                                f"the commit history is the record")
-    feature_set_reproduce_note = ("" if feature_set["source"] == "default" else
-                                  f"`{config.feature_set_json(ticker).name}` must lie beside this file as well — every fit "
-                                  f"reads the promoted set from it; absent, the chain reads the default set and the folder "
-                                  f"it rebuilds is another one.\n\n")
+    promoted = [f"`{descriptor(ticker).name}`" for descriptor in HAND_STAGE_FILE_DESCRIPTORS if descriptor(ticker).exists()]
+    promoted_reproduce_note = ("" if not promoted else
+                               f"{', '.join(promoted)} must lie beside this file as well — the chain reads the promoted "
+                               f"state from them, and without them the folder it rebuilds is another one.\n\n")
 
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
     final_holdout_strategy = strategy["final_holdout"]
@@ -277,7 +278,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV is the asset's partition of the family `ohlcv_1m_canonical` — the market object the whole chain reads, outside the manifest above because its size moves with every top-up and this file is promised byte-reproducible.
 
-{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
+{promoted_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
 """
 
 
