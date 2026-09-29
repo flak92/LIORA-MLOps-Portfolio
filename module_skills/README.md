@@ -122,7 +122,7 @@ each token is written in its coarsest whole unit: `90m` would list before `1h`, 
 The slots are for names with siblings of another granularity to sort against. The raw store has none — `raw_1m`
 is the one raw child of `store/` — so it keeps the compact token the code and the schema already speak, as every
 serialised name does: a family, a feature id and a key are contracts with the files on disk. A partition
-`timeframe=<tf>/` carries the compact token as its value, and the columns of a `catalogue` partition carry no
+`timeframe=<timeframe>/` carries the compact token as its value, and the columns of a `catalogue` partition carry no
 timeframe at all, the partition already saying which; `feature_id()` adds it where no partition stands beside the
 name — a column of X, the key of an importance.
 
@@ -241,7 +241,7 @@ queue and no database process, and no front until a reader outside the host appe
   stage with the command overridden and per asset with `--tickers <TICKER>`. The stages are states, fanned out by a Map
   over `TICKERS` as wide as `JOBS`, and `run_id` is the execution name. A second asset is one more iteration of the
   Map. A rename.
-- **The table families.** `<family>/ticker=<TICKER>/[timeframe=<tf>/]<family>.parquet`, with `schema.json` beside the
+- **The table families.** `<family>/ticker=<TICKER>/[timeframe=<timeframe>/]<family>.parquet`, with `schema.json` beside the
   partitions and one stage writing each family. DuckDB is the engine, in memory, and there is no database file. On the
   volume the files sit at the same paths, and every descriptor resolves unchanged. After the run each file is copied
   whole under its store's prefix. A second asset is one more partition of each family. A rename.

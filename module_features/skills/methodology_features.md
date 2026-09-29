@@ -23,7 +23,7 @@ labels and the strategy stand on. The duration and the slot of each token are re
 which `features_status.json` publishes (`configurables`), and it publishes, per timeframe, its
 duration, its bars per UTC day, its ratio to the level below and its slot (`catalogue.timeframes`).
 The slot travels in the contract and in no file name: a partition names its timeframe as
-`timeframe=<tf>`.
+`timeframe=<timeframe>`.
 
 A token enters the hierarchy on two conditions (`FEATURE-TAXONOMY-A-TIMEFRAME-TOKEN-DIVIDES-THE-DAY`).
 Its duration is a whole multiple of the decision timeframe's and divides one UTC day: a bar opens on
@@ -41,7 +41,7 @@ last, V sum, plus `ffill_bars` and `zero_volume_bars`, the forward-filled and th
 minutes inside each bar, carried up for a reader and read by no later stage; the first and the last
 minute are chosen by timestamp (`arg_min` / `arg_max`), never by row order, so the aggregation is
 deterministic — written by `bars.py` as the asset's partitions of the `bars` family,
-`bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet`, one per entry of the hierarchy, with the
+`bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet`, one per entry of the hierarchy, with the
 family's `bars/schema.json` beside them (`FEATURE-TAXONOMY-TIMEFRAME-ARTIFACTS-FOLLOW-THE-REGISTER`).
 An aggregate is a native bar of its token — the minutes a venue's own candle of that token spans,
 combined the same way — and not a resample.

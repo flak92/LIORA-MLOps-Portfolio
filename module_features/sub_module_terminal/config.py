@@ -31,8 +31,9 @@ def artifact_dir(ticker: str) -> Path:
 
 # twice by extraction
 def partition_dir(family: str, ticker: str, timeframe: str | None = None, store: Path = STORE_ASSETS_ARTIFACTS_DIR) -> Path:
-    """One partition of a table family: `<store>/<family>/ticker=<TICKER>/[timeframe=<tf>/]` — Hive's `key=value`, the value
-    the ticker in capitals and the compact token; the store the artifacts store unless the family lives in another."""
+    """One partition of a table family: `<store>/<family>/ticker=<TICKER>/[timeframe=<timeframe>/]` — Hive's
+    `key=value`, the value the ticker in capitals and the compact token; the store the artifacts store unless the
+    family lives in another."""
     partition = store / family / f"ticker={ticker}"
     return partition if timeframe is None else partition / f"timeframe={timeframe}"
 

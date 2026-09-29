@@ -172,7 +172,7 @@ object. Everything below it describes the method, not the data provider.
 | `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the four snapshots, so a fresh clone opens on real numbers |
 
 A table is a family of Parquet files partitioned by asset and, where the register decides the values, by
-timeframe — `<store>/<family>/ticker=<TICKER>/[timeframe=<tf>/]<family>.parquet`, Hive's `key=value` — and every
+timeframe — `<store>/<family>/ticker=<TICKER>/[timeframe=<timeframe>/]<family>.parquet`, Hive's `key=value` — and every
 writer of a family writes the family's `schema.json` beside its partitions. The asset's folder
 `ticker=<TICKER>/` holds its non-tabular files, one file per artifact, named for it. DuckDB is the engine, in memory,
 and no database file exists. One stage writes each family and each file:
@@ -182,10 +182,10 @@ and no database file exists. One stage writes each family and each file:
 | the raw days | `cryptofuture/{binance,bybit}/minute/<symbol>/<YYYYMMDD>_trade.zip` | `data-download` | no |
 | the venue families | `ohlcv_1m_{binance,bybit}/ticker=<TICKER>/ohlcv_1m_<venue>.parquet` | `data-ingest` | no |
 | the canonical family | `ohlcv_1m_canonical/ticker=<TICKER>/ohlcv_1m_canonical.parquet` | `data-ingest` | no |
-| `bars` | `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet`, every timeframe of the register | `features-bars` | no |
-| `catalogue` | `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet`, every timeframe of the register | `features-catalogue` | no |
-| `labels` | `labels/ticker=<TICKER>/timeframe=<tf>/labels.parquet`, the decision timeframe | `ml-labels` | no |
-| `oos_predictions` | `oos_predictions/ticker=<TICKER>/timeframe=<tf>/oos_predictions.parquet`, the decision timeframe | `ml-train` | no |
+| `bars` | `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet`, every timeframe of the register | `features-bars` | no |
+| `catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, every timeframe of the register | `features-catalogue` | no |
+| `labels` | `labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet`, the decision timeframe | `ml-labels` | no |
+| `oos_predictions` | `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet`, the decision timeframe | `ml-train` | no |
 | the contract | `ticker=<TICKER>/<TICKER>_catalogue.json` | `features-catalogue` | no |
 | the parameters | `ticker=<TICKER>/<TICKER>_parameters.json` | `ml-hpo` | yes |
 | the evaluations | `ticker=<TICKER>/<TICKER>_model_evaluation.json`, `<TICKER>_strategy_evaluation.json` | `ml-train`, `ml-strategy` | no |

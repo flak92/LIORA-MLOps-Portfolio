@@ -62,8 +62,8 @@ make line says `JOBS=n`; the promotion runs for the one asset `ASSET` names, and
 
 | stage | target | writes |
 |---|---|---|
-| bars | `make features-bars` | `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet`, one partition per entry of the register, and `bars/schema.json` |
-| catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
+| bars | `make features-bars` | `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet`, one partition per entry of the register, and `bars/schema.json` |
+| catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
 | status | `make features-status` | `store/status/features_status.json` |
 | serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_trials.jsonl` and the next question `<TICKER>_score_request.json`, or a finished search |
 | promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`, then the asset's ML chain |
@@ -74,12 +74,12 @@ stage one container per asset, `status` once. Each stage takes `--tickers`.
 ## What it writes
 
 ```
-store/assets_artifacts/bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet            one timeframe's bars: the bar's open, OHLCV, ffill_bars, zero_volume_bars
-store/assets_artifacts/bars/schema.json                                            the family's columns, read off a written partition
-store/assets_artifacts/catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet  decision_ts and the definitions offered on that timeframe
-store/assets_artifacts/catalogue/schema.json                                       the family's columns, from the register
-store/assets_artifacts/ticker=<TICKER>/<TICKER>_catalogue.json                     the contract: grid, hierarchy, warm-up, columns, default set, partition paths
-store/status/features_status.json                                                  the snapshot: the catalogue as the register presents it, the CONFIGURABLES records, each asset's row counts and serpentine search
+store/assets_artifacts/bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet            one timeframe's bars: the bar's open, OHLCV, ffill_bars, zero_volume_bars
+store/assets_artifacts/bars/schema.json                                                   the family's columns, read off a written partition
+store/assets_artifacts/catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet  decision_ts and the definitions offered on that timeframe
+store/assets_artifacts/catalogue/schema.json                                              the family's columns, from the register
+store/assets_artifacts/ticker=<TICKER>/<TICKER>_catalogue.json                            the contract: grid, hierarchy, warm-up, columns, default set, partition paths
+store/status/features_status.json                                                         the snapshot: the catalogue as the register presents it, the CONFIGURABLES records, each asset's row counts and serpentine search
 ```
 
 Outside the chain, in the asset's folder `store/assets_artifacts/ticker=<TICKER>/`:

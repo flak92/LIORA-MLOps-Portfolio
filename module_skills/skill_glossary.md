@@ -663,10 +663,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `origin`, `round`, `search_index`, `trial_index`, `state`, `params`
   - Never: a run id, a timestamp or a host name in the ledger — the file is byte-deterministic and each of the three would end that; a minted run name; Optuna's own trial number, which counts from zero and does not leave `hpo.py`; a ticker in a key, the partition being the ticker's
 - a table family: a table of the chain — Parquet, or JSON lines for a ledger — partitioned by asset and, where the timeframe register decides its values, by timeframe; one stage writes it and its `schema.json` beside its partitions, and a partition may omit a column, never rename one or change its type
-  - Code: `ohlcv_1m_binance`, `ohlcv_1m_bybit`, `ohlcv_1m_canonical`, `bars`, `catalogue`, `labels`, `oos_predictions` under `STORE_ASSETS_ARTIFACTS_DIR`; `hpo_trials`, `score_trials` under `STORE_TRIALS_DIR`; `<family>/ticker=<TICKER>/[timeframe=<tf>/]<family>.parquet` or `.jsonl`; `partition_dir()` in every `config.py` that writes or reads one; DuckDB the engine, in memory
+  - Code: `ohlcv_1m_binance`, `ohlcv_1m_bybit`, `ohlcv_1m_canonical`, `bars`, `catalogue`, `labels`, `oos_predictions` under `STORE_ASSETS_ARTIFACTS_DIR`; `hpo_trials`, `score_trials` under `STORE_TRIALS_DIR`; `<family>/ticker=<TICKER>/[timeframe=<timeframe>/]<family>.parquet` or `.jsonl`; `partition_dir()` in every `config.py` that writes or reads one; DuckDB the engine, in memory
   - Never: table file, database, a `.duckdb` file; a Parquet file outside a family; a family with two writers; the serpentine search's family (§ Metrics), a different meaning
 - a partition: one asset's rows of a family, and one timeframe's where the family has one
-  - Code: `ticker=<TICKER>/`, `timeframe=<tf>/` — Hive's `key=value`, the value the ticker in capitals and the compact timeframe token; `partition_dir()`
+  - Code: `ticker=<TICKER>/`, `timeframe=<timeframe>/` — Hive's `key=value`, the value the ticker in capitals and the compact timeframe token; `partition_dir()`
   - Never: `<TICKER>/` without its key; a lower-case ticker as a partition value; a slot as a partition value; a column inside the partition repeating its key
   - External vocabulary: Hive
 - the schema of a family: its columns and types as data, written by the family's one writer beside its partitions — the columns of the union of the partitions, the partition keys absent
@@ -931,16 +931,16 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `module_data/ingest.py` writes `ohlcv_1m_canonical/ticker=<TICKER>/ohlcv_1m_canonical.parquet` and the family's `schema.json`; `ohlcv_1m_canonical_parquet()`
   - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume`, `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence` — the full grid of the window, ordered by `timestamp_ms`; untracked
 - the family `bars`: the bars of every timeframe of the timeframe register, one partition per asset and timeframe
-  - Code: `module_features/bars.py` writes `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet` and the family's `schema.json`; `bars_parquet()`
+  - Code: `module_features/bars.py` writes `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet` and the family's `schema.json`; `bars_parquet()`
   - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume`, `ffill_bars`, `zero_volume_bars` inside the research window, ordered by `timestamp_ms`; untracked
 - the family `catalogue`: every catalogued column on the decision grid, one partition per asset and timeframe; a partition may omit a column the feature catalogue does not offer on its timeframe, never rename one or change its type
-  - Code: `module_features/catalogue.py` writes `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet` and the family's `schema.json` from `catalogue_schema()`, the columns of the union of its partitions in catalogue order; `catalogue_parquet()` — in `module_ml/config.py` the same name over the contract's `parquet_by_timeframe`
+  - Code: `module_features/catalogue.py` writes `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet` and the family's `schema.json` from `catalogue_schema()`, the columns of the union of its partitions in catalogue order; `catalogue_parquet()` — in `module_ml/config.py` the same name over the contract's `parquet_by_timeframe`
   - Holds: `decision_ts` and every definition offered on the partition's timeframe, on the decision grid; untracked
 - the family `labels`: Y on the decision timeframe, one partition per asset and timeframe
-  - Code: `module_ml/labels.py` writes `labels/ticker=<TICKER>/timeframe=<tf>/labels.parquet` and the family's `schema.json`; `labels_parquet()`
+  - Code: `module_ml/labels.py` writes `labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet` and the family's `schema.json`; `labels_parquet()`
   - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `event_resolution`, `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
 - the family `oos_predictions`: the out-of-sample class probabilities, one partition per asset and timeframe
-  - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<tf>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
+  - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
   - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full window of every validation fold and of the final holdout; metrics score only the supervised subset; untracked
 - `<TICKER>_README.md`
   - Code: `module_ml/status.py` writes it, `asset_readme_md()`; its file list `file_manifest()`, the two files of `HAND_STAGE_FILE_DESCRIPTORS` listed with no size
@@ -950,7 +950,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `label_barrier_true_range_multiplier`, `label_horizon`, `take_profit_true_range_multiplier`, `stop_loss_true_range_multiplier` — the asset's promoted barrier geometry, a hand's choice; absent, `START_BY_COORDINATE_DEFAULT` of `module_ml/config.py` is the asset's; tracked once promoted, like the feature set beside it
 - `<TICKER>_catalogue.json`
   - Code: `module_features/catalogue.py` writes it from `catalogue_contract()`; `catalogue_json()`
-  - Holds: the feature layer's contract the ML layer reads instead of the feature configuration: `decision_timeframe`, `timeframes` (each `timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` — each value a path relative to the artifacts store, `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet`; untracked
+  - Holds: the feature layer's contract the ML layer reads instead of the feature configuration: `decision_timeframe`, `timeframes` (each `timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` — each value a path relative to the artifacts store, `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`; untracked
 - `<TICKER>_feature_set.json`
   - Code: `module_features/sub_module_serpentine_search/promote.py` writes it; `feature_set_json()`
   - Holds: `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's; tracked once promoted, like the parameters it conditions
@@ -1011,7 +1011,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `feature_id()` = `<definition>_<timeframe>`
   - Artifact key: `feature_columns`, the keys of an importance
   - Ui label: the feature id — `column <timeframe>` in the FEATURE SET frame
-  - Never: a column literal in a page script; a parquet column with a timeframe (the partition `timeframe=<tf>/` carries it)
+  - Never: a column literal in a page script; a parquet column with a timeframe (the partition `timeframe=<timeframe>/` carries it)
 - the feature catalogue — every definition the repository can compute, with the timeframes it is offered on; drafted, like the rest of `config.py`
   - Code: `FEATURE_CATALOGUE`, `catalogue_columns()`, `CATALOGUE_COLUMNS`; the stage `features-catalogue`, `module_features/catalogue.py`
   - Artifact key: `catalogue` (of `features_status.json`); `<TICKER>_catalogue.json`; the family `catalogue`

@@ -31,7 +31,7 @@ How the feature layer builds and names what it computes: the tokens of the timef
 - `FEATURE-TAXONOMY-AN-ID-NAMES-ITS-COMPUTATION-ALONE`
   - Description: A feature id is its definition's name followed by the one timeframe every term of it is evaluated on, and every number in it counts bars of that timeframe; nothing else is written into it — not the decision timeframe, the label horizon, the asset, a category word or a history in hours.
   - Scope: `module_features/**/*.py`
-  - Expected: `feature_id(definition_name, timeframe)` = `<definition>_<timeframe>` over `[<normaliser>_]<term>{_<operator>_<term>}`, the column of X and the key of an importance; a partition's column the definition's name alone, its partition carrying the timeframe; never `trend_<tf>`, `momentum_<…>`, a ticker, an hour count or a second timeframe inside an id.
+  - Expected: `feature_id(definition_name, timeframe)` = `<definition>_<timeframe>` over `[<normaliser>_]<term>{_<operator>_<term>}`, the column of X and the key of an importance; a partition's column the definition's name alone, its partition carrying the timeframe; never `trend_<timeframe>`, `momentum_<…>`, a ticker, an hour count or a second timeframe inside an id.
   - Exception: none
 
 ## Conformities
@@ -52,7 +52,7 @@ How the feature layer builds and names what it computes: the tokens of the timef
 - `FEATURE-TAXONOMY-TIMEFRAME-ARTIFACTS-FOLLOW-THE-REGISTER`
   - Description: For every timeframe of the register an asset holds one partition of the `bars` family and one of the `catalogue` family, the timeframe the partition's value and never a column or a file-name slot.
   - Scope: `module_features/**/*.py`
-  - Expected: `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet` and `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet` in the artifacts store for every timeframe of `HIERARCHY_TIMEFRAMES`, each family's `schema.json` beside its partitions — the bars' read off a written partition, the catalogue's from the register (`catalogue_schema()`), the union of its partitions' columns; a catalogue partition holding `decision_ts` and the definitions `catalogue_columns(<tf>)` offers; never a bars table in a database, a Parquet outside a family or a timeframe inside a column name.
+  - Expected: `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet` and `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet` in the artifacts store for every timeframe of `HIERARCHY_TIMEFRAMES`, each family's `schema.json` beside its partitions — the bars' read off a written partition, the catalogue's from the register (`catalogue_schema()`), the union of its partitions' columns; a catalogue partition holding `decision_ts` and the definitions `catalogue_columns(<timeframe>)` offers; never a bars table in a database, a Parquet outside a family or a timeframe inside a column name.
   - Exception: none
 - `FEATURE-TAXONOMY-THE-CONTRACT-IS-ONE-FILE`
   - Description: What the ML layer may read is one contract file per asset, written by this module and read by the stages that need it.

@@ -732,7 +732,7 @@ fell back to the grid floor, which is itself the loudest thing the three can say
 Per asset, each name registered in `module_skills/skill_glossary.md` § Artifacts, and
 the research artifacts listed with their sizes in the Files table of
 `<TICKER>_README.md`: in the artifacts store, the asset's partitions of `labels` and `oos_predictions` on the decision
-timeframe — `store/assets_artifacts/<family>/ticker=<TICKER>/timeframe=<tf>/<family>.parquet`,
+timeframe — `store/assets_artifacts/<family>/ticker=<TICKER>/timeframe=<timeframe>/<family>.parquet`,
 each family's `schema.json` at its root — and in the asset's folder
 `store/assets_artifacts/ticker=<TICKER>/` the three result files
 `<TICKER>_parameters.json`, `<TICKER>_model_evaluation.json` and

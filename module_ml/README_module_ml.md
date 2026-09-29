@@ -65,9 +65,9 @@ assets the launcher names — the whole basket.
 
 | stage | target | writes |
 |---|---|---|
-| labels | `make ml-labels` | the asset's `labels` partition on the decision timeframe the contract names, `labels/ticker=<TICKER>/timeframe=<tf>/labels.parquet`, and `labels/schema.json` |
+| labels | `make ml-labels` | the asset's `labels` partition on the decision timeframe the contract names, `labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet`, and `labels/schema.json` |
 | hyper-parameter search | `make ml-hpo` | `<TICKER>_parameters.json`, and every point its study drew into `hpo_trials/ticker=<TICKER>/hpo_trials.jsonl` of the trials store, with `hpo_trials/schema.json` |
-| training | `make ml-train` | `<TICKER>_model_evaluation.json`, and the `oos_predictions` partition, `oos_predictions/ticker=<TICKER>/timeframe=<tf>/oos_predictions.parquet`, with `oos_predictions/schema.json` |
+| training | `make ml-train` | `<TICKER>_model_evaluation.json`, and the `oos_predictions` partition, `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet`, with `oos_predictions/schema.json` |
 | strategy | `make ml-strategy` | `<TICKER>_strategy_evaluation.json` |
 | status | `make ml-status` | `store/status/ml_status.json`, the module's `CONFIGURABLES` records beside the assets, and `<TICKER>_README.md` |
 | score — outside the chain, the serpentine search's question | `make ml-score`, one process per asset of the basket, `ASSET=<TICKER>` narrowing it to one — and between two turns of the search, by `make features-serpentine-search` | `<TICKER>_score_response.json`: a trial row per state, or a study and its candidate per beam parent; a study's points into `score_trials/ticker=<TICKER>/score_trials.jsonl` of the trials store, with `score_trials/schema.json` |
@@ -94,14 +94,14 @@ no parameter, and what is kept is the state, not the model the search evaluated.
 ## What it writes
 
 ```
-store/assets_artifacts/labels/ticker=<TICKER>/timeframe=<tf>/labels.parquet                    Y on the decision grid, tf the decision timeframe
-store/assets_artifacts/oos_predictions/ticker=<TICKER>/timeframe=<tf>/oos_predictions.parquet  the out-of-sample class probabilities, full windows
-store/assets_artifacts/{labels,oos_predictions}/schema.json                                    each family's columns, beside its partitions
-store/assets_artifacts/ticker=<TICKER>/                                                        the parameters, the two evaluations, the README, the score response
-store/trials/hpo_trials/ticker=<TICKER>/hpo_trials.jsonl                                       every point ml-hpo's studies drew, written by ml-hpo alone
-store/trials/score_trials/ticker=<TICKER>/score_trials.jsonl                                   every point the studies ml-score ran for the search drew, written by ml-score alone
-store/trials/{hpo_trials,score_trials}/schema.json                                             the one row both trials families share
-store/status/ml_status.json                                                                    the status snapshot the dashboard reads
+store/assets_artifacts/labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet                    Y on the decision grid of the decision timeframe
+store/assets_artifacts/oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet  the out-of-sample class probabilities, full windows
+store/assets_artifacts/{labels,oos_predictions}/schema.json                                           each family's columns, beside its partitions
+store/assets_artifacts/ticker=<TICKER>/                                                               the parameters, the two evaluations, the README, the score response
+store/trials/hpo_trials/ticker=<TICKER>/hpo_trials.jsonl                                              every point ml-hpo's studies drew, written by ml-hpo alone
+store/trials/score_trials/ticker=<TICKER>/score_trials.jsonl                                          every point the studies ml-score ran for the search drew, written by ml-score alone
+store/trials/{hpo_trials,score_trials}/schema.json                                                    the one row both trials families share
+store/status/ml_status.json                                                                           the status snapshot the dashboard reads
 ```
 
 One folder per asset, one file per artifact responsibility, and beside it the
