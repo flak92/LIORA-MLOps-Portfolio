@@ -314,6 +314,18 @@ b₀ … b₅ are `FOLD_BOUNDS_UTC`, b₀ and b₅ the research window, the firs
 inclusive and the last exclusive; `warmup_end` is the contract's
 `warmup_end_ms`, before which no decision row exists.
 
+**F1 is mostly warm-up.** The catalogue's warm-up, `WARMUP_TOP_TIMEFRAME_BARS`
+bars of the top timeframe counted from b₀, ends at the frozen constants on
+2021-08-09, so F1 keeps its last 145 days and the model of fold 2 trains on ≈3.5
+thousand rows, against ≈12.2, ≈21.0 and ≈29.8 thousand for folds 3, 4 and the
+holdout — the Fold geometry table of `<TICKER>_README.md` counts them. The
+path's log growth rate is the sum of the folds' log final equities over the
+path's years, so the fold whose final equity moves furthest from one moves the
+objective most — as a rule the fold that trades most; where that is F2, as for
+BTC at the default state, the objective of `ml-hpo` and of the serpentine search
+measures mostly the model trained on the least data. The window stays as frozen:
+an earlier b₀, or validation from F3 on, is another experiment.
+
 **Purge** keeps a training row only if `event_end_ts <= oos_start`. Because
 `event_end_ts` is exclusive, that inequality *is* "no overlap" — no artificial
 gap is added, since a gap wider than the event horizon removes information

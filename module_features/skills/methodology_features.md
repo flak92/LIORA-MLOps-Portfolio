@@ -418,7 +418,9 @@ k(N)·σ is therefore a margin that grows with the size of the search — a heur
 model assumes independent normal noise of one size; the states of a search are correlated, each one
 move from its parent, and the search is adaptive, every parent having been selected itself. It gives
 no 95% guarantee against a false proposal under this search, and a sentence that claims one is
-false.
+false. N counts the states of the search in hand alone: the searches before it on the same F2–F4 —
+a calibration run, a reset, an earlier profile — spent the same folds and are not in it, so for an
+asset searched more than once the margin understates the selection behind a proposal.
 
 ### What success is
 
