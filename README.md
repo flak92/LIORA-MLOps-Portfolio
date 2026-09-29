@@ -11,6 +11,13 @@ deterministic canonical series per asset, a partition of a Parquet table family 
 the feature catalogue and labels → purged walk-forward XGBoost → research strategy
 simulation → monitoring.
 
+The repository demonstrates a mathematically correct evaluation process and the serpentine
+algorithm, which searches for better feature configurations under an explicit objective
+function. Success is the correctness of the calculations, the comparisons and the algorithm's
+decisions. A positive trading result is not a condition of acceptance: a move from a CAGR of
+−12% to −8% improves the objective, and a search that accepts no candidate can be a correct
+result.
+
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
 the canon of rules that cross them — one workbook every rule is a row of — with the crawler that reads each controlled file against the Skills marked for it. The governing contract — minimalism, minimum requirements,

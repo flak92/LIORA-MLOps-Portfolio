@@ -1,16 +1,16 @@
 # CLAUDE.md — the way into the contract
 
-This file points; it carries no rule of its own, so nothing here can disagree
-with the document it points at. It exists because an agent session loads this
-filename and not `AGENTS.md`.
+@AGENTS.md
 
-`AGENTS.md` is the governing contract. **Read it in full before the first edit
-of a session.**
+The line above loads `AGENTS.md` whole: it is the governing contract, and this
+file adds no rule of its own, so nothing here can disagree with it. It exists
+because an agent session loads this filename and not `AGENTS.md`.
 
 ## The working path
 
 `AGENTS.md` → module names → `README_module_<name>.md` → the module's own
-`skills/` → code. `README.md` is general information, not part of that path.
+`skills/` and the skills beside its sub-modules → code. `README.md` is general
+information, not part of that path.
 
 ## The modules
 
@@ -25,6 +25,8 @@ of a session.**
 
 `module_skills/` holds the rules that cross modules, indexed by
 `module_skills/README.md`. The name register is `module_skills/glossary.md`.
+Every skill and the register are rendered from `module_skills/skills_sheet.xlsx`
+by `make skills-sync` and never edited by hand: a rule changes on the sheet.
 How an agent is expected to work here is
 `module_skills/skill_agent_first_development.md` — read it once before
 proposing structure.
