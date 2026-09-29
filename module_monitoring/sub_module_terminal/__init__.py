@@ -1,1 +1,1 @@
-"""The monitoring module's terminal: the four snapshots and the run records, then the presentation switch through make."""
+"""The monitoring module's terminal: the four snapshots, then one position of the presentation switch through make."""

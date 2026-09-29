@@ -1,6 +1,6 @@
 /* The toolkit every page of this dashboard shares: the one parser of a payload's UTC text, formatters, cells, tables,
-   frames and pills. It writes into no page-specific element, so the status page and the DevOps panel both load it
-   and neither inherits the other's markup. */
+   frames and pills. It writes into no page-specific element: the section scripts of the page load it and write their
+   own. */
 "use strict";
 
 /* twice by extraction */
@@ -39,6 +39,28 @@ function formatPercent(value, decimals) {
 /* null-safe formatting: to_json_safe() writes null for non-finite floats */
 function formatNumber(value, decimals) {
   return value === null || value === undefined ? "-" : value.toFixed(decimals);
+}
+
+/* the page's own arithmetic over what a snapshot publishes per fold: a mean, and an ML asset's validation folds in
+   fold order */
+function mean(values) {
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function validationFolds(asset) {
+  return Object.keys(asset.validation).sort();
+}
+
+/* a module's CONFIGURABLES records as its snapshot publishes them, one row each in the order config.py holds them —
+   the local view of what an operator may set; a value that is not text is shown as the JSON it travelled as */
+function buildConfigurablesTable(records) {
+  return buildTable(
+    ["name", "class", "value", "unit", "meaning", "TUI", "experiment identity", "requires rerun", "risk"],
+    records.map((record) => [
+      record.name, record.class, typeof record.value === "string" ? record.value : JSON.stringify(record.value),
+      record.unit, record.meaning, record.tui ? "yes" : "no", record.experiment_identity ? "yes" : "no",
+      record.requires_rerun, record.risk,
+    ]));
 }
 
 function buildMeter(pctValue) {

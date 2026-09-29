@@ -28,8 +28,8 @@ from `WRITES_BY_STAGE`) and the `command` line verbatim, `make on` or `make off`
 with the action first and *cancel*; the target's own lines stay on the screen as they come, and the run ends on the
 `DONE` block or on the failure block carrying make's exit code. Two facts of its own:
 
-- **what each word moves.** `on` builds the one image every service runs and brings the two residents up together,
-  `dashboard` and `devops`, then prints the page's address it measured and opens it; `off` is `docker compose down`,
+- **what each word moves.** `on` builds the one image every service runs and brings the one resident up,
+  `dashboard`, then prints the page's address it measured and opens it; `off` is `docker compose down`,
   every container of this project stopped and removed. The terminal names none of it: the plan's `command` line says
   `make on`, and what that raises is the Makefile's to say.
 - **the switch is the whole menu.** `monitoring-terminal` is the only other target this module's token names, and it
@@ -55,7 +55,7 @@ is known, and what a hand does next — no terminal on standard input, no gum, o
 
 | object | why here | why beside these | why this boundary |
 |---|---|---|---|
-| the sub-module | the monitoring module's own instrument: its targets are the switch, `on` and `off`, the lifecycle pair the Makefile carries bare | inside `module_monitoring`, beside the dashboard whose stores it shows and the panel; the shape every module's `sub_module_terminal/` shares | it imports the standard library and its own package alone (D19): the two stores through `module_monitoring/config.py`; it runs on the host's `python3` with gum and no virtual environment, in no container, and opens no socket |
+| the sub-module | the monitoring module's own instrument: its targets are the switch, `on` and `off`, the lifecycle pair the Makefile carries bare | inside `module_monitoring`, beside the dashboard whose stores it shows; the shape every module's `sub_module_terminal/` shares | it imports the standard library and its own package alone (D19): the two stores through `module_monitoring/config.py`; it runs on the host's `python3` with gum and no virtual environment, in no container, and opens no socket |
 | `terminal.py` | the one screen and the one action | it imports `config.py` and `tui.py`, and its own package's `config.py` for `store_status_file()` and `STORE_RUN_RECORDS_DIR` | it writes no file and starts the two make targets; `-h`, `--help` is its only argument |
 | `config.py` | the one surface of configuration | `terminal.py` imports it; `tui.py` imports it for plain output and the filter's placeholder alone | it carries the snapshot names, the two positions and what each writes, the plain-output conditions and the one reader of JSON: `module_monitoring/config.py` is standard library, so the store reads and the descriptors are imported and never copied — an owner that can read its module's `config.py` duplicates nothing (`skill_tui_designer.md` § Where the screens live) |
 | `tui.py` | how a screen is drawn and an answer taken | one file with every other terminal's and the crawler's, five times by extraction and registered | it writes to the terminal and no file; it knows none of this sub-module's objects |

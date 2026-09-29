@@ -1,5 +1,5 @@
 /* Pipeline and Data Quality tabs. Classic script using the formatters, cells, tables and frames of
-   page.js — this file fetches /store_status/data_status.json and renders it into the status page.
+   page.js — this file fetches status/data_status.json and renders it into the status page.
 
    It names no provider. The snapshot publishes the venue set in its tier order as `source_venues`, and every
    per-provider section, column and share cell is derived from it: a provider added to the pipeline appears
@@ -133,7 +133,7 @@ function renderCanonicalSource(status) {
   renderInvariantColumns(document.getElementById("canonical-source"), CANONICAL_INVARIANT_HEADERS);
 }
 
-fetch("/store_status/data_status.json", { cache: "no-store" })
+fetch("status/data_status.json", { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
   .then((status) => {
     renderPipeline(status);
@@ -141,6 +141,6 @@ fetch("/store_status/data_status.json", { cache: "no-store" })
     renderCanonicalSource(status);
   }, (error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load /store_status/data_status.json (" + error.message + ") — run `make data-status`";
+    meta.textContent = "could not load status/data_status.json (" + error.message + ") — run `make data-status`";
     meta.className = "box err";
   });

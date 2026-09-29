@@ -60,20 +60,6 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
-/* a jump between the pages of the two personas: the status page and the DevOps panel, each carrying the one jump to
-   the other in its top right corner */
-.jump {
-  float: right;
-  font-family: inherit;
-  font-size: 14px;
-  border: 1px solid #111;
-  background: #fff;
-  padding: 0.25em 0.9em;
-  color: #111;
-  text-decoration: none;
-  margin-left: 0.5em;
-}
-
 .ticker-link {
   font-family: inherit;
   font-size: 14px;

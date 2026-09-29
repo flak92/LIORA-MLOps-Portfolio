@@ -6,9 +6,7 @@ PORT ?= $(shell p=$$(docker compose port dashboard 8900 2>/dev/null | cut -d: -f
                 echo $$p)
 # measured once per make: the mapping and the page ask one port
 PORT := $(PORT)
-# the docker group of this host, so the one container that holds the socket can read it without being root
-DOCKER_GID  := $(shell getent group docker | cut -d: -f3)
-COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT) DOCKER_GID=$(DOCKER_GID)
+COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT)
 COMPOSE     := $(COMPOSE_ENV) docker compose
 # the five stores of this checkout, one folder each under store/, one variable per store — the store contract every
 # config.py reads; facts, not settings: docker-compose.yml mounts ./store/<content> at /store/<content>, the same
@@ -154,8 +152,8 @@ skills-status:   ## skills_status.json -> store/status: every listed file with t
 
 # the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page
-on: build        ## the presentation switch: the dashboard and the DevOps panel up, the page's address printed and opened
-	$(COMPOSE) up -d dashboard devops
+on: build        ## the presentation switch: the dashboard up, the page's address printed and opened
+	$(COMPOSE) up -d dashboard
 	@python3 -c "import webbrowser; url = 'http://127.0.0.1:$(PORT)/'; print('dashboard at', url); webbrowser.open(url)"
 off:             ## the presentation switch: stop and remove every container of this project
 	$(COMPOSE) down

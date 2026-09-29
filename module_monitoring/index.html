@@ -6,13 +6,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <a class="jump" href="sub_module_devops/index.html">DevOps</a>
   <h1>1m crypto research pipeline — status</h1>
-  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical DuckDB per asset &rarr; features &amp; labels &rarr; research</p>
+  <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical dataset per asset &rarr; features &amp; labels &rarr; research</p>
 
   <nav id="tabs" class="pills" data-pills="tab">
     <button class="pill pill--active" data-key="pipeline">Pipeline</button>
     <button class="pill" data-key="quality">Data Quality</button>
+    <button class="pill" data-key="features">Features</button>
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
     <button class="pill" data-key="scalability">Scalability</button>
@@ -20,7 +20,7 @@
   </nav>
 
   <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
-    <div id="meta" class="box">loading /store_status/data_status.json&hellip;</div>
+    <div id="meta" class="box">loading status/data_status.json&hellip;</div>
     <div id="flow" class="box"></div>
     <table id="pipeline" hidden>
       <thead></thead>
@@ -49,8 +49,18 @@
       skill_candle_canonicalisation.md.</p>
   </section>
 
+  <section id="tab-features" data-panel="tab" data-key="features" hidden>
+    <div id="features-meta" class="box">loading status/features_status.json + ml_status.json&hellip;</div>
+    <table id="serpentine-search"><thead></thead><tbody></tbody></table>
+    <div id="features-detail"></div>
+    <div id="features-configurables"></div>
+    <p class="foot">the serpentine search of each asset as the feature layer last wrote it, read against the ML
+      snapshot's numbers for the asset's own state; it chooses on F2–F4 alone, and a proposal becomes the asset's
+      state only by a hand's promotion.</p>
+  </section>
+
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
-    <div id="ml-meta" class="box">loading /store_status/ml_status.json + features_status.json&hellip;</div>
+    <div id="ml-meta" class="box">loading status/ml_status.json + features_status.json&hellip;</div>
     <table id="ml-assets" hidden>
       <thead></thead>
       <tbody></tbody>
@@ -65,10 +75,11 @@
         <p id="catalogue-nesting" class="foot"></p>
       </div>
     </div>
+    <div id="ml-configurables"></div>
   </section>
 
   <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
-    <div id="asset-meta" class="box">loading /store_status/ml_status.json&hellip;</div>
+    <div id="asset-meta" class="box">loading status/ml_status.json&hellip;</div>
 
     <div class="frame">
       <div class="frame__head">
@@ -77,7 +88,7 @@
           <button class="pill pill--active" data-key="labels">Labels &amp; data</button>
           <button class="pill" data-key="classification">Classification</button>
           <button class="pill" data-key="strategy">Strategy</button>
-          <button class="pill" data-key="search">Search</button>
+          <button class="pill" data-key="search">HPO</button>
           <button class="pill" data-key="feature-set">Feature set</button>
         </span>
       </div>
@@ -102,28 +113,28 @@
 
 
   <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
-    <div id="scalability-meta" class="box">loading /store_status/skills_status.json&hellip;</div>
+    <div id="scalability-meta" class="box">loading status/skills_status.json&hellip;</div>
     <div id="scalability-detail"></div>
-    <p class="foot">every file the crawler's skill matrix lists, read against AGENTS.md and the skills marked for it, with the date of its
-      last report; the age is that date against this browser's clock &middot; <code>make skills-crawl</code> &middot;
-      <code>make skills-status</code> &middot; <code>reports_after_crawled_files/</code></p>
+    <p class="foot">every controlled file of the files matrix, read against the Skills marked for it &mdash; its state, its vendor,
+      when it finished and its current report &middot; <code>make skills-crawl</code> &middot;
+      <code>reports_after_crawled_files/</code></p>
   </section>
 
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
-    <div id="run-meta" class="box">loading /runs&hellip;</div>
+    <div id="run-meta" class="box">loading run_records/index.json&hellip;</div>
     <div id="run-detail"></div>
-    <p class="foot">one recorded run of the whole chain, measured from outside by <code>record.py</code>: for every
-      stage its time, its exit code and what it wrote to the four pipeline stores &mdash; the difference of the store
-      listings before and after, path, size and mtime &mdash; the same thing a task scheduler records about a task.
-      Nothing a stage says about itself enters the record.</p>
+    <p class="foot">the newest run of <code>run_records/index.json</code>, measured from outside every stage by
+      <code>record.py</code>: for every stage its time, its exit code and what it wrote to the four pipeline stores
+      &mdash; the difference of the store listings before and after, path, size and mtime &mdash; the same thing a task
+      scheduler records about a task. Nothing a stage says about itself enters the record.</p>
   </section>
 
-  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code> / <code>store/status/skills_status.json</code>
-    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code> / <code>make skills-status</code>) &middot; the containers, the networks
-    and the volumes are the <strong>DevOps</strong> panel</p>
+  <p class="foot">static page &middot; data from <code>status/data_status.json</code> / <code>status/features_status.json</code> / <code>status/ml_status.json</code> / <code>status/skills_status.json</code>
+    and <code>run_records/index.json</code>, beside the page (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code> / <code>make skills-crawl</code> / <code>make all-record</code>)</p>
   <script src="page.js"></script>
   <script src="data.js"></script>
   <script src="asset.js"></script>
+  <script src="features.js"></script>
   <script src="ml.js"></script>
   <script src="run.js"></script>
   <script src="scalability.js"></script>

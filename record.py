@@ -7,7 +7,13 @@ STORE_RUN_RECORDS_DIR, STORE_STATUS_DIR — path, size and mtime of every file),
 through, lists them again, and writes store/run_records/<RUN_ID>/<stage>.json: when the stage started and ended, how it
 exited, and what it added, changed and removed in the stores. Its exit code is the command's. This is what a task scheduler
 records about a task — what it wrote — and nothing a stage could say about itself. STORE_TRIALS_DIR is deliberately
-absent: a trial ledger is the stage's own account of its search, which is the one thing this recorder never reads."""
+absent: a trial ledger is the stage's own account of its search, which is the one thing this recorder never reads.
+
+Then it writes store/run_records/index.json again from the store's listing — every run with a record, newest first, each
+with its records — the one file the page reads to find a run. Both files are written whole: beside their place, then
+moved onto it, so a reader finds the old file or the new one and never half of one. A checkout runs one operation that
+writes state at a time — here the chain's stages, one after another — so no second recorder writes the index at once,
+and it takes no lock."""
 
 from __future__ import annotations
 
@@ -56,6 +62,24 @@ def store_diff(store: str, before: dict, after: dict) -> dict[str, list]:
     }
 
 
+def write_json(path: Path, payload: dict) -> None:
+    """The file whole or not at all: written beside its place, then moved onto it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    partial = path.with_name(f".{path.name}.partial")
+    partial.write_text(json.dumps(payload, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    os.replace(partial, path)
+
+
+def build_run_index(run_records: Path) -> dict:
+    """Every run of the store that holds a record, newest first — a run id sorts by its time — each with the paths of
+    its records, relative to its directory, in path order."""
+    records: dict[str, list[str]] = {}
+    for path in run_records.glob("*/*.json"):
+        records.setdefault(path.parent.name, []).append(path.name)
+    return {"generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
+            "runs": [{"run_id": run_id, "records": sorted(records[run_id])} for run_id in sorted(records, reverse=True)]}
+
+
 def main() -> int:
     if len(sys.argv) < 3:
         raise SystemExit("usage: RUN_ID=<run_id> python3 record.py <stage> <command…>")
@@ -82,9 +106,10 @@ def main() -> int:
         "duration_seconds": duration_seconds,
         "store_diff": {state: [row for diff in diffs for row in diff[state]] for state in ("added", "changed", "removed")},
     }
-    out = roots["run_records"] / run_id / f"{stage}.json"   # written after the second listing, so it is never in its own diff
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(record, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    # the record and the index are written after the second listing, so neither is ever in a stage's diff
+    out = roots["run_records"] / run_id / f"{stage}.json"
+    write_json(out, record)
+    write_json(roots["run_records"] / "index.json", build_run_index(roots["run_records"]))
     print(f"{stage}: exit {exit_code} in {duration_seconds}s — "
           f"+{len(record['store_diff']['added'])} ~{len(record['store_diff']['changed'])} -{len(record['store_diff']['removed'])} files -> {out}",
           flush=True)

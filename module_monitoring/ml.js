@@ -1,9 +1,9 @@
-/* ML Research and ML Assets tabs: two fetches — /store_status/ml_status.json and
-   /store_status/features_status.json (the catalogue frame) — feed the cross-section
-   table, the catalogue frame, the five summary views and — through
-   asset.js — the per-asset panel. Classic script using appendCell, appendHeaderRow,
-   appendRows, renderTable, buildMeter, buildTickerLink, formatCount,
-   formatNumber and formatPercent from page.js. */
+/* ML Research and ML Assets tabs: two fetches — status/ml_status.json and
+   status/features_status.json (the catalogue frame and each asset's serpentine search) — feed the cross-section
+   table, the catalogue frame, the five summary views, and — through asset.js and features.js — the per-asset panel
+   and the Features tab. Classic script using appendCell, appendHeaderRow, appendRows, renderTable, buildMeter,
+   buildTickerLink, formatCount, formatNumber, formatPercent, mean, validationFolds and buildConfigurablesTable from
+   page.js. */
 "use strict";
 
 const CLASS_NAMES = ["short", "neutral", "long"];
@@ -16,14 +16,6 @@ function buildShareCell(part, whole) {
   wrap.appendChild(buildMeter(pctValue));
   wrap.appendChild(document.createTextNode(formatCount(part) + " (" + pctValue.toFixed(1) + "%)"));
   return wrap;
-}
-
-function mean(values) {
-  return values.reduce((a, b) => a + b, 0) / values.length;
-}
-
-function validationFolds(asset) {
-  return Object.keys(asset.validation).sort();
 }
 
 /* ---- ML Research tab: the wide cross-section table ---- */
@@ -204,42 +196,25 @@ function renderSearch(mlStatus) {
     }));
 }
 
-/* the asset's feature set — its source and its columns per timeframe — and what the coordinate search found
-   beside it; the delta of the best proposal's mean validation skill against the asset's is page arithmetic, like
-   the mean validation skill */
+/* the asset's feature set — its source and its columns per timeframe — and the mean validation skill it earned,
+   page arithmetic over the folds; what the serpentine search found beside it is the Features tab's */
 function renderFeatureSet(mlStatus) {
   const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
-  const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
-  const deltas = mlStatus.assets.map((asset) => {
-    const search = asset.coordinate_search;
-    const bestProposal = search && search.inputs_current && search.proposals.length ? search.proposals[0] : null;
-    return bestProposal === null ? null : bestProposal.mean_relative_logloss_skill - meanValidationSkill(asset);
-  });
-  const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
   renderTable("cs-feature-set",
-    ["asset", "source", ...timeframes.map((timeframe) => "columns " + timeframe), "mean val skill", "trials", "rounds", "converged",
-     "best proposal &Delta; skill"],
-    mlStatus.assets.map((asset, i) => {
-      const search = asset.coordinate_search;
-      const delta = deltas[i];
-      const deltaCell = document.createElement("span");
-      if (delta !== null) {
-        deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
-        deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
-      } else if (search === null) deltaCell.textContent = "no coordinate search yet";
-      else if (!search.inputs_current) deltaCell.textContent = "the search predates the asset's state, its profile or its parameters";
-      else deltaCell.textContent = "no proposal";
-      return [
-        buildTickerLink(asset.ticker, selectAsset),
-        asset.feature_set.source,
-        ...timeframes.map((timeframe) => formatCount(asset.feature_set.columns_by_timeframe[timeframe].length)),
-        formatPercent(meanValidationSkill(asset), 2),
-        search === null ? "-" : formatCount(search.trial_count),
-        search === null ? "-" : formatCount(search.round_count),
-        search === null ? "-" : (search.search_converged ? "yes" : "no"),
-        deltaCell,
-      ];
-    }));
+    ["asset", "source", ...timeframes.map((timeframe) => "columns " + timeframe), "mean val skill"],
+    mlStatus.assets.map((asset) => [
+      buildTickerLink(asset.ticker, selectAsset),
+      asset.feature_set.source,
+      ...timeframes.map((timeframe) => formatCount(asset.feature_set.columns_by_timeframe[timeframe].length)),
+      formatPercent(mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill)), 2),
+    ]));
+}
+
+/* the ML module's CONFIGURABLES as its snapshot publishes them */
+function renderMlConfigurables(mlStatus) {
+  const frame = buildFrame("CONFIGURABLES — what an operator may set in the ML module, each value written once in its config.py");
+  frame.body.appendChild(buildConfigurablesTable(mlStatus.configurables));
+  document.getElementById("ml-configurables").appendChild(frame.frame);
 }
 
 function selectAsset(ticker) {
@@ -248,7 +223,7 @@ function selectAsset(ticker) {
 
 /* ---- fetch ---- */
 
-const fetchSnapshot = (name) => fetch("/store_status/" + name, { cache: "no-store" })
+const fetchSnapshot = (name) => fetch("status/" + name, { cache: "no-store" })
   .then((response) => { if (!response.ok) throw new Error(name + " HTTP " + response.status); return response.json(); });
 
 Promise.all([fetchSnapshot("ml_status.json"), fetchSnapshot("features_status.json")])
@@ -259,6 +234,7 @@ Promise.all([fetchSnapshot("ml_status.json"), fetchSnapshot("features_status.jso
       "generated:       " + mlStatus.generated_at_utc + " UTC";
     document.getElementById("ml-meta").textContent = envelope;
     document.getElementById("asset-meta").textContent = envelope;
+    document.getElementById("features-meta").textContent = "generated:       " + featuresStatus.generated_at_utc + " UTC";
 
     ML_STATUS = mlStatus;
     FEATURES_STATUS = featuresStatus;
@@ -269,10 +245,13 @@ Promise.all([fetchSnapshot("ml_status.json"), fetchSnapshot("features_status.jso
     renderStrategy(mlStatus);
     renderSearch(mlStatus);
     renderFeatureSet(mlStatus);
+    renderSerpentineSearch(mlStatus);
+    renderFeatureConfigurables(featuresStatus);
+    renderMlConfigurables(mlStatus);
     buildAssetPills(mlStatus);
   })
   .catch((error) => {
-    ["ml-meta", "asset-meta"].forEach((id) => {
+    ["ml-meta", "asset-meta", "features-meta"].forEach((id) => {
       const box = document.getElementById(id);
       box.textContent = "could not load the ML snapshots (" + error.message + ") — run `make features-status` and `make ml-status`";
       box.className = "box err";

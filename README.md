@@ -28,7 +28,7 @@ module's own skills → code`; this README is the general overview.
 git clone https://github.com/flak92/LIORA-MLOps-Portfolio.git
 cd LIORA-MLOps-Portfolio
 make all                   # the whole chain from a fresh clone, every stage in a one-off container: build -> data-all -> features-all -> ml-all
-make on                    # build the image if needed, start the dashboard and the DevOps panel, print the page's address and open it
+make on                    # build the image if needed, start the dashboard, print the page's address and open it
 make off                   # stop and remove every container of this project
 make help                  # every action target with its one-line purpose
 ```
@@ -94,15 +94,10 @@ Its skill matrix, vendors and mission are `to_crawl.md`, `vendors_for_crawling.t
 
 `tmux` is a tool of the host beside `docker` and `git`, never of an image.
 
-Two personas, two doors, both behind `make on`:
-
-- **business** — the status page at `http://127.0.0.1:<port>/`, the address
-  `make on` prints: *Pipeline*, *Data
-  Quality*, *ML Research*, *ML Assets*, *Scalability* and *Lifecycle* — the results,
-  the tree counted against its contract and the cost of producing them (§ Dashboard below);
-- **DevOps** — the **DevOps** control opens the panel: every container on the host with its ports, the
-  networks, volumes, bind mounts, the image and the engine's events, with
-  start / stop / restart offered for this project's own containers alone.
+One page behind `make on`, for one reader: the status page at `http://127.0.0.1:<port>/`, the address
+`make on` prints — *Pipeline*, *Data Quality*, *Features*, *ML Research*, *ML Assets*, *Scalability* and
+*Lifecycle*: the results, the serpentine search, the tree counted against its contract and the cost of producing
+them (§ Dashboard below).
 
 A single stage runs by name in a one-off container of its module's runner — `make features-catalogue`
 is `docker compose run --rm -T features python -m module_features.catalogue --tickers <TICKER>`, one container per asset of the
@@ -115,7 +110,7 @@ derives, so a rerun fetches and rebuilds only what its contract says — the `hp
 ledger alone grows, one study more per `ml-hpo`, and beside the chain the crawler's reports
 grow one entry per file crawled. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
-`ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
+`ssh -N -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 Four direct dependencies across
 the four modules and nothing else — `duckdb` (the engine that writes and reads the Parquet families: data, features, ml),
 `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
@@ -217,8 +212,8 @@ on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
 `record.py`, which lists the four pipeline stores — every store but
 `store/trials/`, a search's own account of itself — before and after and writes
-`store/run_records/<run_id>/<stage>.json`. The residents are `liora-dashboard-1` and
-`liora-devops-1`: the compose project is named
+`store/run_records/<run_id>/<stage>.json` and the run index `store/run_records/index.json`. The one resident
+is `liora-dashboard-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
 run one at a time, or set `COMPOSE_PROJECT_NAME`.
 
@@ -234,7 +229,7 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | reset | `make features-serpentine-search-reset ASSET=<TICKER>` | the search's state, ledger, question, answer and `score_trials` partition → gone | runs no stage; the inputs and the profile stay — a new experiment starts from the files the chain left |
 | promotion | `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset, which tunes it again | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
-| dashboard | `make on`              | snapshots → six-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the run, snapshot and `/devops` routes | no external resources |
+| dashboard | `make on`              | the snapshots and the run records → the seven-tab page on `127.0.0.1:<port>`, the address `make on` prints, served by `module_monitoring/serve.py` in the `dashboard` container under three prefixes — the page's own files, `status/` and `run_records/` | no external resources; every other path 404, and no directory listed |
 
 ## Extending
 
@@ -388,21 +383,21 @@ the raw ZIP trees. Every family carries its columns and their types in its own
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and
   zero-volume bars per provider, then canonical construction: source shares,
   switches, the largest 1m move at a switch, cross-source divergence;
-- **ML Research** — the cross-section of every asset's result, and the feature
-  catalogue: every definition the repository computes, its terms, the history
-  each covers on each timeframe, the warm-up it needs and the nesting of the levels;
-- **ML Assets** — one asset at a time in five frames: LABEL, MODEL, STRATEGY, FEATURE SET, PROPOSALS;
-- **Scalability** — every file the crawler's skill matrix lists, with its last crawl, its age, its crawl count and its report, from `make skills-status`;
+- **Features** — the serpentine search of every asset as the feature layer last wrote it, read against the ML
+  snapshot's numbers for the asset's own state, then each asset's PROPOSALS and the feature module's
+  CONFIGURABLES;
+- **ML Research** — the cross-section of every asset's result, the feature
+  catalogue — every definition the repository computes, its terms, the history
+  each covers on each timeframe, the warm-up it needs and the nesting of the levels —
+  and the ML module's CONFIGURABLES;
+- **ML Assets** — the cross-section by view — labels and data, classification, strategy, HPO, feature set — then
+  one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURE SET;
+- **Scalability** — every controlled file of the crawler's files matrix, with its state, its vendor, when it
+  finished and its current report;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and
   removed in the four pipeline stores, then every file it touched, by store and path. Nothing
   a stage says about itself enters the record.
-
-One control in the top right leaves the page, for the DevOps persona:
-
-- **DevOps** — the panel: every container, network and volume the daemon
-  reports, with `start` / `stop` / `restart` offered for this
-  project's own containers alone.
 
 ## ML research layer
 

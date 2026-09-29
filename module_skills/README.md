@@ -10,7 +10,7 @@ modules live here, in `module_skills/` — the canon, with its one sub-module, t
 scalability crawler, which reads each file a hand lists against the skills a hand marks for it. A
 rule two sub-modules draw to crosses them and lives here too — `skill_tui_designer.md`, the
 standards of every terminal's screens; a rule about one sub-module alone stays beside its code,
-as each module's terminal and the panel do. Each is
+as each module's terminal does. Each is
 written exactly once, and a skill is named below by the path it holds in the tree.
 
 ## Cross-cutting — the skills in this directory
@@ -69,7 +69,6 @@ Orientation: `module_monitoring/README_module_monitoring.md`
 | skill | what it governs |
 |---|---|
 | `module_monitoring/skills/skill_dashboard_conventions.md` | the static page, its BEM classes and its state |
-| `module_monitoring/sub_module_devops/skill_devops_panel.md` | the DevOps panel: its views, the action allowlist and its guard, and the one docker socket |
 | `module_monitoring/sub_module_terminal/skill_monitoring_terminal.md` | the monitoring terminal: its opening screen, its actions — the presentation switch —, what it starts through make, and its exits |
 
 ## module_skills

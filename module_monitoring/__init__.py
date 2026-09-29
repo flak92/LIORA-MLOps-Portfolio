@@ -1,1 +1,1 @@
-"""Presentation of what the three runtime modules measured about themselves, of what record.py measured around every stage and of the dates of the canon's crawler's reports, and the one server that serves it."""
+"""The page: what the three modules that compute measured about themselves, what record.py measured around every stage and where the canon's crawler stands, composed from files it reads beside it — a static page, and the one server that serves it."""
