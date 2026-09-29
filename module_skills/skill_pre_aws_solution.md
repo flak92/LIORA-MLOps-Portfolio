@@ -54,7 +54,7 @@ The rules that keep this local, academic tree's boundaries the ones a move onto 
 ## Naming
 
 - `PRE-AWS-SOLUTION-CLOUD-NOUNS-STAY-IN-THE-MAPPING`
-  - Description: A cloud proper noun is external vocabulary, spoken only where the stance is stated or a local object is read forward: `AGENTS.md` § Pre-AWS architectural direction and § Skills absent here, described, `README.md` § Architectural direction, `module_skills/README.md` § The Pre-AWS mapping and this document's rules.
+  - Description: A cloud proper noun is external vocabulary, spoken only where the stance is stated or a local object is read forward: `AGENTS.md` § Pre-AWS architectural direction and § Skills absent here, described, `README.md` § Architectural direction, `module_skills/README.md` § The Pre-AWS mapping, this document's rules, and the columns External vocabulary and Never of the register's § Pre-AWS direction.
   - Scope: `**/*`
   - Expected: No cloud proper noun in a make target, a compose service, an environment variable, a payload key, a code comment, an identifier, any other document or a tracked path but the `pre_aws` stem; the repository's own word *Pre-AWS* free.
   - Exception: none
@@ -93,9 +93,9 @@ The rules that keep this local, academic tree's boundaries the ones a move onto 
 ## Scalability
 
 - `PRE-AWS-SOLUTION-ONE-OPERATION-WRITES-AT-A-TIME-AND-NOTHING-LOCKS`
-  - Description: A checkout runs one operation that writes state at a time — a chain, a stage, a serpentine search, a promotion or a reset — with its fan-out over assets inside it, so no store carries a lock; a basket-wide object has one writer, and a basket that outgrows it moves to a per-asset object and a reader-side fold, never to a lock.
+  - Description: A checkout runs one operation that writes state at a time — a chain, a stage, a serpentine search, a promotion, a reset or a crawl — with its fan-out over assets inside it, so no store carries a lock; a basket-wide object has one writer, and a basket that outgrows it moves to a per-asset object and a reader-side fold, never to a lock.
   - Scope: `Makefile`, `module_*/**/*.py`, `record.py`
-  - Expected: No lock file, `fcntl` call or lock table; each snapshot written whole by its one status stage, run once through `basket` and never fanned out; `run_records/index.json` rewritten by the one recorder.
+  - Expected: No lock file, `fcntl` call or lock table; each snapshot written whole by its one writer — a computational module's by its status stage, run once through `basket` and never fanned out, `skills_status.json` by the crawl; `run_records/index.json` rewritten by the one recorder.
   - Exception: none
 
 ## Complexity

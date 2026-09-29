@@ -11,9 +11,8 @@ absent: a trial ledger is the stage's own account of its search, which is the on
 
 Then it writes store/run_records/index.json again from the store's listing — every run with a record, newest first, each
 with its records — the one file the page reads to find a run. Both files are written whole: beside their place, then
-moved onto it, so a reader finds the old file or the new one and never half of one. A checkout runs one operation that
-writes state at a time — here the chain's stages, one after another — so no second recorder writes the index at once,
-and it takes no lock."""
+moved onto it, so a reader finds the old file or the new one and never half of one. It takes no lock: no second
+recorder writes the index at once (PRE-AWS-SOLUTION-ONE-OPERATION-WRITES-AT-A-TIME-AND-NOTHING-LOCKS)."""
 
 from __future__ import annotations
 

@@ -199,7 +199,8 @@ and no database file exists. One stage writes each family and each file:
 | the promotion | `ticker=<TICKER>/<TICKER>_feature_set.json`, `<TICKER>_barriers.json` | `features-serpentine-search-promote` | yes, once promoted |
 | `hpo_trials` | `hpo_trials/ticker=<TICKER>/hpo_trials.jsonl`, every point `ml-hpo` drew | `ml-hpo` alone | no |
 | `score_trials` | `score_trials/ticker=<TICKER>/score_trials.jsonl`, every point the studies a question asks for drew | `ml-score` alone | no |
-| the snapshots | `{data,features,ml,skills}_status.json` | the status stages | yes |
+| the snapshots | `{data,features,ml}_status.json` | the status stages | yes |
+| the crawl's snapshot | `skills_status.json` | `skills-crawl` | yes |
 | the run records | `<run_id>/<stage>.json` | `record.py` | no |
 
 A ledger carries no run id, no timestamp and no host name, so two studies over an empty store leave the same bytes. A
@@ -306,7 +307,7 @@ Every number here is reproducible. The proof, repeatable on any host:
    reference manifest — each family's `schema.json` and the asset's partitions of `bars`,
    `catalogue`, `labels` and `oos_predictions`, the contract `<TICKER>_catalogue.json`, the
    parameters, the model and strategy evaluations, the asset's README and the `hpo_trials`
-   ledger — and the tracked files unmoved;
+   ledger — and the tracked files of the asset's folder unmoved;
 4. the three computational snapshots identical after dropping the `generated_at_utc` line —
    `grep -v '^ "generated_at_utc":'`, anchored because it is one top-level key on its own
    line and not a substring to be hunted — `data_status.json` apart when the download added a
@@ -319,7 +320,10 @@ the one program that writes each writes the same bytes for the same decisions. T
 files are outside it too, being a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`,
 where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored
 states — one a line, appended and never rewritten — and the asset's partition of `score_trials`. Their proof
-is that a search reset and run again over the same inputs gives the same bytes in all three.
+is that a search reset and run again over the same inputs gives the same bytes in all three, and that a
+search stopped — Ctrl-C in its tmux session — and run again ends on the same state and ledger; its
+`score_trials` partition may then hold a study twice, the lines a stop between a study and its answer
+left and the rerun appends again (AGENTS.md D11).
 `<TICKER>_README.md` lists the two files a promotion writes and measures neither — listed, not measured,
 because their size moves with the hand and not with the chain. The search's state and ledger are tracked
 even so: `features_status.json` is inside the proof and reads them, so a clone without them could not

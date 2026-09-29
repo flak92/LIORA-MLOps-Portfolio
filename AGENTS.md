@@ -36,11 +36,7 @@ the working path.) If a change conflicts with this file, the change is wrong.
   assumed: `import optuna` loads `colorlog`, `tqdm` and `packaging` beside
   `numpy`, and the rest of what its pin installs — `alembic`, `SQLAlchemy`,
   `greenlet`, `Mako` and `MarkupSafe`, the storage it is never asked for, with
-  `PyYAML` and `typing_extensions` — is never imported by this tree. Whether
-  the sampler earns those packages against a seeded random search written in
-  `numpy` is an experiment — TPE against it at the research trial count, on the
-  larger machine — and not a preference this contract settles; if TPE does not
-  win, eleven packages go with it. By the
+  `PyYAML` and `typing_extensions` — is never imported by this tree. By the
   same reading the
   host admits `gum`, the field's own instrument for a responsibility this
   project names — a hand's choice in a terminal and the screens around it, the
@@ -224,9 +220,9 @@ and built nowhere.
   nothing else.
 - **Compute owns no state.** A stage reads a store, writes a store and exits; it
   holds nothing between invocations, binds no port, reads no `ASSET` and assumes
-  no resident peer. A checkout runs one operation that writes state at a time — a
-  chain, a stage, a serpentine search, a promotion or a reset — with its fan-out over
-  assets inside it, and that is why no store carries a lock.
+  no resident peer. A checkout runs one operation that writes state at a time,
+  which is why no store carries a lock; the operations are listed once, in
+  `PRE-AWS-SOLUTION-ONE-OPERATION-WRITES-AT-A-TIME-AND-NOTHING-LOCKS`.
 - **Storage is separate from compute.** Pipeline state lives in the five stores,
   one folder each under `store/`, named to every `config.py` by its
   `STORE_*_DIR` and mounted from `store/<content>/` at `/store/<content>` into each service that touches
@@ -275,9 +271,11 @@ and § Skills absent here, described, `README.md` § Architectural direction, th
 rows of `module_skills/skill_pre_aws_solution.md`, and `module_skills/README.md`
 § The Pre-AWS mapping — its prose, the seats of the local skills, each naming the
 primitive in the table's words, and the column *the same responsibility elsewhere*
-of its mapping table. Never in a make target, a compose service, an environment
-variable, a payload key, a code comment, an identifier, or a tracked path but the
-`pre_aws` stem. The rules are `module_skills/skill_pre_aws_solution.md` — a
+of its mapping table — and, in the register, the columns *External vocabulary* and
+*Never* of `module_skills/skill_glossary.md` § Pre-AWS direction, where a foreign
+name has its place beside the concept it reads forward to. Never in a make
+target, a compose service, an environment variable, a payload key, a code
+comment, an identifier, or a tracked path but the `pre_aws` stem. The rules are `module_skills/skill_pre_aws_solution.md` — a
 cross-cutting skill of the kind § The default choice names, beside
 `skill_asset_containers.md`; the twelve classes, the seats, the mapping table and
 the review of what stays local are `module_skills/README.md` § The Pre-AWS mapping.
@@ -535,7 +533,7 @@ is wrong.
 | D08 | no sub-module is a module: `module_skills/sub_module_scalability_crawler/` and `module_skills/sub_module_terminal/` are the canon's, `module_features/sub_module_serpentine_search/` the feature module's, and each `module_<domain>/sub_module_terminal/` its module's — each with its own `config.py` and `main()`, none in the chain's dataflow; the serpentine search's promotion writes the two files the ML chain reads, by a hand's choice |
 | D09 | artifact names and keys move only with the register: every key of every payload has a row of the register table of `module_skills/skills_sheet.xlsx`, rendered into `module_skills/skill_glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, every family's `schema.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe` and `assets[].serpentine_search`, the serpentine search's state, ledger, profile, question and answer, the `ticker` key in every row of `data_status.json`, that snapshot's own measurement set, and `run_records/index.json` — `generated_at_utc`, `runs[]` with `run_id` and `records` — are each registered there |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
-| D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest `README.md` § Parity, the raw store's own manifest taken before the chain runs. A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` and nothing else — every later stage reads the research window alone; `data_status.json` describes the whole canonical series and moves with every top-up by design. The files a hand drafts — `<TICKER>_serpentine_search_profile.json` and, once promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — stand outside it: no stage of the chain derives them. So do the serpentine search's own files, a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`, where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored states, and the asset's partition of `score_trials` — their proof is that a search reset and run again over the same inputs gives the same bytes in all three. The state and the ledger are **tracked** all the same, because `features_status.json` reads them and is inside the proof: a clone that could not rebuild them could not reproduce the snapshot that quotes them, and the parity of the chain would rest on a file nobody shipped. A change that reshapes one of the chain's files re-bases its line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
+| D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest `README.md` § Parity, the raw store's own manifest taken before the chain runs. A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` and nothing else — every later stage reads the research window alone; `data_status.json` describes the whole canonical series and moves with every top-up by design. The files a hand drafts — `<TICKER>_serpentine_search_profile.json` and, once promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — stand outside it: no stage of the chain derives them. So do the serpentine search's own files, a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`, where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored states, and the asset's partition of `score_trials` — their proof is that a search reset and run again over the same inputs gives the same bytes in all three, and that a search stopped and run again ends on the same state and ledger. The one exception is named: `score_trials` may then hold a study twice, because a stop between a study's lines and the answer after them leaves lines the rerun appends again (`score.hpo_results()`). The state and the ledger are **tracked** all the same, because `features_status.json` reads them and is inside the proof: a clone that could not rebuild them could not reproduce the snapshot that quotes them, and the parity of the chain would rest on a file nobody shipped. A change that reshapes one of the chain's files re-bases its line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
 | D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host but two calls — the venues' public endpoints the two downloaders read, and the one active command line of the crawler's `vendors_for_crawling.toml`, in its user's own login, outside the chain and gating nothing — and the trial ledgers are the partitions `hpo_trials_jsonl()` and `score_trials_jsonl()` build in `module_ml/config.py` under `STORE_TRIALS_DIR`, appended through `hpo.log_trials` — the family `hpo_trials` by `module_ml/hpo.py` alone, the family `score_trials` by `module_ml/score.py` alone — and never a network location; the four pins of `requirements.txt` are the project's, and a fifth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
 | D14 | every object of `module_skills/skill_glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects — and changed on every side at once |

@@ -2,7 +2,7 @@
 
     GET /                        the page, index.html
     GET /<file>                  a file of the page — a direct child of module_monitoring/ ending .html, .js or .css
-    GET /status/<path>           a file of the status store: the four snapshots
+    GET /status/<path>           a file of the status store: the four snapshots and the crawler's reports
     GET /run_records/<path>      a file of the run-records store: index.json and the records it lists
 
 Every other path is 404, and so is a directory: nothing is listed. A path is translated the way http.server translates
