@@ -9,7 +9,7 @@
   <h1>1m crypto research pipeline — status</h1>
   <p class="sub">raw market sources &rarr; Lean ZIPs &rarr; one canonical dataset per asset &rarr; features &amp; labels &rarr; research</p>
 
-  <nav id="tabs" class="pills" data-pills="tab">
+  <nav class="pills" data-pills="tab">
     <button class="pill pill--active" data-key="pipeline">Pipeline</button>
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="features">Features</button>
@@ -19,7 +19,7 @@
     <button class="pill" data-key="lifecycle">Lifecycle</button>
   </nav>
 
-  <section id="tab-pipeline" data-panel="tab" data-key="pipeline">
+  <section data-panel="tab" data-key="pipeline">
     <div id="meta" class="box">loading status/data_status.json&hellip;</div>
     <div id="flow" class="box"></div>
     <table id="pipeline" hidden>
@@ -33,7 +33,7 @@
       each marked when it is older than the download cadence the snapshot publishes.</p>
   </section>
 
-  <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
+  <section data-panel="tab" data-key="quality" hidden>
     <h2>Raw sources, one per provider</h2>
     <div id="raw-sources"></div>
     <h2>Canonical dataset construction</h2>
@@ -49,7 +49,7 @@
       skill_candle_canonicalisation.md.</p>
   </section>
 
-  <section id="tab-features" data-panel="tab" data-key="features" hidden>
+  <section data-panel="tab" data-key="features" hidden>
     <div id="features-meta" class="box">loading status/features_status.json + ml_status.json&hellip;</div>
     <table id="serpentine-search"><thead></thead><tbody></tbody></table>
     <div id="features-detail"></div>
@@ -59,7 +59,7 @@
       state only by a hand's promotion.</p>
   </section>
 
-  <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
+  <section data-panel="tab" data-key="ml" hidden>
     <div id="ml-meta" class="box">loading status/ml_status.json + features_status.json&hellip;</div>
     <table id="ml-assets" hidden>
       <thead></thead>
@@ -78,7 +78,7 @@
     <div id="ml-configurables"></div>
   </section>
 
-  <section id="tab-asset" data-panel="tab" data-key="asset" hidden>
+  <section data-panel="tab" data-key="asset" hidden>
     <div id="asset-meta" class="box">loading status/ml_status.json&hellip;</div>
 
     <div class="frame">
@@ -112,7 +112,7 @@
   </section>
 
 
-  <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
+  <section data-panel="tab" data-key="scalability" hidden>
     <div id="scalability-meta" class="box">loading status/skills_status.json&hellip;</div>
     <div id="scalability-detail"></div>
     <p class="foot">every controlled file of the files matrix, read against the Skills marked for it &mdash; its state, its vendor,
@@ -120,11 +120,11 @@
       <code>reports_after_crawled_files/</code></p>
   </section>
 
-  <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
+  <section data-panel="tab" data-key="lifecycle" hidden>
     <div id="run-meta" class="box">loading run_records/index.json&hellip;</div>
     <div id="run-detail"></div>
     <p class="foot">the newest run of <code>run_records/index.json</code>, measured from outside every stage by
-      <code>record.py</code>: for every stage its time, its exit code and what it wrote to the four pipeline stores
+      <code>record.py</code>: for every stage its time, its exit code and what it wrote to the three pipeline stores
       &mdash; the difference of the store listings before and after, path, size and mtime &mdash; the same thing a task
       scheduler records about a task. Nothing a stage says about itself enters the record.</p>
   </section>

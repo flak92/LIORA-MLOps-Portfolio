@@ -3,8 +3,6 @@
    report is. Classic script over the page.js toolkit; this view derives nothing. */
 "use strict";
 
-let SKILLS_STATUS = null;
-
 function renderCrawlState(host, status) {
   const frame = buildFrame("CRAWL STATE — every controlled file of the files matrix, and its current report");
   frame.body.appendChild(buildTable(
@@ -24,7 +22,6 @@ function initScalability() {
   fetch("status/skills_status.json", { cache: "no-store" })
     .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
     .then((status) => {
-      SKILLS_STATUS = status;
       renderCrawlState(document.getElementById("scalability-detail"), status);
       meta.hidden = true;
     })

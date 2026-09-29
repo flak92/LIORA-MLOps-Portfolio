@@ -149,11 +149,6 @@ def _filled(cells: dict[str, str], where: str) -> None:
         _refuse(f"{where} leaves {', '.join(empty)} empty")
 
 
-def _relative(path: str, where: str) -> None:
-    if Path(path).is_absolute() or ".." in Path(path).parts:
-        _refuse(f"{where}: {path} is not a relative path inside the tree")
-
-
 def load_sheet(path: Path = config.SKILLS_SHEET_PATH) -> Sheet:
     try:
         with zipfile.ZipFile(path) as package:
@@ -194,7 +189,6 @@ def load_sheet(path: Path = config.SKILLS_SHEET_PATH) -> Sheet:
         places = config.skill_places(cells["sheet_tab"])
         if not places:
             _refuse(f"{where}: the tab {cells['sheet_tab']} is no module_<domain>")
-        _relative(cells["skill_path"], where)
         if not any(PurePosixPath(cells["skill_path"]).match(place) and len(PurePosixPath(cells["skill_path"]).parts) == len(PurePosixPath(place).parts)
                    for place in places):
             _refuse(f"{where} lies outside the places a Skill of this tab may lie: {', '.join(places)}")
@@ -252,7 +246,6 @@ def load_sheet(path: Path = config.SKILLS_SHEET_PATH) -> Sheet:
         if cells["path"] in keys:
             _refuse(f"{where} is listed twice; one row per path")
         keys.add(cells["path"])
-        _relative(cells["path"], where)
         chosen = []
         for skill_id, cell in zip(skill_ids, row[1:]):
             if cell == config.SKILL_MARK:

@@ -10,7 +10,7 @@ COMPOSE_ENV := UID=$(shell id -u) GID=$(shell id -g) PORT=$(PORT)
 COMPOSE     := $(COMPOSE_ENV) docker compose
 # the five stores of this checkout, one folder each under store/, one variable per store — the store contract every
 # config.py reads; facts, not settings: docker-compose.yml mounts ./store/<content> at /store/<content>, the same
-# <content> on both sides, record.py lists the four pipeline stores among them by these host paths, and every container
+# <content> on both sides, record.py lists the three pipeline stores among them by these host paths, and every container
 # sees /store/<content> in its own environment
 export STORE_RAW_1M_DIR := $(CURDIR)/store/raw_1m
 export STORE_ASSETS_ARTIFACTS_DIR := $(CURDIR)/store/assets_artifacts
@@ -174,7 +174,7 @@ off:             ## the presentation switch: stop and remove every container of 
 monitoring-terminal:
 	python3 -B -m module_monitoring.sub_module_terminal.terminal
 btc-all: all     ## the single-asset chain by its ticker name; the alias goes when the basket grows
-# the stages of all, one make target each, measured from outside by record.py: the four pipeline stores before and after
+# the stages of all, one make target each, measured from outside by record.py: the three pipeline stores before and after
 RECORDED_STAGES := $(DATA_STAGES) $(FEATURES_STAGES) $(ML_STAGES)
 all-record: build ## one recorded run of the whole chain, every stage measured from outside by record.py -> store/run_records/<run_id>/<stage>.json
 	@run_id=$(RUN_ID); for stage in $(RECORDED_STAGES); do RUN_ID=$$run_id python3 record.py $$stage $(MAKE) $$stage || exit $$?; done

@@ -226,8 +226,8 @@ its module's runner, `docker compose run --rm -T <runner> python -m <module>.<st
 once for the whole basket (the three status stages and the download). `ASSET=<TICKER>`
 on the make line narrows every per-asset stage to one asset and never a
 basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
-`record.py`, which lists the four pipeline stores — every store but
-`store/trials/`, a search's own account of itself — before and after and writes
+`record.py`, which lists the three pipeline stores — every store but
+`store/trials/`, a search's own account of itself, and the run records — before and after and writes
 `store/run_records/<run_id>/<stage>.json` and the run index `store/run_records/index.json`. The one resident
 is `liora-dashboard-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
@@ -422,7 +422,7 @@ the raw ZIP trees. Every family carries its columns and their types in its own
   finished and its current report;
 - **Lifecycle** — one recorded run end to end, measured from outside by `record.py`:
   for every stage its start, its time, its exit code and what it added, changed and
-  removed in the four pipeline stores, then every file it touched, by store and path. Nothing
+  removed in the three pipeline stores, then every file it touched, by store and path. Nothing
   a stage says about itself enters the record.
 
 ## ML research layer

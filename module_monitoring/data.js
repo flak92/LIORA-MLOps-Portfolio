@@ -25,8 +25,7 @@ function renderInvariantColumns(table, invariantHeaders) {
 
 /* the share of the grid that was observed rather than invented: page arithmetic over two published counts */
 function realDataPct(canonicalRow) {
-  return canonicalRow.row_count
-    ? (100 * (canonicalRow.row_count - canonicalRow.ffill_bars)) / canonicalRow.row_count : 0;
+  return (100 * (canonicalRow.row_count - canonicalRow.ffill_bars)) / canonicalRow.row_count;
 }
 
 /* twice by extraction */
@@ -43,7 +42,6 @@ function formatDuration(minutes) {
 
 /* an age against this browser's clock, a warning when it is older than the download cadence the snapshot publishes */
 function ageCell(utcText, cadenceMinutes) {
-  if (!utcText) return "-";
   const minutes = Math.max(0, Math.floor((Date.now() - millisecondsSinceEpoch(utcText))
     / (MILLISECONDS_PER_SECOND * SECONDS_PER_MINUTE)));
   return [formatDuration(minutes), minutes > cadenceMinutes];
@@ -71,7 +69,7 @@ function renderPipeline(status) {
      "flat run (min)"],
     status.canonical_source.map((row) => [
       row.symbol, formatCount(row.row_count),
-      row.last_observation_utc || "-",
+      row.last_observation_utc,
       ageCell(row.last_observation_utc, status.download_cadence_minutes),
       ageCell(status.generated_at_utc, status.download_cadence_minutes),
       buildPercentageCell(realDataPct(row)),

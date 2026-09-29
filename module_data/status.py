@@ -113,7 +113,7 @@ def to_utc_minute(ms: int | None) -> str | None:
 
 
 def share_pct(part: int, whole: int) -> float:
-    return round(100.0 * part / whole, 3) if whole else 0.0
+    return round(100.0 * part / whole, 3)
 
 
 def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows: dict) -> list[dict]:

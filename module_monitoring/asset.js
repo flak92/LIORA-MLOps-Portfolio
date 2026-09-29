@@ -128,7 +128,7 @@ function buildImportanceCell(value, scaleMax, format) {
 /* one table per timeframe over the catalogue: the set's columns marked, each importance the mean over the
    validation folds of that fold's booster — page arithmetic, like the mean validation skill; a column outside
    the set has no model to be measured on */
-function buildFeatureSetFrame(asset, mlStatus) {
+function buildFeatureSetFrame(asset) {
   const frame = buildFrame("FEATURE SET — the columns the model saw, and what each was worth on the validation folds");
   frame.body.appendChild(buildKeyValueBox([
     ["source", asset.feature_set.source === "default" ? "default — the catalogue's default set, no promoted file"
@@ -164,7 +164,7 @@ function renderAsset(ticker) {
   const asset = mlStatus.assets.find((candidate) => candidate.ticker === ticker);
   host.textContent = "";
   host.appendChild(buildHeaderLine(asset, mlStatus));
-  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeatureSetFrame(asset, mlStatus)]
+  [buildLabelFrame(asset), buildModelFrame(asset, mlStatus), buildStrategyFrame(asset, mlStatus), buildFeatureSetFrame(asset)]
     .forEach((el) => host.appendChild(el));
 }
 
@@ -198,5 +198,5 @@ function buildAssetPills(mlStatus) {
   const wanted = decodeURIComponent(location.hash.slice(1)).toUpperCase();
   const start = group.querySelector("button[data-key='" + wanted + "']")
     || group.querySelector("button");
-  if (start) start.click();
+  start.click();
 }

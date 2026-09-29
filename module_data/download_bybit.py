@@ -41,7 +41,7 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
                 data = json.loads(r.read().decode())
             ret_code = data.get("retCode")
             if ret_code == 0:
-                return data.get("result", {}).get("list", [])
+                return data["result"]["list"]
             if ret_code == 10006 and attempt < retries - 1:  # rate limit
                 time.sleep(backoff)
                 backoff *= 2
@@ -77,8 +77,7 @@ def load_earliest_traded_day(out_dir: Path) -> str | None:
     failed request."""
     for zip_path in lean_day_zip_paths(out_dir):
         with zipfile.ZipFile(zip_path) as day_zip:
-            entries = day_zip.infolist()
-            if entries and entries[0].file_size > 0:
+            if day_zip.infolist()[0].file_size > 0:
                 return LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1)
     return None
 

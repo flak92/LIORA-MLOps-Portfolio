@@ -27,7 +27,7 @@ from . import config
 from .lean import LEAN_DAY_ZIP_NAME_PATTERN, lean_day_zip_paths
 
 VENUE_DDL = """
-CREATE TABLE IF NOT EXISTS ohlcv_1m_{venue} (
+CREATE TABLE ohlcv_1m_{venue} (
   timestamp_ms BIGINT  NOT NULL,   -- bar OPEN, UTC epoch ms
   open   DOUBLE,
   high   DOUBLE,
@@ -186,7 +186,7 @@ def load_venue_table(con: duckdb.DuckDBPyConnection, ticker: str, venue: str) ->
         venue_row_count = write_venue_spool(ticker, venue, spool_csv)
         con.execute(f"INSERT INTO ohlcv_1m_{venue} SELECT * FROM read_csv('{spool_csv}', header=false, columns={CSV_COLUMNS})")
     finally:
-        spool_csv.unlink(missing_ok=True)
+        spool_csv.unlink()
     return venue_row_count
 
 

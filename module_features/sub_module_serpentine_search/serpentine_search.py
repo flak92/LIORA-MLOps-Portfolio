@@ -290,7 +290,7 @@ def result_key(kind: str, result: dict) -> str:
 def answers_the_question(response: dict | None, kind: str, round_number: int, keys: list[str]) -> bool:
     """Whether an answer on disk is the answer to the question this turn would ask: the same kind, the same
     round and the same states in the same order. Anything else answers a question no longer asked."""
-    return (response is not None and response.get("kind") == kind and response.get("round") == round_number
+    return (response is not None and response["kind"] == kind and response["round"] == round_number
             and [result_key(kind, result) for result in response["results"]] == keys)
 
 

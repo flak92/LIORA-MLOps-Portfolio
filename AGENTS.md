@@ -170,8 +170,8 @@ recognisable by eye before it is parsed (neuro-optical consistency):
 - short, predictable paths, built only in a module's `config.py` — never
   assembled at the point of use; the exceptions are an external format's own
   file names, built by its adapter (`module_data/lean.py` builds the QuantConnect
-  Lean tree's file names, `record.py` those of the four pipeline stores it lists,
-  every store but `store/trials/`), the Makefile's serpentine search targets, which name
+  Lean tree's file names, `record.py` those of the three pipeline stores it lists,
+  every store but `store/trials/` and the run records it writes), the Makefile's serpentine search targets, which name
   the files they test and remove — the loop the one file `<TICKER>_score_request.json`,
   the reset the files the turn and `ml-score` write for one asset
   — and the browser, which has no config module and reads its four snapshots

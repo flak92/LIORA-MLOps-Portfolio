@@ -1103,7 +1103,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: start; time; start / end and total time in the run's header
   - Never: wall, elapsed
 - the store diff: what the stage did to the stores — every file added, changed (size or mtime moved) or removed, by store and path
-  - Code: `listing()`, `store_diff()` in `record.py`, over the four stores of `STORES` — every store but the trials store
+  - Code: `listing()`, `store_diff()` in `record.py`, over the three stores of `STORES` — every store but the trials store and the run records it writes
   - Artifact key: `store_diff` with `added`, `changed` — each `store`, `path`, `size_bytes`, `mtime_ns` — and `removed` — each `store`, `path`
   - Ui label: added / changed / removed; bytes written; the STORES frame
   - Never: output, artifacts, a stage → artifact map; a trial ledger read by the recorder
@@ -1117,9 +1117,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: a run list per asset; a listing by the page; a route that lists the store; an index written by a stage
 - the stage records of one run, in the order the stages started — each read by the page at the relative path the index lists
   - Code: `runs[].records` of the index; `fetchRunRecord()` in `module_monitoring/run.js`, which sorts them by `started_at_utc`
-  - Ui label: STAGES — stage, asset, start, time, exit, added, changed, removed, bytes written
+  - Ui label: STAGES — stage, start, time, exit, added, changed, removed, bytes written
   - Never: a record per asset of a basket stage; an envelope built by a server
-- the run directory: where a run's records live — one file per stage, written whole after the stage's second listing so it never appears in its own difference; untracked
+- the run directory: where a run's records live — one file per stage, in a store the recorder does not list; untracked
   - Code: `STORE_RUN_RECORDS_DIR`, `store/run_records/<run_id>/<stage>.json`; `write_json()` in `record.py`, beside its place, then moved onto it
   - Never: a `runtime/` folder under an asset; one run record per asset; a run record tracked
 

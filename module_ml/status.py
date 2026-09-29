@@ -154,8 +154,6 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
 
 
 def load_file_size_text(path):
-    if not path.exists():
-        return "—"
     n = path.stat().st_size
     return f"{n:,} B" if n < config.BYTES_PER_KIBIBYTE else f"{n / config.BYTES_PER_KIBIBYTE:,.0f} KB"
 
@@ -290,9 +288,6 @@ def main() -> int:
     assets, envelope_contract = [], None
     for ticker in tickers:
         if not config.is_artifact_set_complete(ticker):
-            continue
-        if not config.catalogue_json(ticker).exists():   # artifacts from before the contract, or a hand's deletion
-            print(f"{ticker}: no {config.catalogue_json(ticker).name} — run `make features-catalogue`", flush=True)
             continue
         cat = dataset.load_catalogue(ticker)
         envelope_contract = envelope_contract or cat

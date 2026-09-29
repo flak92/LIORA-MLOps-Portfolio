@@ -1,13 +1,14 @@
-"""Measure one stage of a run from outside: the four pipeline stores before, the command, the four after — one record.
+"""Measure one stage of a run from outside: the three pipeline stores before, the command, the three after — one record.
 
     RUN_ID=<run_id> python3 record.py <stage> <command…>
 
-The recorder knows no module. Given the execution name RUN_ID, it lists the four pipeline stores named below (STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR,
-STORE_RUN_RECORDS_DIR, STORE_STATUS_DIR — path, size and mtime of every file), runs the command with its output passed
-through, lists them again, and writes store/run_records/<RUN_ID>/<stage>.json: when the stage started and ended, how it
-exited, and what it added, changed and removed in the stores. Its exit code is the command's. This is what a task scheduler
-records about a task — what it wrote — and nothing a stage could say about itself. STORE_TRIALS_DIR is deliberately
-absent: a trial ledger is the stage's own account of its search, which is the one thing this recorder never reads.
+The recorder knows no module. Given the execution name RUN_ID, it lists the three pipeline stores named below
+(STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR, STORE_STATUS_DIR — path, size and mtime of every file), runs the command
+with its output passed through, lists them again, and writes store/run_records/<RUN_ID>/<stage>.json: when the stage
+started and ended, how it exited, and what it added, changed and removed in the stores. Its exit code is the command's.
+This is what a task scheduler records about a task — what it wrote — and nothing a stage could say about itself.
+STORE_TRIALS_DIR is deliberately absent: a trial ledger is the stage's own account of its search, which is the one thing
+this recorder never reads. STORE_RUN_RECORDS_DIR is where the record goes, and no stage writes it.
 
 Then it writes store/run_records/index.json again from the store's listing — every run with a record, newest first, each
 with its records — the one file the page reads to find a run. Both files are written whole: beside their place, then
@@ -28,16 +29,14 @@ from pathlib import Path
 STORES = {
     "raw_1m": "STORE_RAW_1M_DIR",
     "assets_artifacts": "STORE_ASSETS_ARTIFACTS_DIR",
-    "run_records": "STORE_RUN_RECORDS_DIR",
     "status": "STORE_STATUS_DIR",
 }
 
 
 def listing(root: Path) -> dict[str, tuple[int, int]]:
-    """Every file under a store as path relative to it -> (size_bytes, mtime_ns); an absent store is empty, and a file that
-    vanishes between the walk and its stat (a database's temporary file) is simply not there."""
-    if not root.exists():
-        return {}
+    """Every file under a store as path relative to it -> (size_bytes, mtime_ns); a file that vanishes between the walk
+    and its stat — a temporary file a process beside the run moves onto its place, a search in its tmux session or a
+    crawl — is simply not there."""
     out = {}
     for path in root.rglob("*"):
         try:
@@ -80,18 +79,13 @@ def build_run_index(run_records: Path) -> dict:
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
-        raise SystemExit("usage: RUN_ID=<run_id> python3 record.py <stage> <command…>")
     stage, command = sys.argv[1], sys.argv[2:]
     run_id = os.environ["RUN_ID"]
     roots = {store: Path(os.environ[variable]) for store, variable in STORES.items()}
+    run_records = Path(os.environ["STORE_RUN_RECORDS_DIR"])
     before = {store: listing(root) for store, root in roots.items()}
     started_at, started_monotonic = datetime.now(tz=UTC), time.monotonic()
-    try:
-        exit_code = subprocess.run(command).returncode
-    except OSError as error:                      # the command itself could not start — recorded, like any failure
-        print(error, file=sys.stderr, flush=True)
-        exit_code = 127
+    exit_code = subprocess.run(command).returncode
     ended_at, duration_seconds = datetime.now(tz=UTC), round(time.monotonic() - started_monotonic, 3)
     after = {store: listing(root) for store, root in roots.items()}
     diffs = [store_diff(store, before[store], after[store]) for store in STORES]
@@ -105,10 +99,9 @@ def main() -> int:
         "duration_seconds": duration_seconds,
         "store_diff": {state: [row for diff in diffs for row in diff[state]] for state in ("added", "changed", "removed")},
     }
-    # the record and the index are written after the second listing, so neither is ever in a stage's diff
-    out = roots["run_records"] / run_id / f"{stage}.json"
+    out = run_records / run_id / f"{stage}.json"
     write_json(out, record)
-    write_json(roots["run_records"] / "index.json", build_run_index(roots["run_records"]))
+    write_json(run_records / "index.json", build_run_index(run_records))
     print(f"{stage}: exit {exit_code} in {duration_seconds}s — "
           f"+{len(record['store_diff']['added'])} ~{len(record['store_diff']['changed'])} -{len(record['store_diff']['removed'])} files -> {out}",
           flush=True)
