@@ -538,7 +538,7 @@
      "8h",
      "1d"
     ],
-    "warmup_bars": 10
+    "warmup_bars": 11
    },
    {
     "definition_in_default_set": false,
@@ -907,7 +907,7 @@
      "8h",
      "1d"
     ],
-    "warmup_bars": 14
+    "warmup_bars": 15
    },
    {
     "definition_in_default_set": false,
@@ -1195,5 +1195,5 @@
    "value": "features-serpentine-search-promote"
   }
  ],
- "generated_at_utc": "2026-09-29 16:59:55"
+ "generated_at_utc": "2026-09-29 18:36:11"
 }

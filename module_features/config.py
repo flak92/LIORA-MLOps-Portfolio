@@ -288,8 +288,12 @@ def term_indicator(term: tuple) -> str | None:
 
 
 def term_warmup_bars(term: tuple) -> int:
-    """Bars of the term's timeframe before its value is settled; a bare series needs none."""
-    return 0 if len(term) == 1 else INDICATORS[term_indicator(term)]["warmup_multiple"] * term[-1]
+    """Bars of the term's timeframe before its value is settled; a bare series needs none. A window over changes
+    needs the bar before it as well, its record's `warmup_offset_bars`: its first change is taken off that bar."""
+    if len(term) == 1:
+        return 0
+    record = INDICATORS[term_indicator(term)]
+    return record["warmup_multiple"] * term[-1] + record.get("warmup_offset_bars", 0)
 
 
 def definition_warmup_bars(definition: dict) -> int:

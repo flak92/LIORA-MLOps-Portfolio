@@ -138,7 +138,7 @@ need, in the same bars.
 | `close_minus_rolling_mean200_over_true_range_recursive_mean14` | (close − rolling_mean(close, 200)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 200 | 200 | the top level alone | CORE | no |
 | `close_minus_exponential_smoothing20_over_true_range_recursive_mean14` | (close − exponential_smoothing(close, 20)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 80 | every level | CORE | no |
 | `rolling_standard_deviation20_over_close` | rolling_standard_deviation(close, 20) / close | > 0, dimensionless | 20 | 20 | every level | CORE | no |
-| `relative_change10` | close_t / close_{t−10} − 1 | unbounded, dimensionless | 10 | 10 | every level | CORE | no |
+| `relative_change10` | close_t / close_{t−10} − 1 | unbounded, dimensionless | 10 | 11 | every level | CORE | no |
 | `close_minus_open_over_true_range_recursive_mean14` | (close − open) / recursive_mean(true_range, 14) | unbounded, dimensionless | 14 | 56 | every level | CORE | no |
 | `high_minus_low_over_true_range_recursive_mean14` | (high − low) / recursive_mean(true_range, 14) | ≥ 0, dimensionless | 14 | 56 | every level | CORE | no |
 | `centered_recursive_mean_upward_movement_share14` | (recursive_mean_upward_movement_share(high, low, 14) − 50) / 50 | [−1, 1] | 14 | 56 | every level | EXTENDED | no |
@@ -146,7 +146,7 @@ need, in the same bars.
 | `close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14` | (close − Σ₂₀(close · volume) / Σ₂₀(volume)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 56 | every level | EXTENDED | no |
 | `cumulative_signed_volume_rolling_standard_score50` | rolling_standard_score(cumulative_signed_volume, 50) | dimensionless | 50 | 50 | every level | EXTENDED | no |
 | `rolling_volume_weighted_close_location20` | Σ₂₀(location · volume) / Σ₂₀(volume) | [−1, 1] | 20 | 20 | every level | EXTENDED | no |
-| `centered_rolling_money_flow_gain_share14` | (rolling_money_flow_gain_share(high, low, close, volume, 14) − 50) / 50 | [−1, 1] | 14 | 14 | every level | EXTENDED | no |
+| `centered_rolling_money_flow_gain_share14` | (rolling_money_flow_gain_share(high, low, close, volume, 14) − 50) / 50 | [−1, 1] | 14 | 15 | every level | EXTENDED | no |
 | `exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14` | (exponential_smoothing(close, 8) − exponential_smoothing(close, 21)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 21 | 84 | every level | COMPOSITE | no |
 | `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14` | (exponential_smoothing(close, 21) − exponential_smoothing(close, 55)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 55 | 220 | every level | COMPOSITE | no |
 
@@ -166,7 +166,8 @@ One record of `FEATURE_CATALOGUE`, field by field — what a record must carry i
 
 The warm-up a term needs is a multiple of its parameter, the `warmup_multiple` of its record in
 `INDICATORS`: a rolling window is counted settled after one window of bars, a recursion after four
-times its parameter and a recursion of a recursion after eight. The multiples are a convention of
+times its parameter and a recursion of a recursion after eight; a window over changes adds the one bar
+before it, its record's `warmup_offset_bars`. The multiples are a convention of
 the register: the one guard, the finiteness assert, checks that a value exists, not how much weight
 a recursion's seed still carries. The experiment's `WARMUP_TOP_TIMEFRAME_BARS` is the widest of
 them all, read off the catalogue and counted in bars of the top timeframe — today the 220 bars of
@@ -177,9 +178,8 @@ start plus that many bars of the top timeframe, are excluded everywhere
 (`catalogue.warmup`). The boundary is inclusive: `asof_index` takes the last bar closed at or before
 the decision, so the first decision reads the top timeframe's `WARMUP_TOP_TIMEFRAME_BARS`-th bar the
 moment it closes. A window of n bars is finite from its n-th bar; a window over changes —
-`relative_change`, `rolling_money_flow_gain_share` — only from its (n + 1)-th, one bar more than its
-`warmup_multiple` counts: a shortfall the finiteness assert would stop the stage on, were one of
-them the widest.
+`relative_change`, `rolling_money_flow_gain_share` — only from its (n + 1)-th, since its first change
+is taken off the bar before the window, which `warmup_offset_bars` counts.
 
 The nesting criterion holds the longest effective history offered on a level below the shortest
 offered on the level above: a long window on a fine level spans a coarser level's history in many

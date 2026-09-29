@@ -218,8 +218,9 @@ SERIES_KERNELS = {
 }
 
 # the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries
-# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, the bar columns it reads
-# when its inputs are fixed, and the range it outputs when that range is bounded; an indicator without `inputs` takes
+# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter — and, for a window over
+# changes, `warmup_offset_bars`, the one bar before the window its first change is taken off —, the bar columns it
+# reads when its inputs are fixed, and the range it outputs when that range is bounded; an indicator without `inputs` takes
 # any series, close by default, and one without `output_range` is unbounded, so no normaliser can be written on it.
 # A second parameter, when an indicator needs one, extends the record and the name grammar in the same commit.
 # `historical_aliases` carries the popular names the operation answers to: provenance, never a key or a column.
@@ -242,7 +243,7 @@ INDICATORS = {
                                    "warmup_multiple": 1,
         "historical_aliases": ("Bollinger width",)},
     "relative_change": {"kernel": relative_change, "parameter_word": "LOOKBACK", "warmup_multiple": 1,
-                        "inputs": ("close",),
+                        "warmup_offset_bars": 1, "inputs": ("close",),
         "historical_aliases": ("ROC", "momentum")},
     "recursive_mean_upward_movement_share": {"kernel": recursive_mean_upward_movement_share,
                                              "parameter_word": "SMOOTHING_PERIOD", "warmup_multiple": 4,
@@ -262,7 +263,8 @@ INDICATORS = {
                                                "output_range": (-1.0, 1.0),
         "historical_aliases": ("CMF",)},
     "rolling_money_flow_gain_share": {"kernel": rolling_money_flow_gain_share, "parameter_word": "LOOKBACK",
-                                      "warmup_multiple": 1, "inputs": ("high", "low", "close", "volume"),
+                                      "warmup_multiple": 1, "warmup_offset_bars": 1,
+                                      "inputs": ("high", "low", "close", "volume"),
                                       "output_range": (0.0, 100.0),
         "historical_aliases": ("MFI",)},
 }
