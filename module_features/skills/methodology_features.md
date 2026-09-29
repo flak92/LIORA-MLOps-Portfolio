@@ -278,7 +278,7 @@ relation across timeframes stays a rule of the strategy (`module_ml/skills/metho
 ## The serpentine search
 
 The serpentine search is a hand's research over one asset's state Θ, outside the chain
-(`sub_module_serpentine_search/`; how it runs is `README_module_features.md` § Its sub-modules, its
+(`sub_module_serpentine_search/`; how it runs is its `README_sub_module_serpentine_search.md`, its
 rules `module_features/sub_module_serpentine_search/skill_serpentine_search.md`, each cited below by
 its `rule_id`). A state is the columns of a feature set per timeframe, the four barrier coordinates
 — the multiplier the label's barriers stand at, the horizon they stand for, the take-profit and the

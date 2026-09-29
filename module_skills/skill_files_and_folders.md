@@ -18,7 +18,7 @@ The kinds of file and folder this repository holds and what each is for: which a
 - `FILES-AND-FOLDERS-README-ORIENTS`
   - Description: A README orients and rules nothing: `README.md` at the root says what the project is, how to run it and where its Skills are, and a module's or a sub-module's orientation says the same of its own; each is a controlled file, never a context.
   - Scope: `README.md`, `module_*/README_module_*.md`, `module_*/**/README_sub_module_*.md`
-  - Expected: One `README.md` at the root; in each module one `README_module_<name>.md`, its name read off the module's directory, with its § Design rationale; a sub-module oriented by its own `README_sub_module_<subject>.md` or by a section of its module's; none holding or restating a rule, a methodology or the crawler's internals, and no bare `README.md` inside a module.
+  - Expected: One `README.md` at the root; in each module one `README_module_<name>.md`, its name read off the module's directory, with its § Design rationale; every sub-module oriented by its own `README_sub_module_<subject>.md`, beside its code; none holding or restating a rule, a methodology or the crawler's internals, and no bare `README.md` inside a module.
   - Exception: `module_skills/README.md`, the canon's index and the home of its prose that is no rule, and `<TICKER>_README.md`, an artifact `ml-status` derives.
 - `FILES-AND-FOLDERS-METHODOLOGY-IS-REFERENCE`
   - Description: A `methodology_<domain>.md` is reference material for a human, kept in its module's `skills/`, never a row of the files matrix and never sent by the crawler.

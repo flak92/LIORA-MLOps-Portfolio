@@ -142,9 +142,9 @@ or the module's documents; the mapping row it answers to is a row of the mapping
 | `dataset.py` | The parquet writer of this layer, `write_parquet()`, the schema read off a written partition, `load_partition_schema()`, its canonical JSON writer, `write_json()`, and the readers and the ledger's batch append the serpentine search reads and writes with, `load_json()`, `load_jsonl()` and `append_jsonl()` — all but `append_jsonl()` twice by extraction, identical in `module_ml/dataset.py` (its docstring). | `bars.py`, `catalogue.py`, `status.py` and the serpentine search import it, and it imports `config.py` alone; nothing outside the module imports it. | It writes to the descriptor it is handed and builds no path of its own, so an artifact lands where a `config.py` says on whatever disk is mounted at `/store`. | STORAGE — research artifacts |
 | `status.py` | The stage that measures this module's own facts — the catalogue as the register presents it, the module's CONFIGURABLES records, and each asset's row counts and serpentine search as it last wrote itself — published as `store/status/features_status.json` (its docstring). | It imports `config.py`, `dataset.py` and the serpentine search's `config.py`, `coordinate_feature_set.py` and `serpentine_search.py`; it reads the partitions `catalogue.py` wrote, the contract, the parameters file, the profile, the state file and its ledger, and writes the snapshot `ml.js` fetches for the catalogue frame. | It takes `--tickers` like every stage and runs once in a one-off container of the `features` runner, writing at `FEATURES_STATUS_JSON_PATH` under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
 | `__init__.py` | The package that makes `python -m module_features.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the register, the bars, the kernels, the catalogue, the contract, the snapshot and the serpentine search, and imports nothing. | The same `python -m module_features.<stage> --tickers <TICKER>` runs in a one-off container of the `features` runner (§ Stages) — the launcher setting the two `STORE_*_DIR` — the command `docker compose run --rm -T features` carries unchanged whichever host starts it. | COMPUTE — one stage, one one-off process |
-| the module's documents — `README_module_features.md` and `skills/` | This orientation, the rules of `skills/skill_feature_taxonomy.md` — rendered from the canon's sheet — and the method `skills/methodology_features.md`, a reference for a human, filed by ownership (`../AGENTS.md` § The default choice); the serpentine search's rules are `sub_module_serpentine_search/skill_serpentine_search.md`, beside its code, its orientation § Its sub-modules and its method `skills/methodology_features.md` § The serpentine search. | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no stage and no route reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the module's code, beside it |
+| the module's documents — `README_module_features.md` and `skills/` | This orientation, the rules of `skills/skill_feature_taxonomy.md` — rendered from the canon's sheet — and the method `skills/methodology_features.md`, a reference for a human, filed by ownership (`../AGENTS.md` § The default choice); the serpentine search's rules are `sub_module_serpentine_search/skill_serpentine_search.md` and its orientation `sub_module_serpentine_search/README_sub_module_serpentine_search.md`, beside its code, and its method `skills/methodology_features.md` § The serpentine search. | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no stage and no route reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the module's code, beside it |
 | `sub_module_terminal/` | The module's own terminal — the hand's instrument over this layer: each asset's bars and catalogue partitions, its contract and its serpentine search, then one of the module's targets started through `make`, or the serpentine search's draft, recorded search and promotion (§ Its sub-modules). | It imports the standard library and its own package alone, and nothing of the package above it: `config.py` imports `.indicators`, and numpy with it, and the serpentine search's `config.py` imports that one, so it carries registered copies of the store read, the descriptors and the records it reads. | It runs on the host's `python3` with gum, in no container and no venv, and computes nothing: what it starts, the Makefile names — its orientation is `sub_module_terminal/README_sub_module_terminal.md`, its rules `module_skills/skill_tui_designer.md`. | no row — a hand's instrument, beside the stages it starts |
-| `sub_module_serpentine_search/` | The serpentine search, a hand's research outside the chain over one asset's feature set, barrier geometry and hyper-parameters: `serpentine_search.py` one turn, `coordinate_barrier.py` and `coordinate_feature_set.py` the moves of the two coordinates it generates, `promote.py` the promotion, and `config.py` its CONFIGURABLES records, its round, the constants of its gate and the one place it builds a path (§ Its sub-modules). | It imports this module's `config.py` and `dataset.py` and nothing of another module — the values a state is made of and the files of the evaluation contract are registered copies — and `status.py` imports it to publish each asset's search. | What a state is worth crosses to `module_ml` as two files, the question and the answer, never as an import; a turn and a promotion each run in a one-off container of the `features` runner with `--tickers <TICKER>`, and the loop that alternates a turn with `ml-score` is the Makefile's. | COMPUTE — one stage for one asset |
+| `sub_module_serpentine_search/` | The serpentine search, a hand's research outside the chain over one asset's feature set, barrier geometry and hyper-parameters: `serpentine_search.py` one turn, `coordinate_barrier.py` and `coordinate_feature_set.py` the moves of the two coordinates it generates, `promote.py` the promotion, and `config.py` its CONFIGURABLES records, its round, the constants of its gate and the one place it builds a path (its orientation, `sub_module_serpentine_search/README_sub_module_serpentine_search.md`). | It imports this module's `config.py` and `dataset.py` and nothing of another module — the values a state is made of and the files of the evaluation contract are registered copies — and `status.py` imports it to publish each asset's search. | What a state is worth crosses to `module_ml` as two files, the question and the answer, never as an import; a turn and a promotion each run in a one-off container of the `features` runner with `--tickers <TICKER>`, and the loop that alternates a turn with `ml-score` is the Makefile's. | COMPUTE — one stage for one asset |
 
 ## Its sub-modules
 
@@ -166,68 +166,12 @@ standards of every terminal's screens — `module_skills/skill_tui_designer.md`.
 
 `sub_module_serpentine_search/` is the serpentine search: a hand's research
 outside the chain over one asset's state — its feature set, its barrier geometry
-and its hyper-parameter point — under a profile a hand drafted. Its rules are
-`sub_module_serpentine_search/skill_serpentine_search.md`, beside its code; its
-method, its thresholds and their limits are `skills/methodology_features.md`
-§ The serpentine search.
-
-- **A turn** — `make features-serpentine-turn`, one one-off container of the
-  `features` runner per asset — reads the profile, the asset's `best_params`
-  from `<TICKER>_parameters.json`, the contract, the asset's active state — the
-  promoted `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`, else the
-  default set and `START_BY_COORDINATE_DEFAULT` — the state file, its ledger and
-  the answer on disk. It carries the search as far as the answers allow: it
-  appends what an answer adds to the ledger
-  `<TICKER>_serpentine_search_trials.jsonl`, writes
-  `<TICKER>_serpentine_search.json` at the top of every round, and leaves either
-  the next question, `<TICKER>_score_request.json` — written over the one it
-  answers before the spent answer is removed — or a finished search, the
-  question and the answer removed. It computes no metric of a state.
-- **The answer** is `module_ml`'s: `make ml-score` (`module_ml.score`, one
-  one-off container of the `ml` runner per asset) scores the states the
-  question names — a trial row per state, or a study and its candidate per beam
-  parent — and writes `<TICKER>_score_response.json` once the whole question is
-  answered, each study's points in `store/trials/score_trials/ticker=<TICKER>/`.
-- **The loop** — `make features-serpentine-search [ASSET=<TICKER>]`, never
-  inside `all` — is a turn, then `ml-score` and a turn again while the turn
-  leaves a question, each step a one-off container of its runner; it resumes
-  where the files stand, and `JOBS=n` runs n assets side by side, one at a time
-  otherwise. `make tmux-features-serpentine-search ASSET=<TICKER>` is its
-  detached twin in the tmux session `features-serpentine-search-<ticker>` —
-  `<project>-features-serpentine-search-<ticker>` under
-  `COMPOSE_PROJECT_NAME=<project>`, which the session is handed — alive after
-  the terminal closes and gone with the search; a rerun resumes.
-- **The profile**, `<TICKER>_serpentine_search_profile.json`, is drafted by the
-  terminal's `draft` or by hand, never derived: the columns admitted per
-  timeframe, the columns the search starts from (`null` for the asset's own
-  set), the grid of each barrier coordinate — a one-point grid pins it, and the
-  terminal offers `GRID_BY_COORDINATE_DEFAULT` — the loops a round runs, and the
-  asset's noise sigma, `path_cagr_noise_standard_deviation`: `null` on the
-  asset's first searches, the calibration runs, whose last turn prints the
-  estimate a hand may draft into the file.
-- **The promotion** — `make features-serpentine-search-promote ASSET=<TICKER>`,
-  one asset and never fanned out — copies the proposal's columns into
-  `<TICKER>_feature_set.json` and its barrier geometry into
-  `<TICKER>_barriers.json` (`promote.py`), and nothing else, then runs `ml-all`
-  for the asset. A search proposes one state at most, its champion, so there is
-  none to choose. That chain tunes the hyper-parameters anew: `ml-hpo` draws its
-  own `best_params` for the promoted columns and geometry — the point the search
-  evaluated, even one its hpo loop found, is not copied — the result is evaluated
-  again on the validation folds F2–F4, and F5 is read after and never steers.
-  What is kept is the proposal's columns and geometry, not the model the search
-  evaluated, so the realised result differs from the search's. A search that
-  proposes nothing has ended correctly, with nothing to promote, and the
-  promotion refuses it in one line (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
-- **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` —
-  removes `<TICKER>_serpentine_search.json`,
-  `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_score_request.json`,
-  `<TICKER>_score_response.json` and `store/trials/score_trials/ticker=<TICKER>/`,
-  and keeps the search's inputs — the chain's files, the promoted state and the
-  profile — and `hpo_trials`. It runs no stage.
-
-**One search, one experiment.** What a change of data or configuration asks of
-a hand before the next search — the chain, the reset and a new search, or the
-next turn alone — is one rule, `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.
+and its hyper-parameter point — under a profile a hand drafted. Its orientation
+is `sub_module_serpentine_search/README_sub_module_serpentine_search.md` — the
+turn, the answer, the loop, the profile, the promotion and the reset — and its
+rules `sub_module_serpentine_search/skill_serpentine_search.md`, both beside its
+code; its method, its thresholds and their limits are
+`skills/methodology_features.md` § The serpentine search.
 
 ## Its normative skills
 

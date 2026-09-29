@@ -691,7 +691,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the canon: the module of the rules that cross modules or govern the project — the sheet, what the sync renders from it, the index, and its two sub-modules; it takes no part in the chain's dataflow and no module imports it
   - Code: `module_skills/` — `module_skills/config.py`, `module_skills/sheet.py`, `module_skills/sync.py`, `module_skills/configurables.py`, `module_skills/sub_module_scalability_crawler/`, `module_skills/sub_module_terminal/`; `SKILLS_SHEET_PATH`
   - Never: a stage of the chain; a runtime import of it by a module; a cross-cutting rule filed under one module; a third-party package
-- a sub-module: a nesting inside the module, or the canon, that owns it — its own `config.py`, an action module with `main()` for each action of a hand, `tui.py` where it draws a terminal, its orientation beside it or in its module's; no part in the chain's dataflow, a hand's research outside the chain at most, whose promotion writes files the chain reads
+- a sub-module: a nesting inside the module, or the canon, that owns it — its own `config.py`, an action module with `main()` for each action of a hand, `tui.py` where it draws a terminal, its orientation `README_sub_module_<subject>.md` beside it; no part in the chain's dataflow, a hand's research outside the chain at most, whose promotion writes files the chain reads
   - Code: `sub_module_<subject>/` — `module_data/sub_module_terminal/`, `module_features/sub_module_terminal/`, `module_ml/sub_module_terminal/`, `module_monitoring/sub_module_terminal/`, `module_features/sub_module_serpentine_search/`, `module_skills/sub_module_scalability_crawler/`, `module_skills/sub_module_terminal/`
   - Never: a sub-module at the root; a sub-module of a sub-module; the domain repeated in the folder, `sub_module_ml_terminal`; a sub-module that imports another module
 - the project's one image
@@ -1170,8 +1170,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `module_<domain>/README_module_<domain>.md`
   - Never: `module_<domain>/README.md`; an orientation that restates a Skill or a decision table
 - a sub-module's orientation, beside its code
-  - Code: `README_sub_module_<subject>.md` — each `sub_module_terminal/README_sub_module_terminal.md`, `module_skills/sub_module_scalability_crawler/README_sub_module_scalability_crawler.md`
-  - Never: a `README.md` inside a package; an orientation that restates a Skill
+  - Code: `README_sub_module_<subject>.md` — each `sub_module_terminal/README_sub_module_terminal.md`, `module_skills/sub_module_scalability_crawler/README_sub_module_scalability_crawler.md`, `module_features/sub_module_serpentine_search/README_sub_module_serpentine_search.md`
+  - Never: a `README.md` inside a package; an orientation that restates a Skill; a section of its module's orientation in its place
 - the design rationale: the section of a module's orientation that says, per object, analogous pair or the module's documents, why here, why beside these, why this boundary and which mapping row it answers to — the fourth the test of the first three
   - Code: `## Design rationale` of each `README_module_<domain>.md`
   - Never: a decision table; a rule restated; an object with no row or two; ADR, decision record, decision log, `docs/`
