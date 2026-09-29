@@ -263,13 +263,13 @@ experiment and nowhere else (§ One search, one experiment).
 
 ### 3. Progress and stopping
 
-Each family leaves the beam `top_beam(children + beam)` (:495–496): the best
+Each family leaves the beam `top_beam(children + beam)` (:498–499): the best
 `SERPENTINE_SEARCH_BEAM_WIDTH` distinct states by the ranking key, among the children that cleared
 the gate and the parents they came from. The parents stay in the race, so a family that finds
 nothing better keeps what it had, and the leader of the beam — the champion, moved once at the end
 of the round — never ranks worse than it did: the best ranked result never gets worse.
 
-`search_converged = not round_accepted` (:509): the search stops after a round in which no family of
+`search_converged = not round_accepted` (:512): the search stops after a round in which no family of
 the executed schedule changed the beam. From that beam another round would offer the same states
 and, every fit and study being seeded, receive the same answers, so the search stands at a fixed
 point of its own schedule and gate. That is not a global optimum, and not a local optimum of the
@@ -288,7 +288,7 @@ from:
   validation fold F2–F4 — the fold is the unit of robustness;
 - its CAGR beats its parent's by more than k(n)·σ, σ the asset's noise sigma drafted into the
   profile and n the candidates of its pass: every state the family offers from the beam, cache hits
-  included (:462–464), or every point the pass's studies drew, pruned and completed alike
+  included (:465–467), or every point the pass's studies drew, pruned and completed alike
   (:439–442).
 
 A calibration run — the profile's `path_cagr_noise_standard_deviation` null — passes no margin: a
@@ -306,8 +306,9 @@ smaller loss with a shallower drawdown.
 The one proposal (`proposals_block`, :190–210) is the champion, as proposal 1, when its threshold
 constraint is met, it is not the start state, no validation fold's Calmar ratio is below the start's,
 and its CAGR beats the start's by more than k(N)·σ. N is the sum of `trial_count_by_loop`
-(:222–224): the ledger's lines after the start, by loop, plus every point the studies drew — a
-study's candidate, itself a drawn point, counted in both. A calibration run proposes nothing.
+(:222–224): the ledger's lines after the start in the loops that enumerate their moves, and every
+point the studies drew — a study's candidate, itself a drawn point, counted once, as its line
+(:457–459). A calibration run proposes nothing.
 
 These thresholds are this method's assumptions — the baseline it holds itself to — and not
 conditions of correctness for every optimiser: another search could keep other moves and still be a
@@ -326,7 +327,7 @@ count. `gate_threshold_multiple` (:119–130) finds the k(n) at which the chance
 halvings, so one n gives one k on every machine; k grows with n.
 
 σ is `path_cagr_noise_standard_deviation` (:143–161), read off the ledgers of calibration runs —
-the last turn of one prints the estimate of its own ledger (:518–521), and a hand drafts the number
+the last turn of one prints the estimate of its own ledger (:521–524), and a hand drafts the number
 into the profile. A child
 and the parent its `parent_trial_index` names form one pair when both met the threshold constraint
 and the child was fitted on its own — a move of the trade's exit alone shares its parent's fits and

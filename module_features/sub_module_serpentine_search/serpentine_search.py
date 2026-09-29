@@ -454,6 +454,9 @@ def turn(ticker: str) -> None:
                                  "move": config.SERPENTINE_SEARCH_MOVE_FORWARD, "round": round_number,
                                  "parent_trial_index": parent})
                 append_trials(ticker, trials, index_by_state, rows)
+                # a candidate is one of the points its study drew, so a point that became a line is counted once, as
+                # the line: the lines this round's studies left — this turn's or a stopped turn's — come off the draws
+                round_drawn[loop] -= sum(row["loop"] == loop and row["round"] == round_number for row in trials)
                 response = None
                 reached = [(state_key(theta(result["candidate"])), parent, "hpo",
                             config.SERPENTINE_SEARCH_MOVE_FORWARD)

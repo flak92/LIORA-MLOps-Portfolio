@@ -242,10 +242,10 @@ a wrong one.
 **Progress and stopping.** Each family leaves the beam its best
 `SERPENTINE_SEARCH_BEAM_WIDTH` distinct states by the ranking key among its
 gate-cleared children **and the parents they came from**
-(`serpentine_search.py:495–496`), so the best-ranked state — the champion, which
+(`serpentine_search.py:498–499`), so the best-ranked state — the champion, which
 moves at the round's end — never ranks worse than it did. A round in which no
 family changed the beam ends the search: `search_converged = not round_accepted`
-(`serpentine_search.py:509`). That is a statement about the schedule the round
+(`serpentine_search.py:512`). That is a statement about the schedule the round
 executed — every child it scored either failed the gate or ranked below the
 states already there — and not a global optimum, which is not claimed: every
 move is one coordinate, so an improvement that needs several coordinates changed
