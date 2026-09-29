@@ -1,6 +1,7 @@
 """Shared IO for the ML layer: load_catalogue — the one read of the feature layer's contract, once per stage — load_xy
-and build_xy with the asset's feature set, load_barriers, load_feature_columns, build_x, write_json and load_json, and the parquet writer of the
-label and prediction writers — twice by extraction, identical in module_features/dataset.py."""
+and build_xy with the asset's feature set, load_barriers, load_feature_columns, build_x, write_json and load_json, and the
+parquet writer and the schema read off a written partition the label and prediction writers use — twice by extraction,
+identical in module_features/dataset.py."""
 
 from __future__ import annotations
 
@@ -16,8 +17,18 @@ from . import config
 
 
 # twice by extraction
-def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> Path:
-    """zstd parquet from an iterable of rows via a CSV spool: numpy -> repr(float) -> read_csv round-trips float64 exactly."""
+def load_partition_schema(con: duckdb.DuckDBPyConnection, path: Path) -> list[dict[str, str]]:
+    """The columns of a written partition, as data: `column` and DuckDB's `type` in the file's order — the schema of a
+    homogeneous family, whose every partition carries the same; the partition keys stay out because the file is read
+    as a file, not as a Hive tree."""
+    return [{"column": name, "type": kind}
+            for name, kind, *_ in con.execute(f"DESCRIBE SELECT * FROM read_parquet('{path}', hive_partitioning=false)").fetchall()]
+
+
+# twice by extraction
+def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str, family: str | None = None) -> Path:
+    """zstd parquet from an iterable of rows via a CSV spool: numpy -> repr(float) -> read_csv round-trips float64 exactly.
+    Named a homogeneous family's partition, it writes the family's `schema.json` beside the partitions too."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("w", suffix=".csv", delete=False, newline="") as f:
         csv.writer(f).writerows(rows)
@@ -32,6 +43,8 @@ def write_parquet(path: Path, columns: dict[str, str], rows, order_by: str) -> P
                       ORDER BY {order_by})
                 TO '{path}' (FORMAT PARQUET, COMPRESSION zstd)"""
         )
+        if family is not None:
+            write_json(config.schema_json(family), load_partition_schema(con, path))
         con.close()
     finally:
         spool.unlink(missing_ok=True)
@@ -59,7 +72,8 @@ def to_json_safe(obj):
 
 
 # twice by extraction
-def write_json(path: Path, payload: dict) -> None:
+def write_json(path: Path, payload: dict | list) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(to_json_safe(payload), sort_keys=True, indent=1) + "\n", encoding="utf-8")
 
 
@@ -68,7 +82,6 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-# twice by extraction
 def append_jsonl(path: Path, payload: dict) -> None:
     """One object a line, appended: a ledger grows by what it gains and is never rewritten, so writing a
     trial costs the trial and not the trials before it."""
@@ -101,7 +114,7 @@ def load_feature_columns(ticker: str, cat: dict) -> dict[str, tuple[str, ...]]:
 
 def barriers_from(coordinates: dict) -> dict:
     """The barrier geometry a state carries, with its horizon token turned into minutes — the one place a
-    token becomes a number, whether it came from the promoted file or from a state of the search.
+    token becomes a number, whether it came from the promoted file or from a state of the serpentine search.
 
     Every coordinate is cast here too, by the register's own casts: a promoted file is JSON a hand may edit,
     and `2` is an int where `2.0` is a float, which a state key compares as a different state."""
@@ -133,16 +146,16 @@ def build_x(catalogue_values: dict[str, np.ndarray], columns_by_timeframe: dict[
 
 
 def load_feature_material(ticker: str, cat: dict, timeframes: tuple[str, ...]) -> tuple[dict, list]:
-    """The feature parquets as build_xy takes them: every catalogue column's values, keyed by feature id,
-    and the decision grid each timeframe was read on. A search that relabels an asset reads these once and
-    joins them to each new Y."""
+    """The catalogue's partitions as build_xy takes them: every catalogue column's values, keyed by feature id,
+    and the decision grid each timeframe was read on. `score.py`, which relabels an asset for a state of the
+    serpentine search, reads these once and joins them to each new Y."""
     con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     catalogue_values, decision_grids = {}, []
     for timeframe in timeframes:
         per_timeframe = con.execute(
-            f"SELECT * FROM read_parquet('{config.features_parquet(ticker, cat, timeframe)}') ORDER BY decision_ts"
+            f"SELECT * FROM read_parquet('{config.catalogue_parquet(cat, timeframe)}', hive_partitioning=false) ORDER BY decision_ts"
         ).fetchnumpy()
         for name in cat["columns_by_timeframe"][timeframe]:
             catalogue_values[config.feature_id(name, timeframe)] = per_timeframe[name]
@@ -157,14 +170,15 @@ def load_label_events(ticker: str, cat: dict) -> dict[str, np.ndarray]:
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     label_events = con.execute(
-        f"SELECT * FROM read_parquet('{config.label_events_parquet(ticker, cat)}') ORDER BY decision_ts"
+        f"""SELECT * FROM read_parquet('{config.labels_parquet(ticker, cat["decision_timeframe"])}', hive_partitioning=false)
+            ORDER BY decision_ts"""
     ).fetchnumpy()
     con.close()
     return label_events
 
 
 def load_xy(ticker: str) -> dict:
-    """The asset's feature and label parquets read once and handed to build_xy: X and Y on Y's decision
+    """The asset's catalogue and labels partitions read once and handed to build_xy: X and Y on Y's decision
     grid, with the values of every catalogue column beside X and the contract that named them; X may
     carry tail rows Y had to drop."""
     cat = load_catalogue(ticker)
@@ -179,10 +193,10 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
              columns_by_timeframe: dict[str, tuple[str, ...]], barriers: dict) -> dict:
     """X and Y on Y's decision grid from arrays already in memory — the feature grids joined to Y by
     position, every catalogue column narrowed to Y's rows and the set's columns stacked. It reads no
-    file, so a search that relabels an asset in process builds X and Y the way the stage does."""
+    file, so `score.py`, relabelling an asset in process, builds X and Y the way the stage does."""
     # the files are joined by position, so they must share one decision grid
     x_ts = decision_grids[0]
-    assert all(np.array_equal(x_ts, grid) for grid in decision_grids[1:]), "per-timeframe feature parquets disagree on the decision grid"
+    assert all(np.array_equal(x_ts, grid) for grid in decision_grids[1:]), "the catalogue's partitions disagree on the decision grid"
     y_ts = label_events["decision_ts"].astype(np.int64)
     pos = np.searchsorted(x_ts, y_ts)
     assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"

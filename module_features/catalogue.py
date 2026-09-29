@@ -1,5 +1,6 @@
 """The feature catalogue on the decision grid: every feature definition evaluated on every timeframe it is offered on,
-each value from the last closed bar of its timeframe; one parquet per timeframe, from the research warm-up onward."""
+each value from the last closed bar of its timeframe; the family `catalogue`, one partition per asset and timeframe, from
+the research warm-up onward, and the asset's copy of the contract the ML layer reads."""
 
 from __future__ import annotations
 
@@ -10,19 +11,18 @@ import numpy as np
 
 from . import config, dataset, indicators
 
-# the series kernels cover the one series that is not a bar column; the indicators' kernels are their register records
-SERIES_KERNELS = {"log_volume": lambda bars: np.log1p(bars["volume"])}
-
-
-def load_timeframe(con: duckdb.DuckDBPyConnection, timeframe: str) -> dict[str, np.ndarray]:
+def load_timeframe(con: duckdb.DuckDBPyConnection, ticker: str, timeframe: str) -> dict[str, np.ndarray]:
+    """The asset's bars of one timeframe, as the bars stage wrote them, in grid order."""
     return con.execute(
         f"""SELECT timestamp_ms, open, high, low, close, volume
-            FROM ohlcv_{timeframe}_canonical ORDER BY timestamp_ms"""
+            FROM read_parquet('{config.bars_parquet(ticker, timeframe)}') ORDER BY timestamp_ms"""
     ).fetchnumpy()
 
 
 def series_values(bars: dict[str, np.ndarray], series: str) -> np.ndarray:
-    return SERIES_KERNELS[series](bars) if series in SERIES_KERNELS else bars[series]
+    """A series of the register runs its kernel over the bars; any other series is a bar column."""
+    record = indicators.SERIES_KERNELS.get(series)
+    return record["kernel"](bars) if record else bars[series]
 
 
 def term_values(bars: dict[str, np.ndarray], term: tuple) -> np.ndarray:
@@ -75,16 +75,15 @@ def timeframe_catalogue(bars: dict[str, np.ndarray], timeframe: str) -> dict[str
             for definition in config.FEATURE_CATALOGUE if timeframe in definition["timeframes"]}
 
 
-def build_catalogue(con: duckdb.DuckDBPyConnection) -> tuple[np.ndarray, dict[str, np.ndarray]]:
-    """Return (decision_ts, every catalogued column by feature id, config.CATALOGUE_COLUMNS); the stacked matrix is
-    built only to assert finiteness across all of them — a term that needs more warm-up than the experiment grants
-    stops here."""
-    timeframes = {timeframe: load_timeframe(con, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
+def build_catalogue(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, dict[str, np.ndarray]]:
+    """Return (decision_ts, every catalogued column by feature id); the stacked matrix is built only to assert
+    finiteness across all of them — a term that needs more warm-up than the experiment grants stops here."""
+    timeframes = {timeframe: load_timeframe(con, ticker, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
     catalogue = {timeframe: timeframe_catalogue(timeframes[timeframe], timeframe)
                  for timeframe in config.HIERARCHY_TIMEFRAMES}
 
-    ts_15m = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
-    decision_ts = ts_15m[ts_15m >= config.WARMUP_END_MS]
+    decision_grid_ts = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
+    decision_ts = decision_grid_ts[decision_grid_ts >= config.WARMUP_END_MS]
 
     cols: dict[str, np.ndarray] = {}
     for timeframe in config.HIERARCHY_TIMEFRAMES:
@@ -100,27 +99,22 @@ def build_catalogue(con: duckdb.DuckDBPyConnection) -> tuple[np.ndarray, dict[st
 
 
 def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.ndarray]) -> list[Path]:
-    """One parquet per timeframe — the columns the catalogue offers on it, on the decision grid; the filename carries
-    the timeframe, so the columns do not — and the asset's copy of the contract the ML layer reads."""
+    """One partition of the catalogue family per timeframe — the columns the catalogue offers on it, on the decision
+    grid; the partition carries the timeframe, so the columns do not — the family's schema from the register, the same
+    bytes from every asset, and the asset's copy of the contract the ML layer reads."""
     written = []
     for timeframe in config.HIERARCHY_TIMEFRAMES:
         names = config.catalogue_columns(timeframe)
         written.append(dataset.write_parquet(
-            config.features_parquet(ticker, timeframe),
+            config.catalogue_parquet(ticker, timeframe),
             {"decision_ts": "BIGINT", **{name: "DOUBLE" for name in names}},
             ([int(decision_ts[i])] + [repr(float(cols[config.feature_id(name, timeframe)][i])) for name in names]
              for i in range(decision_ts.size)),
             order_by="decision_ts",
         ))
+    dataset.write_json(config.schema_json("catalogue"), config.catalogue_schema())
     contract = config.catalogue_json(ticker)
-    payload = config.catalogue_contract(ticker)
-    # the contract is what the ML layer reads, and every column in it was evaluated under this warm-up: a
-    # contract that does not cover its own widest definition would hand ML rows the definition had not settled
-    # into. Derived today, so this cannot fire — it is what makes writing the number back by hand fail loudly
-    assert max(config.definition_warmup_bars(definition) for definition in config.FEATURE_CATALOGUE) \
-        <= payload["warmup_top_timeframe_bars"], \
-        "the catalogue's warm-up does not cover its widest definition"
-    dataset.write_json(contract, payload)
+    dataset.write_json(contract, config.catalogue_contract(ticker))
     written.append(contract)
     return written
 
@@ -128,13 +122,13 @@ def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.nda
 def main() -> int:
     args = config.build_ticker_parser("the feature catalogue on the decision grid per asset").parse_args()
     for ticker in config.parse_tickers(args.tickers):
-        con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+        con = duckdb.connect()
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
-        decision_ts, cols = build_catalogue(con)
+        decision_ts, cols = build_catalogue(con, ticker)
         con.close()
         *parquets, contract = write_catalogue(ticker, decision_ts, cols)
-        print(f"{ticker} {', '.join(w.name for w in parquets)}: {decision_ts.size} rows x "
+        print(f"{ticker} {', '.join(w.parent.name for w in parquets)}: {decision_ts.size} rows x "
               f"{'/'.join(str(len(config.catalogue_columns(t))) for t in config.HIERARCHY_TIMEFRAMES)} columns, + {contract.name}",
               flush=True)
     return 0

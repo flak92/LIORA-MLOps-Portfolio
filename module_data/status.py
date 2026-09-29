@@ -1,5 +1,5 @@
 """Data-layer quality report: stdout tables + store/status/data_status.json, one sequential process over the
-asset databases; every alias a scan publishes is the key it becomes.
+assets' families; every alias a scan publishes is the key it becomes.
 
 Each venue is measured on its own, the canonical series the venues were merged into is measured beside them,
 and the venue set is one definition — `config.SOURCE_VENUES`, published as `source_venues` so no reader
@@ -18,7 +18,7 @@ from .ingest import OHLC_INTACT_PREDICATE
 from .lean import MINUTES_PER_DAY
 
 # invalid_row_count is what ingest.py refuses to join, counted with ingest's own predicate: the validity rule
-# is written once (skills/skill_candle_canonicalisation.md § 4) and imported, never restated here
+# is written once (`CANDLE-CANONICALISATION-A-CANDLE-IS-CHOSEN-WHOLE`) and imported, never restated here
 VENUE_SCAN = """
 SELECT count(*)                     AS row_count,
        count(DISTINCT timestamp_ms) AS distinct_timestamp_count,
@@ -29,7 +29,7 @@ SELECT count(*)                     AS row_count,
        count(*) FILTER (volume = 0 AND open = high AND high = low
                         AND low = close) AS flat_bars,
        arg_max(close, timestamp_ms) AS last_close
-FROM ohlcv_1m_{venue}
+FROM read_parquet('{venue_parquet}')
 """
 
 # one share per venue, the aliases derived from the one venue definition — a venue added to SOURCE_VENUES
@@ -44,7 +44,7 @@ SELECT count(*)                              AS row_count,
        max(timestamp_ms)                     AS last_timestamp_ms,
        count(*) FILTER (high < greatest(open, close, low)
                      OR low  > least(open, close, high)) AS ohlc_violation_count
-FROM ohlcv_1m_canonical
+FROM read_parquet('{canonical_parquet}')
 """
 
 # one ordered pass over the canonical close: a basis jump can enter only on a minute whose source differs from
@@ -64,21 +64,21 @@ FROM (SELECT close,
              AND low    = lag(low)    OVER minute_order
              AND close  = lag(close)  OVER minute_order
              AND volume = lag(volume) OVER minute_order AS candle_repeated
-      FROM ohlcv_1m_canonical
+      FROM read_parquet('{canonical_parquet}')
       WINDOW minute_order AS (ORDER BY timestamp_ms))
 """
 
 # a minute of the canonical grid is in exactly one state — forward-filled, flat, or traded — and the longest run
 # of each of the first two is one pass and one grouping. A forward-filled row repeats the previous close with no
 # volume, so it satisfies the flat geometry as well; the state is decided in order, so fabrication is never
-# reported as a quiet market (skills/skill_candle_canonicalisation.md § 6, § 10)
+# reported as a quiet market (`CANDLE-CANONICALISATION-PROVENANCE-TRAVELS-WITH-THE-CANDLE`, `CANDLE-CANONICALISATION-THE-GRID-IS-COMPLETE`)
 CANONICAL_RUN_SCAN = """
 WITH marked AS (SELECT timestamp_ms,
                        CASE WHEN source = 'ffill'                     THEN 'ffill'
                             WHEN volume = 0 AND open = high AND high = low
                                              AND low = close          THEN 'flat'
                             ELSE 'traded' END AS minute_state
-                FROM ohlcv_1m_canonical),
+                FROM read_parquet('{canonical_parquet}')),
 state_changes AS (SELECT timestamp_ms, minute_state,
                          CASE WHEN minute_state = lag(minute_state) OVER (ORDER BY timestamp_ms)
                               THEN 0 ELSE 1 END AS state_changed
@@ -208,29 +208,28 @@ def print_canonical_table(canonical: list[dict]) -> None:
 
 
 def main() -> int:
-    args = config.build_ticker_parser("data & database monitoring -> stdout + store/status/data_status.json").parse_args()
+    args = config.build_ticker_parser("data monitoring -> stdout + store/status/data_status.json").parse_args()
     requested = config.parse_tickers(args.tickers)
     venue_rows = {venue: {} for venue in config.SOURCE_VENUES}
     canonical_rows = {}
-    canonical_scan = CANONICAL_SCAN.format(venue_source_counts=venue_source_count_aliases())
     for ticker in requested:
-        path = config.research_ohlcv_duckdb(ticker)
-        if not path.exists():
+        canonical_parquet = config.ohlcv_1m_canonical_parquet(ticker)
+        if not canonical_parquet.exists():
             continue
-        con = duckdb.connect(str(path), read_only=True)
+        con = duckdb.connect()
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
         for venue in config.SOURCE_VENUES:
-            venue_rows[venue][ticker] = load_row(con, VENUE_SCAN.format(venue=venue,
+            venue_rows[venue][ticker] = load_row(con, VENUE_SCAN.format(venue_parquet=config.venue_parquet(ticker, venue),
                                                                        ohlc_intact=OHLC_INTACT_PREDICATE))
         canonical_rows[ticker] = {
-            **load_row(con, canonical_scan),
-            **load_row(con, SOURCE_SWITCH_SCAN),
-            **load_row(con, CANONICAL_RUN_SCAN),
+            **load_row(con, CANONICAL_SCAN.format(venue_source_counts=venue_source_count_aliases(), canonical_parquet=canonical_parquet)),
+            **load_row(con, SOURCE_SWITCH_SCAN.format(canonical_parquet=canonical_parquet)),
+            **load_row(con, CANONICAL_RUN_SCAN.format(canonical_parquet=canonical_parquet)),
         }
         con.close()
     if not canonical_rows:
-        raise SystemExit("no asset database found — run `make data-ingest` first")
+        raise SystemExit("no canonical series found — run `make data-ingest` first")
 
     tickers = [ticker for ticker in requested if ticker in canonical_rows]
     venues = {venue: venue_block(venue, tickers, venue_rows, canonical_rows) for venue in config.SOURCE_VENUES}

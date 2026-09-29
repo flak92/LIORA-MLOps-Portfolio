@@ -23,9 +23,10 @@ deterministic correctness:
 - Speed comes only from external parallelism: independent processes side by
   side, one asset per process, all under the same fixed `SEED` — never from
   raising thread caps inside one process.
-- Width is measured at invocation, never hardcoded — `JOBS` in the Makefile,
-  `module_ml/skills/methodology_ml.md` § 11; `JOBS=n` overrides. A literal written for one
-  machine is silently wrong on every other.
+- Width is one asset at a time unless a hand says otherwise — `JOBS ?= 1` in the
+  Makefile, `module_ml/skills/methodology_ml.md` § 11; `JOBS=n` on the make line sets it for
+  that run. A wider default is not written for any machine: the hand that widens a run
+  answers for the memory of `JOBS` containers side by side.
 - Before optimising, measure the time distribution; after optimising, compare
   against the run-to-run spread — an improvement within the spread is noise
   and is rejected.
@@ -35,6 +36,5 @@ deterministic correctness:
 - **The seat.** Read forward the caps travel unchanged: `nthread=1` and
   `OMP_NUM_THREADS=1` are the environment of the one task definition, and
   `JOBS` is the width of the Map over `TICKERS` in the state machine (AWS Step
-  Functions) — measured as it is measured here, never a literal in the
-  definition; `skill_pre_aws_solution.md` § The Makefile is the developer
-  interface.
+  Functions) — set as it is set here, one unless a hand widens it;
+  `skill_pre_aws_solution.md` § The Makefile is the developer interface.

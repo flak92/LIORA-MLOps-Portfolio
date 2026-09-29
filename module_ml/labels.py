@@ -1,6 +1,6 @@
 """Triple-barrier labels on the canonical 1m path, per asset.
 
-    t_d = decision_ts          close of the 15m bar; all features are known
+    t_d = decision_ts          close of the decision bar; all features are known
     t_0 = entry_ts = t_d + 1m  the candidate entry minute after the decision
     event = [t_0, t_v),        t_v = t_0 + the asset's horizon (240 min by default)
 
@@ -24,8 +24,8 @@ LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
 
 
 # twice by extraction
-def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
-    """Wilder's recursive average: seeded with the SMA of the first period."""
+def recursive_mean(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
+    """Wilder's recursive average: seeded with the mean of the first period."""
     out = np.full_like(x, np.nan)
     if x.size < smoothing_period_bars:
         return out
@@ -36,12 +36,11 @@ def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
 
 
 # twice by extraction
-def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
-        smoothing_period_bars: int) -> np.ndarray:
+def true_range(high: np.ndarray, low: np.ndarray, close: np.ndarray) -> np.ndarray:
+    """The bar's range against the previous close; the first bar has no previous close, so it is its own."""
     prev_close = np.concatenate(([close[0]], close[:-1]))
-    true_range = np.maximum(high - low,
-                            np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
-    return wilder_smoothing(true_range, smoothing_period_bars)
+    return np.maximum(high - low,
+                      np.maximum(np.abs(high - prev_close), np.abs(low - prev_close)))
 
 
 # twice by extraction
@@ -65,10 +64,10 @@ Y_COLUMNS = {
 }
 
 
-def load_research_1m(con: duckdb.DuckDBPyConnection) -> dict[str, np.ndarray]:
-    """The canonical 1m series over the research window — the market object."""
+def load_research_1m(con: duckdb.DuckDBPyConnection, ticker: str) -> dict[str, np.ndarray]:
+    """The canonical 1m series over the research window — the market object, the asset's partition read as a file."""
     bars_1m = con.execute(
-        f"""SELECT timestamp_ms, open, high, low, close, volume FROM ohlcv_1m_canonical
+        f"""SELECT timestamp_ms, open, high, low, close, volume FROM read_parquet('{config.ohlcv_1m_canonical_parquet(ticker)}')
             WHERE timestamp_ms >= {config.RESEARCH_START_MS}
               AND timestamp_ms < {config.RESEARCH_END_MS}
             ORDER BY timestamp_ms"""
@@ -85,11 +84,11 @@ def entry_rows(entry_ts: np.ndarray) -> np.ndarray:
 
 
 def label_barriers(entry_price: np.ndarray, sigma: np.ndarray,
-                   atr_barrier_multiplier: float) -> tuple[np.ndarray, np.ndarray]:
+                   label_barrier_true_range_multiplier: float) -> tuple[np.ndarray, np.ndarray]:
     """The label's own barriers: entry_price +- the multiple of the barrier-timeframe ATR the asset's
     geometry fixes — symmetric and side-agnostic, because the direction is what the model learns."""
-    return (entry_price + atr_barrier_multiplier * sigma,
-            entry_price - atr_barrier_multiplier * sigma)
+    return (entry_price + label_barrier_true_range_multiplier * sigma,
+            entry_price - label_barrier_true_range_multiplier * sigma)
 
 
 def event_end_ts(entry_ts: np.ndarray, t_res: np.ndarray, horizon_minutes: int) -> np.ndarray:
@@ -139,7 +138,7 @@ def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, upper_b
 
 def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
     return dataset.write_parquet(
-        config.label_events_parquet(ticker, cat),
+        config.labels_parquet(ticker, cat["decision_timeframe"]),
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
@@ -150,25 +149,27 @@ def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
             repr(float(cols["exit_reference_price"][i])),
         ] for i in range(cols["decision_ts"].size)),
         order_by="decision_ts",
+        family="labels",
     )
 
 
 def load_label_inputs(ticker: str, cat: dict) -> dict:
     """Everything Y is built from, read once: the canonical 1m series, the grid of the decision timeframe
-    and the bars whose ATR sets the barrier width. A search that relabels an asset holds these and calls
-    label_events() again; the stage reads them and calls it once."""
-    con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+    and the bars whose ATR sets the barrier width. `score.py`, relabelling an asset for a state of the serpentine
+    search, holds these and calls label_events() again; the stage reads them and calls it once."""
+    con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
     barrier_bars = con.execute(
-        f"""SELECT timestamp_ms, high, low, close FROM ohlcv_{config.LABEL_BARRIER_ATR_TIMEFRAME}_canonical
+        f"""SELECT timestamp_ms, high, low, close
+            FROM read_parquet('{config.bars_parquet(ticker, config.LABEL_BARRIER_TRUE_RANGE_TIMEFRAME)}')
             ORDER BY timestamp_ms"""
     ).fetchnumpy()
     decision_grid = con.execute(
-        f"""SELECT timestamp_ms FROM ohlcv_{cat['decision_timeframe']}_canonical
+        f"""SELECT timestamp_ms FROM read_parquet('{config.bars_parquet(ticker, cat['decision_timeframe'])}')
             ORDER BY timestamp_ms"""
     ).fetchnumpy()["timestamp_ms"].astype(np.int64)
-    bars_1m = load_research_1m(con)
+    bars_1m = load_research_1m(con, ticker)
     con.close()
     return {"bars_1m": bars_1m, "decision_grid": decision_grid, "barrier_bars": barrier_bars}
 
@@ -185,16 +186,16 @@ def label_events(label_inputs: dict, cat: dict, barriers: dict) -> dict[str, np.
     keep = entry_ts + horizon_minutes * config.MILLISECONDS_PER_MINUTE <= config.RESEARCH_END_MS
     decision_ts, entry_ts = decision_ts[keep], entry_ts[keep]
 
-    barrier_atr = atr(barrier_bars["high"], barrier_bars["low"], barrier_bars["close"],
-                      config.ATR_WILDER_SMOOTHING_PERIOD_BARS)
-    sigma = barrier_atr[asof_index(decision_ts,
-                                   barrier_bars["timestamp_ms"].astype(np.int64),
-                                   config.timeframe_entry(cat, config.LABEL_BARRIER_ATR_TIMEFRAME)["duration_ms"])]
+    barrier_scale = recursive_mean(true_range(barrier_bars["high"], barrier_bars["low"], barrier_bars["close"]),
+                                   config.LABEL_BARRIER_TRUE_RANGE_SMOOTHING_PERIOD_BARS)
+    sigma = barrier_scale[asof_index(decision_ts,
+                                     barrier_bars["timestamp_ms"].astype(np.int64),
+                                     config.timeframe_entry(cat, config.LABEL_BARRIER_TRUE_RANGE_TIMEFRAME)["duration_ms"])]
     assert np.isfinite(sigma).all() and (sigma > 0).all(), \
-        f"ATR{config.ATR_WILDER_SMOOTHING_PERIOD_BARS} of the last closed {config.LABEL_BARRIER_ATR_TIMEFRAME} bar is not finite and positive at every decision"
+        f"the true range recursive mean{config.LABEL_BARRIER_TRUE_RANGE_SMOOTHING_PERIOD_BARS} of the last closed {config.LABEL_BARRIER_TRUE_RANGE_TIMEFRAME} bar is not finite and positive at every decision"
 
     entry_price = bars_1m["open"][entry_rows(entry_ts)]
-    upper_barrier, lower_barrier = label_barriers(entry_price, sigma, barriers["atr_barrier_multiplier"])
+    upper_barrier, lower_barrier = label_barriers(entry_price, sigma, barriers["label_barrier_true_range_multiplier"])
     y, t_res, event_resolution, exit_reference_price = triple_barrier(
         bars_1m, entry_ts, upper_barrier, lower_barrier, horizon_minutes)
     return {
@@ -219,7 +220,7 @@ def main() -> int:
         y, t_res = cols["y"], cols["t_res"]
         sample_valid = cols["entry_observable"] & cols["label_valid"]
         out = write_y(ticker, cat, cols)
-        print(f"{ticker} {out.name}: {cols['decision_ts'].size} rows  classes(-1/0/+1)="
+        print(f"{ticker} {out.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}: {cols['decision_ts'].size} rows  classes(-1/0/+1)="
               f"{int((y == -1).sum())}/{int((y == 0).sum())}/{int((y == 1).sum())}  "
               f"ambiguous={int((~cols['label_valid']).sum())}  "
               f"unobservable={int((~cols['entry_observable']).sum())}  "

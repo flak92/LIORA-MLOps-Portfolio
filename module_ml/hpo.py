@@ -1,31 +1,32 @@
 """Optuna TPE per asset, sequential and seeded, over the frozen search space. The objective is the CAGR of
-the chained validation path at the threshold the one selection rule would pick — the quantity the coordinate
+the chained validation path at the threshold the one selection rule would pick — the quantity the serpentine
 search selects on, so the parameters are tuned on it. The final holdout is never touched here.
 
 The stage is a function of X, Y and the frozen constants alone: it draws no point to start from, so the
 parameters file it writes is a function of the raw store and this code, never of what it wrote last.
 
-Inside a coordinate search the study is also a coordinate: one candidate per beam member, drawn on that
-member's own X and Y, and pruned by one explicit gate. It cannot answer worse than the member it ran on,
-because a candidate has to beat it — the guarantee is the gate's, not a point the study was handed.
+Inside the serpentine search the study is also a coordinate: one candidate per beam member, drawn on that
+member's own X and Y by `score.hpo_results()`, and pruned by one explicit gate. It cannot answer worse than the
+member it ran on, because a candidate has to beat it — the guarantee is the gate's, not a point the study was
+handed.
 
 That gate is the state gate's own condition, read one fold at a time: after each fold, the thresholds at
 which **every** fold so far clears the trade floor and beats the champion's Calmar. The set only shrinks as
-folds are added, and the child the search would keep needs one threshold inside it over all three, so a trial
-whose set has gone empty cannot produce one and stops. Nothing admissible is discarded by it.
+folds are added, and the child the serpentine search would keep needs one threshold inside it over all three, so a
+trial whose set has gone empty cannot produce one and stops. Nothing admissible is discarded by it.
 
-What stood here before was a bound — the best a fold could reach over the whole grid — on two measures, read
-fold by fold and never jointly. Two bounds, each true of some threshold, say nothing about one threshold
-admissible on every fold, and one threshold is what the state gate needs; this set is that quantity. Optuna's
-own median pruner is not a gate here either: it
-compares a trial's best value over all its steps with the median of other trials at one step, and with folds
-as calendar years that comparison is not of like with like.
+Optuna's own median pruner is not a gate here: it compares a trial's best value over all its steps with the median
+of other trials at one step, and with folds as calendar years that comparison is not of like with like.
 
-Every point the search drew is left in the asset's trial ledger, where the parameters file keeps only the
-one it chose. The ledger is JSON Lines appended a line at a time — the technique the coordinate search's own
-ledger uses, written by `dataset.append_jsonl` and by nothing else."""
+Every point the search drew is left in the asset's partition of the `hpo_trials` family — `score.py` leaves a
+study's points in `score_trials`, the same row, one writer each — where the parameters file keeps only the one
+it chose. The ledger is JSON Lines appended a line at a time — the technique the serpentine search's own ledger
+uses, written by `dataset.append_jsonl` and by nothing else — and the family's `schema.json` is written from the
+one constant the row is built from."""
 
 from __future__ import annotations
+
+from pathlib import Path
 
 import numpy as np
 import optuna
@@ -33,21 +34,25 @@ import optuna
 from . import config, dataset, model, strategy, train, validation
 
 
-def log_trials(ticker: str, study: optuna.Study, origin: str, round_number: int | None) -> None:
-    """Every point a study drew, one line each, appended to the asset's ledger and never rewritten.
+def log_trials(study: optuna.Study, origin: str, round_number: int | None, ledger: Path) -> None:
+    """Every point a study drew, one line each, appended to the ledger it is given — the writer's family's partition of
+    the asset — and never rewritten, the family's `schema.json` beside its partitions.
 
     A study's place in the ledger is read off the ledger: every study opens with its own trial 1, so the
     lines carrying that number are the studies before this one. One read per study and no state kept outside
     the file, which is why two fanned-out processes need nothing from each other — they write different
-    assets' files.
+    assets' partitions.
 
     Nothing here is written differently by a second run: no run id, no timestamp, no host name. Two studies
     over an empty store therefore leave the same bytes, and the ledger stops being a note about the search
     and becomes a thing the search can be proved against. The ledger only grows; a hand clears it."""
-    ledger = config.hyperparameter_search_trials_jsonl(ticker)
     search_index = 1 + sum(row["trial_index"] == 1 for row in dataset.load_jsonl(ledger)) if ledger.exists() else 1
     for trial in study.trials:
         dataset.append_jsonl(ledger, trial_row(trial, origin, round_number, search_index))
+    # a partition's file is named for its family, so the family's schema lands beside the partitions — the same bytes
+    # from every asset and every study
+    dataset.write_json(config.schema_json(ledger.stem, config.STORE_TRIALS_DIR),
+                       [{"column": column, "type": kind} for column, kind in TRIAL_COLUMNS.items()])
 
 
 # the key the chosen point's value is published under, and the name one trial's value carries in the
@@ -55,27 +60,36 @@ def log_trials(ticker: str, study: optuna.Study, origin: str, round_number: int 
 OBJECTIVE_KEY = "best_cagr_validation_path"
 TRIAL_METRIC_KEY = "cagr_validation_path"
 
+# the DuckDB type a drawn parameter takes, by the kind of its draw in HYPERPARAMETER_SEARCH_SPACE
+HYPERPARAMETER_TYPE_BY_DRAW_KIND = {"int": "BIGINT", "int_step": "BIGINT", "float": "DOUBLE", "log": "DOUBLE"}
+# the columns of a trial row, in the writer's order, each with the DuckDB type its values take — the one constant the
+# row is built from and the `schema.json` of both ledger families is written from; `params` a struct of the search
+# space, its field names quoted because xgboost's `lambda` is a word of the SQL
+TRIAL_COLUMNS = {
+    "origin": "VARCHAR", "round": "BIGINT", "search_index": "BIGINT", "trial_index": "BIGINT", "state": "VARCHAR",
+    "params": "STRUCT(" + ", ".join(f'"{name}" {HYPERPARAMETER_TYPE_BY_DRAW_KIND[draw[0]]}'
+                                    for name, draw in config.HYPERPARAMETER_SEARCH_SPACE.items()) + ")",
+    "floor_clearing_threshold_count_by_fold": "BIGINT[]", "admissible_threshold_count_by_fold": "BIGINT[]",
+    "admissible": "BOOLEAN", "pruned_at_fold": "BIGINT", TRIAL_METRIC_KEY: "DOUBLE",
+}
+
 
 def admissible_thresholds(sweeps: dict[int, dict], champion_by_fold: dict[int, dict] | None,
                           fold_ids: tuple[int, ...]) -> list[float]:
     """The thresholds at which every fold evaluated so far clears the trade floor and — when there is a
-    champion to beat — beats its Calmar there. One list, shrinking as folds are added.
+    champion to beat — beats it there on the measure the selection names. One list, shrinking as folds are added.
 
     This is the state gate's own condition read one fold at a time. That gate keeps a child only where a
     **single** threshold makes every validation fold better than the parent, so its threshold must lie in
     this set over all three folds; a trial whose set has gone empty cannot produce one however the remaining
-    folds land, because adding a fold can only remove thresholds. Nothing admissible is discarded.
-
-    What it replaces was a bound, not a condition: the best a fold could reach on a measure over the whole
-    grid, fold by fold and never jointly. Two bounds, each true of some threshold, say nothing about one
-    threshold admissible on every fold — and one threshold is what the state gate needs. This set is that
-    quantity, so the gate stops a trial exactly when the trial can no longer produce a child the search would
-    keep, and stops it at the first fold that settles it rather than the first fold on which some bound
-    happens to fail."""
+    folds land, because adding a fold can only remove thresholds. Nothing admissible is discarded: the gate
+    stops a trial exactly when the trial can no longer produce a child the serpentine search would keep, at
+    the first fold that settles it."""
     return [threshold for threshold in config.ENTRY_EDGE_THRESHOLD_GRID
             if all(sweeps[fold_id][threshold]["trade_count"] >= config.MINIMUM_TRADES_PER_VALIDATION_FOLD
                    and (champion_by_fold is None
-                        or sweeps[fold_id][threshold]["calmar"] > champion_by_fold[fold_id]["calmar"])
+                        or sweeps[fold_id][threshold][config.SELECTION_FOLD_MEASURE]
+                        > champion_by_fold[fold_id][config.SELECTION_FOLD_MEASURE])
                    for fold_id in fold_ids)]
 
 
@@ -99,8 +113,9 @@ def build_objective(xy: dict[str, np.ndarray], bars_1m: dict[str, np.ndarray],
                     champion_by_fold: dict[int, dict] | None = None):
     """The objective one trial is scored by, and the gates that stop it early when it cannot win.
 
-    One sweep of the threshold grid per fold, kept for the trial's life: the two gates read the best that
-    fold could still reach off it, and the trial's own value is read off the same three sweeps. Nothing is
+    One sweep of the threshold grid per fold, kept for the trial's life: the gates read off it the thresholds
+    that clear the trade floor and, against a parent, beat it on every fold so far, and the trial's own value
+    is read off the same three sweeps. Nothing is
     replayed, because nothing has to be — a sweep is a deterministic function of the fold's predictions."""
     y_cls = model.to_class(xy["y"])
 
@@ -145,27 +160,27 @@ def build_objective(xy: dict[str, np.ndarray], bars_1m: dict[str, np.ndarray],
 def trial_row(trial: optuna.trial.FrozenTrial, origin: str, round_number: int | None,
               search_index: int) -> dict:
     """One trial as one line: where it was drawn and in which round, its place in the study and the study's
-    in the ledger, the point the sampler drew, and what the trial left.
+    in the ledger, the point the sampler drew, and what the trial left — the columns of `TRIAL_COLUMNS`, no other.
 
     Every key stands on every line, `null` where it does not apply, so the file reads as one table and not
     as two, and a reader counting lines does not have to know which is which first.
 
-    The state is read from `trial.state` and never inferred from `trial.value`. Optuna records the last
+    The state is read from `trial.state` and never inferred from `trial.value`: Optuna records the last
     reported intermediate value as a pruned trial's value, so a trial stopped by a gate after reporting one
-    carried a value like a completed trial's — and a ledger that asked `value is None` called every pruned
-    trial complete. That is how a gate pruning three quarters of its points was measured as pruning none."""
+    carries a value like a completed trial's."""
     pruned = trial.state == optuna.trial.TrialState.PRUNED
     floor_counts = trial.user_attrs["floor_clearing_threshold_count_by_fold"]
     admissible_counts = trial.user_attrs.get("admissible_threshold_count_by_fold")
     admissible = trial.user_attrs["admissible"] if not pruned else None
-    return {"origin": origin, "round": round_number, "search_index": search_index,
-            "trial_index": trial.number + 1, "state": "pruned" if pruned else "complete",
-            "params": trial.params,
-            "floor_clearing_threshold_count_by_fold": floor_counts,
-            "admissible_threshold_count_by_fold": admissible_counts,
-            "admissible": None if admissible is None else bool(admissible),
-            "pruned_at_fold": config.VALIDATION_FOLD_IDS[len(floor_counts) - 1] if pruned else None,
-            TRIAL_METRIC_KEY: None if pruned else trial.value}
+    values = {"origin": origin, "round": round_number, "search_index": search_index,
+              "trial_index": trial.number + 1, "state": "pruned" if pruned else "complete",
+              "params": trial.params,
+              "floor_clearing_threshold_count_by_fold": floor_counts,
+              "admissible_threshold_count_by_fold": admissible_counts,
+              "admissible": None if admissible is None else bool(admissible),
+              "pruned_at_fold": config.VALIDATION_FOLD_IDS[len(floor_counts) - 1] if pruned else None,
+              TRIAL_METRIC_KEY: None if pruned else trial.value}
+    return {column: values[column] for column in TRIAL_COLUMNS}
 
 
 def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray],
@@ -173,12 +188,10 @@ def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray],
     """The asset's TPE search over the frozen space, sequential and seeded — the study itself, so a caller
     reads the point it chose, that point's value and every point it drew from one object.
 
-    No point is drawn first. The loop used to hand the champion's own parameters to the study as its first trial, so it could never
-    answer worse than where it began, and that trial is now stopped by the gate after its first fold —
-    equality does not beat a strict inequality — so it was a fit spent on a point that could not be a
-    candidate, and a pruned trial without an intermediate value tells the sampler nothing. The guarantee it
-    carried lives in the gate instead: a candidate must beat the champion, so a study that finds nothing
-    better offers nothing."""
+    No point is drawn first: the parent's own parameters would be stopped by the gate after their first fold —
+    equality does not beat a strict inequality — a fit spent on a point that cannot be a candidate. The
+    guarantee lives in the gate: a candidate must beat the parent, so a study that finds nothing better offers
+    nothing."""
     study = optuna.create_study(
         direction="maximize",
         sampler=optuna.samplers.TPESampler(seed=config.SEED,
@@ -189,33 +202,22 @@ def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray],
     return study
 
 
-def moves(state: dict, asset: dict, profile: dict, family: str) -> tuple:
-    """The hyper-parameter coordinate's one candidate: the best admissible point of a study run on this
-    state's own X and Y. Nothing when no point beats the state — which is the same guarantee the study once
-    carried by starting from the state's own parameters, now kept by the gate instead of by a fit.
+def admissible_point(study, champion_objective: float, best_params: dict) -> dict | None:
+    """The study's best admissible point that beats the champion's own path, or nothing.
 
-    The candidate is the best **admissible** point, not the best point. A study's best trial by value may be
-    one whose chosen threshold does not beat the champion on every fold; the state gate refuses such a child,
-    and offering it meant the loop answered nothing while holding, further down its own list, a point the
-    gate would have kept. The trials are read by value, descending, and the first that is admissible and
-    beats the champion's own path is offered. When none is, the loop keeps nothing — which is an answer.
-
-    The study's points are fits the search pays for and the ledger never sees, because only the one the study
-    chose becomes a state: the count goes back under `asset["trial_count_drawn"]` — every point the sampler drew,
-    pruned and completed alike, and every one of them a point the study chose to try."""
-    del profile, family
-    study = search_hyperparameters(asset["xy_for"](state), asset["bars_1m"], asset.get("champion_by_fold"))
-    asset["trial_count_drawn"] = len(study.trials)
-    log_trials(asset["ticker"], study, "coordinate_search", asset["round"])
+    The point is the best **admissible** one, not the best. A study's best trial by value may be one whose
+    chosen threshold does not beat the champion on every fold; the state gate refuses such a child, while a
+    point further down the list may be one the gate keeps. The trials are read by value, descending, and the
+    first that is admissible and beats the champion's own path is offered. When none is, nothing is — which is an answer. A point equal to the parent's own parameters
+    is no move, so it is nothing too."""
     completed = study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
     admissible = sorted((trial for trial in completed
                          if trial.user_attrs.get("admissible")
-                         and trial.value > asset["champion_objective"]),
+                         and trial.value > champion_objective),
                         key=lambda trial: (-trial.value, trial.number))
-    if not admissible or admissible[0].params == state["best_params"]:
-        return ()
-    return ((config.COORDINATE_SEARCH_MOVE_FORWARD, "hpo",
-             {**state, "best_params": admissible[0].params}, config.REBUILD_FITS),)
+    if not admissible or admissible[0].params == best_params:
+        return None
+    return admissible[0].params
 
 
 def main() -> int:
@@ -227,8 +229,7 @@ def main() -> int:
         bars_1m = strategy.load_bars_1m(ticker)
         # the stage has no champion to beat and no point to start from: it is a function of X, Y and the
         # frozen constants, so <TICKER>_parameters.json is a function of the raw store and this code and
-        # never of its own last value. A point to start from belongs to the search's hpo loop, where the
-        # round's champion is an input the state file records
+        # never of its own last value
         study = search_hyperparameters(xy, bars_1m)
         if not study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
             raise SystemExit(f"{ticker}: no admissible strategy on every validation fold at any threshold — "
@@ -242,7 +243,7 @@ def main() -> int:
         }
         out = config.parameters_json(ticker)
         dataset.write_json(out, payload)
-        log_trials(ticker, study, "hpo", None)
+        log_trials(study, "hpo", None, config.hpo_trials_jsonl(ticker))
         print(f"{ticker} {out.name}: {OBJECTIVE_KEY} {study.best_value:.6f} "
               f"(trial {study.best_trial.number})", flush=True)
     return 0

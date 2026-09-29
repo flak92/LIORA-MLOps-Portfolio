@@ -15,8 +15,8 @@ USDT-perpetual PnL at a fixed quantity, linear in price (compounding per-bar ret
     E_t    = E0 * (1 - c + s * (Pt/P0 - 1))     mark-to-market while open
 
 A take-profit fills at the barrier, a stop at the worse of the barrier and the open of the touching minute. The
-entry edge threshold is the grid point maximising the mean validation-fold Sharpe among those with at least
-MINIMUM_TRADES_PER_VALIDATION_FOLD trades in every fold, ties to the smaller threshold.
+entry edge threshold is the grid point maximising the CAGR of the chained validation path among those with at
+least MINIMUM_TRADES_PER_VALIDATION_FOLD trades in every fold, ties to the smaller threshold.
 """
 
 from __future__ import annotations
@@ -32,10 +32,10 @@ EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES = 1440    # one equity point per day for th
 def load_bars_1m(ticker: str) -> dict[str, np.ndarray]:
     """The canonical 1m series over the research window — the path the backtest re-walks for the
     trade's own barriers and marks the open position to. One loader, the labels', not a second."""
-    con = duckdb.connect(str(config.research_ohlcv_duckdb(ticker)), read_only=True)
+    con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
-    bars_1m = labels.load_research_1m(con)
+    bars_1m = labels.load_research_1m(con, ticker)
     con.close()
     return bars_1m
 
@@ -46,7 +46,8 @@ def load_oos_predictions(ticker: str, cat: dict) -> dict[str, np.ndarray]:
     parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     parquet_con.execute("SET threads=1")   # float summation must not be reordered
     oos_predictions = parquet_con.execute(
-        f"SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker, cat)}') ORDER BY oos_fold_id, decision_ts"
+        f"""SELECT * FROM read_parquet('{config.oos_predictions_parquet(ticker, cat["decision_timeframe"])}', hive_partitioning=false)
+            ORDER BY oos_fold_id, decision_ts"""
     ).fetchnumpy()
     parquet_con.close()
     return oos_predictions
@@ -66,9 +67,9 @@ def load_simulation_inputs(ticker: str) -> dict:
 
 
 def trade_barriers(side: np.ndarray, entry_price: np.ndarray, upper_barrier: np.ndarray,
-                   lower_barrier: np.ndarray, atr_barrier_multiplier: float,
-                   take_profit_atr_multiplier: float,
-                   stop_loss_atr_multiplier: float) -> tuple[np.ndarray, np.ndarray]:
+                   lower_barrier: np.ndarray, label_barrier_true_range_multiplier: float,
+                   take_profit_true_range_multiplier: float,
+                   stop_loss_true_range_multiplier: float) -> tuple[np.ndarray, np.ndarray]:
     """The trade's own barriers in price order — take-profit above and stop below for a long, mirrored
     for a short: the label's own half-widths rescaled by what the trade asks of each side.
 
@@ -76,8 +77,8 @@ def trade_barriers(side: np.ndarray, entry_price: np.ndarray, upper_barrier: np.
     to the bit, for every m. Recovering one sigma from the upper barrier instead — entry + (U - E)/m * tp
     — reproduces the upper barrier and misses the lower by one unit in the last place on 2 % of rows,
     which fill_price returns verbatim for a long stop: do not simplify this back to a sigma."""
-    take_profit_scale = take_profit_atr_multiplier / atr_barrier_multiplier
-    stop_loss_scale = stop_loss_atr_multiplier / atr_barrier_multiplier
+    take_profit_scale = take_profit_true_range_multiplier / label_barrier_true_range_multiplier
+    stop_loss_scale = stop_loss_true_range_multiplier / label_barrier_true_range_multiplier
     return (entry_price + np.where(side > 0, take_profit_scale, stop_loss_scale) * (upper_barrier - entry_price),
             entry_price - np.where(side > 0, stop_loss_scale, take_profit_scale) * (entry_price - lower_barrier))
 
@@ -120,8 +121,8 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     upper_barrier, lower_barrier = trade_barriers(
         side[eligible_rows], entry_price[eligible_rows],
         xy["upper_barrier"][pos][eligible_rows], xy["lower_barrier"][pos][eligible_rows],
-        barriers["atr_barrier_multiplier"], barriers["take_profit_atr_multiplier"],
-        barriers["stop_loss_atr_multiplier"])
+        barriers["label_barrier_true_range_multiplier"], barriers["take_profit_true_range_multiplier"],
+        barriers["stop_loss_true_range_multiplier"])
     _, t_res, event_resolution, exit_reference_price = labels.triple_barrier(
         simulation_inputs["bars_1m"], entry_ts[eligible_rows], upper_barrier, lower_barrier,
         horizon_minutes)
@@ -204,13 +205,14 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     max_drawdown = validation.max_drawdown(equity_1m)   # 1m path: intra-bar drawdown is real
     cagr = validation.cagr(float(equity), fold_minute_count)
     # the same path sampled at bar closes, starting from the capital itself:
-    # without E0 the first 15 minutes of the fold produce no return at all
-    equity_15m = np.concatenate(([1.0], equity_1m[bar_close_offset_minutes::decision_bar_minutes]))
-    returns_15m = np.diff(equity_15m) / equity_15m[:-1]
+    # without E0 the first decision bar of the fold produces no return at all
+    decision_bar_equity = np.concatenate(([1.0], equity_1m[bar_close_offset_minutes::decision_bar_minutes]))
+    decision_bar_returns = np.diff(decision_bar_equity) / decision_bar_equity[:-1]
+    periods_per_year = config.MINUTES_PER_YEAR / decision_bar_minutes
     return {
         "equity_1m": equity_1m,
         "trade_returns": trade_returns,
-        "sharpe": validation.sharpe_annualised(returns_15m),
+        "sharpe": validation.sharpe_annualised(decision_bar_returns, periods_per_year),
         "cagr": cagr,
         "max_drawdown": max_drawdown,
         "calmar": validation.calmar(cagr, max_drawdown),
@@ -247,7 +249,7 @@ def validation_path_cagr(final_equity_by_fold: dict[int, float]) -> float:
 def results_by_threshold(simulation_inputs: dict, signals: dict,
                          fold_start_ms: int, fold_end_ms: int) -> dict[float, dict]:
     """One fold's backtest at every point of the threshold grid, each stripped of its 1m path and its trade
-    returns — the sweep a hyper-parameter trial reads to know the best that fold can still do."""
+    returns — the sweep a hyper-parameter trial reads its admissible thresholds and its own value off."""
     return {threshold: pnl_block(backtest(simulation_inputs, signals, threshold, fold_start_ms, fold_end_ms))
             for threshold in config.ENTRY_EDGE_THRESHOLD_GRID}
 
@@ -256,7 +258,7 @@ def validation_path_block(validation_by_fold: dict[int, dict]) -> dict:
     """The validation folds chained into one walk-forward path — each fold's 1m equity scaled by what the
     folds before it settled at — and what that path earned, drew down and returned per unit of drawdown.
     The scale runs left to right and the product is never written out: another association of the same
-    factors differs in the last bit.""" 
+    factors differs in the last bit."""
     equity_scaled, trade_returns, scale = [], [], 1.0
     for fold_id in config.VALIDATION_FOLD_IDS:
         result = validation_by_fold[fold_id]
@@ -282,6 +284,7 @@ def equity_curve(equity_1m: np.ndarray) -> dict:
     return {"equity": np.round(equity_1m[idx], 6).tolist()}
 
 
+# twice by extraction
 SELECTION_SCORE_KEY = "selection_score_cagr_validation_path"
 # what the chosen threshold was chosen out of — reported beside the score, never used to change it
 SELECTION_EXPOSURE_KEYS = ("cleared_point_count", "median_cagr_over_cleared", "max_cagr_over_cleared")
@@ -302,7 +305,8 @@ def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
     """The entry edge threshold chosen on the validation folds — the grid point maximising the chained
     path's growth rate among those clearing the trade floor, ties to the smaller threshold, the grid floor when none
     clears it — with the fold results at that point, the path they chain into, and how many points it was
-    chosen out of. The one selection the stage and the coordinate search both run."""
+    chosen out of. The one selection the stage and `score.py` both run, the latter for every state of the serpentine
+    search."""
     validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
                        for fold_id in config.VALIDATION_FOLD_IDS}
     validation_bounds = {fold_id: validation.fold_bounds(fold_id)

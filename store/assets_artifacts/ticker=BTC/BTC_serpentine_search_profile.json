@@ -1,0 +1,63 @@
+{
+ "columns_admitted_by_timeframe": {
+  "1d": [
+   "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+   "centered_recursive_mean_gain_share14",
+   "true_range_recursive_mean14_over_close",
+   "rolling_range_position20",
+   "logarithmic_volume_rolling_standard_score50",
+   "rolling_standard_score20",
+   "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+   "close_minus_rolling_mean200_over_true_range_recursive_mean14"
+  ],
+  "1h": [
+   "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+   "centered_recursive_mean_gain_share14",
+   "true_range_recursive_mean14_over_close",
+   "rolling_range_position20",
+   "logarithmic_volume_rolling_standard_score50",
+   "rolling_standard_score20",
+   "close_minus_rolling_mean50_over_true_range_recursive_mean14"
+  ],
+  "8h": [
+   "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+   "centered_recursive_mean_gain_share14",
+   "true_range_recursive_mean14_over_close",
+   "rolling_range_position20",
+   "logarithmic_volume_rolling_standard_score50",
+   "rolling_standard_score20",
+   "close_minus_rolling_mean50_over_true_range_recursive_mean14"
+  ]
+ },
+ "grid_by_coordinate": {
+  "label_barrier_true_range_multiplier": [
+   1.75,
+   2.0,
+   2.25
+  ],
+  "label_horizon": [
+   "2h",
+   "4h",
+   "8h",
+   "12h",
+   "1d"
+  ],
+  "stop_loss_true_range_multiplier": [
+   1.5,
+   2.0,
+   2.5
+  ],
+  "take_profit_true_range_multiplier": [
+   1.5,
+   2.0,
+   2.5
+  ]
+ },
+ "loops": [
+  "barrier",
+  "feature_set",
+  "hpo"
+ ],
+ "path_cagr_noise_standard_deviation": 0.02396115512851181,
+ "start_columns_by_timeframe": null
+}

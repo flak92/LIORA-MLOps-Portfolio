@@ -50,8 +50,8 @@ def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.
                 sample_valid: np.ndarray, start_ms: int, end_ms: int,
                 horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
     """Supervised OOS rows whose maximum horizon fits the block — decidable at t_0 — and their weights, with
-    concurrency counted among the scored events alone. The horizon is the asset's, so a search that moves
-    it scores the population that horizon admits."""
+    concurrency counted among the scored events alone. The horizon is the asset's, so a state of the serpentine
+    search that moves it scores the population that horizon admits."""
     keep = (sample_valid & (decision_ts >= start_ms)
             & (entry_ts + horizon_minutes * config.MILLISECONDS_PER_MINUTE <= end_ms))
     idx = np.flatnonzero(keep)
@@ -81,11 +81,11 @@ def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> f
     return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 
-def sharpe_annualised(bar_returns: np.ndarray) -> float:
+def sharpe_annualised(bar_returns: np.ndarray, periods_per_year: float) -> float:
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:
         return 0.0
-    return float(bar_returns.mean() / sd * np.sqrt(config.ANNUALISATION_PERIOD_15M_BARS))
+    return float(bar_returns.mean() / sd * np.sqrt(periods_per_year))
 
 
 def cagr(final_equity: float, minute_count: int) -> float:

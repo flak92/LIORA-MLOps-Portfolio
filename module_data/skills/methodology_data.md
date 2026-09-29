@@ -3,7 +3,7 @@
 How each venue's one-minute observations are fetched and made durable: sources
 and endpoints, units and time, and the limitations of acquisition itself. What
 happens to a candle after it is on disk — validity, primary-failover selection,
-forward fill, provenance and the database schema — is
+forward fill, provenance and the schema of the families it is written into — is
 [skill_candle_canonicalisation.md](skill_candle_canonicalisation.md). The guards
 in the code are the mathematics' own — the seven named in `AGENTS.md`; *The
 repository shows the destination, not the road*.
@@ -41,7 +41,7 @@ prohibition on combining the two venues' raw data are
 
 ## 2. Retries, backoff and pacing
 
-Every request carries `USER_AGENT` = `liora-module-data/1.0`. A request is tried six
+Every request carries `USER_AGENT` = `liora-module-data/1.0`. A request is tried up to six
 times (`fetch_klines(retries=6)`) with an exponential backoff that starts at one
 second and doubles: Binance retries on HTTP 418 and 429, sleeping at least what
 `Retry-After` asks; Bybit retries on `retCode 10006`, its rate-limit code, and raises
@@ -68,8 +68,9 @@ the exchanges printed them — no rounding at any layer.
   it with no override (`download_binance.py`, `download_bybit.py`).
 - **Only Binance is probed for its listing date.** The probe that guarantees
   full coverage of the window runs against Binance alone; Bybit's first traded
-  day is discovered from the ZIPs already on disk, so a Bybit listing inside
-  the window is normal and its pre-listing days are stored as empty files.
+  day is discovered from the ZIPs already on disk and from the first day a run
+  finds printed, so a Bybit listing inside the window is normal and its
+  pre-listing days are stored as empty files.
 - **Idempotence is by file presence.** A day whose ZIP exists is never
   re-fetched. Correcting a day means deleting its ZIP, which is deliberate:
   exchanges do not restate klines, and a silent refetch would erase the

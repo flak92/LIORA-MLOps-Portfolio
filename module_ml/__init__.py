@@ -1,1 +1,1 @@
-"""ML research layer: the feature set an asset's model sees — its search and its promotion —, triple-barrier labels, purged walk-forward, XGBoost, the strategy simulation, and the reports — ml_status.json and each asset's README."""
+"""ML research layer: triple-barrier labels, purged walk-forward, XGBoost, the strategy simulation, the reports — ml_status.json and each asset's README — and the scoring of the states a request names."""

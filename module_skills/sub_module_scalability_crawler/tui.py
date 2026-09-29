@@ -2,7 +2,8 @@
 and lists fitted to the terminal, blocks, and the answer a hand gives in a prompt. Its standards are
 module_skills/skill_tui_designer.md; what a screen holds is the action module's. One file, twice by extraction
 (module_skills/glossary.md § Twice by extraction): it knows none of its sub-module's own objects, and every
-sentence of its own is in that sub-module's config.py."""
+sentence about a screen's content is the caller's; its own words are the block labels and the line naming the
+columns a narrow terminal leaves out."""
 
 from __future__ import annotations
 
@@ -127,3 +128,12 @@ def gum_filter(header: str, candidates: list[str], placeholder: str, value: str 
         for argument in (flag, STATE_COLOURS["CURRENT"]))
     return _gum("filter", "--header", header, "--placeholder", placeholder,
                 f"--value={value}", "--height", "12", "--prompt", "> ", "--indicator", ">", *colours, "--", *candidates)
+
+def gum_input(header: str, placeholder: str, value: str = "") -> str | None:
+    """The line a hand types under header — the answer no list in the tree can offer yet. The placeholder is an example
+    of what is being asked, so it is the caller's sentence and not this file's."""
+    colours = () if config.OUTPUT_PLAIN else tuple(
+        argument for flag in ("--prompt.foreground", "--header.foreground")
+        for argument in (flag, STATE_COLOURS["CURRENT"]))
+    return _gum("input", "--header", header, "--placeholder", placeholder,
+                f"--value={value}", "--prompt", "> ", *colours)

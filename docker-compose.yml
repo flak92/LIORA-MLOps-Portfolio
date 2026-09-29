@@ -28,7 +28,7 @@ x-service: &service
     - .:/app
 
 services:
-  # the data layer writes the raw tree and the asset databases, and its own snapshot
+  # the data layer writes the raw tree and the venue and canonical families, and its own snapshot
   data:
     <<: *service
     volumes:
@@ -36,7 +36,7 @@ services:
       - ./store/raw_1m:/store/raw_1m
       - ./store/assets_artifacts:/store/assets_artifacts
       - ./store/status:/store/status
-  # the feature layer never asks about a venue: it reads the canonical series and writes beside it
+  # the feature layer never asks about a venue: it reads the canonical family and writes the bars and catalogue families
   features:
     <<: *service
     volumes:

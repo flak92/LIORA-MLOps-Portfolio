@@ -1,7 +1,7 @@
 """Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
 reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
 shares, and the null-tolerant rounding the two snapshots share. The basket is not here: the launcher names it
-(`TICKERS` in the Makefile) and every stage is told its assets."""
+(`TICKERS` in the Makefile, `ASSET` on the make line) and every stage is told its assets."""
 
 from __future__ import annotations
 
@@ -52,6 +52,7 @@ SOURCE_VENUES = ("binance", "bybit")
 
 # the stores of this checkout arrive as environment, one variable per store — the store contract every
 # config.py reads; a module reads only the stores it touches, and a missing variable is the interpreter's own KeyError
+# twice by extraction
 STORE_RAW_1M_DIR = Path(os.environ["STORE_RAW_1M_DIR"])
 # twice by extraction
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
@@ -74,15 +75,29 @@ def raw_symbol_dir(ticker: str, venue: str) -> Path:
 
 
 # twice by extraction
-def artifact_dir(ticker: str) -> Path:
-    """One directory per ticker; inside it one file per artifact, named for it."""
-    return STORE_ASSETS_ARTIFACTS_DIR / ticker
+def partition_dir(family: str, ticker: str, timeframe: str | None = None, store: Path = STORE_ASSETS_ARTIFACTS_DIR) -> Path:
+    """One partition of a table family: `<store>/<family>/ticker=<TICKER>/[timeframe=<tf>/]` — Hive's `key=value`, the value
+    the ticker in capitals and the compact token; the store the artifacts store unless the family lives in another."""
+    partition = store / family / f"ticker={ticker}"
+    return partition if timeframe is None else partition / f"timeframe={timeframe}"
+
+
+def venue_parquet(ticker: str, venue: str) -> Path:
+    """One venue's minutes as printed — the family `ohlcv_1m_<venue>`, one Parquet file per partition, written by ingest alone."""
+    return partition_dir(f"ohlcv_1m_{venue}", ticker) / f"ohlcv_1m_{venue}.parquet"
 
 
 # twice by extraction
-def research_ohlcv_duckdb(ticker: str) -> Path:
-    """The asset's own database — the market object's one home, resident in the asset folder."""
-    return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
+def ohlcv_1m_canonical_parquet(ticker: str) -> Path:
+    """The canonical series of the asset — the family `ohlcv_1m_canonical`, one Parquet file per partition, written by ingest alone."""
+    return partition_dir("ohlcv_1m_canonical", ticker) / "ohlcv_1m_canonical.parquet"
+
+
+# twice by extraction
+def schema_json(family: str, store: Path = STORE_ASSETS_ARTIFACTS_DIR) -> Path:
+    """A family's schema as data, beside its partitions: the columns of the union of the partitions, written by the family's
+    one writer; the store the artifacts store unless the family lives in another."""
+    return store / family / "schema.json"
 
 
 # twice by extraction

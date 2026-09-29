@@ -7,8 +7,9 @@ validation, a frozen final out-of-sample holdout, and a static results dashboard
 *The repository shows the destination, not the road*.
 
 Public market observations → QuantConnect Lean-compatible raw data → one
-deterministic canonical DuckDB per asset → the feature catalogue and labels →
-purged walk-forward XGBoost → research strategy simulation → monitoring.
+deterministic canonical series per asset, a partition of a Parquet table family →
+the feature catalogue and labels → purged walk-forward XGBoost → research strategy
+simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
@@ -29,7 +30,16 @@ cd LIORA-MLOps-Portfolio
 make all                   # the whole chain from a fresh clone, every stage in a one-off container: build -> data-all -> features-all -> ml-all
 make on                    # build the image if needed, start the dashboard and the DevOps panel, print the page's address and open it
 make off                   # stop and remove every container of this project
-make help                  # every target with its one-line purpose
+make help                  # every action target with its one-line purpose
+```
+
+Each module's terminal is an entry, not an action, so it carries no line in `make help`:
+
+```bash
+make data-terminal         # the data module's stages over each asset's raw days and canonical series
+make features-terminal     # the feature module's stages and the serpentine search: draft, read, promote
+make ml-terminal           # the ML module's stages and the scoring of a request
+make monitoring-terminal   # the four snapshots and the run records, then the presentation switch
 ```
 
 `git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
@@ -46,19 +56,30 @@ The chain, and the record it leaves:
 make all-record            # the same chain, every stage measured from outside by record.py into store/run_records/<run_id>/ — the Lifecycle tab
 ```
 
-The coordinate search, outside the chain, one asset at a time:
+The serpentine search, outside the chain, one asset at a time:
 
 ```bash
-make tmux-ml-coordinate-search ASSET=BTC   # the search detached in tmux session coordinate-search-btc; it outlives the terminal and ends with the search, resumes if rerun
-tmux attach -t coordinate-search-btc        # watch it; Ctrl-C stops it
-make ml-status                              # the finished search's proposals into the snapshot — the page reads nothing else
+make features-serpentine-search ASSET=BTC        # a turn, then ml-score and a turn while the turn leaves a question; resumes where the files stand
+make tmux-features-serpentine-search ASSET=BTC   # the same search detached in tmux session features-serpentine-search-btc; it outlives the terminal and ends with the search
+tmux attach -t features-serpentine-search-btc     # watch it; Ctrl-C stops it, a rerun resumes
+make features-status                             # the search into the snapshot — the page reads nothing else
 ```
 
-Its proposals are the *Feature set* view and the PROPOSALS frame of *ML
-Assets*; a hand promotes one — one asset at a time — and the chain reruns:
+The search keeps its inputs frozen: a change of what it records in its state starts it over by
+itself, and after any other change of data or of an evaluation setting a hand recomputes the
+asset's chain and starts a new experiment:
 
 ```bash
-make ml-coordinate-search-promote ASSET=BTC PROPOSAL=1   # copy proposal 1 into BTC_feature_set.json and BTC_barriers.json, then ml-all for BTC
+make all ASSET=BTC                               # the dependent artifacts, computed again
+make features-serpentine-search-reset ASSET=BTC  # the search's own files go — its state, ledger, question, answer and score_trials partition; its inputs and profile stay
+```
+
+A search that finds nothing better than where it started proposes nothing, and that is a correct
+result. When it proposes, a hand promotes the proposal — one asset at a time — and the ML chain
+tunes the promoted state again, so the result that counts is the rerun's on the validation folds:
+
+```bash
+make features-serpentine-search-promote ASSET=BTC PROPOSAL=1   # the proposal's columns into BTC_feature_set.json and its barrier geometry into BTC_barriers.json, then ml-all for BTC
 ```
 
 The canon's crawler, outside the chain, by hand in a terminal (`module_skills/sub_module_scalability_crawler/skill_scalability_crawler.md`):
@@ -90,13 +111,13 @@ Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`; every document po
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
 (`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
-derives, so a rerun fetches and rebuilds only what its contract says — the trial
-ledger alone grows, one search more per `ml-hpo`, and beside the chain the crawler's reports
+derives, so a rerun fetches and rebuilds only what its contract says — the `hpo_trials`
+ledger alone grows, one study more per `ml-hpo`, and beside the chain the crawler's reports
 grow one entry per file crawled. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 Four direct dependencies across
-the four modules and nothing else — `duckdb` (storage and query: data, features, ml),
+the four modules and nothing else — `duckdb` (the engine that writes and reads the Parquet families: data, features, ml),
 `numpy` (mathematics: features, ml), `optuna` (hyper-parameter search: ml) and `xgboost-cpu`
 (model: ml); `module_monitoring` is standard library only. The CPU wheel is deliberate, because the research layer trains with `tree_method=hist` and `nthread=1`.
 
@@ -105,12 +126,12 @@ the four modules and nothing else — `duckdb` (storage and query: data, feature
 MARKET DATA ─────┤                     ├──► NORMALISED RAW 1m OHLCV  (Lean ZIPs)
                  └── market source B ──┘              │
                                                       ▼
-                                          ONE DuckDB PER ASSET
+                                ONE CANONICAL PARTITION PER ASSET
                                        (primary-failover, full grid)
                                                       │
                                     ┌─────────────────┼─────────────────┐
                                     ▼                 ▼                 ▼
-                                   15m                1h                4h
+                               decision tf        middle tf          top tf
                                     └─────────────────┬─────────────────┘
                                                       ▼
                                                   FEATURES X
@@ -130,7 +151,7 @@ MARKET DATA ─────┤                     ├──► NORMALISED RAW 1
                                                   MONITORING
 ```
 
-Providers deliver observations; the canonical database defines the research
+Providers deliver observations; the canonical series defines the research
 object. Everything below it describes the method, not the data provider.
 
 ## The stores
@@ -138,10 +159,46 @@ object. Everything below it describes the method, not the data provider.
 | store | variable | in a container | tracked |
 |---|---|---|---|
 | `store/raw_1m/` | `STORE_RAW_1M_DIR` | `/store/raw_1m` | no — the Lean-exact raw ZIPs, one per venue, symbol and UTC day |
-| `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only: `<TICKER>_README.md`, `<TICKER>_parameters.json`, `<TICKER>_coordinate_search_profile.json` once drafted, the coordinate search's own two files — `<TICKER>_coordinate_search.json` and its ledger `<TICKER>_coordinate_search_trials.jsonl` — once a search has run, and `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` once promoted |
+| `store/assets_artifacts/` | `STORE_ASSETS_ARTIFACTS_DIR` | `/store/assets_artifacts` | the remnant only, in the asset's folder `ticker=<TICKER>/`: `<TICKER>_README.md`, `<TICKER>_parameters.json`, `<TICKER>_serpentine_search_profile.json` once drafted, the serpentine search's state `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` once a search has run, and `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` once promoted |
 | `store/run_records/` | `STORE_RUN_RECORDS_DIR` | `/store/run_records` | no |
-| `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — `<TICKER>_hyperparameter_search_trials.jsonl`, one JSON object a line, appended and never rewritten: every point every study drew, the stage's and the coordinate search's alike, a rerun appending a study of its own; `module_ml/hpo.py` alone writes it, the `ml` runner the one service that mounts it, and a hand clears it. It carries no run id, no timestamp and no host name, so two studies over an empty store leave the same bytes. **One writer per asset at a time**: a study's place in the file is read off the file before its lines are appended, so `ml-hpo` and a search of the same asset run one after the other, never together. It is one of two ledgers — one technique, `dataset.append_jsonl`, and two lifecycles: the coordinate search's ledger lies beside its state in the asset's folder, is tracked, and is deleted when the search starts another experiment; this one lies here, is not tracked, and only grows until a hand clears it — a round a resumed search replays runs its studies again, and they are lines again |
+| `store/trials/` | `STORE_TRIALS_DIR` | `/store/trials` | no — two ledger families, one JSON object a line, appended and never rewritten |
 | `store/status/` | `STORE_STATUS_DIR` | `/store/status` | yes — the four snapshots, so a fresh clone opens on real numbers |
+
+A table is a family of Parquet files partitioned by asset and, where the register decides the values, by
+timeframe — `<store>/<family>/ticker=<TICKER>/[timeframe=<tf>/]<family>.parquet`, Hive's `key=value` — and every
+writer of a family writes the family's `schema.json` beside its partitions. The asset's folder
+`ticker=<TICKER>/` holds its non-tabular files, one file per artifact, named for it. DuckDB is the engine, in memory,
+and no database file exists. One stage writes each family and each file:
+
+| what | path under its store | written by | tracked |
+|---|---|---|---|
+| the raw days | `cryptofuture/{binance,bybit}/minute/<symbol>/<YYYYMMDD>_trade.zip` | `data-download` | no |
+| the venue families | `ohlcv_1m_{binance,bybit}/ticker=<TICKER>/ohlcv_1m_<venue>.parquet` | `data-ingest` | no |
+| the canonical family | `ohlcv_1m_canonical/ticker=<TICKER>/ohlcv_1m_canonical.parquet` | `data-ingest` | no |
+| `bars` | `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet`, every timeframe of the register | `features-bars` | no |
+| `catalogue` | `catalogue/ticker=<TICKER>/timeframe=<tf>/catalogue.parquet`, every timeframe of the register | `features-catalogue` | no |
+| `labels` | `labels/ticker=<TICKER>/timeframe=<tf>/labels.parquet`, the decision timeframe | `ml-labels` | no |
+| `oos_predictions` | `oos_predictions/ticker=<TICKER>/timeframe=<tf>/oos_predictions.parquet`, the decision timeframe | `ml-train` | no |
+| the contract | `ticker=<TICKER>/<TICKER>_catalogue.json` | `features-catalogue` | no |
+| the parameters | `ticker=<TICKER>/<TICKER>_parameters.json` | `ml-hpo` | yes |
+| the evaluations | `ticker=<TICKER>/<TICKER>_model_evaluation.json`, `<TICKER>_strategy_evaluation.json` | `ml-train`, `ml-strategy` | no |
+| the asset's README | `ticker=<TICKER>/<TICKER>_README.md` | `ml-status` | yes |
+| the search's profile | `ticker=<TICKER>/<TICKER>_serpentine_search_profile.json` | a hand, or the feature terminal's draft | yes |
+| the search's state and ledger | `ticker=<TICKER>/<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_trials.jsonl` | `features-serpentine-turn` | yes |
+| the question | `ticker=<TICKER>/<TICKER>_score_request.json` | `features-serpentine-turn` | no |
+| the answer | `ticker=<TICKER>/<TICKER>_score_response.json` | `ml-score` | no |
+| the promotion | `ticker=<TICKER>/<TICKER>_feature_set.json`, `<TICKER>_barriers.json` | `features-serpentine-search-promote` | yes, once promoted |
+| `hpo_trials` | `hpo_trials/ticker=<TICKER>/hpo_trials.jsonl`, every point `ml-hpo` drew | `ml-hpo` alone | no |
+| `score_trials` | `score_trials/ticker=<TICKER>/score_trials.jsonl`, every point the studies a question asks for drew | `ml-score` alone | no |
+| the snapshots | `{data,features,ml,skills}_status.json` | the status stages | yes |
+| the run records | `<run_id>/<stage>.json` | `record.py` | no |
+
+A ledger carries no run id, no timestamp and no host name, so two studies over an empty store leave the same bytes. A
+study's place in its ledger is read off the ledger before its lines are appended, so a partition has one writer at a
+time; the fan-out needs nothing more, because its processes write different assets' partitions. The search's own
+ledger lies beside its state in the asset's folder and is tracked; the two families of `store/trials/` are not, and
+only grow until a hand clears them — `make features-serpentine-search-reset` clears the asset's partition of
+`score_trials` with the rest of its search.
 
 The store is the boundary between compute and state (`module_skills/glossary.md`
 § Stores). Every stage reads and writes only these five and learns where they
@@ -168,12 +225,14 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|
 | download  | `make data-download`   | both APIs → `store/raw_1m/.../*_trade.zip`        | idempotent; one file per UTC calendar day; post-listing days complete; one process per venue for the whole basket |
-| ingest    | `make data-ingest`     | ZIPs → raw tables → `ohlcv_1m_canonical` (failover)         | idempotent; deterministic rebuild, one asset at a time |
-| status    | `make data-status`     | DuckDB → stdout + `store/status/data_status.json`           | read-only; per asset, five scans of its one database, the venue scan run once per venue |
-| catalogue | `make features-catalogue` | the bars → one feature parquet per timeframe and `<TICKER>_catalogue.json`, the contract the ML layer reads | deterministic; the existing columns byte-identical after an extension |
-| features status | `make features-status` | the parquets → `store/status/features_status.json` | read-only; the catalogue's facts and each asset's row counts |
-| coordinate search | `make ml-coordinate-search` | the profile a hand drafted, the catalogue parquets, Y and the frozen parameters → `<TICKER>_coordinate_search.json` and its ledger `<TICKER>_coordinate_search_trials.jsonl` | a beam over the coordinates of a state, on the validation folds only, a move kept only where every fold agrees; resumes; promotes nothing; `make ml-status` after it puts the proposals on the page; its detached twin `make tmux-ml-coordinate-search ASSET=<TICKER>` outlives the terminal and ends with the search |
-| promotion | `make ml-coordinate-search-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
+| ingest    | `make data-ingest`     | ZIPs → the venue families `ohlcv_1m_binance`, `ohlcv_1m_bybit` → the canonical family `ohlcv_1m_canonical` (failover), the asset's partition of each | idempotent; deterministic rebuild, one asset at a time |
+| status    | `make data-status`     | the three families → stdout + `store/status/data_status.json` | read-only; one sequential process over the basket, each venue measured on its own and the canonical series beside them |
+| bars      | `make features-bars`   | the canonical family → the `bars` family, one partition per asset and timeframe of the register | deterministic; the research window only |
+| catalogue | `make features-catalogue` | the bars → the `catalogue` family, one partition per asset and timeframe, and `<TICKER>_catalogue.json`, the contract the ML layer reads | deterministic |
+| features status | `make features-status` | the catalogue's partitions and each asset's serpentine search → `store/status/features_status.json` | read-only; the catalogue's facts, each asset's row counts and its search as it last wrote itself |
+| serpentine search | `make features-serpentine-search ASSET=<TICKER>` | the profile, the catalogue, Y and the parameters → `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` | outside the chain: `make features-serpentine-turn` leaves a question, `<TICKER>_score_request.json`, `make ml-score` answers it on the validation folds, and the loop runs while a question stands; resumes where the files stand; promotes nothing; its detached twin `make tmux-features-serpentine-search ASSET=<TICKER>` outlives the terminal and ends with the search |
+| reset | `make features-serpentine-search-reset ASSET=<TICKER>` | the search's state, ledger, question, answer and `score_trials` partition → gone | runs no stage; the inputs and the profile stay — a new experiment starts from the files the chain left |
+| promotion | `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset, which tunes it again | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
 | dashboard | `make on`              | snapshots → six-tab page on `127.0.0.1:<port>`, the address `make on` prints, plus the DevOps panel behind its jump, served by `module_monitoring/serve.py` in the `dashboard` container with the run, snapshot and `/devops` routes | no external resources |
 
@@ -183,9 +242,9 @@ run one at a time, or set `COMPOSE_PROJECT_NAME`.
 |---|---|---|
 | an asset | one ticker in `TICKERS`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
 | a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `module_<domain>/`, then here |
-| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment | `module_features/` |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment, so a recorded search starts over | `module_features/` |
 | a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | `module_features/` |
-| a coordinate of the search | one line per family in `ROUND_SCHEDULE`, one module beside `barrier_search.py` answering which moves are legal and what a child must build again, one entry in `LOOP_MODULES`, and its grid in the profile — the state's format, the gate, the ranking, the beam and the terminal are untouched (`module_ml/README_module_ml.md` § Extending) | `module_ml/` |
+| a coordinate of the serpentine search | its family in `ROUND_SCHEDULE` of `module_features/sub_module_serpentine_search/config.py`, its moves in `coordinate_barrier.py` or `coordinate_feature_set.py` beside it, and its grid in the profile (`module_features/README_module_features.md`) | `module_features/` |
 | a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | `module_data/` |
 | a module | a package `module_<domain>/` with a runner service on the one image | `module_<domain>/` beside the others, then here |
 
@@ -198,7 +257,7 @@ to be built first, because the code is mounted into the container it runs in:
 ```bash
 make ml-all ASSET=BTC        # one module's chain, one asset
 make data-status             # a single stage, basket-wide
-make help                    # every target with its one-line purpose
+make help                    # every action target with its one-line purpose
 ```
 
 `git grep "from module_"` inside a package finds only that package: no module
@@ -221,41 +280,41 @@ restates another (`AGENTS.md` § The default choice).
 
 Every number here is reproducible. The proof, repeatable on any host:
 
-1. a fresh `git clone` of this repository, and a frozen copy
-   of the raw store hardlinked into `store/raw_1m/` — the downloaders never
-   overwrite an existing ZIP — fingerprinted **before** the chain runs, so the
-   fingerprint names the store the hashes came out of:
-   `find store/raw_1m -name '*.zip' -printf '%P %s\n' | sort | md5sum`;
-2. `make build data-ingest data-status features-all ml-all` — the chain without
-   `data-download`, whose window ends at today's UTC midnight and would move the
-   data snapshot; the download is run separately, its gate an exit code of 0;
-3. the nine BTC artifacts — three feature parquets, the label events, the
-   parameters, the out-of-fold predictions, the model and strategy evaluations,
-   the asset README — byte-identical to the reference list;
-   `BTC_catalogue.json`, the one new file, identical between two runs;
+1. a fresh `git clone` of this repository, and a frozen copy of the raw store copied into
+   `store/raw_1m/` — the downloaders never overwrite an existing ZIP — its manifest taken **before**
+   the chain runs, so the manifest names the store the hashes came out of:
+   `(cd store/raw_1m && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) | sha256sum`;
+2. `make all-record` — the whole chain, the download included. A day the download adds past the
+   frozen copy changes the raw tree, the two venue families, the canonical family and
+   `data_status.json` and nothing else, because every later stage reads the research window alone,
+   which ends at `RESEARCH_END_UTC`;
+3. every other file of `store/assets_artifacts/` and `store/trials/` byte-identical to the
+   reference manifest — each family's `schema.json` and the asset's partitions of `bars`,
+   `catalogue`, `labels` and `oos_predictions`, the contract `<TICKER>_catalogue.json`, the
+   parameters, the model and strategy evaluations, the asset's README and the `hpo_trials`
+   ledger — and the tracked files unmoved;
 4. the three computational snapshots identical after dropping the `generated_at_utc` line —
    `grep -v '^ "generated_at_utc":'`, anchored because it is one top-level key on its own
-   line and not a substring to be hunted — under the
-   same fingerprint. `data_status.json` carries no `window_end`: it describes the
-   whole canonical series, including the minutes past `RESEARCH_END_UTC`, and moves
-   with every top-up by design. A differing fingerprint re-bases that one file and
-   leaves the other twelve hashes standing.
+   line and not a substring to be hunted — `data_status.json` apart when the download added a
+   day: it carries no `window_end`, describes the whole canonical series, including the minutes
+   past `RESEARCH_END_UTC`, and moves with every top-up by design.
 
-The files a hand drafts stand outside this proof — `<TICKER>_coordinate_search_profile.json` and, once
-promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`: no stage derives them, and the one
-program that writes each writes the same bytes for the same decisions. The coordinate search's own two files are outside it too, being a hand's stage rather than the chain's:
-`<TICKER>_coordinate_search.json`, where the search stands at a round boundary, and
-`<TICKER>_coordinate_search_trials.jsonl`, its ledger of scored states — one a line, appended and never
-rewritten. Their proof is that two runs of one profile, and a run interrupted and resumed, give the same
-bytes in both. `<TICKER>_README.md` lists every file of a hand's stage and measures none — listed, not
-measured, because its size moves with the hand and not with the chain — so a search leaves the README's bytes
-where the chain put them. Both are tracked even so: `ml_status.json` and `<TICKER>_README.md` are inside the proof and
-read them, so a clone without them could not reproduce the two files that quote them.
+The files a hand drafts stand outside this proof — `<TICKER>_serpentine_search_profile.json` and, once
+promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`: no stage of the chain derives them, and
+the one program that writes each writes the same bytes for the same decisions. The serpentine search's own
+files are outside it too, being a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`,
+where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored
+states — one a line, appended and never rewritten — and the asset's partition of `score_trials`. Their proof
+is that a search reset and run again over the same inputs gives the same bytes in all three.
+`<TICKER>_README.md` lists the two files a promotion writes and measures neither — listed, not measured,
+because their size moves with the hand and not with the chain. The search's state and ledger are tracked
+even so: `features_status.json` is inside the proof and reads them, so a clone without them could not
+reproduce the snapshot that quotes them.
 
 Both sides run in containers from the same pins; `SEED`, `nthread=1`,
 `OMP_NUM_THREADS=1`, sequential Optuna and DuckDB's pinned orders are what make
-the bytes equal (`module_skills/skill_determinism.md`). The comparison script and
-the reference md5 lists live outside this repository.
+the bytes equal (`module_skills/skill_determinism.md`). The reference manifest
+lives outside this repository.
 
 ## One canonical series from two venues
 
@@ -287,9 +346,9 @@ grid.
 
 LIORA is an academic, local MLOps research system, not an AWS deployment. Its
 module, storage and container boundaries are drawn as a Pre-AWS architecture on
-purpose: every local implementation is the smallest that works — one DuckDB file
-per asset, Parquet and JSON in the asset's folder, one image for the tree, a
-Makefile — and the responsibilities are cut so that a later move onto standard
+purpose: every local implementation is the smallest that works — Parquet table
+families partitioned by asset with DuckDB the engine and no database file, JSON in
+the asset's folder, one image for the tree, a Makefile — and the responsibilities are cut so that a later move onto standard
 cloud primitives (an object store, a container runtime, a stage orchestrator)
 would replace the local storage, the local Docker execution and the local stage
 order without redrawing the domain pipeline. No cloud infrastructure exists here
@@ -302,8 +361,8 @@ security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
 
 The same skill seats the four things a move would name first — the host and the
 volume where every asset's folder and the other `store/<content>/` folders live, the
-one-off task and the state machine over the stages, the asset's one database
-file, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
+one-off task and the state machine over the stages, the table families
+partitioned by asset, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
 described lists the skills those seats imply, each with its owner, what it
 would govern and the one condition under which it is written. Four local skills
 carry one seat paragraph each, naming the primitive their object answers to and
@@ -314,12 +373,13 @@ citing that skill for the rest.
 Raw ZIPs are the Lean `cryptofuture` minute format, one tree per venue,
 headerless `offset_ms_from_utc_midnight,open,high,low,close,volume`; timestamps
 are bar-open UTC epoch milliseconds on a strict 60 000 ms grid, volume is
-base-asset volume. The canonical series and its 15m/1h/4h aggregations live only
-in `store/assets_artifacts/<TICKER>/<TICKER>_research_ohlcv.duckdb`; the
-folder's parquets are feature columns, not prices. For Lean backtests use the
-raw ZIP trees. Schema:
-`module_data/skills/skill_candle_canonicalisation.md`
-§ 11 and § 13.
+base-asset volume. The canonical series lives only in the family
+`ohlcv_1m_canonical`, one partition per asset, and its aggregations on the timeframes of
+the register only in the family `bars`, one partition per asset and timeframe; the
+`catalogue` family's partitions are feature columns, not prices. For Lean backtests use
+the raw ZIP trees. Every family carries its columns and their types in its own
+`schema.json`, beside its partitions; the canonical series' rule and provenance:
+`module_data/skills/skill_candle_canonicalisation.md`.
 
 ## Dashboard
 
@@ -347,21 +407,29 @@ One control in the top right leaves the page, for the DevOps persona:
 ## ML research layer
 
 `module_features/` builds, per asset and deterministically, the feature
-catalogue from the canonical series — eight feature definitions on the
-timeframes of the register, twenty-two columns, each name read off its terms
-(`module_features/skills/skill_feature_taxonomy.md`)
-— and writes the contract, `<TICKER>_catalogue.json`, that names them to the next
-layer; `module_ml/` takes the fifteen columns of the default set as X until a
-promotion, triple-barrier labels resolved on the canonical 1-minute path, a
-purged walk-forward protocol with average-uniqueness weights and an Optuna
-search over XGBoost, a final out-of-sample fold that selects nothing, and a
-top-down gated strategy with explicit costs, whose trades leave at their own
-take-profit and stop while the label they learned from stays symmetric. Beside
-the chain, a coordinate search moves the asset's feature set and its barrier
-geometry one step at a time, on the three validation years only: it raises the
-CAGR of those years chained into one walk-forward path, and it may only keep a
-move that raises the Calmar ratio of every one of them. The decision is taken at
-a 15m close and filled one minute later. Every per-asset stage runs `JOBS` assets in
-parallel, one process each, thread caps at one. Every asset folder describes
-itself in `<TICKER>_README.md`. Full methodology:
-`module_ml/skills/methodology_ml.md`.
+catalogue from the canonical series — twenty-one feature definitions on the
+timeframes of the register, sixty-one columns, each named by `feature_id()` off its
+terms (`module_features/skills/skill_feature_taxonomy.md`) — and writes the contract,
+`<TICKER>_catalogue.json`, that names them to the next layer; `module_ml/` takes the
+fifteen columns of the default set as X until a promotion, triple-barrier labels
+resolved on the canonical 1-minute path, a purged walk-forward protocol with
+average-uniqueness weights and an Optuna search over XGBoost, a final out-of-sample
+fold that selects nothing, and a top-down gated strategy with explicit costs, whose
+trades leave at their own take-profit and stop while the label they learned from
+stays symmetric. The decision is taken at the close of a bar of `DECISION_TIMEFRAME`
+and entered at the next minute's open.
+
+Beside the chain, the serpentine search of `module_features/` moves the asset's feature
+set, its barrier geometry and its hyper-parameters one family at a time, on the three
+validation folds only. It ranks a state by the CAGR of those folds chained into one
+walk-forward path, then by its Calmar ratio, then by its profit factor, and keeps a
+move only when the child's path CAGR beats its parent's by more than the noise of the
+pass and its Calmar ratio beats its parent's on every fold. It proposes its champion
+only when the champion beats the state it started from by more than the noise of the
+whole search; a search that proposes nothing has still answered. A promotion copies the
+proposal and reruns the ML chain, which tunes it again. The gate is a heuristic, not a
+guarantee: `module_features/skills/methodology_features.md`.
+
+Every per-asset stage runs `JOBS` assets side by side, one by default, one process
+each, thread caps at one. Every asset folder describes itself in `<TICKER>_README.md`.
+Full methodology: `module_ml/skills/methodology_ml.md`.

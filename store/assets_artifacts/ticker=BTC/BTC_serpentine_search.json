@@ -1,0 +1,197 @@
+{
+ "beam": [
+  1
+ ],
+ "champion_trial_index": 1,
+ "inputs": {
+  "active_barriers": {
+   "label_barrier_true_range_multiplier": 2.0,
+   "label_horizon": "4h",
+   "stop_loss_true_range_multiplier": 2.0,
+   "take_profit_true_range_multiplier": 2.0
+  },
+  "active_columns_by_timeframe": {
+   "1d": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50"
+   ],
+   "1h": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50"
+   ],
+   "8h": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50"
+   ]
+  },
+  "best_params": {
+   "alpha": 0.02310201887845294,
+   "colsample_bytree": 0.9162213204002109,
+   "eta": 0.11114989443094977,
+   "lambda": 0.26587543983272705,
+   "max_depth": 5,
+   "min_child_weight": 2,
+   "num_boost_round": 150,
+   "subsample": 0.9849549260809971
+  },
+  "catalogue_columns_by_timeframe": {
+   "1d": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50",
+    "rolling_standard_score20",
+    "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+    "close_minus_rolling_mean200_over_true_range_recursive_mean14",
+    "close_minus_exponential_smoothing20_over_true_range_recursive_mean14",
+    "rolling_standard_deviation20_over_close",
+    "relative_change10",
+    "close_minus_open_over_true_range_recursive_mean14",
+    "high_minus_low_over_true_range_recursive_mean14",
+    "centered_recursive_mean_upward_movement_share14",
+    "recursive_mean_directional_movement_imbalance14",
+    "close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14",
+    "cumulative_signed_volume_rolling_standard_score50",
+    "rolling_volume_weighted_close_location20",
+    "centered_rolling_money_flow_gain_share14",
+    "exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14",
+    "exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14"
+   ],
+   "1h": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50",
+    "rolling_standard_score20",
+    "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+    "close_minus_exponential_smoothing20_over_true_range_recursive_mean14",
+    "rolling_standard_deviation20_over_close",
+    "relative_change10",
+    "close_minus_open_over_true_range_recursive_mean14",
+    "high_minus_low_over_true_range_recursive_mean14",
+    "centered_recursive_mean_upward_movement_share14",
+    "recursive_mean_directional_movement_imbalance14",
+    "close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14",
+    "cumulative_signed_volume_rolling_standard_score50",
+    "rolling_volume_weighted_close_location20",
+    "centered_rolling_money_flow_gain_share14",
+    "exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14",
+    "exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14"
+   ],
+   "8h": [
+    "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "centered_recursive_mean_gain_share14",
+    "true_range_recursive_mean14_over_close",
+    "rolling_range_position20",
+    "logarithmic_volume_rolling_standard_score50",
+    "rolling_standard_score20",
+    "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+    "close_minus_exponential_smoothing20_over_true_range_recursive_mean14",
+    "rolling_standard_deviation20_over_close",
+    "relative_change10",
+    "close_minus_open_over_true_range_recursive_mean14",
+    "high_minus_low_over_true_range_recursive_mean14",
+    "centered_recursive_mean_upward_movement_share14",
+    "recursive_mean_directional_movement_imbalance14",
+    "close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14",
+    "cumulative_signed_volume_rolling_standard_score50",
+    "rolling_volume_weighted_close_location20",
+    "centered_rolling_money_flow_gain_share14",
+    "exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14",
+    "exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14"
+   ]
+  },
+  "profile": {
+   "columns_admitted_by_timeframe": {
+    "1d": [
+     "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+     "centered_recursive_mean_gain_share14",
+     "true_range_recursive_mean14_over_close",
+     "rolling_range_position20",
+     "logarithmic_volume_rolling_standard_score50",
+     "rolling_standard_score20",
+     "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+     "close_minus_rolling_mean200_over_true_range_recursive_mean14"
+    ],
+    "1h": [
+     "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+     "centered_recursive_mean_gain_share14",
+     "true_range_recursive_mean14_over_close",
+     "rolling_range_position20",
+     "logarithmic_volume_rolling_standard_score50",
+     "rolling_standard_score20",
+     "close_minus_rolling_mean50_over_true_range_recursive_mean14"
+    ],
+    "8h": [
+     "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+     "centered_recursive_mean_gain_share14",
+     "true_range_recursive_mean14_over_close",
+     "rolling_range_position20",
+     "logarithmic_volume_rolling_standard_score50",
+     "rolling_standard_score20",
+     "close_minus_rolling_mean50_over_true_range_recursive_mean14"
+    ]
+   },
+   "grid_by_coordinate": {
+    "label_barrier_true_range_multiplier": [
+     1.75,
+     2.0,
+     2.25
+    ],
+    "label_horizon": [
+     "2h",
+     "4h",
+     "8h",
+     "12h",
+     "1d"
+    ],
+    "stop_loss_true_range_multiplier": [
+     1.5,
+     2.0,
+     2.5
+    ],
+    "take_profit_true_range_multiplier": [
+     1.5,
+     2.0,
+     2.5
+    ]
+   },
+   "loops": [
+    "barrier",
+    "feature_set",
+    "hpo"
+   ],
+   "path_cagr_noise_standard_deviation": 0.02396115512851181,
+   "start_columns_by_timeframe": null
+  },
+  "research_window": {
+   "end_utc": "2026-08-26",
+   "seed": 42,
+   "start_utc": "2021-01-01",
+   "warmup_top_timeframe_bars": 220
+  },
+  "selection": {
+   "beam_width": 3
+  }
+ },
+ "path": [],
+ "proposals": [],
+ "round_count": 1,
+ "search_converged": true,
+ "trial_count_by_loop": {
+  "barrier": 8,
+  "feature_set": 22,
+  "hpo": 8
+ }
+}

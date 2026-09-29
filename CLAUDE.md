@@ -35,5 +35,7 @@ Sections of `AGENTS.md` worth naming: § Values, § Architecture shape,
 
 ## Running it
 
-Everything goes through the Makefile. `make help` lists every target with its
-one-line purpose — read the targets there, never from prose.
+Everything goes through the Makefile. `make help` lists every action target with
+its one-line purpose — read the targets there, never from prose. The entries that
+open a module's terminal, `make <module>-terminal`, are not actions and carry no
+line there.

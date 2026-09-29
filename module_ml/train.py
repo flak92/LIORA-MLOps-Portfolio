@@ -12,18 +12,19 @@ from . import config, dataset, model, validation
 
 def write_predictions(ticker: str, cat: dict, rows: list[tuple]) -> Path:
     return dataset.write_parquet(
-        config.oos_predictions_parquet(ticker, cat),
+        config.oos_predictions_parquet(ticker, cat["decision_timeframe"]),
         {"decision_ts": "BIGINT", "oos_fold_id": "TINYINT",
          "p_short": "DOUBLE", "p_neutral": "DOUBLE", "p_long": "DOUBLE"},
         ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in rows),
         order_by="oos_fold_id, decision_ts",
+        family="oos_predictions",
     )
 
 
 def to_oos_predictions(prediction_records: list[tuple]) -> dict[str, np.ndarray]:
     """The prediction records as strategy.load_oos_predictions returns them: fold-major, by decision, the
-    probabilities widened to float64 exactly as the parquet round trip widens them — so a search that never
-    writes the parquet replays the strategy on the same numbers the stage would."""
+    probabilities widened to float64 exactly as the parquet round trip widens them — so `score.py`, which never
+    writes the parquet, replays the strategy on the same numbers the stage would."""
     return {
         "decision_ts": np.array([row[0] for row in prediction_records], dtype=np.int64),
         "oos_fold_id": np.array([row[1] for row in prediction_records], dtype=np.int8),

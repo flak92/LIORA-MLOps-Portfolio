@@ -1,0 +1,16 @@
+{
+ "hyperparameter_search_result": {
+  "best_cagr_validation_path": -0.06734947303600092,
+  "best_params": {
+   "alpha": 0.02310201887845294,
+   "colsample_bytree": 0.9162213204002109,
+   "eta": 0.11114989443094977,
+   "lambda": 0.26587543983272705,
+   "max_depth": 5,
+   "min_child_weight": 2,
+   "num_boost_round": 150,
+   "subsample": 0.9849549260809971
+  },
+  "trial_count": 8
+ }
+}

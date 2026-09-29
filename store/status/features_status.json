@@ -2,24 +2,40 @@
  "assets": [
   {
    "row_count_by_timeframe": {
-    "15m": 194848,
-    "1h": 194848,
-    "4h": 194848
+    "1d": 44232,
+    "1h": 44232,
+    "8h": 44232
+   },
+   "serpentine_search": {
+    "champion_trial_index": 1,
+    "inputs_current": true,
+    "proposals": [],
+    "round_count": 1,
+    "search_converged": true,
+    "trial_count": 31,
+    "trial_count_by_loop": {
+     "barrier": 8,
+     "feature_set": 22,
+     "hpo": 8
+    }
    },
    "ticker": "BTC"
   }
  ],
  "catalogue": {
-  "decision_timeframe": "15m",
+  "decision_timeframe": "1h",
   "definitions": [
    {
     "definition_in_default_set": true,
     "effective_history_hours_by_timeframe": {
-     "15m": 12.5,
+     "1d": 1200.0,
      "1h": 50.0,
-     "4h": 200.0
+     "8h": 400.0
     },
-    "feature_definition": "ema20_minus_ema50_over_atr14",
+    "feature_definition": "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14",
+    "historical_aliases": [
+     "MACD line"
+    ],
     "normaliser": null,
     "operators": [
      "minus",
@@ -28,7 +44,10 @@
     "range": "unbounded, dimensionless",
     "terms": [
      {
-      "indicator": "ema",
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
       "inputs": [
        "close"
       ],
@@ -37,7 +56,10 @@
       "parameter_word": "SPAN"
      },
      {
-      "indicator": "ema",
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
       "inputs": [
        "close"
       ],
@@ -46,38 +68,44 @@
       "parameter_word": "SPAN"
      },
      {
-      "indicator": "atr",
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
       "inputs": [
-       "high",
-       "low",
-       "close"
+       "true_range"
       ],
       "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 200
    },
    {
     "definition_in_default_set": true,
     "effective_history_hours_by_timeframe": {
-     "15m": 3.5,
+     "1d": 336.0,
      "1h": 14.0,
-     "4h": 56.0
+     "8h": 112.0
     },
-    "feature_definition": "centered_rsi14",
+    "feature_definition": "centered_recursive_mean_gain_share14",
+    "historical_aliases": [],
     "normaliser": "centered",
     "operators": [],
     "range": "[-1, 1]",
     "terms": [
      {
-      "indicator": "rsi",
+      "historical_aliases": [
+       "RSI"
+      ],
+      "indicator": "recursive_mean_gain_share",
       "inputs": [
        "close"
       ],
@@ -89,21 +117,26 @@
       "parameter_word": "SMOOTHING_PERIOD"
      }
     ],
+    "tier": "EXTENDED",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 56
    },
    {
     "definition_in_default_set": true,
     "effective_history_hours_by_timeframe": {
-     "15m": 3.5,
+     "1d": 336.0,
      "1h": 14.0,
-     "4h": 56.0
+     "8h": 112.0
     },
-    "feature_definition": "atr14_over_close",
+    "feature_definition": "true_range_recursive_mean14_over_close",
+    "historical_aliases": [
+     "ATR",
+     "NATR"
+    ],
     "normaliser": null,
     "operators": [
      "over"
@@ -111,17 +144,19 @@
     "range": "> 0, dimensionless",
     "terms": [
      {
-      "indicator": "atr",
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
       "inputs": [
-       "high",
-       "low",
-       "close"
+       "true_range"
       ],
       "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      },
      {
+      "historical_aliases": [],
       "indicator": null,
       "inputs": [
        "close"
@@ -131,27 +166,33 @@
       "parameter_word": null
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 56
    },
    {
     "definition_in_default_set": true,
     "effective_history_hours_by_timeframe": {
-     "15m": 5.0,
+     "1d": 480.0,
      "1h": 20.0,
-     "4h": 80.0
+     "8h": 160.0
     },
-    "feature_definition": "range_position20",
+    "feature_definition": "rolling_range_position20",
+    "historical_aliases": [],
     "normaliser": null,
     "operators": [],
     "range": "[0, 1]",
     "terms": [
      {
-      "indicator": "range_position",
+      "historical_aliases": [
+       "Stochastic %K",
+       "Williams %R"
+      ],
+      "indicator": "rolling_range_position",
       "inputs": [
        "close",
        "high",
@@ -165,56 +206,70 @@
       "parameter_word": "LOOKBACK"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 20
    },
    {
     "definition_in_default_set": true,
     "effective_history_hours_by_timeframe": {
-     "15m": 12.5,
+     "1d": 1200.0,
      "1h": 50.0,
-     "4h": 200.0
+     "8h": 400.0
     },
-    "feature_definition": "log_volume_zscore50",
+    "feature_definition": "logarithmic_volume_rolling_standard_score50",
+    "historical_aliases": [
+     "Relative volume"
+    ],
     "normaliser": null,
     "operators": [],
     "range": "dimensionless",
     "terms": [
      {
-      "indicator": "zscore",
+      "historical_aliases": [
+       "Bollinger %B",
+       "rolling z-score"
+      ],
+      "indicator": "rolling_standard_score",
       "inputs": [
-       "log_volume"
+       "logarithmic_volume"
       ],
       "output_range": null,
       "parameter_bars": 50,
       "parameter_word": "LOOKBACK"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 50
    },
    {
     "definition_in_default_set": false,
     "effective_history_hours_by_timeframe": {
-     "15m": 5.0,
+     "1d": 480.0,
      "1h": 20.0,
-     "4h": 80.0
+     "8h": 160.0
     },
-    "feature_definition": "zscore20",
+    "feature_definition": "rolling_standard_score20",
+    "historical_aliases": [],
     "normaliser": null,
     "operators": [],
     "range": "dimensionless",
     "terms": [
      {
-      "indicator": "zscore",
+      "historical_aliases": [
+       "Bollinger %B",
+       "rolling z-score"
+      ],
+      "indicator": "rolling_standard_score",
       "inputs": [
        "close"
       ],
@@ -223,21 +278,23 @@
       "parameter_word": "LOOKBACK"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 20
    },
    {
     "definition_in_default_set": false,
     "effective_history_hours_by_timeframe": {
-     "15m": 12.5,
+     "1d": 1200.0,
      "1h": 50.0,
-     "4h": 200.0
+     "8h": 400.0
     },
-    "feature_definition": "close_minus_sma50_over_atr14",
+    "feature_definition": "close_minus_rolling_mean50_over_true_range_recursive_mean14",
+    "historical_aliases": [],
     "normaliser": null,
     "operators": [
      "minus",
@@ -246,6 +303,7 @@
     "range": "unbounded, dimensionless",
     "terms": [
      {
+      "historical_aliases": [],
       "indicator": null,
       "inputs": [
        "close"
@@ -255,7 +313,10 @@
       "parameter_word": null
      },
      {
-      "indicator": "sma",
+      "historical_aliases": [
+       "SMA"
+      ],
+      "indicator": "rolling_mean",
       "inputs": [
        "close"
       ],
@@ -264,30 +325,33 @@
       "parameter_word": "LOOKBACK"
      },
      {
-      "indicator": "atr",
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
       "inputs": [
-       "high",
-       "low",
-       "close"
+       "true_range"
       ],
       "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "15m",
      "1h",
-     "4h"
+     "8h",
+     "1d"
     ],
     "warmup_bars": 56
    },
    {
     "definition_in_default_set": false,
     "effective_history_hours_by_timeframe": {
-     "4h": 800.0
+     "1d": 4800.0
     },
-    "feature_definition": "close_minus_sma200_over_atr14",
+    "feature_definition": "close_minus_rolling_mean200_over_true_range_recursive_mean14",
+    "historical_aliases": [],
     "normaliser": null,
     "operators": [
      "minus",
@@ -296,6 +360,7 @@
     "range": "unbounded, dimensionless",
     "terms": [
      {
+      "historical_aliases": [],
       "indicator": null,
       "inputs": [
        "close"
@@ -305,7 +370,10 @@
       "parameter_word": null
      },
      {
-      "indicator": "sma",
+      "historical_aliases": [
+       "SMA"
+      ],
+      "indicator": "rolling_mean",
       "inputs": [
        "close"
       ],
@@ -314,64 +382,818 @@
       "parameter_word": "LOOKBACK"
      },
      {
-      "indicator": "atr",
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
       "inputs": [
-       "high",
-       "low",
-       "close"
+       "true_range"
       ],
       "output_range": null,
       "parameter_bars": 14,
       "parameter_word": "SMOOTHING_PERIOD"
      }
     ],
+    "tier": "CORE",
     "timeframes": [
-     "4h"
+     "1d"
     ],
     "warmup_bars": 200
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 480.0,
+     "1h": 20.0,
+     "8h": 160.0
+    },
+    "feature_definition": "close_minus_exponential_smoothing20_over_true_range_recursive_mean14",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 20,
+      "parameter_word": "SPAN"
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "CORE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 80
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 480.0,
+     "1h": 20.0,
+     "8h": 160.0
+    },
+    "feature_definition": "rolling_standard_deviation20_over_close",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [
+     "over"
+    ],
+    "range": "> 0, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [
+       "Bollinger width"
+      ],
+      "indicator": "rolling_standard_deviation",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 20,
+      "parameter_word": "LOOKBACK"
+     },
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     }
+    ],
+    "tier": "CORE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 20
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 240.0,
+     "1h": 10.0,
+     "8h": 80.0
+    },
+    "feature_definition": "relative_change10",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [
+       "ROC",
+       "momentum"
+      ],
+      "indicator": "relative_change",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 10,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "tier": "CORE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 10
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 336.0,
+     "1h": 14.0,
+     "8h": 112.0
+    },
+    "feature_definition": "close_minus_open_over_true_range_recursive_mean14",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "open"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "CORE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 336.0,
+     "1h": 14.0,
+     "8h": 112.0
+    },
+    "feature_definition": "high_minus_low_over_true_range_recursive_mean14",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": ">= 0, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "high"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "low"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "CORE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 336.0,
+     "1h": 14.0,
+     "8h": 112.0
+    },
+    "feature_definition": "centered_recursive_mean_upward_movement_share14",
+    "historical_aliases": [],
+    "normaliser": "centered",
+    "operators": [],
+    "range": "[-1, 1]",
+    "terms": [
+     {
+      "historical_aliases": [
+       "DMI",
+       "+DI",
+       "-DI"
+      ],
+      "indicator": "recursive_mean_upward_movement_share",
+      "inputs": [
+       "high",
+       "low"
+      ],
+      "output_range": [
+       0.0,
+       100.0
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 336.0,
+     "1h": 14.0,
+     "8h": 112.0
+    },
+    "feature_definition": "recursive_mean_directional_movement_imbalance14",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [],
+    "range": "[0, 100]",
+    "terms": [
+     {
+      "historical_aliases": [
+       "ADX"
+      ],
+      "indicator": "recursive_mean_directional_movement_imbalance",
+      "inputs": [
+       "high",
+       "low"
+      ],
+      "output_range": [
+       0.0,
+       100.0
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 112
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 480.0,
+     "1h": 20.0,
+     "8h": 160.0
+    },
+    "feature_definition": "close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [],
+      "indicator": null,
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": null,
+      "parameter_word": null
+     },
+     {
+      "historical_aliases": [
+       "VWAP"
+      ],
+      "indicator": "rolling_volume_weighted_mean",
+      "inputs": [
+       "close",
+       "volume"
+      ],
+      "output_range": null,
+      "parameter_bars": 20,
+      "parameter_word": "LOOKBACK"
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 56
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 1200.0,
+     "1h": 50.0,
+     "8h": 400.0
+    },
+    "feature_definition": "cumulative_signed_volume_rolling_standard_score50",
+    "historical_aliases": [
+     "OBV"
+    ],
+    "normaliser": null,
+    "operators": [],
+    "range": "dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [
+       "Bollinger %B",
+       "rolling z-score"
+      ],
+      "indicator": "rolling_standard_score",
+      "inputs": [
+       "cumulative_signed_volume"
+      ],
+      "output_range": null,
+      "parameter_bars": 50,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 50
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 480.0,
+     "1h": 20.0,
+     "8h": 160.0
+    },
+    "feature_definition": "rolling_volume_weighted_close_location20",
+    "historical_aliases": [],
+    "normaliser": null,
+    "operators": [],
+    "range": "[-1, 1]",
+    "terms": [
+     {
+      "historical_aliases": [
+       "CMF"
+      ],
+      "indicator": "rolling_volume_weighted_close_location",
+      "inputs": [
+       "high",
+       "low",
+       "close",
+       "volume"
+      ],
+      "output_range": [
+       -1.0,
+       1.0
+      ],
+      "parameter_bars": 20,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 20
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 336.0,
+     "1h": 14.0,
+     "8h": 112.0
+    },
+    "feature_definition": "centered_rolling_money_flow_gain_share14",
+    "historical_aliases": [],
+    "normaliser": "centered",
+    "operators": [],
+    "range": "[-1, 1]",
+    "terms": [
+     {
+      "historical_aliases": [
+       "MFI"
+      ],
+      "indicator": "rolling_money_flow_gain_share",
+      "inputs": [
+       "high",
+       "low",
+       "close",
+       "volume"
+      ],
+      "output_range": [
+       0.0,
+       100.0
+      ],
+      "parameter_bars": 14,
+      "parameter_word": "LOOKBACK"
+     }
+    ],
+    "tier": "EXTENDED",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 14
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 504.0,
+     "1h": 21.0,
+     "8h": 168.0
+    },
+    "feature_definition": "exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14",
+    "historical_aliases": [
+     "Market Cipher ribbon"
+    ],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 8,
+      "parameter_word": "SPAN"
+     },
+     {
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 21,
+      "parameter_word": "SPAN"
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "COMPOSITE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 84
+   },
+   {
+    "definition_in_default_set": false,
+    "effective_history_hours_by_timeframe": {
+     "1d": 1320.0,
+     "1h": 55.0,
+     "8h": 440.0
+    },
+    "feature_definition": "exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14",
+    "historical_aliases": [
+     "Market Cipher ribbon"
+    ],
+    "normaliser": null,
+    "operators": [
+     "minus",
+     "over"
+    ],
+    "range": "unbounded, dimensionless",
+    "terms": [
+     {
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 21,
+      "parameter_word": "SPAN"
+     },
+     {
+      "historical_aliases": [
+       "EMA"
+      ],
+      "indicator": "exponential_smoothing",
+      "inputs": [
+       "close"
+      ],
+      "output_range": null,
+      "parameter_bars": 55,
+      "parameter_word": "SPAN"
+     },
+     {
+      "historical_aliases": [
+       "Wilder smoothing"
+      ],
+      "indicator": "recursive_mean",
+      "inputs": [
+       "true_range"
+      ],
+      "output_range": null,
+      "parameter_bars": 14,
+      "parameter_word": "SMOOTHING_PERIOD"
+     }
+    ],
+    "tier": "COMPOSITE",
+    "timeframes": [
+     "1h",
+     "8h",
+     "1d"
+    ],
+    "warmup_bars": 220
    }
   ],
   "nesting": [
    {
-    "lower": "15m",
-    "lower_longest_effective_history_hours": 12.5,
-    "upper": "1h",
-    "upper_shortest_effective_history_hours": 14.0
+    "lower": "1h",
+    "lower_longest_effective_history_hours": 55.0,
+    "upper": "8h",
+    "upper_shortest_effective_history_hours": 80.0
    },
    {
-    "lower": "1h",
-    "lower_longest_effective_history_hours": 50.0,
-    "upper": "4h",
-    "upper_shortest_effective_history_hours": 56.0
+    "lower": "8h",
+    "lower_longest_effective_history_hours": 440.0,
+    "upper": "1d",
+    "upper_shortest_effective_history_hours": 240.0
    }
   ],
   "timeframes": [
    {
-    "bars_per_day": 96,
-    "duration_ms": 900000,
-    "ratio_to_lower": null,
-    "slot": "ss-15-hh-dd-MM",
-    "timeframe": "15m"
-   },
-   {
     "bars_per_day": 24,
     "duration_ms": 3600000,
-    "ratio_to_lower": 4,
+    "ratio_to_lower": null,
     "slot": "ss-mm-01-dd-MM",
     "timeframe": "1h"
    },
    {
-    "bars_per_day": 6,
-    "duration_ms": 14400000,
-    "ratio_to_lower": 4,
-    "slot": "ss-mm-04-dd-MM",
-    "timeframe": "4h"
+    "bars_per_day": 3,
+    "duration_ms": 28800000,
+    "ratio_to_lower": 8,
+    "slot": "ss-mm-08-dd-MM",
+    "timeframe": "8h"
+   },
+   {
+    "bars_per_day": 1,
+    "duration_ms": 86400000,
+    "ratio_to_lower": 3,
+    "slot": "ss-mm-hh-01-MM",
+    "timeframe": "1d"
    }
   ],
   "warmup": {
-   "end_utc": "2021-02-03 08:00",
-   "top_timeframe_bars": 200
+   "end_utc": "2021-08-09 00:00",
+   "top_timeframe_bars": 220
   }
  },
- "generated_at_utc": "2026-09-13 14:08:46"
+ "configurables": [
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the first day of the frozen research window",
+   "name": "RESEARCH_START_UTC",
+   "requires_rerun": "features-all, ml-all",
+   "risk": "another experiment: every artifact of the chain changes",
+   "tui": false,
+   "unit": "UTC day, inclusive",
+   "value": "2021-01-01"
+  },
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the day after the last of the frozen research window",
+   "name": "RESEARCH_END_UTC",
+   "requires_rerun": "features-all, ml-all",
+   "risk": "another experiment: every artifact of the chain changes",
+   "tui": false,
+   "unit": "UTC day, exclusive",
+   "value": "2026-08-26"
+  },
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the timeframes of the register: one partition of `bars` and one of `catalogue` each, the coarsest the trend gate's",
+   "name": "HIERARCHY_TIMEFRAMES",
+   "requires_rerun": "features-all, ml-all",
+   "risk": "the contract changes shape, and every ML stage reads the new hierarchy",
+   "tui": false,
+   "unit": "timeframe tokens, finest first",
+   "value": [
+    "1h",
+    "8h",
+    "1d"
+   ]
+  },
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the grid the decisions, the labels and the strategy stand on",
+   "name": "DECISION_TIMEFRAME",
+   "requires_rerun": "features-catalogue, ml-all",
+   "risk": "another population of decisions: every label, fit and trade changes",
+   "tui": false,
+   "unit": "timeframe token",
+   "value": "1h"
+  },
+  {
+   "class": "WIRING",
+   "experiment_identity": false,
+   "meaning": "the ceiling of every DuckDB connection of the module, beside threads=1",
+   "name": "DUCKDB_MEMORY_LIMIT",
+   "requires_rerun": "none",
+   "risk": "a stage stops on memory where its container holds less",
+   "tui": false,
+   "unit": "DuckDB memory size",
+   "value": "4GB"
+  },
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the branches a family keeps; 1 is one champion moved one move at a time",
+   "name": "SERPENTINE_SEARCH_BEAM_WIDTH",
+   "requires_rerun": "features-serpentine-search",
+   "risk": "another experiment: the recorded serpentine search starts again",
+   "tui": false,
+   "unit": "states",
+   "value": 3
+  },
+  {
+   "class": "SPECTRUM",
+   "experiment_identity": true,
+   "meaning": "what each barrier coordinate may be searched over \u2014 the preset a draft of the profile offers; multipliers are multiples of a quarter, exact in binary, a horizon a duration token",
+   "name": "GRID_BY_COORDINATE_DEFAULT",
+   "requires_rerun": "features-serpentine-search",
+   "risk": "a profile drafted from another grid describes another experiment",
+   "tui": true,
+   "unit": "grid points per barrier coordinate",
+   "value": {
+    "label_barrier_true_range_multiplier": [
+     1.75,
+     2.0,
+     2.25
+    ],
+    "label_horizon": [
+     "2h",
+     "4h",
+     "8h",
+     "12h",
+     "1d"
+    ],
+    "stop_loss_true_range_multiplier": [
+     1.5,
+     2.0,
+     2.5
+    ],
+    "take_profit_true_range_multiplier": [
+     1.5,
+     2.0,
+     2.5
+    ]
+   }
+  },
+  {
+   "class": "WIRING",
+   "experiment_identity": false,
+   "meaning": "the module's target that runs the promotion, the one the features terminal opens its own screen for",
+   "name": "PROMOTE_TARGET",
+   "requires_rerun": "none",
+   "risk": "the terminal's option and its screen part ways",
+   "tui": true,
+   "unit": "make target",
+   "value": "features-serpentine-search-promote"
+  }
+ ],
+ "generated_at_utc": "2026-09-29 16:59:55"
 }

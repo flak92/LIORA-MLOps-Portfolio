@@ -29,15 +29,18 @@ TICKER_LIST := $(if $(ASSET),$(ASSET),$(TICKERS))
 # the basket-wide stages, which ASSET never narrows: a snapshot of one asset would silently drop the rest of the basket
 # from the page, and the download is one process per venue for the whole basket
 TICKERS_CSV := $(shell echo $(TICKERS) | tr ' ' ,)
-# one process per asset with its threads pinned to 1; the width is min(cores, available GiB), at least 1
-JOBS ?= $(shell c=$$(nproc 2>/dev/null || echo 1); \
-                g=$$(awk '/MemAvailable/ {printf "%d", $$2 / 1048576}' /proc/meminfo 2>/dev/null); \
-                if [ -n "$$g" ] && [ "$$g" -lt "$$c" ]; then c=$$g; fi; \
-                if [ "$$c" -lt 1 ]; then echo 1; else echo $$c; fi)
-# the proposal a promotion copies, by its rank in the coordinate search result
+# the fan-out's width — how many assets one stage runs at once, one process per asset with its threads pinned to 1: one
+# unless the make line says otherwise, `JOBS=n`
+JOBS ?= 1
+# the stages of each module's chain, in the order the data moves through them — the one definition data-all,
+# features-all, ml-all and all-record read
+DATA_STAGES     := data-download data-ingest data-status
+FEATURES_STAGES := features-bars features-catalogue features-status
+ML_STAGES       := ml-labels ml-hpo ml-train ml-strategy ml-status
+# the proposal a promotion copies, by its rank in the serpentine search result
 PROPOSAL ?= 1
-# the tmux session the detached coordinate search runs in: one per asset, named for it
-COORDINATE_SEARCH_SESSION = coordinate-search-$(shell echo $(ASSET) | tr A-Z a-z)
+# the tmux session the detached serpentine search runs in: one per asset, named for its target
+SERPENTINE_SEARCH_SESSION = features-serpentine-search-$(shell echo $(ASSET) | tr A-Z a-z)
 RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
 # a stage runs in a one-off container of its module's runner service — a role, not an image; nothing resident is assumed
 # for compute. `env $(COMPOSE_ENV) docker compose`, because $(COMPOSE) cannot cross xargs
@@ -48,8 +51,13 @@ fanout = printf '%s\n' $(TICKER_LIST) | xargs -P $(3) -I{} $(run) $(1) python -m
 basket = $(run) $(1) python -m $(2) --tickers $(TICKERS_CSV)
 
 .DEFAULT_GOAL := help
+# the stages run in the order the chain names them, whatever -j or MAKEFLAGS say: the one parallelism is JOBS, the assets
+# of one stage side by side
+.NOTPARALLEL:
 
-help:            ## list targets
+# every target that carries a `##`, with its one-line purpose; it carries none itself, and neither does a module's
+# terminal: an interface is not an option of the menu it opens
+help:
 	@grep -E '^[a-zA-Z][a-zA-Z0-9_-]*:[^#]*##' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## / — /'
 
 all:             ## the whole chain from a fresh clone: the image, raw data, canonical, features, ML, snapshots
@@ -62,32 +70,32 @@ build: | $(STORES) ## the image every service runs
 # compose target joins the line below
 $(STORES):
 	@mkdir -p $@
-data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status ml-coordinate-search ml-coordinate-search-promote on all-record: | $(STORES)
+$(DATA_STAGES) $(FEATURES_STAGES) $(ML_STAGES) features-serpentine-turn ml-score features-serpentine-search features-serpentine-search-promote on all-record: | $(STORES)
 
 data-download:   ## raw 1m candles of both venues into store/raw_1m — one process per venue, a venue's rate limit being per process
 	$(call basket,data,module_data.download_binance)
 	$(call basket,data,module_data.download_bybit)
-data-ingest:     ## ZIPs -> one canonical series per asset, one asset at a time
+data-ingest:     ## ZIPs -> the two venue families and the canonical family, each asset's partition of each, one asset at a time
 	$(call fanout,data,module_data.ingest,1)
 data-status:     ## data_status.json -> store/status
 	$(call basket,data,module_data.status)
 data-all:        ## the data chain in order
-	$(MAKE) data-download data-ingest data-status
-data-terminal:   ## the data terminal: each asset's raw days and database, then one stage — download, ingest or status; run it in a terminal
+	$(MAKE) $(DATA_STAGES)
+# a module's own terminal, on the host: python3 and gum, no runner and no dependency — it computes nothing, shows what
+# that module's stores hold and starts one of this Makefile's targets, the ones its name gives the module. It gates
+# nothing and no target of the chain depends on it; it does not resume, so it has no tmux twin; run it in a terminal
+data-terminal:
 	python3 -B -m module_data.sub_module_terminal.terminal --tickers $(if $(ASSET),$(ASSET),$(TICKERS_CSV))
 
-features-bars:   ## canonical 1m -> every timeframe of the register, in each asset's own database
+features-bars:   ## canonical 1m -> the bars family, one partition per asset and timeframe of the register
 	$(call fanout,features,module_features.bars,$(JOBS))
-features-catalogue: ## every catalogued column on the decision grid, one parquet per timeframe per asset, and <TICKER>_catalogue.json — the contract the ML layer reads
+features-catalogue: ## every catalogued column on the decision grid — the catalogue family, one partition per asset and timeframe — and <TICKER>_catalogue.json, the contract the ML layer reads
 	$(call fanout,features,module_features.catalogue,$(JOBS))
-features-status: ## features_status.json -> store/status: the catalogue's facts and each asset's row counts
+features-status: ## features_status.json -> store/status: the catalogue's facts, each asset's row counts and its serpentine search
 	$(call basket,features,module_features.status)
 features-all:    ## the feature chain in order
-	$(MAKE) features-bars features-catalogue features-status
-# a module's own terminal, on the host: python3 and gum, no runner and no dependency — it computes nothing,
-# shows what that module's stores hold and starts one of this Makefile's targets. It gates nothing and no target
-# of the chain depends on it; it does not resume, so it has no tmux twin
-features-terminal: ## the features terminal: each asset's database, catalogue and parquets, then one stage — bars, catalogue or status; run it in a terminal
+	$(MAKE) $(FEATURES_STAGES)
+features-terminal:
 	python3 -B -m module_features.sub_module_terminal.terminal --tickers $(if $(ASSET),$(ASSET),$(TICKERS_CSV))
 
 ml-labels:       ## triple-barrier labels on the canonical 1m path
@@ -101,23 +109,40 @@ ml-strategy:     ## entry edge threshold on the validation folds, final-holdout 
 ml-status:       ## ml_status.json -> store/status, and <TICKER>_README.md
 	$(call basket,ml,module_ml.status)
 ml-all:          ## the ML chain in order
-	$(MAKE) ml-labels ml-hpo ml-train ml-strategy ml-status
-ml-terminal:     ## the ML terminal: each asset's artifacts and its search, then one action — a stage, or draft the profile, start the search, read the recorded search, promote a proposal; run it in a terminal
+	$(MAKE) $(ML_STAGES)
+ml-terminal:
 	python3 -B -m module_ml.sub_module_terminal.terminal --tickers $(if $(ASSET),$(ASSET),$(TICKERS_CSV))
-ml-coordinate-search: ## coordinate search on the validation folds under the asset's profile and frozen parameters; resumes; promotes nothing
-	$(call fanout,ml,module_ml.coordinate_search,$(JOBS))
-# a hand's decision for one asset, never fanned out: ASSET= is required
-ml-coordinate-search-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain either way; ASSET= is required
-	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	$(run) ml python -m module_ml.coordinate_search_promote --tickers $(ASSET) --proposal $(PROPOSAL)
-	$(MAKE) ml-all ASSET=$(ASSET)
+
+# the serpentine search, a hand's research outside the chain: its two steps, one turn of the feature layer's search and
+# the ML layer's scoring of the question the turn left, each a stage of its own module
+features-serpentine-turn: ## one turn of the serpentine search per asset: carry it as far as the answers on disk allow, then leave the next question or a finished search
+	$(call fanout,features,module_features.sub_module_serpentine_search.serpentine_search,$(JOBS))
+ml-score:        ## score the states of <TICKER>_score_request.json -> <TICKER>_score_response.json, one process per asset
+	$(call fanout,ml,module_ml.score,$(JOBS))
+# the loop over them, per asset: a turn, then — while the turn has left a question — ml-score and a turn again, each step
+# a one-off container of its module's runner; the question is the one file the loop tests. Never inside all or all-record
+features-serpentine-search: ## the serpentine search per asset: a turn, then ml-score and a turn while the turn leaves a question; resumes where the files stand
+	printf '%s\n' $(TICKER_LIST) | xargs -P $(JOBS) -I{} sh -c '$(run) features python -m module_features.sub_module_serpentine_search.serpentine_search --tickers {} && while [ -e "$(STORE_ASSETS_ARTIFACTS_DIR)/ticker={}/{}_score_request.json" ]; do $(run) ml python -m module_ml.score --tickers {} && $(run) features python -m module_features.sub_module_serpentine_search.serpentine_search --tickers {} || exit $$?; done'
 # the detached twin: the same search in a tmux session that outlives the terminal, started in this checkout, one asset per
-# session; the session ends with the search — `<TICKER>_coordinate_search.json` and the page are the record.
+# session; the session ends with the search — `<TICKER>_serpentine_search.json` and the page are the record.
 # A plain make, not $(MAKE): the session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs
 # even under -n
-tmux-ml-coordinate-search: ## the search detached in tmux session coordinate-search-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t coordinate-search-<ticker> to watch, Ctrl-C stops, a rerun after it ends resumes; ASSET= is required
+tmux-features-serpentine-search: ## the serpentine search of one asset detached in tmux session features-serpentine-search-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t features-serpentine-search-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
 	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	@tmux has-session -t $(COORDINATE_SEARCH_SESSION) 2>/dev/null && echo '$(COORDINATE_SEARCH_SESSION) is already running — tmux attach -t $(COORDINATE_SEARCH_SESSION)' || tmux new-session -d -s $(COORDINATE_SEARCH_SESSION) -c $(CURDIR) 'make ml-coordinate-search ASSET=$(ASSET)'
+	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) 'make features-serpentine-search ASSET=$(ASSET)'
+# a hand's decision for one asset, never fanned out: the proposal's columns and barrier geometry become the asset's own,
+# and its ML chain runs again, tuning it anew — the search's evaluated point is not what is kept. ASSET= is required
+features-serpentine-search-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset's serpentine search into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain, which tunes it again; ASSET= is required
+	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
+	$(run) features python -m module_features.sub_module_serpentine_search.promote --tickers $(ASSET) --proposal $(PROPOSAL)
+	$(MAKE) ml-all ASSET=$(ASSET)
+# a new experiment for one asset: every file the turn or ml-score writes for it is removed, on the host, over the stores'
+# host paths — the state, the loop's ledger, the question, the answer and the asset's partition of score_trials; its
+# inputs, the chain's files, the promoted state, hpo_trials and the profile stay. It runs no stage. ASSET= is required
+features-serpentine-search-reset: ## remove one asset's serpentine search — its state, ledger, question, answer and score_trials partition — keeping its inputs and its profile; ASSET= is required
+	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
+	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_trials.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
+	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)
 
 # the canon's crawler and its text-based user interface (TUI), on the host: python3 and gum, git only for the root, the
 # paths an add offers and the commit a report entry names, the canon having no runner and no dependency — it gates
@@ -134,11 +159,11 @@ on: build        ## the presentation switch: the dashboard and the DevOps panel 
 	@python3 -c "import webbrowser; url = 'http://127.0.0.1:$(PORT)/'; print('dashboard at', url); webbrowser.open(url)"
 off:             ## the presentation switch: stop and remove every container of this project
 	$(COMPOSE) down
-monitoring-terminal: ## the monitoring terminal: the four snapshots and the run records, then on or off; run it in a terminal
+monitoring-terminal:
 	python3 -B -m module_monitoring.sub_module_terminal.terminal
 btc-all: all     ## the single-asset chain by its ticker name; the alias goes when the basket grows
 # the stages of all, one make target each, measured from outside by record.py: the four pipeline stores before and after
-RECORDED_STAGES := data-download data-ingest data-status features-bars features-catalogue features-status ml-labels ml-hpo ml-train ml-strategy ml-status
+RECORDED_STAGES := $(DATA_STAGES) $(FEATURES_STAGES) $(ML_STAGES)
 all-record: build ## one recorded run of the whole chain, every stage measured from outside by record.py -> store/run_records/<run_id>/<stage>.json
 	@run_id=$(RUN_ID); for stage in $(RECORDED_STAGES); do RUN_ID=$$run_id python3 record.py $$stage $(MAKE) $$stage || exit $$?; done
 btc-lifecycle: all-record ## the recorded lifecycle by its ticker name; the alias goes when the basket grows
