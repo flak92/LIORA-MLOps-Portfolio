@@ -1,13 +1,12 @@
-/* Pipeline and Data Quality tabs. Classic script using the formatters, cells, tables, frames and
-   DATA_STATUS_LOADED of page.js — this file is what renders that snapshot into the status page.
+/* Pipeline and Data Quality tabs. Classic script using the formatters, cells, tables and frames of
+   page.js — this file fetches /store_status/data_status.json and renders it into the status page.
 
    It names no provider. The snapshot publishes the venue set in its tier order as `source_venues`, and every
    per-provider section, column and share cell is derived from it: a provider added to the pipeline appears
    here with no edit to this file or to index.html. */
 "use strict";
 
-/* the columns whose only correct value is zero — duplicate and invalid rows per venue, OHLC violations on the
-   canonical series.
+/* the columns whose only correct value is zero — the invariants of skill_candle_canonicalisation.md § 16.
    They are marked as a category, not a magnitude, so a reader knows which numbers he may be alarmed by:
    after a change of provider these must still be zero, while every observation beside them is expected to move. */
 const VENUE_INVARIANT_HEADERS = ["dups", "invalid"];
@@ -30,6 +29,26 @@ function realDataPct(canonicalRow) {
     ? (100 * (canonicalRow.row_count - canonicalRow.ffill_bars)) / canonicalRow.row_count : 0;
 }
 
+/* twice by extraction */
+const MINUTES_PER_HOUR = 60;
+/* twice by extraction */
+const HOURS_PER_DAY = 24;
+
+function formatDuration(minutes) {
+  if (minutes < MINUTES_PER_HOUR) return minutes + "m";
+  const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+  if (hours < HOURS_PER_DAY) return hours + "h";
+  return Math.floor(hours / HOURS_PER_DAY) + "d " + (hours % HOURS_PER_DAY) + "h";
+}
+
+/* an age against this browser's clock, a warning when it is older than the download cadence the snapshot publishes */
+function ageCell(utcText, cadenceMinutes) {
+  if (!utcText) return "-";
+  const minutes = Math.max(0, Math.floor((Date.now() - millisecondsSinceEpoch(utcText))
+    / (MILLISECONDS_PER_SECOND * SECONDS_PER_MINUTE)));
+  return [formatDuration(minutes), minutes > cadenceMinutes];
+}
+
 /* ---- Pipeline tab: the series research consumes ---- */
 
 function renderPipeline(status) {
@@ -48,10 +67,13 @@ function renderPipeline(status) {
   /* no "first" column: the canonical grid is full from window_start_utc by construction, so the envelope
      above already states it; a provider's own first printed minute is a venue row, on the other tab */
   renderTable("pipeline",
-    ["symbol", "rows", "last", "real-data share", "ffill bars", "ffill run (min)", "flat run (min)"],
+    ["symbol", "rows", "last", "observation lag", "measurement age", "real-data share", "ffill bars", "ffill run (min)",
+     "flat run (min)"],
     status.canonical_source.map((row) => [
       row.symbol, formatCount(row.row_count),
       row.last_observation_utc || "-",
+      ageCell(row.last_observation_utc, status.download_cadence_minutes),
+      ageCell(status.generated_at_utc, status.download_cadence_minutes),
       buildPercentageCell(realDataPct(row)),
       [formatCount(row.ffill_bars), row.ffill_bars > 0],
       [formatCount(row.longest_ffill_run_minutes), row.longest_ffill_run_minutes > 0],
@@ -111,14 +133,14 @@ function renderCanonicalSource(status) {
   renderInvariantColumns(document.getElementById("canonical-source"), CANONICAL_INVARIANT_HEADERS);
 }
 
-DATA_STATUS_LOADED.then((status) => {
-  if (status instanceof Error) {
+fetch("/store_status/data_status.json", { cache: "no-store" })
+  .then((response) => { if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
+  .then((status) => {
+    renderPipeline(status);
+    renderRawSources(status);
+    renderCanonicalSource(status);
+  }, (error) => {
     const meta = document.getElementById("meta");
-    meta.textContent = "could not load /store_status/data_status.json (" + status.message + ") — run `make data-status`";
+    meta.textContent = "could not load /store_status/data_status.json (" + error.message + ") — run `make data-status`";
     meta.className = "box err";
-    return;
-  }
-  renderPipeline(status);
-  renderRawSources(status);
-  renderCanonicalSource(status);
-});
+  });

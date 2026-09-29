@@ -20,6 +20,19 @@ def write_predictions(ticker: str, cat: dict, rows: list[tuple]) -> Path:
     )
 
 
+def to_oos_predictions(prediction_records: list[tuple]) -> dict[str, np.ndarray]:
+    """The prediction records as strategy.load_oos_predictions returns them: fold-major, by decision, the
+    probabilities widened to float64 exactly as the parquet round trip widens them — so a search that never
+    writes the parquet replays the strategy on the same numbers the stage would."""
+    return {
+        "decision_ts": np.array([row[0] for row in prediction_records], dtype=np.int64),
+        "oos_fold_id": np.array([row[1] for row in prediction_records], dtype=np.int8),
+        "p_short": np.array([row[2] for row in prediction_records], dtype=np.float64),
+        "p_neutral": np.array([row[3] for row in prediction_records], dtype=np.float64),
+        "p_long": np.array([row[4] for row in prediction_records], dtype=np.float64),
+    }
+
+
 def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
     """Model log-loss against the training class prior: relative_logloss_skill = 1 - model / prior."""
     model_logloss = validation.multiclass_logloss(y_cls, proba, weight)
@@ -36,7 +49,8 @@ def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
     """The two importances of one validation fold's booster, the SHAP values measured on the fold's scoring rows."""
     oos_start, oos_end = validation.fold_bounds(fold_id)
     scoring_rows, _ = validation.scoring_set(
-        xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start, oos_end)
+        xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start, oos_end,
+        xy["barriers"]["horizon_minutes"])
     return {
         "gain_importance": model.gain_importance(booster, xy["feature_columns"]),
         "mean_abs_shap_importance": model.mean_abs_shap_importance(booster, xy["x"][scoring_rows], xy["feature_columns"]),
@@ -52,7 +66,7 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
     window_rows = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
     scoring_rows, scoring_weight = validation.scoring_set(
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
-        xy["sample_valid"], oos_start, oos_end)
+        xy["sample_valid"], oos_start, oos_end, xy["barriers"]["horizon_minutes"])
     prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
     booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
     window_proba = model.predict_proba(booster, xy["x"][window_rows], xy["feature_columns"])

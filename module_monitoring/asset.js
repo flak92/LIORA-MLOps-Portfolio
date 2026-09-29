@@ -65,8 +65,8 @@ function buildModelFrame(asset, mlStatus) {
   frame.body.appendChild(buildKeyValueBox([
     ["parameters", "depth " + bestParameters.max_depth + " · eta " + bestParameters.eta.toFixed(4)
       + " · rounds " + bestParameters.num_boost_round + " · subsample " + bestParameters.subsample.toFixed(2)],
-    ["search", asset.hyperparameter_search_result.trial_count + " Optuna trials · best mean F2–F4 log-loss "
-      + asset.hyperparameter_search_result.best_logloss.toFixed(6)],
+    ["search", asset.hyperparameter_search_result.trial_count + " Optuna trials · best F2–F4 path CAGR "
+      + formatPercent(asset.hyperparameter_search_result.best_cagr_validation_path, 2)],
   ]));
   const rows = validationFolds(asset).map((foldKey) => ["F" + foldKey.split("_")[1], asset.validation[foldKey]]);
   rows.push(["F" + mlStatus.final_holdout_fold_id + " — final holdout (out-of-sample)", asset.final_holdout]);
@@ -88,6 +88,10 @@ function buildStrategyFrame(asset, mlStatus) {
   const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
   frame.body.appendChild(buildKeyValueBox([
     ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
+      ["chosen out of", asset.strategy.cleared_point_count === null ? "no grid point qualified"
+        : asset.strategy.cleared_point_count + " grid points cleared the trade floor"
+          + "  (median " + formatPercent(asset.strategy.median_cagr_over_cleared, 2)
+          + ", best " + formatPercent(asset.strategy.max_cagr_over_cleared, 2) + ")"],
     ["gate", "side = sign(" + mlStatus.trend_gate_feature + ") and at least " + mlStatus.minimum_agreeing_trend_timeframes + " of " + FEATURES_STATUS.catalogue.timeframes.length + " timeframes agree"],
     ["cost per side", formatPercent(asset.strategy.execution_cost_rate_per_trade_side, 2)
       + "  (execution-cost-adjusted, excluding funding)"],
@@ -154,7 +158,7 @@ function buildFeatureSetFrame(asset, mlStatus) {
   return frame.frame;
 }
 
-/* what the feature-set search found: every proposal with what it adds and removes against the active set, the
+/* what the coordinate search found: every proposal with what it adds and removes against the active state, the
    validation skill it was chosen on and what the strategy would do with it; the delta against the asset's mean
    validation skill is page arithmetic, like the mean validation skill itself */
 function formatColumnChanges(proposal, timeframes) {
@@ -165,47 +169,51 @@ function formatColumnChanges(proposal, timeframes) {
 }
 
 function buildProposalsFrame(asset, mlStatus) {
-  const frame = buildFrame("PROPOSALS — feature sets the search found on the validation folds; none is promoted by itself");
-  const search = asset.feature_set_search;
+  const frame = buildFrame("PROPOSALS — the states the coordinate search found on the validation folds; none is promoted by itself");
+  const search = asset.coordinate_search;
   if (search === null) {
-    frame.body.appendChild(buildFootnote("no feature-set search yet — run `make ml-feature-set-search ASSET=" + asset.ticker + "`"));
+    frame.body.appendChild(buildFootnote("no coordinate search yet — run `make ml-coordinate-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
   }
   /* a recorded search conditioned on another set or other parameters compares against a baseline that has gone,
      so the frame states that and shows nothing rather than a delta against the wrong set */
   if (!search.inputs_current) {
-    frame.body.appendChild(buildFootnote("the search predates the active set or its parameters — run "
-      + "`make ml-feature-set-search ASSET=" + asset.ticker + "`"));
+    frame.body.appendChild(buildFootnote("the search predates the asset's state, its profile or its parameters — run "
+      + "`make ml-coordinate-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
   }
   const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
   const folds = validationFolds(asset);
   const meanValidationSkill = mean(folds.map((fold) => asset.validation[fold].relative_logloss_skill));
   frame.body.appendChild(buildKeyValueBox([
-    ["feature-set search", search.trial_count + " trials in " + search.pass_count + " passes · " + (search.search_converged ? "converged" : "not converged")
-      + " · the active set's mean validation skill " + formatPercent(meanValidationSkill, 2)],
+    ["coordinate search", search.trial_count + " trials in " + search.round_count + " rounds · " + (search.search_converged ? "converged" : "not converged")
+      + " · the active state's mean validation skill " + formatPercent(meanValidationSkill, 2)],
   ]));
   frame.body.appendChild(buildTable(
-    ["#", "trial", "columns added / removed", ...folds.map((fold) => "skill F" + fold.split("_")[1]), "mean skill",
-     "&Delta; vs active", "&tau;", ...folds.map((fold) => "Sharpe F" + fold.split("_")[1]),
-     ...folds.map((fold) => "trades F" + fold.split("_")[1]), "selection score"],
+    ["#", "trial", "columns added / removed", "path CAGR", "path Calmar", "path PF",
+     ...folds.map((fold) => "Calmar F" + fold.split("_")[1]),
+     ...folds.map((fold) => "trades F" + fold.split("_")[1]),
+     "mean skill", "&Delta; vs active", "&tau;"],
     search.proposals.map((proposal) => {
       const delta = proposal.mean_relative_logloss_skill - meanValidationSkill;
       return [
-        proposal.proposal, proposal.trial, formatColumnChanges(proposal, timeframes),
-        ...folds.map((fold) => formatPercent(proposal.validation[fold].relative_logloss_skill, 2)),
+        proposal.proposal, proposal.trial_index, formatColumnChanges(proposal, timeframes),
+        formatPercent(proposal.validation_path.cagr, 2),
+        formatNumber(proposal.validation_path.calmar, 2),
+        formatNumber(proposal.validation_path.profit_factor, 2),
+        ...folds.map((fold) => formatNumber(proposal.validation[fold].calmar, 2)),
+        ...folds.map((fold) => formatCount(proposal.validation[fold].trade_count)),
         formatPercent(proposal.mean_relative_logloss_skill, 2),
         (delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp",
         proposal.entry_edge_threshold.toFixed(2) + (proposal.entry_edge_threshold_constraint_met ? "" : " !"),
-        ...folds.map((fold) => formatNumber(proposal.validation[fold].sharpe, 2)),
-        ...folds.map((fold) => formatCount(proposal.validation[fold].trade_count)),
-        formatNumber(proposal.selection_score_mean_sharpe, 2),
       ];
     })));
-  frame.body.appendChild(buildFootnote("every proposal is a trial no validation fold scores below the active set, by "
-    + "mean skill, under the asset's frozen parameters; when a pass accepted a set, that set stands first. The Sharpe "
-    + "and trade columns say what the strategy would do with each at its own entry edge threshold — τ marked ! when "
-    + "its trade floor was not met — and were never selected on. Nothing here touched the final holdout."));
+  frame.body.appendChild(buildFootnote("every proposal is a trial no validation fold scores below the state the search "
+    + "started from; they are ranked by the CAGR of the validation path — F2, F3 and F4 chained into one "
+    + "walk-forward equity — and a move reached one only by raising the Calmar ratio of every fold, under the trade "
+    + "floor, at its own entry edge threshold (τ marked ! when that floor was not met). When a family accepted a "
+    + "state, that state stands first. The model's own skill is reported beside them and was not selected on. "
+    + "Nothing here touched the final holdout."));
   return frame.frame;
 }
 

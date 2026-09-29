@@ -15,6 +15,7 @@
     <button class="pill" data-key="quality">Data Quality</button>
     <button class="pill" data-key="ml">ML Research</button>
     <button class="pill" data-key="asset">ML Assets</button>
+    <button class="pill" data-key="scalability">Scalability</button>
     <button class="pill" data-key="lifecycle">Lifecycle</button>
   </nav>
 
@@ -27,7 +28,9 @@
     </table>
     <p class="foot">one row per asset of the series research consumes. The real-data share is the page's own
       arithmetic over the forward-filled bars and the row count; a forward-filled minute is one neither provider
-      printed, and its longest run says whether that was noise or an outage.</p>
+      printed, and its longest run says whether that was noise or an outage. The observation lag and the measurement
+      age are the page's arithmetic too: the last minute and the snapshot's generation against this browser's clock,
+      each marked when it is older than the download cadence the snapshot publishes.</p>
   </section>
 
   <section id="tab-quality" data-panel="tab" data-key="quality" hidden>
@@ -42,9 +45,8 @@
       the providers once more, in its share columns — a share of the grid is the one number that is per provider by
       nature; every other column of it describes one market object and asks about no source. A marked column is an
       invariant, whose only correct value is zero; every other number is an observation, which a change of provider
-      is expected to move. A canonical minute is one venue's whole candle copied verbatim — Binance where it
-      traded, Bybit where only Bybit did, an explicitly flagged forward fill where neither printed — and never
-      an average of the two, because an average prints a price no market made.</p>
+      is expected to move. Tier order, the verbatim-candle rule and the reason it beats averaging are in
+      skill_candle_canonicalisation.md.</p>
   </section>
 
   <section id="tab-ml" data-panel="tab" data-key="ml" hidden>
@@ -99,6 +101,14 @@
   </section>
 
 
+  <section id="tab-scalability" data-panel="tab" data-key="scalability" hidden>
+    <div id="scalability-meta" class="box">loading /store_status/skills_status.json&hellip;</div>
+    <div id="scalability-detail"></div>
+    <p class="foot">every file the crawler's skill matrix lists, read against AGENTS.md and the skills marked for it, with the date of its
+      last report; the age is that date against this browser's clock &middot; <code>make skills-crawl</code> &middot;
+      <code>make skills-status</code> &middot; <code>reports_after_crawled_files/</code></p>
+  </section>
+
   <section id="tab-lifecycle" data-panel="tab" data-key="lifecycle" hidden>
     <div id="run-meta" class="box">loading /runs&hellip;</div>
     <div id="run-detail"></div>
@@ -108,13 +118,14 @@
       Nothing a stage says about itself enters the record.</p>
   </section>
 
-  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code>
-    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code>) &middot; the containers, the networks
+  <p class="foot">static page &middot; data from <code>store/status/data_status.json</code> / <code>store/status/features_status.json</code> / <code>store/status/ml_status.json</code> / <code>store/status/skills_status.json</code>
+    (regenerate with <code>make data-status</code> / <code>make features-status</code> / <code>make ml-status</code> / <code>make skills-status</code>) &middot; the containers, the networks
     and the volumes are the <strong>DevOps</strong> panel</p>
   <script src="page.js"></script>
   <script src="data.js"></script>
   <script src="asset.js"></script>
   <script src="ml.js"></script>
   <script src="run.js"></script>
+  <script src="scalability.js"></script>
 </body>
 </html>

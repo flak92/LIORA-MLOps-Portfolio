@@ -43,7 +43,7 @@ def container_path(container_id: str) -> str:
 
 
 def container_stats_path(container_id: str) -> str:
-    """One sample, not a stream: the page differences two polls the way it does for an asset's cgroup."""
+    """One sample, not a stream: the page differences two polls into a rate."""
     return engine_path(f"/containers/{container_id}/stats?stream=false&one-shot=true")
 
 

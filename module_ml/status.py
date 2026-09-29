@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 
-from . import config, dataset, feature_set_search
+from . import config, coordinate_search, dataset, feature_set_search, hpo, strategy as strategy_module
 
 EQUITY_CURVE_DOWNSAMPLE_INTERVAL_DAYS = 7          # daily equity grid -> weekly points for the sparkline
 
@@ -27,7 +27,7 @@ def sample_block(metrics: dict) -> dict:
 def hyperparameter_search_result_block(hyperparameter_search_result: dict) -> dict:
     return {
         "trial_count": hyperparameter_search_result["trial_count"],
-        "best_logloss": round(hyperparameter_search_result["best_logloss"], 6),
+        hpo.OBJECTIVE_KEY: round(hyperparameter_search_result[hpo.OBJECTIVE_KEY], 6),
         "best_params": dict(sorted(hyperparameter_search_result["best_params"].items())),
     }
 
@@ -59,7 +59,10 @@ def equity_curve_block(curve: dict, final_equity: float) -> dict:
 def _pnl_block(block: dict) -> dict:
     return {
         "sharpe": round(block["sharpe"], 3),
+        "cagr": round(block["cagr"], 6),
         "max_drawdown": round(block["max_drawdown"], 4),
+        "calmar": round(block["calmar"], 4),
+        "profit_factor": config.rounded(block["profit_factor"], 4),
         "trade_count": block["trade_count"],
         "hit_rate": config.rounded(block["hit_rate"], 4),
         "average_trade_return": config.rounded(block["average_trade_return"], 6),
@@ -75,29 +78,42 @@ def strategy_block(strategy: dict) -> dict:
         "entry_edge_threshold": strategy["entry_edge_threshold"],
         "entry_edge_threshold_constraint_met":
             strategy["entry_edge_threshold_constraint_met"],
-        "selection_score_mean_sharpe": config.rounded(strategy["selection_score_mean_sharpe"], 3),
+        # what the chosen threshold was chosen out of, carried verbatim: the page states the spread beside
+        # the score rather than computing it, and a reader who wants a correction has the count to make it
+        **{name: strategy[name] for name in strategy_module.SELECTION_EXPOSURE_KEYS},
+        strategy_module.SELECTION_SCORE_KEY: config.rounded(strategy[strategy_module.SELECTION_SCORE_KEY], 6),
         "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
         "validation": {k: _pnl_block(v) for k, v in sorted(strategy["validation"].items())},
+        "validation_path": {k: config.rounded(v, 6) if isinstance(v, float) or v is None else v
+                            for k, v in sorted(strategy["validation_path"].items())},
         "final_holdout": _pnl_block(final_holdout),
         "equity_curve": equity_curve_block(final_holdout["equity_curve"],
                                    final_holdout["final_equity"]),
     }
 
 
-def proposal_block(proposal: dict) -> dict:
-    """One proposal as the page reads it: the model's skill it was chosen on, then what the strategy would do."""
+def proposal_block(proposal: dict, trial: dict, active_columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> dict:
+    """One proposal as the page reads it: its rank and trial from the state file, and everything else from that
+    trial's line of the ledger — the columns it moves against the state the search was run on, the model's skill,
+    then what the strategy would do."""
+    columns_by_timeframe = trial["columns_by_timeframe"]
     return {
         "proposal": proposal["proposal"],
-        "trial": proposal["trial"],
-        "added_columns_by_timeframe": proposal["added_columns_by_timeframe"],
-        "removed_columns_by_timeframe": proposal["removed_columns_by_timeframe"],
-        "mean_relative_logloss_skill": round(proposal["mean_relative_logloss_skill"], 6),
+        "trial_index": proposal["trial_index"],
+        "added_columns_by_timeframe": feature_set_search.columns_added(columns_by_timeframe, active_columns_by_timeframe, timeframes),
+        "removed_columns_by_timeframe": feature_set_search.columns_removed(columns_by_timeframe, active_columns_by_timeframe, timeframes),
+        "mean_relative_logloss_skill": round(trial["mean_relative_logloss_skill"], 6),
         "validation": {fold: {"relative_logloss_skill": round(block["relative_logloss_skill"], 6),
-                              "sharpe": round(block["sharpe"], 3), "trade_count": block["trade_count"]}
-                       for fold, block in sorted(proposal["validation"].items())},
-        "entry_edge_threshold": proposal["entry_edge_threshold"],
-        "entry_edge_threshold_constraint_met": proposal["entry_edge_threshold_constraint_met"],
-        "selection_score_mean_sharpe": config.rounded(proposal["selection_score_mean_sharpe"], 3),
+                              "sharpe": round(block["sharpe"], 3),
+                              "cagr": round(block["cagr"], 6), "calmar": round(block["calmar"], 4),
+                              "profit_factor": config.rounded(block["profit_factor"], 4),
+                              "trade_count": block["trade_count"]}
+                       for fold, block in sorted(trial["validation"].items())},
+        "validation_path": {k: config.rounded(v, 6) if isinstance(v, float) or v is None else v
+                            for k, v in sorted(trial["validation_path"].items())},
+        "entry_edge_threshold": trial["entry_edge_threshold"],
+        "entry_edge_threshold_constraint_met": trial["entry_edge_threshold_constraint_met"],
+        strategy_module.SELECTION_SCORE_KEY: config.rounded(trial[strategy_module.SELECTION_SCORE_KEY], 6),
     }
 
 
@@ -108,28 +124,38 @@ def feature_set_block(ticker: str, cat: dict) -> dict:
             "columns_by_timeframe": dataset.load_feature_columns(ticker, cat)}
 
 
-def feature_set_search_block(ticker: str, best_params: dict, active_columns_by_timeframe: dict, cat: dict) -> dict | None:
-    """The feature-set search as it last wrote itself, and whether its inputs are still the asset's — a promotion,
-    a retuning or a catalogue change makes a recorded search describe a state that has gone; None while the asset
-    has no search file."""
-    path = config.feature_set_search_json(ticker)
+def coordinate_search_block(ticker: str, best_params: dict, active_columns_by_timeframe: dict,
+                            active_barriers: dict, cat: dict) -> dict | None:
+    """The coordinate search as it last wrote itself, and whether its inputs are still the asset's — a
+    promotion, a retuning, a catalogue change, an edited profile or a flipped selection makes a recorded
+    search describe a state that has gone; None while the asset has no search file, and false rather than
+    an error while it has no profile."""
+    path = config.coordinate_search_json(ticker)
+    profile_path = config.coordinate_search_profile_json(ticker)
     if not path.exists():
         return None
     search = dataset.load_json(path)
+    ledger = config.coordinate_search_trials_jsonl(ticker)
+    # the trials are the ledger's lines, and a proposal is read off the line its index names; how many points
+    # each loop put through a fit is the search's own number, written once at a round boundary and copied
+    # here — the page, the terminal and the state file show one number because one of them computed it
+    trials = dataset.load_jsonl(ledger) if ledger.exists() else []
+    inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
+        coordinate_search.build_search_inputs(best_params, active_columns_by_timeframe, active_barriers,
+                                              cat, dataset.load_json(profile_path)))
     return {
-        "trial_count": len(search["trials"]),
-        "pass_count": search["pass_count"],
+        "trial_count": len(trials),
+        "trial_count_by_loop": search["trial_count_by_loop"],
+        "round_count": search["round_count"],
         "search_converged": search["search_converged"],
-        "inputs_current": search["inputs"] == dataset.to_json_safe(
-            feature_set_search.build_search_inputs(best_params, active_columns_by_timeframe, cat)),
-        "proposals": [proposal_block(proposal) for proposal in search["proposals"]],
+        "champion_trial_index": search["champion_trial_index"],
+        "inputs_current": inputs_current,
+        # a search whose inputs have gone describes another experiment, and its proposals are numbers of
+        # that one: the page shows none of them, and the snapshot publishes none either
+        "proposals": [proposal_block(proposal, trials[proposal["trial_index"] - 1],
+                                     search["inputs"]["active_columns_by_timeframe"], config.timeframes(cat))
+                      for proposal in search["proposals"]] if inputs_current else [],
     }
-
-
-def artifacts_block(ticker: str) -> dict:
-    """A fact of the folder, not of the experiment: it goes to the payload, never to the timestamp-free README."""
-    modified = config.model_evaluation_json(ticker).stat().st_mtime
-    return {"model_evaluation_modified_utc": datetime.fromtimestamp(modified, tz=UTC).strftime("%Y-%m-%d %H:%M:%S")}
 
 
 # the rounding of each importance as the page shows it: gain is a sum of gains, the SHAP value a margin
@@ -156,11 +182,18 @@ def asset_report(ticker: str, cat: dict, hyperparameter_search_result: dict, met
         "feature_columns": list(metrics["feature_columns"]),
         "feature_set": feature_set,
         "validation_importance": validation_importance_block(metrics["validation_importance"]),
-        "feature_set_search": feature_set_search_block(ticker, hyperparameter_search_result["best_params"],
-                                                       feature_set["columns_by_timeframe"], cat),
+        "coordinate_search": coordinate_search_block(ticker, hyperparameter_search_result["best_params"],
+                                                     feature_set["columns_by_timeframe"],
+                                                     dataset.load_barriers(ticker), cat),
         "strategy": strategy_block(strategy),
-        "artifacts": artifacts_block(ticker),
     }
+
+
+# the files of a hand's stage — drafted by a hand, written by the search a hand starts, or promoted by one. A file of a
+# hand's stage is listed, not measured: its size moves with the hand, not with the chain, and the README is promised
+# byte-reproducible by the chain alone
+HAND_STAGE_FILE_DESCRIPTORS = (config.barriers_json, config.coordinate_search_json, config.coordinate_search_profile_json,
+                               config.coordinate_search_trials_jsonl, config.feature_set_json)
 
 
 def file_manifest(ticker: str, cat: dict) -> list[tuple]:
@@ -168,9 +201,12 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
     hierarchy for the catalogue parquets, which the slot standard sorts finest first, as LC_COLLATE=C does."""
     return [
         (config.asset_readme_md(ticker), "this file"),
+        (config.barriers_json(ticker), "the promoted barrier geometry: the two multipliers of a trade, the label's own and the horizon token — a hand's choice; absent, the frozen constants are the asset's"),
         (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their slots, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
+        (config.coordinate_search_json(ticker), "where the coordinate search stands at a round boundary: its inputs, the beam, the champion, the path it took and the proposals, each trial named by its index into the ledger"),
+        (config.coordinate_search_profile_json(ticker), "the search profile: the columns admitted, the state to start from, each coordinate's grid and the loops of a round — drafted by a hand"),
+        (config.coordinate_search_trials_jsonl(ticker), "the coordinate search's ledger: one scored state a line, appended and never rewritten"),
         (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
-        (config.feature_set_search_json(ticker), "the feature-set search: every trial, the champion, the proposals"),
         *((config.features_parquet(ticker, cat, timeframe), f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
           for timeframe in config.timeframes(cat)),
         (config.label_events_parquet(ticker, cat), "Y — triple-barrier outcome and the event prices"),
@@ -198,6 +234,7 @@ def markdown_table(headers, rows):
 
 def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> str:
     """What this folder holds and what came out of it — no timestamp, by design."""
+    barriers = dataset.load_barriers(ticker)   # the asset's own horizon, as the labels were written with
     labels, counts = metrics["labels"], metrics["class_counts"]
     supervised = counts["short"] + counts["neutral"] + counts["long"]
     folds = [f"fold_{i}" for i in config.VALIDATION_FOLD_IDS]
@@ -206,8 +243,9 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
 
     files = []
     for path, note in file_manifest(ticker, cat):
-        # this file's own size would be self-referential: writing it changes it
-        size = "—" if path == config.asset_readme_md(ticker) else load_file_size_text(path)
+        # this file's own size would be self-referential: writing it changes it; a hand's stage is listed, not measured
+        unmeasured = path == config.asset_readme_md(ticker) or path in {descriptor(ticker) for descriptor in HAND_STAGE_FILE_DESCRIPTORS}
+        size = "—" if unmeasured else load_file_size_text(path)
         files.append([f"`{path.name}`", note, size])
 
     cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
@@ -266,7 +304,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 {markdown_table(["file", "holds", "size"], files)}
 
-Each of the {len(config.timeframes(cat))} catalogue parquets carries {config.LABEL_HORIZON_MS // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.label_events_parquet(ticker, cat).name}`: the tail decisions whose full {config.LABEL_HORIZON_MINUTES}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat).name}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the {len(config.timeframes(cat))} catalogue parquets carries {barriers['horizon_minutes'] * config.MILLISECONDS_PER_MINUTE // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.label_events_parquet(ticker, cat).name}`: the tail decisions whose full {barriers['horizon_minutes']}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat).name}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
 
 ## Feature set
 
@@ -280,7 +318,7 @@ Each of the {len(config.timeframes(cat))} catalogue parquets carries {config.LAB
 
 ## Model
 
-Search: {hyperparameter_search_result['trial_count']} Optuna trials, best log-loss {hyperparameter_search_result['best_logloss']:.6f}. Winner: depth {best_params['max_depth']}, eta {best_params['eta']:.4f}, {best_params['num_boost_round']} rounds, subsample {best_params['subsample']:.3f}, colsample {best_params['colsample_bytree']:.3f}, min_child_weight {best_params['min_child_weight']}, lambda {best_params['lambda']:.4f}, alpha {best_params['alpha']:.4f}.
+Search: {hyperparameter_search_result['trial_count']} Optuna trials, best {hpo.OBJECTIVE_KEY} {hyperparameter_search_result[hpo.OBJECTIVE_KEY]:.6f}. Winner: depth {best_params['max_depth']}, eta {best_params['eta']:.4f}, {best_params['num_boost_round']} rounds, subsample {best_params['subsample']:.3f}, colsample {best_params['colsample_bytree']:.3f}, min_child_weight {best_params['min_child_weight']}, lambda {best_params['lambda']:.4f}, alpha {best_params['alpha']:.4f}.
 
 {markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
 
@@ -304,7 +342,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV lives in `{config.research_ohlcv_duckdb(ticker).name}` beside this file — the market object the whole chain reads, resident in the folder and outside the manifest above, because its size moves with every top-up and this file is promised byte-reproducible.
 
-{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The folds are a purged walk-forward: each training population drops the events that had not resolved when its fold opened. Every field name above is the key of the same measurement in `{config.model_evaluation_json(ticker).name}`, `{config.strategy_evaluation_json(ticker).name}` and `ml_status.json`.
+{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/glossary.md`.
 """
 
 

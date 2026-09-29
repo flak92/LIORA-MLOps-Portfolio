@@ -145,22 +145,32 @@ function renderClassification(mlStatus) {
 
 function renderStrategy(mlStatus) {
   renderTable("cs-strategy",
-    ["asset", "entry edge threshold", "constraint met", "selection score", "holdout Sharpe", "degradation",
+    ["asset", "entry edge threshold", "constraint met", "grid points cleared",
+     "median CAGR over cleared", "selection score", "path CAGR", "path Calmar",
+     "path maxDD", "path PF", "holdout CAGR", "degradation", "holdout Sharpe",
      "maxDD", "trades", "hit", "avg trade", "exposure", "final equity",
      "exits: upper/lower/vertical/ambiguous"],
     mlStatus.assets.map((asset) => {
       const finalHoldoutStrategy = asset.strategy.final_holdout;
-      const selectionScore = asset.strategy.selection_score_mean_sharpe;
-      const holdoutDegradation = finalHoldoutStrategy.sharpe === null || selectionScore === null
-        ? null : finalHoldoutStrategy.sharpe - selectionScore;
+      const validationPath = asset.strategy.validation_path;
+      const selectionScore = asset.strategy.selection_score_cagr_validation_path;
+      const holdoutDegradation = finalHoldoutStrategy.cagr === null || validationPath.cagr === null
+        ? null : finalHoldoutStrategy.cagr - validationPath.cagr;
       const exitCounts = finalHoldoutStrategy.exit_counts;
       return [
         buildTickerLink(asset.ticker, selectAsset),
         asset.strategy.entry_edge_threshold.toFixed(2),
         asset.strategy.entry_edge_threshold_constraint_met ? "yes" : "fallback",
-        formatNumber(selectionScore, 2),
+        asset.strategy.cleared_point_count === null ? "-" : String(asset.strategy.cleared_point_count),
+        formatPercent(asset.strategy.median_cagr_over_cleared, 2),
+        formatPercent(selectionScore, 2),
+        formatPercent(validationPath.cagr, 2),
+        formatNumber(validationPath.calmar, 2),
+        formatPercent(validationPath.max_drawdown, 1),
+        formatNumber(validationPath.profit_factor, 2),
+        formatPercent(finalHoldoutStrategy.cagr, 2),
+        holdoutDegradation === null ? "-" : (holdoutDegradation >= 0 ? "+" : "") + (100 * holdoutDegradation).toFixed(2) + " pp",
         formatNumber(finalHoldoutStrategy.sharpe, 2),
-        holdoutDegradation === null ? "-" : (holdoutDegradation >= 0 ? "+" : "") + holdoutDegradation.toFixed(2),
         formatPercent(finalHoldoutStrategy.max_drawdown, 1),
         formatCount(finalHoldoutStrategy.trade_count),
         formatPercent(finalHoldoutStrategy.hit_rate, 1),
@@ -174,14 +184,14 @@ function renderStrategy(mlStatus) {
 
 function renderSearch(mlStatus) {
   renderTable("cs-search",
-    ["asset", "trials", "best LL", "depth", "eta",
+    ["asset", "trials", "best path CAGR", "depth", "eta",
      "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
     mlStatus.assets.map((asset) => {
       const bestParameters = asset.hyperparameter_search_result.best_params;
       return [
         buildTickerLink(asset.ticker, selectAsset),
         asset.hyperparameter_search_result.trial_count,
-        asset.hyperparameter_search_result.best_logloss.toFixed(4),
+        formatPercent(asset.hyperparameter_search_result.best_cagr_validation_path, 2),
         bestParameters.max_depth,
         bestParameters.eta.toFixed(4),
         bestParameters.min_child_weight,
@@ -194,30 +204,30 @@ function renderSearch(mlStatus) {
     }));
 }
 
-/* the asset's feature set — its source and its columns per timeframe — and what the feature-set search found
+/* the asset's feature set — its source and its columns per timeframe — and what the coordinate search found
    beside it; the delta of the best proposal's mean validation skill against the asset's is page arithmetic, like
    the mean validation skill */
 function renderFeatureSet(mlStatus) {
   const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
   const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
   const deltas = mlStatus.assets.map((asset) => {
-    const search = asset.feature_set_search;
+    const search = asset.coordinate_search;
     const bestProposal = search && search.inputs_current && search.proposals.length ? search.proposals[0] : null;
     return bestProposal === null ? null : bestProposal.mean_relative_logloss_skill - meanValidationSkill(asset);
   });
   const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
   renderTable("cs-feature-set",
-    ["asset", "source", ...timeframes.map((timeframe) => "columns " + timeframe), "mean val skill", "trials", "passes", "converged",
+    ["asset", "source", ...timeframes.map((timeframe) => "columns " + timeframe), "mean val skill", "trials", "rounds", "converged",
      "best proposal &Delta; skill"],
     mlStatus.assets.map((asset, i) => {
-      const search = asset.feature_set_search;
+      const search = asset.coordinate_search;
       const delta = deltas[i];
       const deltaCell = document.createElement("span");
       if (delta !== null) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
         deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
-      } else if (search === null) deltaCell.textContent = "no feature-set search yet";
-      else if (!search.inputs_current) deltaCell.textContent = "the search predates the active set or its parameters";
+      } else if (search === null) deltaCell.textContent = "no coordinate search yet";
+      else if (!search.inputs_current) deltaCell.textContent = "the search predates the asset's state, its profile or its parameters";
       else deltaCell.textContent = "no proposal";
       return [
         buildTickerLink(asset.ticker, selectAsset),
@@ -225,7 +235,7 @@ function renderFeatureSet(mlStatus) {
         ...timeframes.map((timeframe) => formatCount(asset.feature_set.columns_by_timeframe[timeframe].length)),
         formatPercent(meanValidationSkill(asset), 2),
         search === null ? "-" : formatCount(search.trial_count),
-        search === null ? "-" : formatCount(search.pass_count),
+        search === null ? "-" : formatCount(search.round_count),
         search === null ? "-" : (search.search_converged ? "yes" : "no"),
         deltaCell,
       ];

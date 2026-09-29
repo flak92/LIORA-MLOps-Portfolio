@@ -3,13 +3,12 @@
     GET  /api/machines                 every container on the host, this project's marked as its own
     GET  /api/networks                 the networks, with what is attached to each
     GET  /api/volumes                  named volumes with their sizes, and the bind mounts in use
-    GET  /api/image                    the image this container runs — liora-1m-pipeline, the one image every service runs
+    GET  /api/image                    the image this container runs, named by the container itself
     GET  /api/events                   a bounded tail of the daemon's events
     POST /api/machines/<id>/<action>   start / stop / restart — this project's containers only
 
 The socket lives in this container and in no other. The dashboard reaches these routes by
-service name over the compose network, exactly as it reaches an asset's /status, and holds
-no socket of its own.
+service name over the compose network and holds no socket of its own.
 """
 
 from __future__ import annotations
@@ -196,7 +195,7 @@ def volumes_payload(project: str | None) -> dict:
 
 
 def image_payload(hostname: str) -> dict:
-    """The image this container runs — `liora-1m-pipeline`, the one image every service runs — named by this container rather than by a literal."""
+    """The image this container runs, named by the container itself — its own `Config.Image` — and never by a literal."""
     image = own_image(hostname)
     inspected = engine_object(config.image_path(image)) if image else None
     return {

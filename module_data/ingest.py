@@ -3,8 +3,8 @@
 The canonical table ohlcv_1m_canonical is a PRIMARY-FAILOVER series: every canonical bar is ONE venue's
 candle copied verbatim — no weighting, no rounding — or an explicitly flagged forward fill. The validity
 predicate, the decision table the SQL below encodes, the volume rule that chooses the venue and the
-provenance columns are defined here and nowhere else: this file is their normative source, and no second
-copy of them exists.
+provenance columns are this module's own contract, skills/skill_candle_canonicalisation.md. It is the
+normative source; this file is its one implementation and keeps no second copy of it.
 """
 
 from __future__ import annotations
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS ohlcv_1m_canonical (
   zero_volume    BOOLEAN,          -- the winning candle was valid and traded nothing
   binance_valid  BOOLEAN,          -- Binance row present with intact OHLC
   bybit_valid    BOOLEAN,          -- Bybit row present with intact OHLC
-  rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid: a quality measurement, never a selection rule
+  rel_divergence DOUBLE            -- |c_bin - c_byb| / mid when both valid: a quality measurement, never a selection rule (skills § 12)
 );
 """
 

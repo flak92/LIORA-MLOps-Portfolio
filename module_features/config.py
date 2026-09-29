@@ -12,34 +12,39 @@ from pathlib import Path
 
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
-# twice by extraction — identical in module_data/config.py and module_ml/config.py, changed on every side in one
-# commit: the units, the ceiling, the two stores this module touches and their descriptors, and the one CLI every
-# stage shares — the two store reads identical in module_monitoring/config.py as well, and the browser's own
-# MILLISECONDS_PER_SECOND in module_monitoring/page.js and MILLISECONDS_PER_MINUTE in
-# module_monitoring/sub_module_devops/containers.js; a change to one copy is a change to every copy, by hand
+# twice by extraction
 MILLISECONDS_PER_SECOND = 1000
+# twice by extraction
 MILLISECONDS_PER_MINUTE = 60_000
+# twice by extraction
 MILLISECONDS_PER_DAY = 86_400_000
+# twice by extraction
 DUCKDB_MEMORY_LIMIT = "4GB"
+# twice by extraction
 STORE_ASSETS_ARTIFACTS_DIR = Path(os.environ["STORE_ASSETS_ARTIFACTS_DIR"])
+# twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])
 
 
+# twice by extraction
 def to_utc_ms(day: str) -> int:
     """A UTC calendar day, `YYYY-MM-DD`, as the epoch milliseconds of its midnight."""
     return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
 
 
+# twice by extraction
 def artifact_dir(ticker: str) -> Path:
     """One directory per ticker; inside it one file per artifact, named for it."""
     return STORE_ASSETS_ARTIFACTS_DIR / ticker
 
 
+# twice by extraction
 def research_ohlcv_duckdb(ticker: str) -> Path:
     """The asset's own database — the market object's one home, resident in the asset folder."""
     return artifact_dir(ticker) / f"{ticker}_research_ohlcv.duckdb"
 
 
+# twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
     ap = argparse.ArgumentParser(description=description)
@@ -47,30 +52,35 @@ def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     return ap
 
 
+# twice by extraction
 def parse_tickers(tickers_csv: str) -> list[str]:
+    """The --tickers value as a basket: split on commas, trimmed, upper case, an empty item dropped."""
     return [ticker.strip().upper() for ticker in tickers_csv.split(",") if ticker.strip()]
 
 
 MINUTES_PER_HOUR = 60
 MILLISECONDS_PER_HOUR = MINUTES_PER_HOUR * MILLISECONDS_PER_MINUTE
 
-# ---- frozen research window (later data top-ups do not change this experiment) — twice by extraction: identical in
-# module_ml/config.py, where it bounds the labels and the folds. The start repeats module_data's DATA_WINDOW_START_UTC on
-# purpose rather than importing it: the download window may be widened without moving an experiment already run against it.
+# ---- frozen research window (later data top-ups do not change this experiment). The start repeats module_data's
+# DATA_WINDOW_START_UTC on purpose rather than importing it: the download window may be widened without moving an
+# experiment already run against it.
+# twice by extraction
 RESEARCH_START_UTC = "2021-01-01"   # inclusive
+# twice by extraction
 RESEARCH_END_UTC = "2026-08-26"     # exclusive
+# twice by extraction
 RESEARCH_START_MS = to_utc_ms(RESEARCH_START_UTC)
+# twice by extraction
 RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 
 # ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
 # and the count the strategy's agreement reads all follow from it, so a new token is one line here and a new
 # experiment. Every entry is an exact aggregation of the canonical 1m series, written by bars.py; a token is
-# <integer><unit>, and its duration and its file-name slot derive from the token
+# <integer><unit>, and its duration and its file-name slot derive from the token (skills/skill_feature_taxonomy.md)
 HIERARCHY_TIMEFRAMES = ("15m", "1h", "4h")
 DECISION_TIMEFRAME = "15m"
 TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": MILLISECONDS_PER_DAY}
-# the five file-name slots ss-mm-hh-dd-MM, finest first, and the field each unit fills: the active granularity is a
-# zero-padded number in its own slot and the others stay letters, so a plain listing sorts by granularity
+# the five slots of module_skills/skill_sorting_files_naming_standard.md, finest first, and the field each unit fills
 TIMEFRAME_SLOT_FIELDS = ("ss", "mm", "hh", "dd", "MM")
 TIMEFRAME_UNIT_SLOT_FIELD = {"m": 1, "h": 2, "d": 3}
 
@@ -88,10 +98,6 @@ def timeframe_slot(token: str) -> str:
 
 TIMEFRAME_DURATION_MS = {timeframe: timeframe_duration_ms(timeframe) for timeframe in HIERARCHY_TIMEFRAMES}
 TIMEFRAME_SLOT = {timeframe: timeframe_slot(timeframe) for timeframe in HIERARCHY_TIMEFRAMES}
-# the experiment's warm-up, in bars of the top timeframe: a term that needs more stops the evaluator
-WARMUP_TOP_TIMEFRAME_BARS = 200
-WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
-
 # ---- the terms: a series of the bars, or an indicator of the register with its one integer parameter glued to the
 # token in a name (ema20, rsi14); the indicators' invariants are their register records in indicators.py, and the
 # operators and normalisers that compose them are the registers beside their kernels in catalogue.py
@@ -140,7 +146,7 @@ def feature_definition_name(definition: dict) -> str:
     return f"{normaliser}_{name}" if normaliser else name
 
 
-# twice by extraction — identical in module_ml/config.py: a feature is <definition>_<timeframe>, restated where X's columns are named
+# twice by extraction
 def feature_id(definition_name: str, timeframe: str) -> str:
     """The column of X and the key of an importance: the definition aligned to the decision grid on one timeframe."""
     return f"{definition_name}_{timeframe}"
@@ -158,6 +164,15 @@ def term_warmup_bars(term: tuple) -> int:
 
 def definition_warmup_bars(definition: dict) -> int:
     return max(term_warmup_bars(term) for term in definition["terms"])
+
+
+# The experiment's warm-up, in bars of the top timeframe — read off the catalogue, not written beside it.
+# Written down it was a number that had to be remembered: a definition with a longer memory than the one it
+# was set for is evaluated before its own value has settled, and nothing says so, because the rows are there
+# and finite. Derived, the catalogue moves it. Today the widest are ema50 (4 x 50) and sma200 (1 x 200), and
+# the derived value is 200 — the number that was written here.
+WARMUP_TOP_TIMEFRAME_BARS = max(definition_warmup_bars(definition) for definition in FEATURE_CATALOGUE)
+WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
 
 
 def definition_effective_history_hours(definition: dict, timeframe: str) -> float:
@@ -182,7 +197,8 @@ DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME = {
                      if definition["definition_in_default_set"] and timeframe in definition["timeframes"])
     for timeframe in HIERARCHY_TIMEFRAMES
 }
-TREND_GATE_FEATURE_DEFINITION = feature_definition_name(FEATURE_CATALOGUE[0])   # the strategy reads it on every timeframe, set or no set — module_ml/config.py carries the same name as a literal (twice by extraction, equal by value)
+# twice by extraction
+TREND_GATE_FEATURE_DEFINITION = feature_definition_name(FEATURE_CATALOGUE[0])   # the strategy reads it on every timeframe, set or no set — module_ml/config.py carries the same name as a literal
 TREND_GATE_TIMEFRAME = HIERARCHY_TIMEFRAMES[-1]                                  # the top timeframe that vetoes a side
 
 
@@ -194,7 +210,7 @@ def features_parquet(ticker: str, timeframe: str):
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts
 
 
-# twice by extraction — identical in module_ml/config.py, the reader; the writer names the contract it writes, the reader the one it reads
+# twice by extraction
 def catalogue_json(ticker: str):
     """The asset's copy of the feature layer's contract — what the ML layer reads instead of the feature configuration."""
     return artifact_dir(ticker) / f"{ticker}_catalogue.json"

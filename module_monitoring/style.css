@@ -52,7 +52,7 @@ td:first-child, th:first-child { text-align: left; }
   margin-right: 0.4em;
 }
 .meter__fill { display: block; height: 100%; background: #0a7a0a; }
-/* an invariant column: its only correct value is zero, and a non-zero value is a defect. Colour marks the
+/* an invariant cell: its only correct value is zero (skill_candle_canonicalisation.md § 16). Colour marks the
    category, never a magnitude — the observations beside it are expected to move when a provider changes, and these
    are not. Declared before .warn, so a broken invariant reads as a warning rather than as its calm self. */
 .invariant { background: #eaf0ea; }
@@ -60,8 +60,8 @@ td:first-child, th:first-child { text-align: left; }
 .foot { color: #666; margin-top: 1em; }
 .err { color: #a00; }
 
-/* a jump between the pages of the two personas: the status page and the DevOps panel, one on each page. Floated, so
-   it sits top right and out of the flow of the heading beneath it */
+/* a jump between the pages of the two personas: the status page and the DevOps panel, each carrying the one jump to
+   the other in its top right corner */
 .jump {
   float: right;
   font-family: inherit;
@@ -93,17 +93,3 @@ td:first-child, th:first-child { text-align: left; }
 .spark__line { fill: none; stroke: #0a7a0a; stroke-width: 2; vector-effect: non-scaling-stroke; }
 .spark__base { stroke: #111; stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 .final-holdout { font-weight: bold; }
-
-/* DevOps panel: a badge is the compact element carrying one variable of an asset's state;
-   --warn marks a state the reader should look at — a stale observation or measurement, an uncovered
-   research window, a threshold that fell back; --down a container that did not answer, or was not
-   asked yet */
-.badge {
-  display: inline-block;
-  border: 1px solid #111;
-  background: #fff;
-  padding: 0.15em 0.6em;
-  margin: 0 0.4em 0.4em 0;
-}
-.badge--warn { background: #fff3b0; }
-.badge--down { background: #111; color: #fff; }

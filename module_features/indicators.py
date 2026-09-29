@@ -16,8 +16,7 @@ def ema(x: np.ndarray, span_bars: int) -> np.ndarray:
     return out
 
 
-# twice by extraction — wilder_smoothing, atr and asof_index are identical in module_ml/labels.py, changed on both sides in one
-# commit: the label defines its own barrier scale
+# twice by extraction
 def wilder_smoothing(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     """Wilder's recursive average: seeded with the SMA of the first period."""
     out = np.full_like(x, np.nan)
@@ -41,6 +40,7 @@ def rsi(close: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
     return np.concatenate(([np.nan], out))    # delta[i] describes close[i + 1]
 
 
+# twice by extraction
 def atr(high: np.ndarray, low: np.ndarray, close: np.ndarray,
         smoothing_period_bars: int) -> np.ndarray:
     prev_close = np.concatenate(([close[0]], close[:-1]))
@@ -91,7 +91,7 @@ def rolling_zscore(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     return out
 
 
-# twice by extraction — identical in module_ml/labels.py
+# twice by extraction
 def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
                timeframe_duration_ms: int) -> np.ndarray:
     """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says
@@ -102,8 +102,8 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
     return idx
 
 
-# the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries,
-# the warm-up it needs in multiples of that parameter, the bar columns it reads
+# the indicator register: one record per token beside its kernel — the kernel, the word its one parameter carries
+# (AGENTS.md § Canonical vocabulary), the warm-up it needs in multiples of that parameter, the bar columns it reads
 # when its inputs are fixed, and the range it outputs when that range is bounded; an indicator without `inputs` takes
 # any series, close by default, and one without `output_range` is unbounded, so no normaliser can be written on it.
 # A second parameter, when an indicator needs one, extends the record and the name grammar in the same commit.
