@@ -74,13 +74,14 @@ tmux attach -t features-serpentine-search-btc     # watch it; Ctrl-C stops it, a
 make features-status                             # the search into the snapshot — the page reads nothing else
 ```
 
-The search keeps its inputs frozen: a change of what it records in its state starts it over by
-itself, and after any other change of data or of an evaluation setting a hand recomputes the
-asset's chain and starts a new experiment:
+A search is one experiment, and what a change asks of it is one rule,
+`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT` — after a change of anything the chain reads, in
+this order:
 
 ```bash
 make all ASSET=BTC                               # the dependent artifacts, computed again
 make features-serpentine-search-reset ASSET=BTC  # the search's own files go — its state, ledger, question, answer and score_trials partition; its inputs and profile stay
+make features-serpentine-search ASSET=BTC        # a new search
 ```
 
 A search proposes one state at most, its champion. A search that finds nothing better than where it
@@ -251,7 +252,7 @@ to its tmux session and puts before the session's name.
 |---|---|---|
 | an asset | one ticker in `TICKERS`; every stage is told its assets by `--tickers` | this repository; nothing changes in any module |
 | a stage of a module | the stage in its module and one `<module>-<stage>` target here — a `fanout` or a `basket` line — and, if a run should record it, its name in `RECORDED_STAGES` | `module_<domain>/`, then here |
-| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment, so a recorded search starts over | `module_features/` |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py`, carried to ML by `<TICKER>_catalogue.json` — a different experiment: the chain runs again, and a recorded search after its reset (`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`) | `module_features/` |
 | a feature | one record of `FEATURE_CATALOGUE` in the same file (`module_features/README_module_features.md` § Extending) | `module_features/` |
 | a coordinate of the serpentine search | its family in `ROUND_SCHEDULE` of `module_features/sub_module_serpentine_search/config.py`, its moves in `coordinate_barrier.py` or `coordinate_feature_set.py` beside it, and its grid in the profile (`module_features/README_module_features.md`) | `module_features/` |
 | a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | `module_data/` |

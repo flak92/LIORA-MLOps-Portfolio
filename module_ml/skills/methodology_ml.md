@@ -825,15 +825,10 @@ stages, and most edits do not touch them:
 | a promotion (`make features-serpentine-search-promote`) | `ml-all` for the asset — run by the promotion itself — then `features-status`, whose search block then reads the recorded search as no longer current |
 | the monitoring payload | `ml-status` |
 
-A recorded serpentine search compares its inputs — the window, the seed and the
-warm-up, `best_params`, the catalogue's columns, the asset's own state, its
-profile and the beam width — by equality at every turn, and starts over by itself
-when one of them has moved. What it evaluates with besides — the folds, the
-label's barrier scale, the study's counts and space, the cost, the threshold grid,
-the trade floor, the strategy's rules — it does not compare:
-after a change of one of them a hand removes the asset's search with
-`make features-serpentine-search-reset ASSET=<TICKER>` and runs it again, so that
-no trial of another experiment is read as a cache hit.
+A recorded serpentine search is one experiment: after a change this table sends
+through the chain, the asset's search is reset and run again, in the order
+`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT` sets, so that no trial of
+another experiment is read as a cache hit.
 
 This table is the layer's rebuild condition, held in a document a reader applies
 rather than in a stage: what decides that an asset's artifacts are stale stays

@@ -435,19 +435,12 @@ its champion the start state, its proposals none — is a correct result too.
 
 ### One search, one experiment
 
-The data inside the research window and the evaluation settings are constant for a whole
-experiment, and a serpentine search is one experiment. What the search records in its `inputs`
-(`build_search_inputs`) — the research window with the seed and the warm-up, the asset's
-`best_params`, the catalogue's columns, the asset's active columns and barriers, the profile and the
-beam width — is compared by equality at every turn, and a difference starts a fresh state and a
-fresh ledger by itself (`turn()`; `SERPENTINE-SEARCH-INPUTS-DECIDE-RESUME`). What the scores depend
-on beyond those fields is not recorded: the canonical data inside the window, the catalogue's
-values, and the records of
-`module_ml/config.py` — the execution cost, the threshold grid, the trade floor, the hyper-parameter
-budget and space, the inner bounds of the folds, the barrier's true-range timeframe and period.
-After any change of data or configuration outside `inputs` — a CONFIGURABLES record of `module_ml`
-such as `EXECUTION_COST_RATE_PER_TRADE_SIDE` or `HYPERPARAMETER_SEARCH_TRIAL_COUNT`, or new data —
-first `make all ASSET=<TICKER>` recomputes the dependent artifacts, then
-`make features-serpentine-search-reset ASSET=<TICKER>` removes the recorded search, and then a new
-search starts: a line scored before the change is not a state of the new experiment, and a resumed
-search would read it as a cache hit (`SERPENTINE-SEARCH-A-CHANGE-OUTSIDE-THE-INPUTS-NEEDS-A-RESET`).
+The conditions of § 2 hold inside one experiment, and a serpentine search is one: every line of its
+ledger was scored on the same data, folds, costs and seed, which is what makes two lines comparable
+and a line already in the ledger a cache hit. The search records part of what it is conditioned on
+in its `inputs` (`build_search_inputs`) and compares them by equality at every turn; what the scores
+depend on beyond them — the canonical data inside the window, the catalogue's values, the records of
+`module_ml/config.py` — it does not see, and what it does record it reads off the chain's files and
+cannot recompute. A change therefore reaches a search through the chain or not at all, and a line
+scored before it is no state of the experiment after it: the order a hand follows is
+`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

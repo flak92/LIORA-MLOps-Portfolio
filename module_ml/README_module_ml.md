@@ -76,20 +76,22 @@ Every stage runs in a one-off container of the `ml` runner —
 `docker compose run --rm -T ml python -m module_ml.<stage> --tickers <TICKER>`,
 through the Makefile's `fanout` macro one container per asset — `ml-score`
 through `each` and `serpentine_score`, the command the search's loop repeats —
-and through its `basket` macro once for `status`. Each stage takes `--tickers`; `status` takes it
-too and folds the assets it was told — the launcher passes the whole basket,
-which `ASSET=` does not narrow, and every complete asset among them gets its
-`<TICKER>_README.md`.
+and through its `basket` macro once for `status`. Each stage takes `--tickers`;
+`status` takes it too and folds the assets it was told — the launcher passes the
+whole basket, which `ASSET=` does not narrow, and every complete asset among
+them gets its `<TICKER>_README.md`.
 
 The serpentine search is `module_features`', and so are its targets:
-`features-serpentine-search` alternates a turn of the search with `ml-score` while
-the turn leaves a question, `tmux-features-serpentine-search` is its detached
-twin, `features-serpentine-search-reset` removes an asset's search and its
-`score_trials` partition, and `features-serpentine-search-promote ASSET=<TICKER>`
-copies the proposal's columns into `<TICKER>_feature_set.json` and its barrier
-geometry into `<TICKER>_barriers.json`, then reruns `ml-all` for the asset. That rerun tunes the hyper-parameters anew: the promoted state is
-evaluated again on the validation folds F2–F4, F5 is read after them and steers
-no parameter, and what is kept is the state, not the model the search evaluated.
+`features-serpentine-search` alternates a turn of the search with `ml-score`
+while the turn leaves a question, `tmux-features-serpentine-search` is its
+detached twin, `features-serpentine-search-reset` removes an asset's search and
+its `score_trials` partition, and
+`features-serpentine-search-promote ASSET=<TICKER>` copies the proposal's
+columns into `<TICKER>_feature_set.json` and its barrier geometry into
+`<TICKER>_barriers.json`, then reruns `ml-all` for the asset. That rerun tunes
+the hyper-parameters anew: the promoted state is evaluated again on the
+validation folds F2–F4, F5 is read after them and steers no parameter, and what
+is kept is the state, not the model the search evaluated.
 
 ## What it writes
 
@@ -122,7 +124,7 @@ evaluations, the request and the response and the trials store are not tracked.
 
 | what you add | where, and how much | what it changes | the gate |
 |---|---|---|---|
-| a hyper-parameter | one entry in `HYPERPARAMETER_SEARCH_SPACE` (`config.py`), in xgboost's own spelling, with the kind of its draw — `int`, `int_step`, `float` or `log` — and its bounds | the search space, `best_params`, the `params` of both trials families' `schema.json` — `TRIAL_COLUMNS` is built from the space — and every artifact downstream of a retune; a recorded serpentine search starts over, `best_params` being among its inputs | `ml-labels` and the catalogue's partitions byte-identical; the record's `requires_rerun` names what to run |
+| a hyper-parameter | one entry in `HYPERPARAMETER_SEARCH_SPACE` (`config.py`), in xgboost's own spelling, with the kind of its draw — `int`, `int_step`, `float` or `log` — and its bounds | the search space, `best_params`, the `params` of both trials families' `schema.json` — `TRIAL_COLUMNS` is built from the space — and every artifact downstream of a retune; a recorded serpentine search is reset and run again after the retune (`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`) | `ml-labels` and the catalogue's partitions byte-identical; the record's `requires_rerun` names what to run |
 | a coordinate of a state's barrier geometry | one entry in `BARRIER_COORDINATE_CASTS` and one in `START_BY_COORDINATE_DEFAULT` (`config.py`), each twice by extraction with `module_features/sub_module_serpentine_search/config.py`, the name in `TRADE_EXIT_COORDINATE_NAMES` too where it moves only a trade's exit, and the one computation that reads it — `labels.label_events()` for the label, `strategy.signals_for_fold()` for a trade; its moves are the search's, in `module_features/sub_module_serpentine_search/` | nothing of `score.py`: a state, its key, its fit identity and its trial row carry the coordinates by the register's names, and `fit_identity()` reads which of them leave the fits alone | with the coordinate at its start value the chain's files are byte-identical; `score.py` still names no coordinate of its own |
 
 ## Design rationale
