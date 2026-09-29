@@ -58,7 +58,7 @@ in `<TICKER>_catalogue.json`.
 Run in order; `make ml-all` runs them, each stage in a one-off container of the
 `ml` runner, and a single stage is its own `ml-<stage>` target in the same
 runner, or the one-off process above run by hand in a shell that exports those
-variables (`module_skills/glossary.md` § Stores). The four stages above `status`
+variables (`module_skills/skill_glossary.md` § Stores). The four stages above `status`
 fan out one process per asset, `JOBS` at a time — one unless the make line says
 `JOBS=n` — with its threads pinned to one; `status` runs once and aggregates the
 assets the launcher names — the whole basket.
@@ -107,7 +107,7 @@ store/status/ml_status.json                                                     
 One folder per asset, one file per artifact responsibility, and beside it the
 asset's partition of every family. The manifest of an asset's research artifacts,
 with what each holds, is the Files table of its `<TICKER>_README.md`, written by
-`status.py`; the names are registered in `module_skills/glossary.md`
+`status.py`; the names are registered in `module_skills/skill_glossary.md`
 § Artifacts. Of what this module writes, `<TICKER>_README.md` and
 `<TICKER>_parameters.json` are tracked — beside the serpentine search's profile,
 state and ledger and, once a hand has promoted one, `<TICKER>_feature_set.json`

@@ -1,7 +1,7 @@
 """A sub-module's text-based user interface (TUI) over the gum command line: the state words, plain output, tables
 and lists fitted to the terminal, blocks, and the answer a hand gives in a prompt. Its standards are
 module_skills/skill_tui_designer.md; what a screen holds is the action module's. One file, twice by extraction
-(module_skills/glossary.md § Twice by extraction): it knows none of its sub-module's own objects, and every
+(module_skills/skill_glossary.md § Twice by extraction): it knows none of its sub-module's own objects, and every
 sentence about a screen's content is the caller's; its own words are the block labels and the line naming the
 columns a narrow terminal leaves out."""
 

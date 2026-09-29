@@ -13,7 +13,7 @@ How an agent works on this repository: extend the module that owns a responsibil
 - `AGENT-FIRST-DEVELOPMENT-NAME-ENTERS-THE-REGISTER`
   - Description: A new name enters the name register in the commit that introduces it, and a synonym never enters at all.
   - Scope: `**/*.py`, `**/*.js`, `Makefile`, `docker-compose.yml`, `module_skills/skills_sheet.xlsx`
-  - Expected: The name and its register row in `module_skills/skills_sheet.xlsx` in one commit, `module_skills/glossary.md` synced from it; no second name for a concept the register already holds.
+  - Expected: The name and its register row in `module_skills/skills_sheet.xlsx` in one commit, `module_skills/skill_glossary.md` synced from it; no second name for a concept the register already holds.
   - Exception: none
 - `AGENT-FIRST-DEVELOPMENT-PROVE-BY-RUNNING`
   - Description: A change is proved by running the stages it affects, never by a framework that promises to.

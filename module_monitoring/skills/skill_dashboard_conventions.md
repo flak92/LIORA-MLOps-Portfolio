@@ -53,7 +53,7 @@ The rules of the status page `module_monitoring` serves: one static page of plai
 
 - `DASHBOARD-CONVENTIONS-A-TAB-MOVES-EVERY-LIST-OF-THE-TABS`
   - Description: A tab added, renamed or removed changes, in the same commit, every document that lists the tabs.
-  - Scope: `module_monitoring/index.html`, `README.md`, `module_monitoring/README_module_monitoring.md`, `module_skills/glossary.md`
+  - Scope: `module_monitoring/index.html`, `README.md`, `module_monitoring/README_module_monitoring.md`, `module_skills/skill_glossary.md`
   - Expected: The tabs of `#tabs` in `index.html`, in their order and by their labels, named alike by `README.md` (its quickstart and its Dashboard section), by the tab's row in `module_monitoring/README_module_monitoring.md` and by the register wherever it lists them.
   - Exception: none
 

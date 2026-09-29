@@ -1,7 +1,7 @@
 # The canon — the index
 
 Where every rule of the project is written down, and the canon's prose that is no rule. Every Skill and
-`module_skills/glossary.md` is rendered from `module_skills/skills_sheet.xlsx` by `make skills-sync` and never edited by
+`module_skills/skill_glossary.md` is rendered from `module_skills/skills_sheet.xlsx` by `make skills-sync` and never edited by
 hand; this file links to each, holds no rule of its own, and keeps what the rules leave out — the explanations, the
 worked examples and the mapping read forward — so nothing here can disagree with a rule. A rule is cited by its
 `rule_id`. *The repository shows the destination, not the road*.
@@ -18,11 +18,11 @@ is named below by the path it holds in the tree.
 
 | skill | what it governs |
 |---|---|
-| [glossary.md](glossary.md) | the name register: one concept, one name, in code, artifacts and interface — and the register of the copies no module may import across |
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this project — extend the owner, register a name in its commit, prove a change by running it; subtract, don't add |
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology: one image, three runners and one resident under two anchors, the store mounts each service is given, the `fanout` and `basket` macros, the host user, the one memory ceiling and the measured host port; the runtime contract every module runs inside |
 | [skill_determinism.md](skill_determinism.md) | bit parity, thread caps, the one seed and the pinned orders, and where speed is allowed to come from |
 | [skill_files_and_folders.md](skill_files_and_folders.md) | the kinds of file and folder the tree holds, what each is for, and which are generated |
+| [skill_glossary.md](skill_glossary.md) | the name register: one concept, one name, in code, artifacts and interface — and the register of the copies no module may import across |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the rules that keep every local boundary the one a move onto standard cloud primitives would keep, with nothing built for it; the mapping itself is § The Pre-AWS mapping below |
 | [skill_rule_tables.md](skill_rule_tables.md) | a rule as a row of the sheet: its columns, its identifier, and how it is cited |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, the naming review, and how a new convention is minted |
@@ -387,7 +387,7 @@ Six things, each a seat above:
 - the orchestration outside the modules, in one Makefile and one compose file;
 - the contracts between modules as files, never imports: `<TICKER>_catalogue.json`, the serpentine search's question
   and answer, the promoted feature set and barriers, the snapshots, the run record, and the copies registered in
-  `module_skills/glossary.md` § Twice by extraction;
+  `module_skills/skill_glossary.md` § Twice by extraction;
 - the asset as a parameter of the launcher alone;
 - a recorder that reads off the stores what a stage wrote.
 

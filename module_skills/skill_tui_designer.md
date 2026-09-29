@@ -13,7 +13,7 @@ Every terminal of the tree — `module_<module>/sub_module_terminal/` of the fou
 - `TUI-DESIGNER-TUI-PY-IS-THE-ONE-GUM-SPEAKER`
   - Description: Every screen is drawn in gum, the one terminal instrument the host admits, and `tui.py` is the one module of a terminal that speaks it: it draws and asks, knows none of its terminal's objects and writes no file, while `terminal.py` decides what a screen holds.
   - Scope: `module_*/sub_module_terminal/tui.py`, `module_*/sub_module_terminal/terminal.py`
-  - Expected: gum run over `subprocess` in `tui.py` alone, which imports the standard library and its own `config` for `OUTPUT_PLAIN`; every header, placeholder and line of content a caller's argument, the words of `tui.py` itself being the block labels and the line naming the columns left out; no Rich, Textual or curses and no escape code written by Python; one `tui.py`, byte for byte, in every terminal, registered as twice by extraction in `module_skills/glossary.md`.
+  - Expected: gum run over `subprocess` in `tui.py` alone, which imports the standard library and its own `config` for `OUTPUT_PLAIN`; every header, placeholder and line of content a caller's argument, the words of `tui.py` itself being the block labels and the line naming the columns left out; no Rich, Textual or curses and no escape code written by Python; one `tui.py`, byte for byte, in every terminal, registered as twice by extraction in `module_skills/skill_glossary.md`.
   - Exception: none
 
 ## Naming
@@ -82,7 +82,7 @@ Every terminal of the tree — `module_<module>/sub_module_terminal/` of the fou
 - `TUI-DESIGNER-A-TABLE-HOLDS-ROWS-OF-ONE-KIND`
   - Description: A table holds rows of one kind with more than one field — `#` first where the rows are numbered, then the identifier, then the fields, the secondary last — and one fact is a line, not a table.
   - Scope: `module_*/sub_module_terminal/terminal.py`, `module_*/sub_module_terminal/tui.py`
-  - Expected: Header words the register's UI labels as `module_skills/glossary.md` spells them, the terminal's own words lower case; `#` counting from 1 in the order the file holds; a fact such as `command <command line>` printed as a line; the rows handed to `gum table --print` as CSV from Python's `csv` on its standard input, `TERM=dumb` in its environment so that no row is bold, and no `--widths`, colour flag or padding by Python.
+  - Expected: Header words the register's UI labels as `module_skills/skill_glossary.md` spells them, the terminal's own words lower case; `#` counting from 1 in the order the file holds; a fact such as `command <command line>` printed as a line; the rows handed to `gum table --print` as CSV from Python's `csv` on its standard input, `TERM=dumb` in its environment so that no row is bold, and no `--widths`, colour flag or padding by Python.
   - Exception: none
 - `TUI-DESIGNER-A-CELL-IS-A-VALUE-AS-IT-STANDS`
   - Description: A cell holds a value as it stands — a count, a state word, `yes` or `no`, a number, a timestamp as its file carries it, `absent` for a file that is not there — and `—` where no value applies.

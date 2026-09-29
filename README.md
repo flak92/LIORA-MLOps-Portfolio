@@ -95,7 +95,7 @@ The canon, outside the chain, on the host — every rule a row of one workbook, 
 edited with any spreadsheet program:
 
 ```bash
-make skills-sync           # render every skill_*.md and module_skills/glossary.md from the sheet
+make skills-sync           # render every skill_*.md and module_skills/skill_glossary.md from the sheet
 make skills-configurables  # the table of every CONFIGURABLES record in the controlled config.py files, on stdout
 make skills-crawl          # after the sync, every controlled file of the sheet's files matrix read against the Skills marked for it by the active vendor — up to 30 min a file; Ctrl-C ends it, the reports already written stay
 ```
@@ -207,7 +207,7 @@ ledger lies beside its state in the asset's folder and is tracked; the two famil
 only grow until a hand clears them — `make features-serpentine-search-reset` clears the asset's partition of
 `score_trials` with the rest of its search.
 
-The store is the boundary between compute and state (`module_skills/glossary.md`
+The store is the boundary between compute and state (`module_skills/skill_glossary.md`
 § Stores). Every stage reads and writes only these five and learns where they
 are from its environment — the Makefile exports the host paths, the compose file
 sets the container paths — and no module writes into another's tree. The image
@@ -276,7 +276,7 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 `AGENTS.md` and `module_skills/` are the canon: the contract, the name register and the rules that cross
 modules. Every rule of the tree is a row of one workbook, `module_skills/skills_sheet.xlsx` — a `rule_id`, its
 description, the files it binds, what conforming looks like and its one exception — and `make skills-sync` renders the
-rows into the `skill_*.md` beside what each governs, and the register into `module_skills/glossary.md`; a generated
+rows into the `skill_*.md` beside what each governs, and the register into `module_skills/skill_glossary.md`; a generated
 document is never edited by hand, and a document cites a rule by its `rule_id`. The sheet's files matrix marks which
 Skills each controlled file is read against: `make skills-crawl` sends every controlled file with its marked Skills to
 the one active vendor and keeps one report per file; it gates nothing

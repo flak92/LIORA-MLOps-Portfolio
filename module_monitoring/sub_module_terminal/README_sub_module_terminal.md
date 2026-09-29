@@ -44,4 +44,4 @@ and no virtual environment; the Makefile it calls is the one of the directory it
 another, and a package for what the terminals share would be the `common` the contract refuses, so it carries its
 copies: `STORE_STATUS_DIR`, `load_json()`, `tui.py`, `OUTPUT_PLAIN`, `HELP_LINE_PATTERN` and the helpers
 `_option_rows()`, `_cancelled_exit_code()`, `_failure_exit_code()`, `_make()`, `_target_rows()` and `_write_target()`,
-each marked `# twice by extraction`, registered in `module_skills/glossary.md` and changed on every side at once.
+each marked `# twice by extraction`, registered in `module_skills/skill_glossary.md` and changed on every side at once.

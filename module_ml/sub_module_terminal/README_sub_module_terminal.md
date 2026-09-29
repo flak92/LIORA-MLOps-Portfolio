@@ -64,4 +64,4 @@ crossing as a file and never as an import — so nothing of `module_features` is
 terminals, and the reader `dataset.py` cannot lend it, it carries: `load_json()`, `tui.py`, `OUTPUT_PLAIN`,
 `HELP_LINE_PATTERN` and the helpers `_option_rows()`, `_cancelled_exit_code()`, `_failure_exit_code()`, `_make()`,
 `_target_rows()`, `_present()`, `_write_target()` and `_tickers()`, each marked `# twice by extraction`, registered in
-`module_skills/glossary.md` and changed on every side at once.
+`module_skills/skill_glossary.md` and changed on every side at once.

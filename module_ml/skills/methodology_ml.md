@@ -729,7 +729,7 @@ fell back to the grid floor, which is itself the loudest thing the three can say
 
 ## 10. Artifacts and modules
 
-Per asset, each name registered in `module_skills/glossary.md` § Artifacts, and
+Per asset, each name registered in `module_skills/skill_glossary.md` § Artifacts, and
 the research artifacts listed with their sizes in the Files table of
 `<TICKER>_README.md`: in the artifacts store, the asset's partitions of `labels` and `oos_predictions` on the decision
 timeframe — `store/assets_artifacts/<family>/ticker=<TICKER>/timeframe=<tf>/<family>.parquet`,

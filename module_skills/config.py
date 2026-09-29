@@ -13,7 +13,7 @@ from pathlib import Path
 
 TREE_ROOT_DIR = Path(__file__).resolve().parent.parent
 SKILLS_SHEET_PATH = TREE_ROOT_DIR / "module_skills" / "skills_sheet.xlsx"
-GLOSSARY_SKILL_PATH = "module_skills/glossary.md"   # the one Skill the glossary is rendered into
+GLOSSARY_SKILL_PATH = "module_skills/skill_glossary.md"   # the one Skill the glossary is rendered into
 
 # the tables the sheet holds, each told by its header, wherever it lies
 RULE_HEADER = ("skill_path", "rule_type_id", "rule_id", "description", "scope", "expected_form", "exception")
@@ -43,7 +43,7 @@ def skill_places(sheet_tab: str) -> tuple[str, ...]:
     glossary among them, and beside each of its sub-modules; a module's in its `skills/` and beside each of its
     sub-modules. A tab of no family has no place, and the sheet reader refuses it."""
     if sheet_tab == "module_skills":
-        return ("module_skills/skill_*.md", GLOSSARY_SKILL_PATH, "module_skills/sub_module_*/skill_*.md")
+        return ("module_skills/skill_*.md", "module_skills/sub_module_*/skill_*.md")
     if sheet_tab.startswith("module_"):
         return (f"{sheet_tab}/skills/skill_*.md", f"{sheet_tab}/sub_module_*/skill_*.md")
     return ()

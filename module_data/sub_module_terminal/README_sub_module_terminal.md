@@ -58,4 +58,4 @@ and no virtual environment. No module imports another, and a package for what th
 `common` the contract refuses, so the duplication is paid on purpose: `tui.py`, `OUTPUT_PLAIN`, `HELP_LINE_PATTERN`
 and the helpers `_option_rows()`, `_cancelled_exit_code()`, `_failure_exit_code()`, `_make()`, `_target_rows()`,
 `_present()`, `_write_target()` and `_tickers()` are each marked `# twice by extraction`, registered in
-`module_skills/glossary.md` and changed on every side at once.
+`module_skills/skill_glossary.md` and changed on every side at once.

@@ -31,7 +31,7 @@ The kinds of file and folder this repository holds and what each is for: which a
   - Expected: One workbook; every Skill and the glossary rendered from it; a row of the files matrix per controlled file or glob; no total of Skills, rules, documents or controlled files written in a tracked file.
   - Exception: none
 - `FILES-AND-FOLDERS-SKILL-IS-RENDERED`
-  - Description: Every `skill_*.md` and `module_skills/glossary.md` is rendered from the sheet by `make skills-sync`, carries the marker on its first line, is never edited by hand, and is the only kind of document the crawler sends as context.
+  - Description: Every `skill_*.md` and `module_skills/skill_glossary.md` is rendered from the sheet by `make skills-sync`, carries the marker on its first line, is never edited by hand, and is the only kind of document the crawler sends as context.
   - Scope: `module_skills/sync.py`, `module_skills/skills_sheet.xlsx`
   - Expected: `GENERATED_MARKER` of `module_skills/config.py` on line 1, the stem of `skill_path` as its heading, the summary, one list per `rule_type_id` and, in the glossary, the register after them; a change made on the sheet and synced; a generated document the sheet no longer names deleted by the sync; each Skill in `module_skills/`, in a module's `skills/` or beside the sub-module it governs.
   - Exception: none

@@ -116,14 +116,14 @@ its sync renders the Skills from the sheet, and its crawler reads the controlled
 one snapshot about them. **No module
 imports another.** What would cross a module boundary as an import crosses it as a
 file in a store instead — the five `STORE_*_DIR` the launcher names
-(`module_skills/glossary.md` § Stores), the families of the artifact store, the per-asset contract
+(`module_skills/skill_glossary.md` § Stores), the families of the artifact store, the per-asset contract
 `<TICKER>_catalogue.json` the feature layer writes and every ML stage reads, the
 four snapshots — the three each computational module writes about itself and the crawler's —
 which the dashboard serves, the run record `record.py` writes around every stage, the serpentine
 search's question and answer `<TICKER>_score_request.json` and `<TICKER>_score_response.json` with the
 parameters `<TICKER>_parameters.json` it starts from, and the feature set and barriers
 `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` its promotion writes for the ML chain — or as a copy
-registered in `module_skills/glossary.md` § Twice by extraction, identical to the
+registered in `module_skills/skill_glossary.md` § Twice by extraction, identical to the
 byte on every side unless its row there says equal by value. The basket is the launcher's: `TICKERS` in the
 `Makefile`; every stage is told its assets by `--tickers` and defines
 none. A new `module_<domain>` is justified only by a
@@ -267,7 +267,7 @@ and built nowhere.
   architecture; scale is `ASSET=<TICKER>`, never hundreds of assets.
 
 Cloud proper nouns are external vocabulary. Apart from the repository's own word
-*Pre-AWS* — `module_skills/glossary.md` § Pre-AWS direction, and the `pre_aws`
+*Pre-AWS* — `module_skills/skill_glossary.md` § Pre-AWS direction, and the `pre_aws`
 file stem it registers, the skill's — they are spoken only
 where the stance is stated, reviewed or a local object is seated: this section
 and § Skills absent here, described, `README.md` § Architectural direction, the
@@ -292,7 +292,7 @@ not be required to decode an obscure name.**
 
 One concept, one name — in the code, in the artifacts, in the interface, in the
 Makefile, in docker compose and in the documents. The
-register is `module_skills/glossary.md`, rendered from the register table of
+register is `module_skills/skill_glossary.md`, rendered from the register table of
 `module_skills/skills_sheet.xlsx`, and a new name enters that table in the same
 commit that introduces it. The word "test" never names a fold.
 
@@ -306,7 +306,7 @@ collision.
 config and never hand-edited: `<TICKER>_parameters.json`,
 `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl`,
 `<TICKER>_README.md`, `<TICKER>_catalogue.json`, the four snapshots, and every `skill_*.md` with
-`module_skills/glossary.md`, rendered from the sheet by `make skills-sync`. A hand edit to one is a
+`module_skills/skill_glossary.md`, rendered from the sheet by `make skills-sync`. A hand edit to one is a
 violation; `make features-serpentine-search-reset` removing the search's own files is not an edit
 but the start of another experiment.
 
@@ -352,7 +352,7 @@ from its layer's grammar, never invented:
 | statement constants (SQL text) | `<OBJECT>_<KIND>`, kind from the closed list `DDL`, `INSERT`, `COPY`, `SCAN`, `PREDICATE`, `COLUMNS` | `VENUE_DDL`, `CANONICAL_COPY`, `BAR_COPY`, `VENUE_SCAN`, `OHLC_INTACT_PREDICATE`, `Y_COLUMNS` | `SOURCE_SWITCHES`, `QUERY_1` |
 | conversion factors | `<UNIT>_PER_<UNIT>` | `MILLISECONDS_PER_MINUTE`, `MINUTES_PER_DAY` | `MS_MIN`, `60_000` inline |
 | module-private helpers | a leading `_` on the name its layer's grammar gives, for a helper no other module may import | `_pnl_block`, `_classification_block` | an `_` name imported by another module |
-| gum calls | `gum_<subcommand>`, the subcommand from gum's own closed list — `table`, `style`, `choose`, `filter`, `input` — for the one function that speaks it, and `_gum`, the one private call that runs a prompt and returns its answer, in the `tui.py` of a terminal and nowhere else — one file, the same in every `sub_module_terminal/`, each copy registered, never a second spelling (`module_skills/glossary.md` § Twice by extraction) | `gum_table`, `gum_choose`, `gum_input`, `_gum` | `render_table`, `show_menu`, `print_block`, `draw_`; a gum command line outside `tui.py`; a second spelling of `tui.py` |
+| gum calls | `gum_<subcommand>`, the subcommand from gum's own closed list — `table`, `style`, `choose`, `filter`, `input` — for the one function that speaks it, and `_gum`, the one private call that runs a prompt and returns its answer, in the `tui.py` of a terminal and nowhere else — one file, the same in every `sub_module_terminal/`, each copy registered, never a second spelling (`module_skills/skill_glossary.md` § Twice by extraction) | `gum_table`, `gum_choose`, `gum_input`, `_gum` | `render_table`, `show_menu`, `print_block`, `draw_`; a gum command line outside `tui.py`; a second spelling of `tui.py` |
 | CLI entry | `main()` — one per stage module, returning the exit code | `main` | `run`, `cli`, `entrypoint` |
 | quantities | `<what>_<unit>` | `fold_start_ms`, `equity_1m`, `decision_bar_minutes` | `n_min`, `off` |
 | index arrays | `<population>_rows` | `training_rows`, `window_rows`, `scoring_rows` | `tr`, `wi`, `oi` |
@@ -444,7 +444,7 @@ already binds that are worth steering away from on sight.
   `_factory`; in JavaScript `load`, `poll`. The stem is rejected as a **verb**: a
   function named for a domain noun the register carries is not one, which is why
   `run_dir()` and `run_payload()` stand — a run is the object of
-  `module_skills/glossary.md` § Run record — and why `write_venue_spool()` stands, its
+  `module_skills/skill_glossary.md` § Run record — and why `write_venue_spool()` stands, its
   verb being `write` and its spool the CSV the register names
 - **key names:** bare `lag`, `age`, `usage` — without the subject and the unit —
   `mem`, `cpu_pct`, a bare duration for how long a container has been up, a
@@ -479,7 +479,7 @@ is its `README_module_<name>.md`. Each is written exactly once, the location
 follows ownership, and there is no second copy to drift. Every rule is a row of one
 sheet, `module_skills/skills_sheet.xlsx`, with a `rule_id` a document cites it by;
 `make skills-sync` renders the rows into the `skill_*.md` beside what each governs
-and the register into `module_skills/glossary.md`, and no generated document is
+and the register into `module_skills/skill_glossary.md`, and no generated document is
 edited by hand. `module_skills/README.md` is the index — it links to every skill,
 cross-cutting and module-owned alike, restates none of them, and keeps the canon's
 prose that is no rule.
@@ -532,12 +532,12 @@ is wrong.
 | D06 | no module writes into another's source tree: what a stage writes lands in a store |
 | D07 | an asset is `ASSET` on the make line and `--tickers` at the process boundary — never an image or a service definition of its own |
 | D08 | no sub-module is a module: `module_skills/sub_module_scalability_crawler/` and `module_skills/sub_module_terminal/` are the canon's, `module_features/sub_module_serpentine_search/` the feature module's, and each `module_<domain>/sub_module_terminal/` its module's — each with its own `config.py` and `main()`, none in the chain's dataflow; the serpentine search's promotion writes the two files the ML chain reads, by a hand's choice |
-| D09 | artifact names and keys move only with the register: every key of every payload has a row of the register table of `module_skills/skills_sheet.xlsx`, rendered into `module_skills/glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, every family's `schema.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe` and `assets[].serpentine_search`, the serpentine search's state, ledger, profile, question and answer, the `ticker` key in every row of `data_status.json`, that snapshot's own measurement set, and `run_records/index.json` — `generated_at_utc`, `runs[]` with `run_id` and `records` — are each registered there |
+| D09 | artifact names and keys move only with the register: every key of every payload has a row of the register table of `module_skills/skills_sheet.xlsx`, rendered into `module_skills/skill_glossary.md`, and a key added, dropped or renamed moves that row in the same commit. The feature layer's contract file `<TICKER>_catalogue.json`, every family's `schema.json`, the `catalogue` block in `features_status.json` beside `assets[].row_count_by_timeframe` and `assets[].serpentine_search`, the serpentine search's state, ledger, profile, question and answer, the `ticker` key in every row of `data_status.json`, that snapshot's own measurement set, and `run_records/index.json` — `generated_at_utc`, `runs[]` with `run_id` and `records` — are each registered there |
 | D10 | determinism is unchanged: the caps, the seed, the pinned orders (`module_skills/skill_determinism.md`) |
 | D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest `README.md` § Parity, the raw store's own manifest taken before the chain runs. A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` and nothing else — every later stage reads the research window alone; `data_status.json` describes the whole canonical series and moves with every top-up by design. The files a hand drafts — `<TICKER>_serpentine_search_profile.json` and, once promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — stand outside it: no stage of the chain derives them. So do the serpentine search's own files, a hand's stage rather than the chain's: `<TICKER>_serpentine_search.json`, where the search stands at a round boundary, `<TICKER>_serpentine_search_trials.jsonl`, its ledger of scored states, and the asset's partition of `score_trials` — their proof is that a search reset and run again over the same inputs gives the same bytes in all three. The state and the ledger are **tracked** all the same, because `features_status.json` reads them and is inside the proof: a clone that could not rebuild them could not reproduce the snapshot that quotes them, and the parity of the chain would rest on a file nobody shipped. A change that reshapes one of the chain's files re-bases its line and no other — the gate is then a field-level before/after comparison, every kept field byte-identical, beside the lines held fixed |
 | D12 | zero cloud mechanisms: nothing in the tree reaches a service off this host but two calls — the venues' public endpoints the two downloaders read, and the one active command line of the crawler's `vendors_for_crawling.toml`, in its user's own login, outside the chain and gating nothing — and the trial ledgers are the partitions `hpo_trials_jsonl()` and `score_trials_jsonl()` build in `module_ml/config.py` under `STORE_TRIALS_DIR`, appended through `hpo.log_trials` — the family `hpo_trials` by `module_ml/hpo.py` alone, the family `score_trials` by `module_ml/score.py` alone — and never a network location; the four pins of `requirements.txt` are the project's, and a fifth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
-| D14 | every object of `module_skills/glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects — and changed on every side at once |
+| D14 | every object of `module_skills/skill_glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object, never one above a block of objects — and changed on every side at once |
 | D15 | the tracked remnant of the artifacts store, in the asset's folder `ticker=<TICKER>/` — `<TICKER>_README.md`, `<TICKER>_parameters.json`, once drafted `<TICKER>_serpentine_search_profile.json`, once a search has run `<TICKER>_serpentine_search.json` and `<TICKER>_serpentine_search_trials.jsonl` (D11), and, once promoted, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — and the four snapshots are tracked, so a fresh clone opens on real numbers and on the profile the last search was run under |
 | D16 | the fan-out, the serpentine search's loop and its detached twin run through `docker compose run --rm`, one one-off container per step; nothing is `exec`'d into a resident |
 | D17 | `skills_status.json` and the crawler's reports are written by the crawler alone — `module_skills.sub_module_scalability_crawler.status` the one writer of the snapshot, `crawl` the one caller — the snapshot a row per controlled file of the sheet's files matrix, neutral on the branch: every file `pending`, no report; the reports untracked, reset by every crawl |
@@ -551,7 +551,7 @@ ownership as § The default choice places every skill, described today where its
 last column says, and written when its one condition holds. Two rows this shape
 answered are no longer here: the status prefix — the snapshots live in
 `store/status/`, tracked, the crawler's reports beside them untracked
-(`module_skills/glossary.md` § Stores) — and the image contents — the `Dockerfile`
+(`module_skills/skill_glossary.md` § Stores) — and the image contents — the `Dockerfile`
 carries the pins and each service mounts the stores it touches, the `dashboard`
 those it serves, read-only (`ASSET-CONTAINERS-A-SERVICE-MOUNTS-ONLY-THE-STORES-IT-TOUCHES`).
 
@@ -560,7 +560,7 @@ those it serves, read-only (`ASSET-CONTAINERS-A-SERVICE-MOUNTS-ONLY-THE-STORES-I
 | `skill_task_host_volume.md` | `module_skills/` | the one Linux host every asset's runs share and the volume mounted where the `./store/<content>` mounts are today — every asset's folder and the other `store/<content>/` folders at the same `/store/<content>` paths, and what a task may leave on it | the first run whose `store/<content>/` folders sit on a volume that is not this host's disk | `module_skills/README.md` § The Pre-AWS mapping, The seats and The home and the copy |
 | `skill_object_storage_layout.md` | `module_skills/` | the prefixes of the copy — `raw_1m/` written once, `assets_artifacts/<run_id>/`, `trials/`, `run_records/`, `status/` — and the one discipline: a whole file copied after the last stage of a run has exited, never a path a stage writes | the first whole file copied off the host | `module_skills/README.md` § The Pre-AWS mapping, The home and the copy |
 | `skill_stage_state_machine.md` | `module_skills/` | one state per stage in the order of `DATA_STAGES`, `FEATURES_STAGES` and `ML_STAGES`, a Map over `TICKERS` whose width is `JOBS`, the execution named by `run_id`, the whole-file copy as the state after the last stage, and the schedule that starts it | the first stage launched by something other than `make` | `module_skills/README.md` § The Pre-AWS mapping, The Makefile, read forward and The ladder; `PRE-AWS-SOLUTION-THE-MAKEFILE-NEVER-SCHEDULES` |
-| `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `PRE-AWS-SOLUTION-THE-REBUILD-CONDITION-STAYS-SEPARABLE`; `module_skills/glossary.md` § Pre-AWS direction |
+| `skill_rebuild_condition.md` | `module_skills/` | the four `has_` / `requires_` predicates — read-only, per asset, in the module that owns what they compare — and the condition state that reads them; never a function that both detects and trains | the first freshness predicate is written, `has_new_market_data(ticker)` in `module_data` | `PRE-AWS-SOLUTION-THE-REBUILD-CONDITION-STAYS-SEPARABLE`; `module_skills/skill_glossary.md` § Pre-AWS direction |
 | `skill_artifact_versioning.md` | `module_skills/` | `<version>` = `run_id` under the `assets_artifacts/` prefix, which version is the active one and how a reader resolves it; no version inside an artifact | the second version of one asset's artifacts exists off the host | `PRE-AWS-SOLUTION-AN-ARTIFACT-CARRIES-NO-RUN-IDENTITY`; `module_skills/README.md` § The Pre-AWS mapping, The home and the copy; `module_ml/skills/methodology_ml.md` § 10 |
 | `skill_dashboard_front.md` | `module_monitoring/skills/` | the page files, the snapshots and the run records as static objects behind a content-delivery front — the three prefixes of `module_monitoring/serve.py` read forward; until then the tunnel of `README.md` § Quickstart | the first reader the tunnel does not serve | `module_skills/README.md` § The Pre-AWS mapping, The mapping table, the rows `MONITORING — the static dashboard` and `MONITORING — a small reader process`, and What stays as it is, and why, the `module_monitoring/serve.py` row |
 | `skill_strategy_execution.md` | `module_trading/skills/` | `module_trading/` — a fifth module beside `module_ml`, with its own container, reading the Lean-exact raw tree and the asset artifacts from the copy, its brokerage credentials read once at start from a secrets store | `module_trading/` is created — the first strategy that consumes an artifact | `module_skills/README.md` § The Pre-AWS mapping, The twelve classes and the paragraph under them, and The mapping table, the two STRATEGY EXECUTION rows |

@@ -434,4 +434,4 @@ The word *merge* is avoided: it suggests mixing O, H, L, C and V across venues,
 which `CANDLE-CANONICALISATION-A-CANDLE-IS-CHOSEN-WHOLE` forbids — say *venue
 selection*, *canonicalisation* or *primary-failover selection* instead. The
 register's rejected synonyms of the canonical series — *fused series*, *index*,
-*blended price* — are in `module_skills/glossary.md` § Market object.
+*blended price* — are in `module_skills/skill_glossary.md` § Market object.

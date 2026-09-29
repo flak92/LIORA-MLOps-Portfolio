@@ -24,7 +24,7 @@ information, not part of that path.
 ## Beside them
 
 `module_skills/` holds the rules that cross modules, indexed by
-`module_skills/README.md`. The name register is `module_skills/glossary.md`.
+`module_skills/README.md`. The name register is `module_skills/skill_glossary.md`.
 Every skill and the register are rendered from `module_skills/skills_sheet.xlsx`
 by `make skills-sync` and never edited by hand: a rule changes on the sheet.
 How an agent is expected to work here is

@@ -6,7 +6,7 @@ It runs on the host, on `python3` and gum, with no virtual environment: it impor
 package alone. It cannot import `module_features/config.py` — its thirteenth line imports `.indicators`, and numpy
 with it — nor the serpentine search's `config.py`, which imports that one, so the store reads, the descriptors, the
 readers and the writer of JSON and the values the draft pins a coordinate to are carried here as registered copies,
-twice by extraction (module_skills/glossary.md § Twice by extraction), each the same as its owner's.
+twice by extraction (module_skills/skill_glossary.md § Twice by extraction), each the same as its owner's.
 The store is read from `STORE_ASSETS_ARTIFACTS_DIR`, so a shell that lacks it fails here, at import, before a hand
 chooses a stage."""
 

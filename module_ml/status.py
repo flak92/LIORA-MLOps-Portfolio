@@ -277,7 +277,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV is the asset's partition of the family `ohlcv_1m_canonical` — the market object the whole chain reads, outside the manifest above because its size moves with every top-up and this file is promised byte-reproducible.
 
-{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/glossary.md`.
+{feature_set_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a set is promoted, the feature set. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
 """
 
 

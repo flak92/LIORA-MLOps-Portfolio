@@ -258,7 +258,7 @@ def _tickers(given: str | None) -> list[str] | None:
 
     The Makefile's recipe passes the basket, or `ASSET` on the make line, as `--tickers`, so the answer is asked here
     only when a run names none. This module defines no basket of its own and reads none from a store: the launcher
-    names the assets (`module_skills/glossary.md` § Asset containers). None for Esc.
+    names the assets (`module_skills/skill_glossary.md` § Asset containers). None for Esc.
     """
     answer = given if given is not None else tui.gum_input("asset", "the assets this run is about — BTC, or BTC,ETH")
     if answer is None:
