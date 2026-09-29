@@ -57,16 +57,16 @@ ROUND_SCHEDULE = ((SERPENTINE_SEARCH_LOOP_BARRIER, "trade"),
 SERPENTINE_SEARCH_ROUND_LOOPS = tuple(dict.fromkeys(loop for loop, _ in ROUND_SCHEDULE))
 
 # twice by extraction
-SELECTION_FOLD_MEASURE = "calmar"   # the measure the fold gate reads; the study's own gate reads the copy in ML
+SELECTION_FOLD_MEASURE = "cagr"   # the measure the fold gate reads; the study's own gate reads the copy in ML
 
-# ---- the noise a move has to clear (DC-35): the asset's noise sigma — the standard deviation of one evaluation's path
-# CAGR, a number of the profile — times k(n), the multiple at which the best of n candidates, each scored with noise of
-# its own, beats a parent that carries its own by chance at the rate below; k(n) by Gauss-Hermite quadrature and
-# bisection, a fixed node count, bracket and number of halvings, so one n gives one k on every machine
-GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE = 0.05
-GATE_THRESHOLD_QUADRATURE_NODE_COUNT = 160
-GATE_THRESHOLD_BISECTION_BRACKET_MULTIPLES = (0.0, 12.0)
-GATE_THRESHOLD_BISECTION_ITERATION_COUNT = 64
+# ---- the noise a proposal has to clear: the asset's noise sigma — the standard deviation of one evaluation's path
+# CAGR, a number of the profile — times k(N), the multiple at which the best of N states, each scored with noise of its
+# own, beats a start that carries its own by chance at the rate below; k(N) by Gauss-Hermite quadrature and bisection,
+# a fixed node count, bracket and number of halvings, so one N gives one k on every machine
+PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE = 0.05
+PROPOSAL_THRESHOLD_QUADRATURE_NODE_COUNT = 160
+PROPOSAL_THRESHOLD_BISECTION_BRACKET_MULTIPLES = (0.0, 12.0)
+PROPOSAL_THRESHOLD_BISECTION_ITERATION_COUNT = 64
 # the median absolute deviation of a normal sample times this is its standard deviation
 NOISE_MEDIAN_ABSOLUTE_DEVIATION_SCALE = 1.4826
 
@@ -116,7 +116,7 @@ def serpentine_search_trials_jsonl(ticker):
 # twice by extraction
 def serpentine_search_profile_json(ticker):
     """What a hand asks the search to look at: the columns admitted, the state to start from, the grid of each
-    coordinate, the loops of a round and the asset's noise sigma its gate clears. Drafted, never derived."""
+    coordinate, the loops of a round and the asset's noise sigma its proposal clears. Drafted, never derived."""
     return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
 
 

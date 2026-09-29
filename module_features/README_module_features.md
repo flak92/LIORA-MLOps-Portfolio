@@ -178,7 +178,7 @@ code; its method, its thresholds and their limits are
 | document | answers |
 |---|---|
 | `skills/skill_feature_taxonomy.md` | rendered from the canon's sheet: the tokens of the timeframe hierarchy, the registers beside their kernels, the terms and the feature ids, the catalogue record and its order, the default set, the warm-up, the effective histories — published, not asserted — and the two families and the contract |
-| `sub_module_serpentine_search/skill_serpentine_search.md` | rendered from the canon's sheet: the question and the answer across the file boundary, resume and reset, the tracked record, the key of a state, the gate and its noise margin, the beam, the convergence, the proposal and its count, and the promotion |
+| `sub_module_serpentine_search/skill_serpentine_search.md` | rendered from the canon's sheet: the question and the answer across the file boundary, resume and reset, the tracked record, the key of a state, the gate, the beam, the convergence, the proposal with its noise margin and its count, and the promotion |
 | `skills/methodology_features.md` | hand-written, a reference for a human: every catalogued definition, equation by equation, with its histories and citations; the field table; the feature id; the serpentine search's objective, gate, margin and stopping, and why one search is one experiment |
 
 Project-wide rules are in `module_skills/`, the canon beside the modules, indexed by

@@ -442,12 +442,11 @@ Beside the chain, the serpentine search of `module_features/` moves the asset's 
 set, its barrier geometry and its hyper-parameters one family at a time, on the three
 validation folds only. It ranks a state by the CAGR of those folds chained into one
 walk-forward path, then by its Calmar ratio, then by its profit factor, and keeps a
-move only when the child's path CAGR beats its parent's by more than the noise of the
-pass and its Calmar ratio beats its parent's on every fold. It proposes its champion
-only when the champion beats the state it started from by more than the noise of the
-whole search; a search that proposes nothing has still answered. A promotion copies the
-proposal and reruns the ML chain, which tunes it again. The gate is a heuristic, not a
-guarantee: `module_features/skills/methodology_features.md`.
+move only when the child's CAGR beats its parent's on every fold. It proposes its
+champion only when the champion beats the state it started from by more than the noise
+of the whole search; a search that proposes nothing has still answered. A promotion
+copies the proposal and reruns the ML chain, which tunes it again. The noise margin is a
+heuristic, not a guarantee: `module_features/skills/methodology_features.md`.
 
 Every per-asset stage runs `JOBS` assets side by side, one by default, one process
 each, thread caps at one. Every asset folder describes itself in `<TICKER>_README.md`.

@@ -79,8 +79,8 @@ def score_results(asset: dict, states: list[dict]) -> list[dict]:
 
 def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int) -> list[dict]:
     """A study per beam parent, in the order the request named them, and the candidate the study offers. The
-    gate of each study reads its own parent's numbers: every validation fold it stands at, and the growth rate
-    of the path it chained. A parent whose study offers nothing answers with null, which is an answer.
+    gate of each study reads its own parent's numbers: the growth rate of every validation fold it stands at. A
+    parent whose study offers nothing answers with null, which is an answer.
 
     The points of every study go to the asset's partition of the `score_trials` family once the last study has ended, in
     the order of the parents, and the response is written after them: a stop inside a study leaves nothing
@@ -92,7 +92,7 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
                             for fold_id in config.VALIDATION_FOLD_IDS}
         study = hpo.search_hyperparameters(xy_for_state(asset, state), asset["bars_1m"], champion_by_fold)
         studies.append(study)
-        params = hpo.admissible_point(study, parent["validation_path"]["cagr"], state["best_params"])
+        params = hpo.admissible_point(study)
         candidate = None
         if params is not None:
             offered = {**state, "best_params": params}

@@ -53,7 +53,7 @@ Orientation: `module_features/README_module_features.md`
 | skill | what it governs |
 |---|---|
 | `module_features/skills/skill_feature_taxonomy.md` | the timeframe register, the registers of series, indicators, operators and normalisers, the terms and feature definitions and the ids derived from them, the default set, the warm-up and the effective histories, and the two families and the contract the layer writes |
-| `module_features/sub_module_serpentine_search/skill_serpentine_search.md` | the serpentine search: the question and the answer, resume and reset, the tracked record, the key of a state, the gate and its noise margin, the beam, the convergence, the proposal and the promotion a hand makes |
+| `module_features/sub_module_serpentine_search/skill_serpentine_search.md` | the serpentine search: the question and the answer, resume and reset, the tracked record, the key of a state, the gate, the beam, the convergence, the proposal with its noise margin, and the promotion a hand makes |
 
 Reference for a human, never sent by the crawler: `module_features/skills/methodology_features.md` — every catalogued
 feature definition, equation by equation, with its histories and citations, the feature id, and the serpentine

@@ -369,7 +369,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `hyperparameter_search_result`
   - Never: tuning, optimisation, autoML; a derived artifact that reads its own last value; `HPO` spelled out mid-document after its first use; `search` alone for the serpentine search
   - External vocabulary: Optuna (the TPE sampler)
-- the serpentine search — a beam over the coordinates of a state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, a move must clear the noise margin, and the trial count stands on the page beside the proposals
+- the serpentine search — a beam over the coordinates of a state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, the proposal must clear the noise of every state scored, and the trial count stands on the page beside it
   - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `coordinate_barrier.py`, `coordinate_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question, the Makefile's `serpentine_turn` and `serpentine_score`, the one command of each step — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session, behind `COMPOSE_PROJECT_NAME` where it is set
   - Artifact key: `serpentine_search` (a block of each asset of features_status.json), `<TICKER>_serpentine_search.json`
   - Ui label: serpentine search
@@ -406,9 +406,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `parent_trial_index`
   - Artifact key: `parent_trial_index`
   - Never: the champion, where the parent is meant
-- the selection rule — the one rule every choice reads: a child clears the gate by the validation path's growth rate beyond the noise margin and by every fold's Calmar ratio; the path's growth rate ranks the beam and is the objective of the threshold's choice and of a study
+- the selection rule — the one rule every choice reads: a child clears the gate by every fold's growth rate, and so by the validation path's; the path's growth rate ranks the beam, clears the proposal's noise margin and is the objective of the threshold's choice and of a study
   - Code: `SELECTION_FOLD_MEASURE`, `fold_objective()`, `state_objective()`, `is_gate_cleared()`, `ranking_key()`, `strategy.selection_score()`, `strategy.SELECTION_SCORE_KEY`
-  - Artifact key: `selection` (`beam_width`), inside `inputs`
+  - Artifact key: `selection` (`beam_width`, `fold_measure`), inside `inputs`
   - Never: a selection rule keyed anywhere else; a threshold rule that disagrees with the serpentine search's; an objective read from the profile; a constant choosing between objectives where only one is ever run
 - one scored state of the serpentine search — the whole of Θ, its objective per fold and over the state, what the strategy would do with it, and where the serpentine search was when it scored it
   - Code: a line of `<TICKER>_serpentine_search_trials.jsonl`, `trial_result()` in `module_ml/score.py`
@@ -418,14 +418,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the mean validation skill — the mean over the validation folds of a trial's relative log-loss skill
   - Code: `mean_relative_logloss_skill`
   - Artifact key: `mean_relative_logloss_skill`
-  - Ui label: mean skill (`mean val skill` in the feature-set table); `Δ vs active` for a proposal's mean skill minus the active set's (`best proposal Δ skill` in the Features tab's table, the first proposal's), page arithmetic printed in percentage points (`pp`)
+  - Ui label: mean skill (`mean val skill` in the feature-set table); `Δ vs active` for a proposal's mean skill minus the active set's (`proposal Δ skill` in the Features tab's table), page arithmetic printed in percentage points (`pp`)
   - Never: score (the strategy's word for its own selection)
 - the state the serpentine search stands on — the leader of the beam, moved once at the end of a round, and the one state a proposal may name
   - Code: `champion_trial_index`
   - Artifact key: `champion_trial_index`
   - Ui label: champion trial (the features terminal)
   - Never: incumbent, current best; a champion moved inside a family
-- the move direction — `forward` for a move that grows the state, `backward` for one that shrinks it; under the asset's noise sigma both clear one gate, and only a calibration run keeps a `backward` move that is no worse
+- the move direction — `forward` for a move that grows the state, `backward` for one that shrinks it; a `forward` move must be strictly better on every fold, a `backward` move no worse
   - Code: `SERPENTINE_SEARCH_MOVE_FORWARD`, `SERPENTINE_SEARCH_MOVE_BACKWARD`
   - Artifact key: `move` = `forward` / `backward`
   - Ui label: — (a turn's progress line prints them; no page shows a move)
@@ -457,14 +457,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: — (a calibration run's last turn prints the estimate of its ledger; no page shows it)
   - Never: noise level, volatility; a sigma per ticker in code; a sigma a serpentine search recomputes; one ledger's estimate where a decision pooled several
   - External vocabulary: statistics (median absolute deviation)
-- the gate's noise margin — k(n) times the asset's noise sigma, the path-CAGR gain a move must exceed: k(n) the multiple at which the best of n candidates, each scored with noise of its own, beats a parent that carries its own by chance at the rate `GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE`; n the candidates of a pass, the points a pass's studies drew, or every state a serpentine search scored for its proposal
-  - Code: `gate_threshold()`, `gate_threshold_multiple()`, `false_exceedance_rate()`, `GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE`, `GATE_THRESHOLD_QUADRATURE_NODE_COUNT`, `GATE_THRESHOLD_BISECTION_BRACKET_MULTIPLES`, `GATE_THRESHOLD_BISECTION_ITERATION_COUNT`
+- the proposal's noise margin — k(N) times the asset's noise sigma, the path-CAGR gain the champion must exceed over the start: k(N) the multiple at which the best of N states, each scored with noise of its own, beats a start that carries its own by chance at the rate `PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`; N every state a serpentine search scored
+  - Code: `proposal_threshold_multiple()`, `false_exceedance_rate()`, `PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`, `PROPOSAL_THRESHOLD_QUADRATURE_NODE_COUNT`, `PROPOSAL_THRESHOLD_BISECTION_BRACKET_MULTIPLES`, `PROPOSAL_THRESHOLD_BISECTION_ITERATION_COUNT`
   - Artifact key: — (computed where it is read; no artifact carries it)
   - Ui label: — (no page shows it)
-  - Never: k95; a table of k by n; a margin per family or per ticker; the count of a pass without its cache hits
+  - Never: k95; a table of k by N; a margin per move, per family or per ticker
 - the inputs of the serpentine search — what it was run under, recorded in its state and compared by equality on the next turn: equal, it resumes; different, it starts again
   - Code: `build_search_inputs()`, `inputs`
-  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`, `seed`, `warmup_top_timeframe_bars`), `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection`
+  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`, `seed`, `warmup_top_timeframe_bars`), `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
   - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's trials under another's rules
 - current inputs — a recorded serpentine search's inputs that are still the asset's own
   - Code: `serpentine_search_block()` in `module_features/status.py`
@@ -482,7 +482,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `best_cagr_validation_path`
   - Ui label: best F2–F4 path CAGR (`best path CAGR` in the HPO table)
   - Never: best_value, score; one key that holds two different quantities
-- the trial gate — one gate, read fold by fold: the thresholds at which every fold evaluated so far clears the trade floor and beats the champion's Calmar; the set only shrinks as folds are added, so nothing admissible is discarded
+- the trial gate — one gate, read fold by fold: the thresholds at which every fold evaluated so far clears the trade floor and beats the champion's CAGR; the set only shrinks as folds are added, so nothing admissible is discarded
   - Code: `admissible_thresholds()`, `optuna.TrialPruned`
   - Never: a pruner that compares folds as if they were epochs; a gate on a fold's realised value rather than on what it could still reach
   - External vocabulary: Optuna (`TrialPruned`)
@@ -518,13 +518,13 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `selection_score_cagr_validation_path`
   - Ui label: selection score; `degradation` for the final holdout's CAGR minus the validation path's — presentation arithmetic
   - Never: one key that holds two different quantities; a score whose name does not say what it measures
-- CAGR — the compound annual growth rate of an equity path that started at E₀ = 1, over its own length in minutes, on a calendar year, 24/7
+- CAGR — the compound annual growth rate of an equity path that started at E₀ = 1, over its own length in minutes, on a calendar year, 24/7; the quantity the gate compares fold by fold, the fold being the unit of robustness
   - Code: `validation.cagr()`, `MINUTES_PER_YEAR`
   - Artifact key: `cagr`
   - Ui label: CAGR
   - Never: annualised return, APY, growth; a year of trading days
   - External vocabulary: finance (compound annual growth rate)
-- the Calmar ratio — growth per unit of maximum drawdown, the quantity the gate compares fold by fold, the fold being the unit of robustness
+- the Calmar ratio — growth per unit of maximum drawdown, reported for every fold and for the path, and the path's second ranking key
   - Code: `validation.calmar()`
   - Artifact key: `calmar`
   - Ui label: Calmar

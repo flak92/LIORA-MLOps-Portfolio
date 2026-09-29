@@ -11,7 +11,7 @@ member it ran on, because a candidate has to beat it — the guarantee is the ga
 handed.
 
 That gate is the state gate's own condition, read one fold at a time: after each fold, the thresholds at
-which **every** fold so far clears the trade floor and beats the champion's Calmar. The set only shrinks as
+which **every** fold so far clears the trade floor and beats the champion's CAGR. The set only shrinks as
 folds are added, and the child the serpentine search would keep needs one threshold inside it over all three, so a
 trial whose set has gone empty cannot produce one and stops. Nothing admissible is discarded by it.
 
@@ -202,22 +202,18 @@ def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray],
     return study
 
 
-def admissible_point(study, champion_objective: float, best_params: dict) -> dict | None:
-    """The study's best admissible point that beats the champion's own path, or nothing.
+def admissible_point(study) -> dict | None:
+    """The study's best admissible point, or nothing.
 
     The point is the best **admissible** one, not the best. A study's best trial by value may be one whose
     chosen threshold does not beat the champion on every fold; the state gate refuses such a child, while a
     point further down the list may be one the gate keeps. The trials are read by value, descending, and the
-    first that is admissible and beats the champion's own path is offered. When none is, nothing is — which is an answer. A point equal to the parent's own parameters
-    is no move, so it is nothing too."""
+    first admissible one is offered: better than the champion's CAGR on every fold, it beats the champion's path
+    too and is not the champion's own point. When none is, nothing is — which is an answer."""
     completed = study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,))
-    admissible = sorted((trial for trial in completed
-                         if trial.user_attrs.get("admissible")
-                         and trial.value > champion_objective),
+    admissible = sorted((trial for trial in completed if trial.user_attrs["admissible"]),
                         key=lambda trial: (-trial.value, trial.number))
-    if not admissible or admissible[0].params == best_params:
-        return None
-    return admissible[0].params
+    return admissible[0].params if admissible else None
 
 
 def main() -> int:

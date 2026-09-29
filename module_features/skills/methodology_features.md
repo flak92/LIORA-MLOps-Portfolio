@@ -351,60 +351,56 @@ than it did: the best ranked result never gets worse
 family of the executed schedule changed the beam. From that beam another round would offer the same
 states and, every fit and study being seeded, receive the same answers, so the search stands at a
 fixed point of its own schedule and gate. That is not a global optimum, and not a local optimum of
-the objective alone: a neighbour that raised the CAGR by less than the margin, or not on every fold,
-was offered and refused, and a child that cleared the gate but ranked below a full beam was not kept
+the objective alone: a neighbour that raised the path's CAGR but not every fold's was offered and
+refused, and a child that cleared the gate but ranked below a full beam was not kept
 (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
 
 ### 4. The thresholds
 
-`is_gate_cleared` keeps a child only when three conditions hold against the parent it came from
-(`SERPENTINE-SEARCH-A-MOVE-CLEARS-THE-NOISE-OF-ITS-PASS`):
+`is_gate_cleared` keeps a child only when two conditions hold against the parent it came from
+(`SERPENTINE-SEARCH-A-MOVE-BEATS-ITS-PARENT-ON-EVERY-FOLD`):
 
 - its threshold constraint is met — some threshold cleared `MINIMUM_TRADES_PER_VALIDATION_FOLD`
   trades on every validation fold (`strategy.entry_edge_threshold_selection()`); a fallback row,
   scored at the grid floor nothing qualified for, is refused before it is compared;
-- its Calmar ratio, `SELECTION_FOLD_MEASURE`, is strictly higher than its parent's on every
-  validation fold F2–F4 — the fold is the unit of robustness;
-- its CAGR beats its parent's by more than k(n)·σ, σ the asset's noise sigma drafted into the
-  profile and n the candidates of its pass: every state the family offers from the beam, cache hits
-  included (`len(candidates_of())`), or every point the pass's studies drew, pruned and completed
-  alike (`trial_count_drawn` summed in `turn()`).
+- its CAGR, `SELECTION_FOLD_MEASURE`, is strictly higher than its parent's on every validation fold
+  F2–F4, and no lower for a move that shrinks the state, which then ranks first for its fewer
+  columns — the fold is the unit of robustness.
 
-A calibration run — the profile's `path_cagr_noise_standard_deviation` null — passes no margin: a
-child must be strictly better on the CAGR and on every fold, and a move that shrinks the state no
-worse on either (`is_gate_cleared`). The barrier and hpo loops call every move `forward`. Inside a
-study, `module_ml` already refuses a point that does not beat the parent on every fold at its own
-threshold or on the path's CAGR; the turn's gate then adds the margin.
+A fold's CAGR rises with its final equity, and the path's CAGR compounds the three final equities,
+so a child better on every fold is better on the path: the objective needs no condition of its own,
+and a better fold is a smaller loss or a larger gain whatever its drawdown did — the drawdown stays
+in the report and in the ranking. No margin is asked of a move, so small true gains can add up move
+by move; the noise of the whole search is asked once, of the proposal. The barrier and hpo loops
+call every move `forward`. Inside a study, `module_ml` refuses a point whose chosen threshold does
+not beat the parent's CAGR on every fold, so a study offers only a child the gate keeps.
 
-The fold condition compares ratios. Where a fold's CAGR is negative, its Calmar ratio — the CAGR
-over the maximum drawdown (`validation.calmar()`) — rises toward zero as the drawdown deepens:
-against a parent at −12% and a 24% drawdown (−0.5), a child at −12% and 48% (−0.25) clears the fold,
-and a child at −8% and 12% (−0.67) does not. On a losing fold the condition reads the ratio, not a
-smaller loss with a shallower drawdown.
-
-The one proposal (`proposals_block`) is the champion, as proposal 1, when its threshold constraint
-is met, it is not the start state, no validation fold's Calmar ratio is below the start's, and its
-CAGR beats the start's by more than k(N)·σ. N is the sum of `trial_count_by_loop`
+The one proposal (`proposals_block`) is the champion, as proposal 1, when it is not the start state
+and its path CAGR beats the start's by more than k(N)·σ, σ the asset's noise sigma drafted into the
+profile. Its threshold constraint and its folds need no test there: every member of the beam cleared
+the gate against its parent, so every one of them stands at or above the start on every fold
+(`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`). N is the sum of `trial_count_by_loop`
 (`write_round_state()`): the ledger's lines after the start in the loops that enumerate their moves,
 and every point the studies drew — a study's candidate, itself a drawn point, counted once, as its
-line (`SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`). A calibration run proposes nothing
+line (`SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`). A calibration run — the profile's
+`path_cagr_noise_standard_deviation` null — keeps moves as any run does and proposes nothing
 (`SERPENTINE-SEARCH-ONLY-A-CHAMPION-ABOVE-THE-NOISE-IS-PROPOSED`).
 
 These thresholds are this method's assumptions — the baseline it holds itself to — and not
 conditions of correctness for every optimiser: another search could keep other moves and still be a
 correct search.
 
-### 5. The margin k(n)·σ is a heuristic
+### 5. The margin k(N)·σ is a heuristic
 
-    rate(k, n) = P( max_i S_i − S_parent > k·σ ) = 1 − E_Z[ Φ(k + Z)^n ],   Z ~ N(0, 1)
-    S = true value + σ·ε,  ε ~ N(0, 1) independent for the parent and each of the n candidates,
-        every true value equal to the parent's
+    rate(k, N) = P( max_i S_i − S_start > k·σ ) = 1 − E_Z[ Φ(k + Z)^N ],   Z ~ N(0, 1)
+    S = true value + σ·ε,  ε ~ N(0, 1) independent for the start and each of the N states,
+        every true value equal to the start's
 
-`false_exceedance_rate` is that chance: the best of n candidates beating a parent by k·σ when none
-of them is truly better than it, the expectation a Gauss–Hermite quadrature on a fixed node count.
-`gate_threshold_multiple` finds the k(n) at which the chance is 5%
-(`GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE`) by bisection on a fixed bracket in a fixed number of
-halvings, so one n gives one k on every machine; k grows with n.
+`false_exceedance_rate` is that chance: the best of N states beating the start by k·σ when none of
+them is truly better than it, the expectation a Gauss–Hermite quadrature on a fixed node count.
+`proposal_threshold_multiple` finds the k(N) at which the chance is 5%
+(`PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`) by bisection on a fixed bracket in a fixed number of
+halvings, so one N gives one k on every machine; k grows with N.
 
 σ is `path_cagr_noise_standard_deviation`, read off the ledgers of calibration runs — the last turn
 of one prints the estimate of its own ledger (`turn()`), and a hand drafts the number into the
@@ -417,12 +413,11 @@ deviation, over the √2 of a difference of two scores. The pairs are pairs of d
 holds the effect of each change as well as the variability of an evaluation; a state scored twice
 scores the same, every fit and study being seeded.
 
-k(n)·σ is therefore a margin that grows with the size of a pass — a heuristic, not a test. Its model
-assumes independent normal noise of one size; the candidates of a pass are correlated, sharing a
-parent and differing by one move, the search is adaptive, every parent having been selected itself,
-and a pass over several beam parents compares each child with its own parent, which the expression
-does not model. It gives no 95% guarantee against a false acceptance under this search, and a
-sentence that claims one is false.
+k(N)·σ is therefore a margin that grows with the size of the search — a heuristic, not a test. Its
+model assumes independent normal noise of one size; the states of a search are correlated, each one
+move from its parent, and the search is adaptive, every parent having been selected itself. It gives
+no 95% guarantee against a false proposal under this search, and a sentence that claims one is
+false.
 
 ### What success is
 

@@ -4,8 +4,8 @@ and leave either the next question or a finished search.
 A turn walks the round from its top. Every state it needs and already has is a line of the ledger; the first family
 whose states are not all there is the question it asks, written as `<TICKER>_score_request.json` and answered by
 another module as `<TICKER>_score_response.json`. It computes no metric of a state: every number a gate, a ranking
-or a proposal reads comes off an answer, and the noise a move has to clear is the asset's noise sigma, a number of the
-profile measured once off the answers of a calibration run.
+or a proposal reads comes off an answer, and the noise a proposal has to clear is the asset's noise sigma, a number of
+the profile measured once off the answers of a calibration run.
 
 The round is the unit of resume, so nothing says which family a turn stopped at — the walk finds out by asking the
 ledger. What the ledger cannot say is which states a pass asked for once some of them were already written, so a
@@ -70,69 +70,52 @@ def state_objective(row: dict) -> tuple:
     return (path["cagr"], path["calmar"], profit_factor)
 
 
-def is_gate_cleared(row: dict, parent: dict, move: str, threshold: float | None) -> bool:
-    """Whether a child may be kept at all: better than the state it came from **on the objective and on
-    every validation fold**, the objective by more than the noise of its own pass.
+def is_gate_cleared(row: dict, parent: dict, move: str) -> bool:
+    """Whether a child may be kept at all: better than the state it came from on every validation fold — strictly,
+    and no worse for a move that shrinks the state, which the ranking then puts first for its fewer columns.
 
-    Two conditions and not one. The folds alone would admit a child that beats its parent on all three fold
-    measures while the chained path's CAGR — the quantity the search selects on and reports — falls, a state
-    worse at the thing searched for because it is better at the thing guarding it. The guard does not get to
-    outvote the objective.
-
-    The objective's margin is `threshold`, k(n) times the asset's noise sigma for a pass of n candidates: the
-    best of n noisy scores beats a noisy parent by chance, and the more candidates a pass offers the more it
-    does, so a move is kept only above what its pass could offer by chance one time in twenty — for every
-    family, a move that shrinks the state included. A calibration run, whose profile has no sigma yet, passes
-    None: its gate is the one that measures sigma — strictly better on the objective and every fold, no worse
-    for a move that shrinks the state.
+    The fold measure is the fold's CAGR, so a better fold is a higher final equity, and the chained path, which
+    compounds the folds' final equities, is better too: the objective needs no condition of its own. No margin is
+    asked of a move, so small true gains can add up move by move; the noise of the whole search is asked once, of
+    the proposal.
 
     The fold measure is a strategy number, so a state whose threshold fell back to the grid floor — no point
     of the grid cleared the trade floor in every fold — is refused before it is compared: its numbers stand
     at a threshold nothing qualified for."""
     if not row["entry_edge_threshold_constraint_met"]:
         return False
-    objective, parent_objective = state_objective(row)[0], state_objective(parent)[0]
-    if threshold is None and move == config.SERPENTINE_SEARCH_MOVE_BACKWARD:
-        return (objective >= parent_objective
-                and all(child >= own for child, own in zip(fold_objective(row), fold_objective(parent))))
-    if threshold is None:
-        return (objective > parent_objective
-                and all(child > own for child, own in zip(fold_objective(row), fold_objective(parent))))
-    return (objective - parent_objective > threshold
-            and all(child > own for child, own in zip(fold_objective(row), fold_objective(parent))))
+    pairs = zip(fold_objective(row), fold_objective(parent))
+    if move == config.SERPENTINE_SEARCH_MOVE_BACKWARD:
+        return all(child >= own for child, own in pairs)
+    return all(child > own for child, own in pairs)
 
 
-# ---- the noise a move has to clear ---------------------------------------------------------------------------
+# ---- the noise a proposal has to clear -----------------------------------------------------------------------
 
-_NODES, _WEIGHTS = np.polynomial.hermite_e.hermegauss(config.GATE_THRESHOLD_QUADRATURE_NODE_COUNT)
+_NODES, _WEIGHTS = np.polynomial.hermite_e.hermegauss(config.PROPOSAL_THRESHOLD_QUADRATURE_NODE_COUNT)
 QUADRATURE = [(float(node), float(weight) / math.sqrt(2.0 * math.pi)) for node, weight in zip(_NODES, _WEIGHTS)]
 NORMAL = statistics.NormalDist()
 
 
 def false_exceedance_rate(multiple: float, candidate_count: int) -> float:
-    """The chance that the best of `candidate_count` candidates, each scored with noise of its own, beats a parent
-    that carries noise of its own by `multiple` noise standard deviations: 1 - E_Z[Phi(k + Z)^n], Z standard
-    normal — the expectation by Gauss-Hermite quadrature."""
+    """The chance that the best of `candidate_count` states, each scored with noise of its own, beats a start that
+    carries noise of its own by `multiple` noise standard deviations: 1 - E_Z[Phi(k + Z)^N], Z standard normal —
+    the expectation by Gauss-Hermite quadrature."""
     return 1.0 - sum(weight * NORMAL.cdf(multiple + node) ** candidate_count for node, weight in QUADRATURE)
 
 
-def gate_threshold_multiple(candidate_count: int) -> float:
-    """k(n), the multiple of the noise standard deviation at which that chance is the gate's rate — by bisection
-    on a fixed bracket in a fixed number of halvings, one deterministic function for every n: a pass (n its
-    candidates, or the points its studies drew) and the proposal (n every state the search scored)."""
-    low, high = config.GATE_THRESHOLD_BISECTION_BRACKET_MULTIPLES
-    for _ in range(config.GATE_THRESHOLD_BISECTION_ITERATION_COUNT):
+def proposal_threshold_multiple(candidate_count: int) -> float:
+    """k(N), the multiple of the noise standard deviation at which that chance is the proposal's rate, N every
+    state the search scored — by bisection on a fixed bracket in a fixed number of halvings, one deterministic
+    function of N."""
+    low, high = config.PROPOSAL_THRESHOLD_BISECTION_BRACKET_MULTIPLES
+    for _ in range(config.PROPOSAL_THRESHOLD_BISECTION_ITERATION_COUNT):
         middle = 0.5 * (low + high)
-        if false_exceedance_rate(middle, candidate_count) > config.GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE:
+        if false_exceedance_rate(middle, candidate_count) > config.PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE:
             low = middle
         else:
             high = middle
     return 0.5 * (low + high)
-
-
-def gate_threshold(candidate_count: int, noise_sigma: float | None) -> float | None:
-    """The objective margin of a pass of `candidate_count` candidates, k(n) times sigma; None without sigma."""
-    return None if noise_sigma is None else gate_threshold_multiple(candidate_count) * noise_sigma
 
 
 def _fitted_part(state: dict) -> dict:
@@ -189,23 +172,19 @@ def path_entry(round_number: int, loop: str, family: str, move: str, beam: list[
 
 def proposals_block(trials: list[dict], champion_trial_index: int,
                     noise_sigma: float | None, trial_count: int) -> list[dict]:
-    """The state a hand may promote: the champion alone, and only when it beats the state the search started
-    from by more than the noise of the whole search — k(N) times the asset's noise sigma, N every state the
-    search scored, because the champion is the best of all of them — while its threshold constraint is met, it
-    is not that start and no validation fold scores it below the start. A fallback row wears
-    the numbers of a threshold nothing qualified for, and a state worse on any fold is not the asset's to take;
-    a calibration run, whose profile has no sigma yet, proposes nothing.
+    """The state a hand may promote: the champion alone, and only when it is not the state the search started
+    from and beats it by more than the noise of the whole search — k(N) times the asset's noise sigma, N every
+    state the search scored, because the champion is the best of all of them. Its threshold constraint and its
+    folds need no test here: every member of the beam cleared the gate against its parent, so the champion meets
+    the constraint and stands at or above the start on every fold. A calibration run, whose profile has no sigma
+    yet, proposes nothing.
 
     A proposal is its rank and the index of its trial, and nothing else: the columns, the geometry and every
     number are the ledger's line, so each stands in one file and a reader joins it by the index."""
-    if noise_sigma is None or not trials:
+    if noise_sigma is None or champion_trial_index == 1:
         return []
-    champion, start = trials[champion_trial_index - 1], trials[0]
-    qualifies = (champion["entry_edge_threshold_constraint_met"]
-                 and state_key(theta(champion)) != state_key(theta(start))
-                 and all(child >= own for child, own in zip(fold_objective(champion), fold_objective(start))))
-    if qualifies and (state_objective(champion)[0] - state_objective(start)[0]
-                      > gate_threshold_multiple(trial_count) * noise_sigma):
+    gain = state_objective(trials[champion_trial_index - 1])[0] - state_objective(trials[0])[0]
+    if gain > proposal_threshold_multiple(trial_count) * noise_sigma:
         return [{"proposal": 1, "trial_index": champion_trial_index}]
     return []
 
@@ -230,8 +209,8 @@ def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, ac
     """What a search is conditioned on: the frozen window with its warm-up, the parameters and the barrier
     geometry it starts from, the catalogue it draws from, the profile a hand drafted and the selection the
     experiment froze — recorded in the state file and compared by equality on a rerun. The selection is the
-    beam width, and it belongs here because a rerun under another width is another experiment: it starts its
-    own trials instead of resuming these."""
+    beam width and the fold measure, and it belongs here because a rerun under another of either is another
+    experiment: it starts its own trials instead of resuming these."""
     return {
         "research_window": {"start_utc": features_config.RESEARCH_START_UTC,
                             "end_utc": features_config.RESEARCH_END_UTC,
@@ -242,7 +221,7 @@ def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, ac
         "active_columns_by_timeframe": active_columns_by_timeframe,
         "active_barriers": {name: active_barriers[name] for name in config.BARRIER_COORDINATE_NAMES},
         "profile": profile,
-        "selection": {"beam_width": config.SERPENTINE_SEARCH_BEAM_WIDTH},
+        "selection": {"beam_width": config.SERPENTINE_SEARCH_BEAM_WIDTH, "fold_measure": config.SELECTION_FOLD_MEASURE},
     }
 
 
@@ -438,8 +417,6 @@ def turn(ticker: str) -> None:
                 offered = list(zip(response["results"], beam))
                 for result, _ in offered:
                     round_drawn[loop] += result["trial_count_drawn"]
-                # the pass's candidates are every point its studies drew, whether a study offered one or none
-                threshold = gate_threshold(sum(result["trial_count_drawn"] for result, _ in offered), noise_sigma)
                 # two parents can be offered one state — studies over the same columns and geometry can draw the
                 # same point — and one line serves both: the first parent to offer it is its provenance
                 seen, rows = set(index_by_state), []
@@ -463,9 +440,7 @@ def turn(ticker: str) -> None:
                            for result, parent in offered if result["candidate"] is not None]
             else:
                 candidates = candidates_of(beam, trials, cat, profile, loop, family)
-                # every state the pass offers counts, a cache hit too: it is compared like any other
-                threshold = gate_threshold(len(candidates), noise_sigma)
-                members = pass_membership(candidates, trials, index_by_state, round_number, loop, family)
+                members =pass_membership(candidates, trials, index_by_state, round_number, loop, family)
                 if any(candidate["key"] not in index_by_state for candidate in members):
                     if not answers_the_question(response, KIND_SCORE, round_number,
                                                 [candidate["key"] for candidate in members]):
@@ -482,15 +457,15 @@ def turn(ticker: str) -> None:
                 reached = [(candidate["key"], candidate["parent"], candidate["label"], candidate["move"])
                            for candidate in candidates]
             # the move the gate reads is the edge this family just walked, not the one that first wrote the
-            # state: on a calibration run a state reached before by a move that shrinks it is compared with `>=`,
-            # and reaching it again by a move that grows it must be compared with `>`. The ledger keeps the first
-            # provenance, which is a different fact and stays where it is.
+            # state: a state reached before by a move that shrinks it is compared with `>=`, and reaching it again
+            # by a move that grows it must be compared with `>`. The ledger keeps the first provenance, which is a
+            # different fact and stays where it is.
             children = []
             for key, parent, label, move in reached:
                 index, parent_row = index_by_state[key], trials[parent - 1]
                 print(progress_line(ticker, round_number, loop, family, label, parent_row,
                                     trials[index - 1]), flush=True)
-                if is_gate_cleared(trials[index - 1], parent_row, move, threshold):
+                if is_gate_cleared(trials[index - 1], parent_row, move):
                     children.append(index)
             # the beam the family leaves is the best of its children **and the parents it came from**: a family
             # that finds nothing better keeps what it had, and one that improves only the third member does not

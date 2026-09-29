@@ -245,11 +245,12 @@ MINIMUM_AGREEING_TREND_TIMEFRAMES = VALUE_BY_CONFIGURABLE["MINIMUM_AGREEING_TREN
 
 # ---- a state of the serpentine search as this module scores it: the values a state is made of and the measure the
 # gate inside a study reads, each of which the feature layer's copy must equal; the final holdout never chooses
-# what the gate compares fold by fold: the growth a fold earned per unit of the drawdown it took. The fold
-# is the unit of robustness and the validation path is the unit of the goal — the model's own skill is
-# measured and reported beside both, and selected on by nothing
+# what the gate compares fold by fold: the growth a fold earned, so a better fold is a higher final equity and the
+# validation path, which compounds the folds' final equities, is better too. The fold is the unit of robustness and
+# the validation path is the unit of the goal — the model's own skill is measured and reported beside both, and
+# selected on by nothing
 # twice by extraction
-SELECTION_FOLD_MEASURE = "calmar"
+SELECTION_FOLD_MEASURE = "cagr"
 # the barrier geometry a promotion writes, in the order a state keys it, and what each value is however a
 # hand wrote it in a grid: a multiplier is a float, a horizon a token of HORIZON_TOKEN_MINUTES
 # twice by extraction
