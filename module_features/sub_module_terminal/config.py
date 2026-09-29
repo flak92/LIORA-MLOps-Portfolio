@@ -129,5 +129,6 @@ OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "d
                 or not sys.stdout.isatty())
 
 # the targets of the one Makefile this terminal offers: its module's, read off `make help` by name — `features-<stage>`,
-# `features-all` and a stage's `tmux-` twin (AGENTS.md § Canonical vocabulary, the terminal-menu row)
+# `features-all`, `features-<process>` with its actions, and a `tmux-` twin (AGENTS.md § Canonical vocabulary, the
+# terminal-menu row)
 MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?features-")

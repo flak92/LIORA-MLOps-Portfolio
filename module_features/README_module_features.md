@@ -192,8 +192,10 @@ method, its thresholds and their limits are `skills/methodology_features.md`
   leaves a question, each step a one-off container of its runner; it resumes
   where the files stand, and `JOBS=n` runs n assets side by side, one at a time
   otherwise. `make tmux-features-serpentine-search ASSET=<TICKER>` is its
-  detached twin in the tmux session `features-serpentine-search-<ticker>`, alive
-  after the terminal closes and gone with the search; a rerun resumes.
+  detached twin in the tmux session `features-serpentine-search-<ticker>` —
+  `<project>-features-serpentine-search-<ticker>` under
+  `COMPOSE_PROJECT_NAME=<project>`, which the session is handed — alive after
+  the terminal closes and gone with the search; a rerun resumes.
 - **The profile**, `<TICKER>_serpentine_search_profile.json`, is drafted by the
   terminal's `draft` or by hand, never derived: the columns admitted per
   timeframe, the columns the search starts from (`null` for the asset's own

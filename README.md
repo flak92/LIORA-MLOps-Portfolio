@@ -227,7 +227,8 @@ basket-wide one; `make all-record` wraps every stage of `RECORDED_STAGES` in
 `store/run_records/<run_id>/<stage>.json` and the run index `store/run_records/index.json`. The one resident
 is `liora-dashboard-1`: the compose project is named
 `liora` in the file, so two checkouts of the project on one host share the name —
-run one at a time, or set `COMPOSE_PROJECT_NAME`.
+run one at a time, or set `COMPOSE_PROJECT_NAME`, which the detached search hands
+to its tmux session and puts before the session's name.
 
 | Stage     | Command                | Input → Output                                              | Property                          |
 |-----------|------------------------|-------------------------------------------------------------|-----------------------------------|

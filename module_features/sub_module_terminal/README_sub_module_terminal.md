@@ -28,7 +28,7 @@ hold a contract. Then the state table, one row per asset, its columns left out i
 | `trials` | the lines of the search's ledger, `—` where no ledger names a trial | first |
 
 Then the menu, `gum choose` headed *action*: the targets `make help` lists that `MENU_TARGET_PATTERN` matches — the
-module's stages, `features-all`, the serpentine search's targets and a stage's `tmux-` twin — in the Makefile's
+module's stages, `features-all`, the serpentine search's targets and its `tmux-` twin — in the Makefile's
 order, then the terminal's own `draft` and `recorded search`, then `quit`; `features-terminal` carries no `##` and is
 no option of the menu it opens (`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`).
 
@@ -49,9 +49,9 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   `command  make <target> ASSET=<TICKER>` and the gate `<target>?`; the target's own lines stay on the screen as they
   come, and the run ends on the `DONE` block or on the failure block carrying make's exit code. `features-status`
   folds the whole basket whatever `ASSET` says — the Makefile passes `TICKERS_CSV`. `tmux-features-serpentine-search`
-  starts the search detached in the tmux session `features-serpentine-search-<ticker>`, alive after this terminal
-  closes; there is no stop here: `tmux attach -t features-serpentine-search-<ticker>` and Ctrl-C stop it, as
-  `make help` says, and a rerun resumes.
+  starts the search detached in the tmux session `features-serpentine-search-<ticker>` — its name behind the compose
+  project's under `COMPOSE_PROJECT_NAME` — alive after this terminal closes; there is no stop here: `tmux attach -t`
+  that session and Ctrl-C stop it, as `make help` says, and a rerun resumes.
 - **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, since no bare run can
   answer its form: the proposals as a list under the steps table, then the plan — the asset, the proposal, its trial,
   the coordinates it moves and what it writes, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — the line

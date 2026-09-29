@@ -37,16 +37,24 @@ FEATURES_STAGES := features-bars features-catalogue features-status
 ML_STAGES       := ml-labels ml-hpo ml-train ml-strategy ml-status
 # the proposal a promotion copies, by its rank in the serpentine search result
 PROPOSAL ?= 1
-# the tmux session the detached serpentine search runs in: one per asset, named for its target
-SERPENTINE_SEARCH_SESSION = features-serpentine-search-$(shell echo $(ASSET) | tr A-Z a-z)
+# the one asset a hand's action on the serpentine search names: one ticker of TICKERS, or make stops before a line of
+# the recipe runs — the reset removes files by it
+one_asset = $(if $(filter-out $(TICKERS),$(ASSET))$(filter-out 1,$(words $(ASSET))),$(error ASSET=<TICKER> is required, one ticker of TICKERS: $(TICKERS)))
+# the tmux session the detached serpentine search runs in: one per asset, named for its target, behind the compose
+# project's name where COMPOSE_PROJECT_NAME sets one, so two checkouts on one host run two sessions
+SERPENTINE_SEARCH_SESSION = $(if $(COMPOSE_PROJECT_NAME),$(COMPOSE_PROJECT_NAME)-)features-serpentine-search-$(shell echo $(ASSET) | tr A-Z a-z)
 RUN_ID = $(shell date -u +%Y%m%dT%H%M%SZ)_$(shell git rev-parse --short HEAD)
 # a stage runs in a one-off container of its module's runner service — a role, not an image; nothing resident is assumed
 # for compute. `env $(COMPOSE_ENV) docker compose`, because $(COMPOSE) cannot cross xargs
 run    = env $(COMPOSE_ENV) docker compose run --rm -T
+# $(1) runner service, $(2) python module, $(3) ticker: one stage for one asset, one one-off container
+stage  = $(run) $(1) python -m $(2) --tickers $(3)
+# $(1) width, $(2) a command of one asset, {} its ticker: the command for every ticker of the list, that many side by side
+each   = printf '%s\n' $(TICKER_LIST) | xargs -P $(1) -I{} $(2)
 # $(1) runner service, $(2) python module, $(3) width: the same stage for every ticker of the list, one one-off container each
-fanout = printf '%s\n' $(TICKER_LIST) | xargs -P $(3) -I{} $(run) $(1) python -m $(2) --tickers {}
+fanout = $(call each,$(3),$(call stage,$(1),$(2),{}))
 # $(1) runner service, $(2) python module: a basket-wide stage, once, the whole basket
-basket = $(run) $(1) python -m $(2) --tickers $(TICKERS_CSV)
+basket = $(call stage,$(1),$(2),$(TICKERS_CSV))
 
 .DEFAULT_GOAL := help
 # the stages run in the order the chain names them, whatever -j or MAKEFLAGS say: the one parallelism is JOBS, the assets
@@ -112,22 +120,25 @@ ml-terminal:
 	python3 -B -m module_ml.sub_module_terminal.terminal --tickers $(if $(ASSET),$(ASSET),$(TICKERS_CSV))
 
 # the serpentine search, a hand's research outside the chain: its two steps, one turn of the feature layer's search and
-# the ML layer's scoring of the question the turn left, each a stage of its own module
+# the ML layer's scoring of the question the turn left, each a stage of its own module — the command of each written
+# once, $(1) its ticker, for its own target and for the loop
+serpentine_turn  = $(call stage,features,module_features.sub_module_serpentine_search.serpentine_search,$(1))
+serpentine_score = $(call stage,ml,module_ml.score,$(1))
 features-serpentine-turn: ## one turn of the serpentine search per asset: carry it as far as the answers on disk allow, then leave the next question or a finished search
-	$(call fanout,features,module_features.sub_module_serpentine_search.serpentine_search,$(JOBS))
+	$(call each,$(JOBS),$(call serpentine_turn,{}))
 ml-score:        ## score the states of <TICKER>_score_request.json -> <TICKER>_score_response.json, one process per asset
-	$(call fanout,ml,module_ml.score,$(JOBS))
+	$(call each,$(JOBS),$(call serpentine_score,{}))
 # the loop over them, per asset: a turn, then — while the turn has left a question — ml-score and a turn again, each step
 # a one-off container of its module's runner; the question is the one file the loop tests. Never inside all or all-record
 features-serpentine-search: ## the serpentine search per asset: a turn, then ml-score and a turn while the turn leaves a question; resumes where the files stand
-	printf '%s\n' $(TICKER_LIST) | xargs -P $(JOBS) -I{} sh -c '$(run) features python -m module_features.sub_module_serpentine_search.serpentine_search --tickers {} && while [ -e "$(STORE_ASSETS_ARTIFACTS_DIR)/ticker={}/{}_score_request.json" ]; do $(run) ml python -m module_ml.score --tickers {} && $(run) features python -m module_features.sub_module_serpentine_search.serpentine_search --tickers {} || exit $$?; done'
+	$(call each,$(JOBS),sh -c '$(call serpentine_turn,{}) && while [ -e "$(STORE_ASSETS_ARTIFACTS_DIR)/ticker={}/{}_score_request.json" ]; do $(call serpentine_score,{}) && $(call serpentine_turn,{}) || exit $$?; done')
 # the detached twin: the same search in a tmux session that outlives the terminal, started in this checkout, one asset per
-# session; the session ends with the search — `<TICKER>_serpentine_search.json` and the page are the record.
-# A plain make, not $(MAKE): the session is a new process of the tmux server, and a recipe line carrying $(MAKE) runs
-# even under -n
-tmux-features-serpentine-search: ## the serpentine search of one asset detached in tmux session features-serpentine-search-<ticker>, alive after the terminal closes and gone with the search; tmux attach -t features-serpentine-search-<ticker> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
-	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) 'make features-serpentine-search ASSET=$(ASSET)'
+# session; the session ends with the search — `<TICKER>_serpentine_search.json` and the page are the record. The session
+# is a process of the tmux server and takes the server's environment, not this shell's, so its command line carries
+# COMPOSE_PROJECT_NAME where it is set. A plain make, not $(MAKE): a recipe line carrying $(MAKE) runs even under -n
+tmux-features-serpentine-search: ## the serpentine search of one asset detached in tmux session features-serpentine-search-<ticker>, <project>-features-serpentine-search-<ticker> under COMPOSE_PROJECT_NAME=<project>, alive after the terminal closes and gone with the search; tmux attach -t <session> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
+	$(one_asset)
+	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) '$(if $(COMPOSE_PROJECT_NAME),COMPOSE_PROJECT_NAME=$(COMPOSE_PROJECT_NAME) )make features-serpentine-search ASSET=$(ASSET)'
 # a hand's decision for one asset, never fanned out: the proposal's columns and barrier geometry become the asset's own,
 # and its ML chain runs again, tuning it anew — the search's evaluated point is not what is kept. ASSET= is required
 features-serpentine-search-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset's serpentine search into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain, which tunes it again; ASSET= is required
@@ -138,7 +149,7 @@ features-serpentine-search-promote: ## copy proposal PROPOSAL=<n> (default 1) of
 # host paths — the state, the loop's ledger, the question, the answer and the asset's partition of score_trials; its
 # inputs, the chain's files, the promoted state, hpo_trials and the profile stay. It runs no stage. ASSET= is required
 features-serpentine-search-reset: ## remove one asset's serpentine search — its state, ledger, question, answer and score_trials partition — keeping its inputs and its profile; ASSET= is required
-	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
+	$(one_asset)
 	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_trials.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
 	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)
 

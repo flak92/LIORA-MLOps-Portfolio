@@ -370,7 +370,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: tuning, optimisation, autoML; a derived artifact that reads its own last value; `HPO` spelled out mid-document after its first use; `search` alone for the serpentine search
   - External vocabulary: Optuna (the TPE sampler)
 - the serpentine search — a beam over the coordinates of a state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, a move must clear the noise margin, and the trial count stands on the page beside the proposals
-  - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `coordinate_barrier.py`, `coordinate_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session
+  - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `coordinate_barrier.py`, `coordinate_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question, the Makefile's `serpentine_turn` and `serpentine_score`, the one command of each step — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session, behind `COMPOSE_PROJECT_NAME` where it is set
   - Artifact key: `serpentine_search` (a block of each asset of features_status.json), `<TICKER>_serpentine_search.json`
   - Ui label: serpentine search
   - Never: the coordinate search, its name while `module_ml` held it; feature-set search (one of its loops, not the serpentine search); feature selection (as a name), optimisation, the search (HPO's word); "no overfitting"
@@ -680,7 +680,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `ticker` — in code, in a key, and as the partition value `ticker=<TICKER>`; `--tickers` of a stage's command line, `build_ticker_parser()` with no default; `ASSET=<TICKER>` on the make line narrowing `TICKER_LIST`, read by no stage
   - Never: `TICKER`, `SYMBOL`, `ASSET_TICKER` as its name; a per-asset `.env`; a module, a file, a function, a compose service or an image named for a ticker; `ASSET` read by a stage
 - the basket, as the launcher defines it
-  - Code: `TICKERS` in the `Makefile`, the basket's one list; `TICKER_LIST`, the `fanout` macro's list, which `ASSET` narrows; `TICKERS_CSV`, the basket as one `--tickers` argument of a basket-wide stage, which `ASSET` never narrows
+  - Code: `TICKERS` in the `Makefile`, the basket's one list; `TICKER_LIST`, the list the `each` macro goes over, which `ASSET` narrows; `one_asset`, the one ticker of `TICKERS` a hand's action on the serpentine search names; `TICKERS_CSV`, the basket as one `--tickers` argument of a basket-wide stage, which `ASSET` never narrows
   - Never: a basket in a module's `config.py`; a second list in `docker-compose.yml`; a stage that defaults to it; a basket a terminal defines or reads from a store
 
 ## The tree
@@ -1044,10 +1044,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
 ## Asset containers
 
 - an asset container: a runner's one-off for one asset, exiting with its stage
-  - Code: the `fanout` macro of the `Makefile` — `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>` once per ticker of `TICKER_LIST`, `JOBS` at a time
+  - Code: the `stage` macro of the `Makefile` — `docker compose run --rm -T <runner> python -m <module>.<stage> --tickers <TICKER>` — once per ticker of `TICKER_LIST` through `each` and `fanout`, `JOBS` at a time
   - Never: a compose service per asset; a resident per asset; a `restart:` policy; a published port
 - a runner: a compose service that is a role and a one-off — no command of its own; the run supplies one and the container exits with the stage
-  - Code: `data`, `features`, `ml` — each the `x-service` anchor, which carries the one `build:` and `image:`, with its `volumes:` respelled; the `run`, `fanout` and `basket` macros of the `Makefile`
+  - Code: `data`, `features`, `ml` — each the `x-service` anchor, which carries the one `build:` and `image:`, with its `volumes:` respelled; the `run`, `stage`, `each`, `fanout` and `basket` macros of the `Makefile`
   - Never: `pipeline`, one runner for every module; a stage run by `exec` inside a resident; a runner with a `command:`
 - a service's mounts: the tree at `/app` and the stores it touches at `/store/<content>`, read-only where it only reads
   - Code: `.:/app` and `./store/<content>:/store/<content>` in each service's `volumes:` of `docker-compose.yml`, respelled whole because a service's key replaces the anchor's

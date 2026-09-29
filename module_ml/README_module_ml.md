@@ -74,8 +74,9 @@ assets the launcher names — the whole basket.
 
 Every stage runs in a one-off container of the `ml` runner —
 `docker compose run --rm -T ml python -m module_ml.<stage> --tickers <TICKER>`,
-through the Makefile's `fanout` macro one container per asset, through its
-`basket` macro once for `status`. Each stage takes `--tickers`; `status` takes it
+through the Makefile's `fanout` macro one container per asset — `ml-score`
+through `each` and `serpentine_score`, the command the search's loop repeats —
+and through its `basket` macro once for `status`. Each stage takes `--tickers`; `status` takes it
 too and folds the assets it was told — the launcher passes the whole basket,
 which `ASSET=` does not narrow, and every complete asset among them gets its
 `<TICKER>_README.md`.
