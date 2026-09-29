@@ -37,7 +37,7 @@ this module writes lands in another module's files.
 Beyond its partitions this module publishes two things. Per asset,
 `<TICKER>_catalogue.json` in the asset's folder `ticker=<TICKER>/` — the
 contract the ML layer reads instead of importing this module: the decision
-timeframe, the hierarchy with each timeframe's slot and duration, the warm-up,
+timeframe, the hierarchy with each timeframe's duration, the warm-up,
 the columns per timeframe in catalogue order, the default set, and the partition
 of the `catalogue` family each timeframe's columns live in, as a path under the
 artifacts store. And one snapshot, `store/status/features_status.json`, written

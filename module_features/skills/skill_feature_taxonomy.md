@@ -57,7 +57,7 @@ How the feature layer builds and names what it computes: the tokens of the timef
 - `FEATURE-TAXONOMY-THE-CONTRACT-IS-ONE-FILE`
   - Description: What the ML layer may read is one contract file per asset, written by this module and read by the stages that need it.
   - Scope: `module_features/**/*.py`
-  - Expected: One `<TICKER>_catalogue.json` in the asset's folder `ticker=<TICKER>/`, written by `catalogue.write_catalogue()` alone from `catalogue_contract()`: the decision timeframe, the hierarchy with each timeframe's slot and duration, the warm-up, the columns and the default columns per timeframe, and each timeframe's partition as a path under the artifacts store.
+  - Expected: One `<TICKER>_catalogue.json` in the asset's folder `ticker=<TICKER>/`, written by `catalogue.write_catalogue()` alone from `catalogue_contract()`: the decision timeframe, the hierarchy with each timeframe's duration, the warm-up, the columns and the default columns per timeframe, and each timeframe's partition as a path under the artifacts store.
   - Exception: none
 
 ## Determinism

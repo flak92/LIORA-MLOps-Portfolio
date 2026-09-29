@@ -81,7 +81,8 @@ def has_catalogue(ticker: str) -> bool:
 def proposal_block(proposal: dict, trial: dict, active_columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> dict:
     """One proposal as the page reads it: its rank and trial from the state file, and everything else from that
     trial's line of the ledger — the columns it moves against the state the serpentine search was run on, the
-    model's skill, then what the strategy would do."""
+    model's skill, then what the strategy would do: each fold's growth and trades, the path's growth, Calmar ratio
+    and profit factor, and the threshold it stood at."""
     columns_by_timeframe = trial["columns_by_timeframe"]
     return {
         "proposal": proposal["proposal"],
@@ -89,17 +90,11 @@ def proposal_block(proposal: dict, trial: dict, active_columns_by_timeframe: dic
         "added_columns_by_timeframe": coordinate_feature_set.columns_added(columns_by_timeframe, active_columns_by_timeframe, timeframes),
         "removed_columns_by_timeframe": coordinate_feature_set.columns_removed(columns_by_timeframe, active_columns_by_timeframe, timeframes),
         "mean_relative_logloss_skill": round(trial["mean_relative_logloss_skill"], 6),
-        "validation": {fold: {"relative_logloss_skill": round(block["relative_logloss_skill"], 6),
-                              "sharpe": round(block["sharpe"], 3),
-                              "cagr": round(block["cagr"], 6), "calmar": round(block["calmar"], 4),
-                              "profit_factor": config.rounded(block["profit_factor"], 4),
-                              "trade_count": block["trade_count"]}
+        "validation": {fold: {"cagr": round(block["cagr"], 6), "trade_count": block["trade_count"]}
                        for fold, block in sorted(trial["validation"].items())},
-        "validation_path": {k: config.rounded(v, 6) if isinstance(v, float) or v is None else v
-                            for k, v in sorted(trial["validation_path"].items())},
+        "validation_path": {key: config.rounded(trial["validation_path"][key], 6)
+                            for key in ("cagr", "calmar", "profit_factor")},
         "entry_edge_threshold": trial["entry_edge_threshold"],
-        "entry_edge_threshold_constraint_met": trial["entry_edge_threshold_constraint_met"],
-        config.SELECTION_SCORE_KEY: config.rounded(trial[config.SELECTION_SCORE_KEY], 6),
     }
 
 
@@ -116,9 +111,7 @@ def serpentine_search_block(ticker: str) -> dict | None:
     cat = dataset.load_json(config.catalogue_json(ticker))
     profile_path = serpentine_search_config.serpentine_search_profile_json(ticker)
     ledger = serpentine_search_config.serpentine_search_trials_jsonl(ticker)
-    # the trials are the ledger's lines, and a proposal is read off the line its index names; how many points each
-    # loop put through a fit is the serpentine search's own number, written once at a round boundary and copied
-    # here — the page, the terminal and the state file show one number because one of them computed it
+    # the trials are the ledger's lines, and a proposal is read off the line its index names
     trials = dataset.load_jsonl(ledger) if ledger.exists() else []
     inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
         serpentine_search.build_search_inputs(serpentine_search.load_best_params(ticker),
@@ -127,10 +120,8 @@ def serpentine_search_block(ticker: str) -> dict | None:
                                               dataset.load_json(profile_path)))
     return {
         "trial_count": len(trials),
-        "trial_count_by_loop": search["trial_count_by_loop"],
         "round_count": search["round_count"],
         "search_converged": search["search_converged"],
-        "champion_trial_index": search["champion_trial_index"],
         "inputs_current": inputs_current,
         # a serpentine search whose inputs have gone describes another experiment, and its proposals are numbers of
         # that one: the page shows none of them, and the snapshot publishes none either

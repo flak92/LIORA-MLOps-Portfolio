@@ -283,7 +283,7 @@ def timeframes(cat: dict) -> tuple[str, ...]:
 
 
 def timeframe_entry(cat: dict, timeframe: str) -> dict:
-    """One timeframe of the contract: its token, its slot and its duration."""
+    """One timeframe of the contract: its token and its duration."""
     return next(entry for entry in cat["timeframes"] if entry["timeframe"] == timeframe)
 
 

@@ -293,10 +293,10 @@ The training weights therefore feed `model.fit` and the class prior, the
 scoring weights feed the log-losses of that same fold, and neither can be
 used in place of the other.
 
-The asset's `labels` partition also carries the prices the backtest needs —
-`entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price` — so the
-strategy replays exactly the event that produced the label instead of
-recomputing it.
+The asset's `labels` partition also carries what the backtest takes from the
+event — `entry_price`, `upper_barrier` and `lower_barrier`, the half-widths a
+trade's own exit is rescaled from (§ 9); the trade's event is its own walk, never
+the label's.
 
 ## 6. Folds — WARMUP | TRAIN | PURGE | OOS | final holdout
 

@@ -156,11 +156,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: exit time
 - the price that closes the event
   - Code: `exit_reference_price`
-  - Artifact key: `exit_reference_price`
   - Never: exit_ref
 - the event resolution — how the event ended
   - Code: `event_resolution`
-  - Artifact key: `event_resolution`, `exit_counts.*`
+  - Artifact key: `exit_counts.*`
   - Ui label: upper_barrier / lower_barrier / vertical / ambiguous (the asset README's exits); `exits: upper/lower/vertical/ambiguous` in the Strategy view
   - Never: reason, exit_reason
   - External vocabulary: López de Prado (triple-barrier method)
@@ -172,7 +171,6 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - External vocabulary: technical analysis (Wilder's true range)
 - the four resolutions
   - Code: `EVENT_RESOLUTION_{UPPER_BARRIER, LOWER_BARRIER, VERTICAL, AMBIGUOUS}`, named by `EVENT_RESOLUTION_NAMES`
-  - Artifact key: `event_resolution`
   - Never: bare 1 / −1 / 0 / 9
 - the entry minute traded at all — knowable at `entry_ts`, may gate an entry
   - Code: `entry_observable`
@@ -448,7 +446,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: origin, provenance, `final_holdout_evaluation_count` (a counter git already records)
 - the proposals — the one state a hand may promote: the champion, when it beats the start by more than the noise of the whole search
   - Code: `proposals_block()`; `proposal_block()` in `module_features/status.py`
-  - Artifact key: `proposals` in `<TICKER>_serpentine_search.json`, each `proposal`, `trial_index`; `proposals` in the `serpentine_search` block of features_status.json, each `proposal`, `trial_index`, `added_columns_by_timeframe`, `removed_columns_by_timeframe` (against the asset's own set the serpentine search recorded in `inputs`), `mean_relative_logloss_skill`, `validation`, `validation_path`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `selection_score_cagr_validation_path`
+  - Artifact key: `proposals` in `<TICKER>_serpentine_search.json`, each `proposal`, `trial_index`; `proposals` in the `serpentine_search` block of features_status.json, each `proposal`, `trial_index`, `added_columns_by_timeframe`, `removed_columns_by_timeframe` (against the asset's own set the serpentine search recorded in `inputs`), `mean_relative_logloss_skill`, `validation` (per fold `cagr`, `trade_count`), `validation_path` (`cagr`, `calmar`, `profit_factor`), `entry_edge_threshold`
   - Ui label: PROPOSALS, one frame per asset on the Features tab — `#` for the rank, `columns added / removed` for the two differences
   - Never: recommendations, top sets, best features; a set worse on any validation fold; the highest mean without the fold test; a trial's numbers copied into the state file; a proposal 2 or 3; a proposal of a calibration run
 - the asset's noise sigma — the standard deviation of one evaluation's path CAGR, measured once off the ledgers of the asset's calibration searches and drafted into its profile by a decision; absent on the calibration run that measures it
@@ -608,7 +606,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`
   - Holds: which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads
 - the feature layer's snapshot
-  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `trial_count`, `trial_count_by_loop`, `round_count`, `search_converged`, `champion_trial_index`, `inputs_current`, `proposals`)
+  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `trial_count`, `round_count`, `search_converged`, `inputs_current`, `proposals`)
   - Holds: the catalogue as the register presents it, the one run-state fact the feature layer has per asset — the rows of its catalogue partitions, the last line of the register box — and the serpentine search as it last wrote itself; written by `module_features/status.py`
 - the catalogue block — of `features_status.json`
   - Artifact key: `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range`, `historical_aliases` —, `operators`, `normaliser`, `range`, `tier`, `historical_aliases`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`)
@@ -764,9 +762,6 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `feature_id()` — identical
   - Code: `module_features/config.py`, `module_ml/config.py`
   - Why twice: the id grammar `module_features` owns, composed where the columns of X are named — the one copy downstream, the ML module importing no feature code
-- `SELECTION_SCORE_KEY` — identical
-  - Code: `module_ml/strategy.py`, `module_features/config.py`
-  - Why twice: the key a scored state carries its selection score under, chosen by the module that scores it and read by the feature layer's snapshot for every proposal it publishes; neither module imports the other
 - `to_json_safe()` — identical
   - Code: `module_features/dataset.py`, `module_ml/dataset.py`
   - Why twice: numpy canonicalisation is local to the modules that hold numpy values, and the JSON both publish is one form; no module imports another
@@ -941,7 +936,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `decision_ts` and every definition offered on the partition's timeframe, on the decision grid; untracked
 - the family `labels`: Y on the decision timeframe, one partition per asset and timeframe
   - Code: `module_ml/labels.py` writes `labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet` and the family's `schema.json`; `labels_parquet()`
-  - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `event_resolution`, `entry_price`, `upper_barrier`, `lower_barrier`, `exit_reference_price`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
+  - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `entry_price`, `upper_barrier`, `lower_barrier`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
 - the family `oos_predictions`: the out-of-sample class probabilities, one partition per asset and timeframe
   - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
   - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full window of every validation fold and of the final holdout; metrics score only the supervised subset; untracked
@@ -953,7 +948,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `label_barrier_true_range_multiplier`, `label_horizon`, `take_profit_true_range_multiplier`, `stop_loss_true_range_multiplier` — the asset's promoted barrier geometry, a hand's choice; absent, `START_BY_COORDINATE_DEFAULT` of `module_ml/config.py` is the asset's; tracked once promoted, like the feature set beside it
 - `<TICKER>_catalogue.json`
   - Code: `module_features/catalogue.py` writes it from `catalogue_contract()`; `catalogue_json()`
-  - Holds: the feature layer's contract the ML layer reads instead of the feature configuration: `decision_timeframe`, `timeframes` (each `timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` — each value a path relative to the artifacts store, `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`; untracked
+  - Holds: the feature layer's contract the ML layer reads instead of the feature configuration: `decision_timeframe`, `timeframes` (each `timeframe`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe` — each value a path relative to the artifacts store, `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`; untracked
 - `<TICKER>_feature_set.json`
   - Code: `module_features/sub_module_serpentine_search/promote.py` writes it; `feature_set_json()`
   - Holds: `columns_by_timeframe` — the promoted feature set, a hand's choice, and nothing else; absent, the default set is the asset's; tracked once promoted, like the parameters it conditions
@@ -1025,7 +1020,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: palette, feature list, feature store
 - the feature layer's contract, per asset — what the ML layer reads instead of this module's configuration
   - Code: `catalogue_contract()`, `catalogue_json()` in `module_features/config.py`; the descriptor's copy in `module_ml/config.py`; `load_catalogue()` in `module_ml/dataset.py`, `cat`
-  - Artifact key: `<TICKER>_catalogue.json`: `decision_timeframe`, `timeframes` (`timeframe`, `slot`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe`
+  - Artifact key: `<TICKER>_catalogue.json`: `decision_timeframe`, `timeframes` (`timeframe`, `duration_ms`), `warmup_top_timeframe_bars`, `warmup_end_ms`, `columns_by_timeframe`, `default_columns_by_timeframe`, `parquet_by_timeframe`
   - Never: an import of `module_features` from `module_ml`; a token or a slot parsed in the ML layer; a second read of the file inside one stage; a path built from the slot grammar outside `module_features`; a parquet named in the contract by anything but its path relative to the artifact store
 - the effective history — what a parameter covers on a timeframe, `bars × timeframe`, the quantity the nesting rule compares
   - Code: `definition_effective_history_hours()`

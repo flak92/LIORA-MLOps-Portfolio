@@ -143,7 +143,7 @@ RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 # ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
 # and the count the strategy's agreement reads all follow from it, so a new token is one line here and a new
 # experiment. Every entry is an exact aggregation of the canonical 1m series, written by bars.py; a token is
-# <integer><unit>, and its duration and the slot the contract carries derive from the token (skills/skill_feature_taxonomy.md)
+# <integer><unit>, and its duration and the slot the snapshot carries derive from the token (skills/skill_feature_taxonomy.md)
 HIERARCHY_TIMEFRAMES = VALUE_BY_CONFIGURABLE["HIERARCHY_TIMEFRAMES"]
 DECISION_TIMEFRAME = VALUE_BY_CONFIGURABLE["DECISION_TIMEFRAME"]
 TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": MILLISECONDS_PER_DAY}
@@ -344,10 +344,6 @@ def catalogue_schema() -> list[dict[str, str]]:
 
 
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts and its serpentine search
-# the key a scored state carries its selection score under — the word of the module that scores it, which the snapshot
-# publishes for each proposal
-# twice by extraction
-SELECTION_SCORE_KEY = "selection_score_cagr_validation_path"
 
 
 # twice by extraction
@@ -357,13 +353,13 @@ def catalogue_json(ticker: str):
 
 
 def catalogue_contract(ticker: str) -> dict:
-    """The catalogue as the ML layer needs it, per asset: the decision grid, the hierarchy with each timeframe's slot and
+    """The catalogue as the ML layer needs it, per asset: the decision grid, the hierarchy with each timeframe's
     duration, the warm-up, the columns offered per timeframe in catalogue order, the default set, and the partition of
     the catalogue family each timeframe's columns live in, as a path under the artifacts store — so ML parses no token,
     builds no path from this module's grammar and imports nothing."""
     return {
         "decision_timeframe": DECISION_TIMEFRAME,
-        "timeframes": [{"timeframe": timeframe, "slot": TIMEFRAME_SLOT[timeframe], "duration_ms": TIMEFRAME_DURATION_MS[timeframe]}
+        "timeframes": [{"timeframe": timeframe, "duration_ms": TIMEFRAME_DURATION_MS[timeframe]}
                        for timeframe in HIERARCHY_TIMEFRAMES],
         "warmup_top_timeframe_bars": WARMUP_TOP_TIMEFRAME_BARS,
         "warmup_end_ms": WARMUP_END_MS,

@@ -220,9 +220,7 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
         "label_valid": label_events["label_valid"].astype(bool),
         # the supervised population: an observable entry and an unambiguous event
         "sample_valid": label_events["entry_observable"].astype(bool) & label_events["label_valid"].astype(bool),
-        "event_resolution": label_events["event_resolution"].astype(np.int8),
         "entry_price": label_events["entry_price"].astype(np.float64),
         "upper_barrier": label_events["upper_barrier"].astype(np.float64),
         "lower_barrier": label_events["lower_barrier"].astype(np.float64),
-        "exit_reference_price": label_events["exit_reference_price"].astype(np.float64),
     }

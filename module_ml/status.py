@@ -144,7 +144,7 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
         (config.oos_predictions_parquet(ticker, cat["decision_timeframe"]), "out-of-sample class probabilities, full windows"),
         (config.asset_readme_md(ticker), "this file"),
         (config.barriers_json(ticker), "the promoted barrier geometry: the two multipliers of a trade, the label's own and the horizon token — a hand's choice; absent, the frozen constants are the asset's"),
-        (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their slots, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
+        (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their durations, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
         (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
         (config.hyperparameter_point_json(ticker), "the promoted hyper-parameter point: the first trial of the search, a hand's choice — absent, the search draws every point"),
         (config.model_evaluation_json(ticker), "classification metrics per fold"),

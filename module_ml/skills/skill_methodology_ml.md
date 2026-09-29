@@ -128,7 +128,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-AMBIGUITY-IS-NOT-A-CLASS`
   - Description: A minute touching both barriers is a missing observation and not a third outcome, so it is marked invalid rather than relabelled.
   - Scope: `module_ml/**/*.py`
-  - Expected: `label_valid = false` and the ambiguous `event_resolution` on such a row; the `0` its `y` column carries never read as the neutral class, every population and every published class count reading `y` through `sample_valid`.
+  - Expected: `label_valid = false` on such a row, set from the ambiguous `event_resolution` of its walk; the `0` its `y` column carries never read as the neutral class, every population and every published class count reading `y` through `sample_valid`.
   - Exception: none
 - `METHODOLOGY-ML-LABEL-VALIDITY-NEVER-GATES-AN-ENTRY`
   - Description: An entry may be gated on `entry_observable`, known at `t_0`, and never on `label_valid`, known only afterwards; a signal whose event turns out ambiguous is a trade, settled on the side adverse to the position.

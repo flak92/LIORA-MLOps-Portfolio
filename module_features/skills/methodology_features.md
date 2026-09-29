@@ -22,7 +22,7 @@ labels and the strategy stand on. The duration and the slot of each token are re
 (`timeframe_duration_ms()`, `timeframe_slot()`). The values of both records stand in the records,
 which `features_status.json` publishes (`configurables`), and it publishes, per timeframe, its
 duration, its bars per UTC day, its ratio to the level below and its slot (`catalogue.timeframes`).
-The slot travels in the contract and in no file name: a partition names its timeframe as
+The slot travels in the snapshot and in no file name: a partition names its timeframe as
 `timeframe=<timeframe>`.
 
 A token enters the hierarchy on two conditions (`FEATURE-TAXONOMY-A-TIMEFRAME-TOKEN-DIVIDES-THE-DAY`).

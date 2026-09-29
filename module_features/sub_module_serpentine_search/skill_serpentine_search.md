@@ -84,8 +84,8 @@ How the serpentine search of `module_features/sub_module_serpentine_search/` mov
   - Exception: none
 - `SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`
   - Description: `trial_count_by_loop`, whose sum is the N of the proposal, counts per loop the ledger's lines after the start and the points the studies drew that did not become lines, so a study's candidate, itself a drawn point, is counted once, as its line; it is written at a round boundary alone and rebuilt from the ledger on resume, so a resumed turn counts what an unbroken one would.
-  - Scope: `module_features/sub_module_serpentine_search/serpentine_search.py`, `module_features/status.py`
-  - Expected: At a round's end the ledger's lines by loop, the start's excluded, plus every round's draws less the lines that round's studies left; at a turn's start the draws still to count rebuilt as the recorded count less the lines of the rounds it covers; `status.serpentine_search_block()` copying `trial_count_by_loop`, never recounting it.
+  - Scope: `module_features/sub_module_serpentine_search/serpentine_search.py`
+  - Expected: At a round's end the ledger's lines by loop, the start's excluded, plus every round's draws less the lines that round's studies left; at a turn's start the draws still to count rebuilt as the recorded count less the lines of the rounds it covers.
   - Exception: none
 - `SERPENTINE-SEARCH-THE-NOISE-SIGMA-IS-DRAFTED`
   - Description: The asset's noise sigma is a number of its profile and so of the serpentine search's inputs: absent on the asset's first searches, the calibration runs, and set by a hand from a decision — estimated by `path_cagr_noise_standard_deviation()` off the ledgers of the asset's calibration searches, never recomputed by a serpentine search.

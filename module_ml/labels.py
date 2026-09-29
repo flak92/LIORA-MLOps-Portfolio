@@ -8,7 +8,8 @@ Entry is the canonical 1m open at t_0; the barriers are P0 ± m·ATR14 of the la
 multiplier; a touch requires
 volume > 0; event_end_ts is the exclusive end of the event, so the purge rule is event_end_ts <= oos_start. Both
 barriers inside one minute leave the order unknowable: label_valid = false, never relabelled 0. entry_observable
-(the entry minute traded) may gate an entry; label_valid never does. Y also carries the prices the backtest replays.
+(the entry minute traded) may gate an entry; label_valid never does. Y also carries the entry price and the two
+barriers, which the backtest rescales to a trade's own exit.
 """
 
 from __future__ import annotations
@@ -57,10 +58,8 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
     "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
-    "label_valid": "BOOLEAN",
-    "event_resolution": "TINYINT", "entry_price": "DOUBLE",
+    "label_valid": "BOOLEAN", "entry_price": "DOUBLE",
     "upper_barrier": "DOUBLE", "lower_barrier": "DOUBLE",
-    "exit_reference_price": "DOUBLE",
 }
 
 
@@ -143,10 +142,9 @@ def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
             int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
-            int(cols["label_valid"][i]), int(cols["event_resolution"][i]),
+            int(cols["label_valid"][i]),
             repr(float(cols["entry_price"][i])), repr(float(cols["upper_barrier"][i])),
             repr(float(cols["lower_barrier"][i])),
-            repr(float(cols["exit_reference_price"][i])),
         ] for i in range(cols["decision_ts"].size)),
         order_by="decision_ts",
         family="labels",
@@ -196,16 +194,13 @@ def label_events(label_inputs: dict, cat: dict, barriers: dict) -> dict[str, np.
 
     entry_price = bars_1m["open"][entry_rows(entry_ts)]
     upper_barrier, lower_barrier = label_barriers(entry_price, sigma, barriers["label_barrier_true_range_multiplier"])
-    y, t_res, event_resolution, exit_reference_price = triple_barrier(
-        bars_1m, entry_ts, upper_barrier, lower_barrier, horizon_minutes)
+    y, t_res, event_resolution, _ = triple_barrier(bars_1m, entry_ts, upper_barrier, lower_barrier, horizon_minutes)
     return {
         "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
         "event_end_ts": event_end_ts(entry_ts, t_res, horizon_minutes),
         "entry_observable": bars_1m["volume"][entry_rows(entry_ts)] > 0,
-        "label_valid": event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS,
-        "event_resolution": event_resolution, "entry_price": entry_price,
+        "label_valid": event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS, "entry_price": entry_price,
         "upper_barrier": upper_barrier, "lower_barrier": lower_barrier,
-        "exit_reference_price": exit_reference_price,
         "t_res": t_res,                        # the walk's own, for the stage's count of vertical exits
     }
 
