@@ -65,8 +65,8 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   recorded search's champion. *coordinates to search*: the coordinates of `GRID_BY_COORDINATE_DEFAULT`, each with its
   grid; the grid itself is not asked — it is one preset, and another grid is a hand's edit of the file. *loops*: the
   loops of a round in the order of `SERPENTINE_SEARCH_ROUND_LOOPS`. The drafted profile carries every coordinate: one
-  left unticked is pinned to where it stands — the first point of the grid the profile holds, or
-  `START_BY_COORDINATE_DEFAULT` when there is no profile yet — and its grid becomes that one point, which has no
+  left unticked is pinned to where the asset stands — its promoted `<TICKER>_barriers.json`, else
+  `START_BY_COORDINATE_DEFAULT` — the value the search starts from, and its grid becomes that one point, which has no
   neighbour, so its family makes no move. The asset's noise sigma is carried over unchanged, a hand's edit of the
   file. Then the changes table, `parameter | now | after`, or the line `no profile changes`; a recorded search run
   under another profile puts one `WARN` line above the gate — the next turn starts a new state and overwrites the

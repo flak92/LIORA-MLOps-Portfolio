@@ -101,8 +101,8 @@ def sweep_selection(sweeps: dict[int, dict]) -> tuple[float, float]:
     The rule reads the trade floor and nothing else, never the champion: a trial's value is what it is worth,
     not what it is worth against something. A trial with no threshold clearing the floor in every fold never
     reaches here — the fold loop stops it — because the grid floor it would otherwise be scored at is a
-    fallback for a *report*, a number to show when nothing qualified, and handing it to a sampler let a trial
-    that never qualified compete, and win, on the numbers of a threshold nothing qualified for."""
+    fallback for a *report*, a number to show when nothing qualified: handed to a sampler, it would let a trial
+    that never qualified compete on the numbers of a threshold nothing qualified for."""
     cleared = admissible_thresholds(sweeps, None, config.VALIDATION_FOLD_IDS)
     value, negated = max((strategy.validation_path_cagr(
         {fold_id: sweeps[fold_id][threshold]["final_equity"] for fold_id in config.VALIDATION_FOLD_IDS}),
@@ -166,9 +166,8 @@ def trial_row(trial: optuna.trial.FrozenTrial, origin: str, round_number: int | 
     Every key stands on every line, `null` where it does not apply, so the file reads as one table and not
     as two, and a reader counting lines does not have to know which is which first.
 
-    The state is read from `trial.state` and never inferred from `trial.value`: Optuna records the last
-    reported intermediate value as a pruned trial's value, so a trial stopped by a gate after reporting one
-    carries a value like a completed trial's."""
+    The state is read from `trial.state`, Optuna's own word for how the trial ended, and never inferred from
+    `trial.value`; a pruned trial's line carries no value."""
     pruned = trial.state == optuna.trial.TrialState.PRUNED
     floor_counts = trial.user_attrs["floor_clearing_threshold_count_by_fold"]
     admissible_counts = trial.user_attrs.get("admissible_threshold_count_by_fold")

@@ -267,11 +267,14 @@ def _tickers(given: str | None) -> list[str] | None:
     return [ticker.strip().upper() for ticker in answer.split(",") if ticker.strip()]
 
 
-def _pinned_point(profile: dict | None, name: str):
-    """Where an unsearched coordinate is pinned: the point the profile already stands on — the first of the
-    grid it holds — or the experiment's frozen geometry when a hand is drafting the first profile."""
-    grid = (profile or {}).get("grid_by_coordinate", {}).get(name)
-    return grid[0] if grid else config.START_BY_COORDINATE_DEFAULT[name]
+def _active_barrier(ticker: str, name: str):
+    """Where an unsearched coordinate is pinned: where the asset stands — its promoted geometry, else the experiment's
+    frozen one — the value a search starts from, so the one-point grid holds the start. The value takes the type of its
+    frozen default, as the search's own casts give it."""
+    path = config.barriers_json(ticker)
+    promoted = config.load_json(path) if path.exists() else {}
+    start = config.START_BY_COORDINATE_DEFAULT[name]
+    return type(start)(promoted.get(name, start))
 
 
 def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | None, search: dict | None) -> int:
@@ -334,7 +337,7 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
             # not there, and a coordinate a hand did not tick is not a coordinate that stopped existing — it is
             # one pinned to where it stands. Its grid is that single point, which the kernel already handles,
             # because a one-point grid has no neighbour and a family with no neighbour makes no move
-            "grid_by_coordinate": {name: (list(grid) if name in searched else [_pinned_point(profile, name)])
+            "grid_by_coordinate": {name: (list(grid) if name in searched else [_active_barrier(ticker, name)])
                                    for name, grid in sorted(config.GRID_BY_COORDINATE_DEFAULT.items())},
             "loops": loops,
             # the asset's noise sigma is a decision recorded elsewhere and a hand's edit of the file, never a step of

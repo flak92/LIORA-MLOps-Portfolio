@@ -301,11 +301,8 @@ def definition_warmup_bars(definition: dict) -> int:
     return max(term_warmup_bars(term) for term in definition["terms"])
 
 
-# The experiment's warm-up, in bars of the top timeframe — read off the catalogue, not written beside it.
-# Written down it was a number that had to be remembered: a definition with a longer memory than the one it
-# was set for is evaluated before its own value has settled, and nothing says so, because the rows are there
-# and finite. Derived, the catalogue moves it: a longer definition raises it by itself, and no second value
-# is written anywhere to follow it.
+# The experiment's warm-up, in bars of the top timeframe — read off the catalogue, not written beside it, so a
+# definition with a longer memory raises it by itself and is never evaluated before its own value has settled.
 WARMUP_TOP_TIMEFRAME_BARS = max(definition_warmup_bars(definition) for definition in FEATURE_CATALOGUE)
 WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATION_MS[HIERARCHY_TIMEFRAMES[-1]]
 

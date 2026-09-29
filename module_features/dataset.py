@@ -1,7 +1,6 @@
 """The parquet writer of the feature layer and the schema read off a written partition — twice by extraction, identical in
 module_ml/dataset.py — the canonical JSON writer of the feature layer, and the readers a search of this layer needs:
-the per-asset contract and the snapshot this module writes, and the state, the ledger and the answers the serpentine
-search reads back."""
+the per-asset contract, and the state, the ledger and the answers the serpentine search reads back."""
 
 from __future__ import annotations
 

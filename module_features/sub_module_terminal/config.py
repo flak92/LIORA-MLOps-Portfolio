@@ -87,7 +87,7 @@ def hyperparameter_point_json(ticker: str) -> Path:
 
 
 # the loops of a round in the order a round runs them, and the geometry a coordinate stands at without a promotion —
-# the point a draft pins an unsearched coordinate to
+# where a draft pins an unsearched coordinate when no promoted file says otherwise
 # twice by extraction
 SERPENTINE_SEARCH_ROUND_LOOPS = ("barrier", "feature_set", "hpo")
 # twice by extraction

@@ -1,7 +1,7 @@
 """Stage: the table of every CONFIGURABLES record the project holds, on stdout — `make skills-configurables`.
 
-The files are the files matrix's own: every controlled `config.py` whose module level assigns the block, in the
-matrix's order. A file is read as text and its block evaluated as a literal, never imported, so no stage of any module
+The files are the files matrix's own: every controlled `config.py` whose module level assigns the block, in path
+order. A file is read as text and its block evaluated as a literal, never imported, so no stage of any module
 runs here and nothing is installed for it; the records are printed in the block's order, one row each, the file they
 live in first. The table is rendered from the records and written nowhere, so it is never a second place a value is
 written; the same records print the same bytes.

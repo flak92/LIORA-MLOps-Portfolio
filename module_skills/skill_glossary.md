@@ -792,7 +792,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: the casts are what make an integer and the same number as a float one state, and the order is the order a state is keyed in; a copy differing by one cast turns every cache hit into a miss and the serpentine search pays again for states it already holds
 - `START_BY_COORDINATE_DEFAULT` — equal by value
   - Code: a CONFIGURABLES record and the constant read from it in `module_ml/config.py`; constants in `module_features/sub_module_serpentine_search/config.py` and `module_features/sub_module_terminal/config.py`
-  - Why twice: the geometry the chain stands at without a promotion, the point the serpentine search pins a coordinate at when the profile does not search it, and the point the features terminal's draft pins it at too; neither side may import the ML module, and the terminal not even its own module's `config.py`
+  - Why twice: the geometry the chain stands at without a promotion — where the serpentine search starts, and where the features terminal's draft pins a coordinate it does not search; neither side may import the ML module, and the terminal not even its own module's `config.py`
 - `TRADE_EXIT_COORDINATE_NAMES` — identical
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`
   - Why twice: the serpentine search moves the two as one family and the evaluator leaves them out of a fit identity; a copy that drifts merges states whose fits differ, with wrong numbers and no error

@@ -1,7 +1,8 @@
 """The feature layer's report: store/status/features_status.json for the dashboard — the catalogue as the register presents
 it (the facts of config.py: the hierarchy, the warm-up, every definition with its terms and histories, the nesting) and,
 per asset, the row counts of the catalogue's partitions and the serpentine search as it last wrote itself, beside the
-module's CONFIGURABLES records — assembled from what the stages and the turns wrote, deriving nothing of its own."""
+module's CONFIGURABLES records — assembled from the register and from what the stages and the turns wrote, and
+computing no metric."""
 
 from __future__ import annotations
 

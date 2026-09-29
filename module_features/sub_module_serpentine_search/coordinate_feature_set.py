@@ -10,8 +10,8 @@ from . import config
 from .. import config as features_config
 
 
-# the helpers take the hierarchy from the asset's contract, never from the feature layer's own register: a
-# contract an older catalogue wrote must read the same here as it reads where the state is scored
+# the helpers take the hierarchy from the asset's contract, never from the feature layer's own register: a state is
+# read here off the one contract it is scored against
 def columns_added(columns_by_timeframe: dict, active: dict, timeframes: tuple[str, ...]) -> dict:
     return {timeframe: [name for name in columns_by_timeframe[timeframe] if name not in active[timeframe]]
             for timeframe in timeframes}

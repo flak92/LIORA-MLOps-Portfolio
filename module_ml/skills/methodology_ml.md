@@ -431,8 +431,7 @@ writer had in mind would be a key the register could not define. The count the
 gate stops on is zero on a pruned trial's last fold and on no completed trial's —
 the floor's for the stage, the champion's for the search — which is the whole of
 the gate's story on one line. The state is read from `trial.state` and never
-inferred from the value: Optuna records the last reported intermediate value as a
-pruned trial's value.
+inferred from the value, and a pruned trial's line carries no value.
 
 **The stage starts from no point but a promoted one.** It is a function of X,
 Y, the frozen constants and the point a hand promoted,

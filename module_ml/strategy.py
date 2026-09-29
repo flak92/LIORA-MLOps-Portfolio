@@ -76,7 +76,7 @@ def trade_barriers(side: np.ndarray, entry_price: np.ndarray, upper_barrier: np.
     At tp = sl = m every scale is x / x = 1.0 and 1.0 * d = d, so the trade's barriers are the label's
     to the bit, for every m. Recovering one sigma from the upper barrier instead — entry + (U - E)/m * tp
     — reproduces the upper barrier and misses the lower by one unit in the last place on 2 % of rows,
-    which fill_price returns verbatim for a long stop: do not simplify this back to a sigma."""
+    which fill_price returns verbatim for a long stop — so each half-width is rescaled, and no sigma recovered."""
     take_profit_scale = take_profit_true_range_multiplier / label_barrier_true_range_multiplier
     stop_loss_scale = stop_loss_true_range_multiplier / label_barrier_true_range_multiplier
     return (entry_price + np.where(side > 0, take_profit_scale, stop_loss_scale) * (upper_barrier - entry_price),
