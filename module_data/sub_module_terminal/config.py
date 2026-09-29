@@ -13,7 +13,7 @@ import re
 import sys
 
 # plain output — state words in brackets, no colour, no symbol, no border: NO_COLOR set and not empty, TERM=dumb,
-# or standard output not a terminal (module_skills/skill_tui_designer.md § Colour and plain output)
+# or standard output not a terminal (module_skills/skill_tui_designer.md, TUI-DESIGNER-PLAIN-OUTPUT-FOLLOWS-THE-ENVIRONMENT)
 # twice by extraction
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())

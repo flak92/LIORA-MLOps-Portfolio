@@ -1,16 +1,655 @@
 {
  "files": [
   {
-   "crawl_count": 2,
-   "last_crawled_utc": "2026-09-14 07:38",
-   "path": "AGENTS.md",
-   "report": "reports_after_crawled_files/AGENTS.md.md"
+   "finished_at_utc": null,
+   "path": ".gitignore",
+   "report": null,
+   "state": "pending",
+   "vendor": null
   },
   {
-   "crawl_count": 6,
-   "last_crawled_utc": "2026-09-14 16:11",
+   "finished_at_utc": null,
+   "path": "AGENTS.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "CLAUDE.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "Dockerfile",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "Makefile",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "README.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "docker-compose.yml",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/README_module_data.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
    "path": "module_data/config.py",
-   "report": "reports_after_crawled_files/module_data/config.py.md"
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/download_binance.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/download_bybit.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/ingest.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/lean.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/status.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/sub_module_terminal/README_sub_module_terminal.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/sub_module_terminal/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/sub_module_terminal/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/sub_module_terminal/terminal.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_data/sub_module_terminal/tui.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/README_module_features.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/bars.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/catalogue.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/dataset.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/indicators.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/status.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/coordinate_barrier.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/coordinate_feature_set.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/promote.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_serpentine_search/serpentine_search.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_terminal/README_sub_module_terminal.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_terminal/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_terminal/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_terminal/terminal.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_features/sub_module_terminal/tui.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/README_module_ml.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/dataset.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/hpo.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/labels.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/model.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/score.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/status.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/strategy.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/sub_module_terminal/README_sub_module_terminal.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/sub_module_terminal/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/sub_module_terminal/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/sub_module_terminal/terminal.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/sub_module_terminal/tui.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/train.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_ml/validation.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/README_module_monitoring.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/asset.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/data.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/features.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/index.html",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/ml.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/page.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/run.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/scalability.js",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/serve.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/style.css",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/sub_module_terminal/README_sub_module_terminal.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/sub_module_terminal/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/sub_module_terminal/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/sub_module_terminal/terminal.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_monitoring/sub_module_terminal/tui.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/README.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/configurables.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sheet.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/README_sub_module_scalability_crawler.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/crawl.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/crawlers_mission.md",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/status.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_terminal/__init__.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_terminal/config.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_terminal/terminal.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sub_module_terminal/tui.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "module_skills/sync.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "record.py",
+   "report": null,
+   "state": "pending",
+   "vendor": null
+  },
+  {
+   "finished_at_utc": null,
+   "path": "requirements.txt",
+   "report": null,
+   "state": "pending",
+   "vendor": null
   }
  ]
 }

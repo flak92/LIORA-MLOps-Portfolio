@@ -71,8 +71,9 @@ X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
 Features and target therefore describe the same canonical research object by
 construction, and nothing here simulates trading on a named exchange: it
 simulates a strategy on a canonical market model, with the costs stated.
-`module_data/skills/skill_candle_canonicalisation.md` § 5 and § 6 carry the construction rule and why verbatim candles
-beat an average.
+`CANDLE-CANONICALISATION-A-CANDLE-IS-CHOSEN-WHOLE` and `CANDLE-CANONICALISATION-PRIMARY-FAILOVER-IS-A-TABLE`
+(`module_data/skills/skill_candle_canonicalisation.md`) carry the construction rule, and
+`module_data/skills/methodology_data.md` why verbatim candles beat an average.
 
 ## 3. Time semantics
 
@@ -803,7 +804,7 @@ loop of `features-serpentine-search` fan out by it; `data-ingest` stays at one a
 at a time, and the three status stages run once over the basket.
 
 Thread caps stay at one — `nthread = 1`, `OMP_NUM_THREADS = 1` — for the
-reason `module_skills/skill_determinism.md` states. The hyper-parameter search is
+reason `DETERMINISM-THREAD-CAPS-FROZEN-AT-ONE` (`module_skills/skill_determinism.md`) states. The hyper-parameter search is
 CPU-bound and one asset's study is sequential by construction, so the wall-clock
 floor of `ml-hpo` is the slowest single asset.
 
@@ -836,9 +837,8 @@ no trial of another experiment is read as a cache hit.
 
 This table is the layer's rebuild condition, held in a document a reader applies
 rather than in a stage: what decides that an asset's artifacts are stale stays
-separate from the stages that rebuild them —
-`module_skills/skill_pre_aws_solution.md` § The rebuild condition stays
-separable.
+separate from the stages that rebuild them — the rebuild condition
+`module_skills/skill_pre_aws_solution.md` keeps separable.
 
 ## 12. What this is, and what it is not
 

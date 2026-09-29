@@ -142,13 +142,17 @@ features-serpentine-search-reset: ## remove one asset's serpentine search — it
 	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_trials.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
 	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)
 
-# the canon's crawler and its text-based user interface (TUI), on the host: python3 and gum, git only for the root, the
-# paths an add offers and the commit a report entry names, the canon having no runner and no dependency — it gates
-# nothing, and no target of the chain depends on it
-skills-crawl:    ## the crawler's TUI: the listed paths and the skill matrix, then one action — crawl chosen listed files with a vendor, model, effort and permissions chosen in turn, after the plan; add a path with its skills; mark a path's skills; or remove a path — then it closes; run it in a terminal
+# the canon, on the host: python3 and the standard library alone, no runner and no dependency — the sheet rendered into
+# every Skill and the glossary, the CONFIGURABLES records tabled, and the controlled files read against their Skills; it
+# gates nothing, and no target of the chain depends on it
+skills-sync:     ## render every Skill and module_skills/glossary.md from module_skills/skills_sheet.xlsx
+	python3 -B -m module_skills.sync
+skills-configurables: ## the table of every CONFIGURABLES record in the controlled config.py files, on stdout
+	python3 -B -m module_skills.configurables
+skills-crawl: skills-sync ## after the sync, read every controlled file of the files matrix against the Skills marked for it with the active vendor — up to 30 min per file; Ctrl-C ends it, the reports already written stay
 	python3 -B -m module_skills.sub_module_scalability_crawler.crawl
-skills-status:   ## skills_status.json -> store/status: every listed file with the date of its last report
-	python3 -B -m module_skills.sub_module_scalability_crawler.status
+skills-terminal:
+	python3 -B -m module_skills.sub_module_terminal.terminal
 
 # the presentation switch — the one switch pair the target grammar admits (AGENTS.md § Canonical vocabulary): two words to
 # type in front of an audience; the rest is a click in the page

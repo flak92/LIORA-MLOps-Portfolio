@@ -1,1 +1,1 @@
-"""The scalability crawler: every file to_crawl.md lists, read by the agent against the skills its row marks into its report, and the reports' dates in store/status/skills_status.json."""
+"""The scalability crawler: every controlled file of the files matrix, read by the active vendor against the Skills its row marks into its current report, and the state of each file in store/status/skills_status.json."""

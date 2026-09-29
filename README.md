@@ -13,7 +13,7 @@ simulation → monitoring.
 
 The four modules of the chain sit at the root beside what none of them owns: the
 Makefile and the compose file that run them, the recorder, the five stores, one folder each under `store/`, and
-the canon of rules that cross them, with the one sub-module that reads each listed file against the skills a hand marks for it. The governing contract — minimalism, minimum requirements,
+the canon of rules that cross them — one workbook every rule is a row of — with the crawler that reads each controlled file against the Skills marked for it. The governing contract — minimalism, minimum requirements,
 KISS/YAGNI/DRY/SOLID, UCAS, pipeline-first, and what holds the project
 together — is [AGENTS.md](AGENTS.md). Each module carries its own rules in its
 `skills/` and its front door in `README_module_<name>.md`; the naming register
@@ -39,13 +39,15 @@ Each module's terminal is an entry, not an action, so it carries no line in `mak
 make data-terminal         # the data module's stages over each asset's raw days and canonical series
 make features-terminal     # the feature module's stages and the serpentine search: draft, read, promote
 make ml-terminal           # the ML module's stages and the scoring of a request
-make monitoring-terminal   # the four snapshots and the run records, then the presentation switch
+make monitoring-terminal   # the four snapshots, then the presentation switch
+make skills-terminal       # the canon: the sheet and the crawl's state, then one of the canon's tools
 ```
 
-`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`,
-`make skills-crawl`, `make skills-status` and the opener `make on` prints through — are the whole requirement of the host;
-`tmux` joins them for the detached search, and gum 2 for the crawler's text-based user interface (TUI) beside at least one command line
-of `module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml`, installed and logged in, for the crawler's agent.
+`git`, `docker`, `make` and Python 3 — standard library only, for `record.py`, the terminals, the canon's
+tools and the opener `make on` prints through — are the whole requirement of the host; `tmux` joins them for the
+detached search, gum 2 for the terminals' text-based user interface (TUI), and, for `make skills-crawl` alone, the one
+active command line of `module_skills/sub_module_scalability_crawler/vendors_for_crawling.toml`, installed and logged
+in.
 Everything runs through the Makefile. `on` and `off` are the presentation switch,
 the one switch pair the target grammar admits ([AGENTS.md](AGENTS.md) § Canonical
 vocabulary): two words for a presenter to remember.
@@ -82,15 +84,18 @@ tunes the promoted state again, so the result that counts is the rerun's on the 
 make features-serpentine-search-promote ASSET=BTC PROPOSAL=1   # the proposal's columns into BTC_feature_set.json and its barrier geometry into BTC_barriers.json, then ml-all for BTC
 ```
 
-The canon's crawler, outside the chain, by hand in a terminal (`module_skills/sub_module_scalability_crawler/skill_scalability_crawler.md`):
+The canon, outside the chain, on the host — every rule a row of one workbook, `module_skills/skills_sheet.xlsx`,
+edited with any spreadsheet program:
 
 ```bash
-make skills-crawl     # the TUI in gum: the listed paths and the skill matrix, then one action — crawl (vendor, model, effort, permissions, files, then the plan — each first option, every file and crawl preselected), add a path (its skills chosen, previewed), mark skills (the changes shown) or remove a path (confirmed) — then it closes; Esc writes nothing
-make skills-status    # the snapshot of the listed files' reports, without the TUI — the Scalability tab reads it
+make skills-sync           # render every skill_*.md and module_skills/glossary.md from the sheet
+make skills-configurables  # the table of every CONFIGURABLES record in the controlled config.py files, on stdout
+make skills-crawl          # after the sync, every controlled file of the sheet's files matrix read against the Skills marked for it by the active vendor — up to 30 min a file; Ctrl-C ends it, the reports already written stay
 ```
 
-Its skill matrix, vendors and mission are `to_crawl.md`, `vendors_for_crawling.toml` and `crawlers_mission.md` in
-`module_skills/sub_module_scalability_crawler/`, each kept by hand — a row per path, an `X` under each skill it is read against; a vendor is one table whose forms are data, its CLI installed and logged in.
+The crawl writes one report per file under `store/status/reports_after_crawled_files/`, untracked, and
+`store/status/skills_status.json`, which the Scalability tab reads; its vendors and its mission are
+`vendors_for_crawling.toml` and `crawlers_mission.md` in `module_skills/sub_module_scalability_crawler/`, kept by hand.
 
 `tmux` is a tool of the host beside `docker` and `git`, never of an image.
 
@@ -104,11 +109,11 @@ is `docker compose run --rm -T features python -m module_features.catalogue --ti
 basket — and `data-all`, `features-all`, `ml-all` and `all` are the chains. The stage order is the
 Makefile's `all:`, `data-all:`, `features-all:` and `ml-all:`; every document points there. The host port is measured
 at invocation — the port the dashboard already publishes, else the first free port from 8900 upward
-(`module_skills/skill_asset_containers.md` § The topology) — and `PORT=8902 make on` overrides
+(`ASSET-CONTAINERS-THE-HOST-PORT-IS-MEASURED`) — and `PORT=8902 make on` overrides
 it; `JOBS=2 make ml-hpo` sets the fan-out width, and every stage is idempotent in what it
 derives, so a rerun fetches and rebuilds only what its contract says — the `hpo_trials`
 ledger alone grows, one study more per `ml-hpo`, and beside the chain the crawler's reports
-grow one entry per file crawled. The dashboard is
+are reset and written again by every crawl. The dashboard is
 docker-only and reachable on loopback alone; on a remote machine tunnel with
 `ssh -N -L 8900:127.0.0.1:<port> <host>`, `<port>` the one `make on` printed there.
 Four direct dependencies across
@@ -261,15 +266,19 @@ file in a store instead (`AGENTS.md` § Architecture shape).
 
 ## Skills
 
-`AGENTS.md` and `module_skills/` are the canon: the contract, the naming register
-and the rules that cross modules, and the one sub-module that reads each listed file
-against the skills a hand marks for it — `make skills-crawl` opens the crawler's TUI, where a hand chooses one action — crawl, which sends the files it chooses from the skill matrix to an agent after the plan, each with the skills its row marks, and appends each answer to that file's report; add a path with its skills; mark a path's skills; or remove a path — and
-`make skills-status` dates the reports in `store/status/skills_status.json`; it gates nothing (`module_skills/sub_module_scalability_crawler/skill_scalability_crawler.md`). How any of this tree's terminals draws a screen is the canon's too,
-`module_skills/skill_tui_designer.md`, because every module now draws one: `make <module>-terminal`
-opens that module's terminal over its own stages, and the crawler draws its own. A module's own rules live under that module, in
-`module_<domain>/skills/`, and the index `module_skills/README.md` links to all of
-them. Each rule is written exactly once, where it is owned, and no document
-restates another (`AGENTS.md` § The default choice).
+`AGENTS.md` and `module_skills/` are the canon: the contract, the name register and the rules that cross
+modules. Every rule of the tree is a row of one workbook, `module_skills/skills_sheet.xlsx` — a `rule_id`, its
+description, the files it binds, what conforming looks like and its one exception — and `make skills-sync` renders the
+rows into the `skill_*.md` beside what each governs, and the register into `module_skills/glossary.md`; a generated
+document is never edited by hand, and a document cites a rule by its `rule_id`. The sheet's files matrix marks which
+Skills each controlled file is read against: `make skills-crawl` sends every controlled file with its marked Skills to
+the one active vendor and keeps one report per file; it gates nothing
+(`module_skills/sub_module_scalability_crawler/README_sub_module_scalability_crawler.md`). How any of this tree's
+terminals draws a screen is the canon's too, `module_skills/skill_tui_designer.md`: `make <module>-terminal` opens that
+module's terminal over its own targets, and `make skills-terminal` the canon's. A module's own rules live under that
+module, in `module_<domain>/skills/` and beside its sub-modules, and the index `module_skills/README.md` links to all of
+them. Each rule is written exactly once, where it is owned, and no document restates another (`AGENTS.md` § The default
+choice).
 
 ## Parity
 
@@ -351,17 +360,18 @@ and none is planned; the mapping is described, not built. Correctness is shown b
 the whole chain running end to end on a small representative basket, `BTC`
 today, never by production-scale infrastructure: there is no test suite, no
 security layer and no guard beyond the seven the mathematics needs (`AGENTS.md`
-§ Values). The rule, its non-goals, the mapping table and what the shape holds:
-[module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md).
+§ Values). The rules are
+[module_skills/skill_pre_aws_solution.md](module_skills/skill_pre_aws_solution.md); the twelve classes, the
+seats, the mapping table and what the shape holds are
+[module_skills/README.md](module_skills/README.md) § The Pre-AWS mapping.
 
-The same skill seats the four things a move would name first — the host and the
+That section seats the four things a move would name first — the host and the
 volume where every asset's folder and the other `store/<content>/` folders live, the
 one-off task and the state machine over the stages, the table families
 partitioned by asset, and the strategy host that is absent; `AGENTS.md` § Skills absent here,
 described lists the skills those seats imply, each with its owner, what it
-would govern and the one condition under which it is written. Four local skills
-carry one seat paragraph each, naming the primitive their object answers to and
-citing that skill for the rest.
+would govern and the one condition under which it is written. The local skills'
+seats stand there too, one paragraph each, naming the primitive their object answers to.
 
 ## Data formats
 

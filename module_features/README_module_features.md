@@ -1,10 +1,13 @@
 # module_features — the canonical series in, the feature catalogue out
 
 The front door of this module: what it is, where its responsibility stops, and
-how to run it. The names are `skills/skill_feature_taxonomy.md`; the definitions,
-the feature id and the serpentine search's mathematics are
-`skills/methodology_features.md`; neither is repeated here. *The repository
-shows the destination, not the road*.
+how to run it. Its rules are `skills/skill_feature_taxonomy.md` — the tokens,
+the registers, the names, the catalogue record, the warm-up, the two families
+and the contract — and `sub_module_serpentine_search/skill_serpentine_search.md`
+for the serpentine search, both rendered by `make skills-sync` from the canon's
+sheet and cited by `rule_id`; the definitions, the feature id and the serpentine
+search's mathematics are `skills/methodology_features.md`; none is repeated
+here. *The repository shows the destination, not the road*.
 
 `module_features` reads one asset's partition of the canonical 1m family and
 produces the feature catalogue: exact bars on every timeframe of the register —
@@ -95,20 +98,21 @@ The manifest and what each file holds are in `module_skills/glossary.md`
 
 ## Extending
 
-Every element of the taxonomy is one record in one register, and its name, its
-computation, its history and its warm-up are read off that record — so adding
-one is a local edit, and what it costs is known before it is made. The rules
-the names follow are `skills/skill_feature_taxonomy.md`; this is what each
-addition touches.
+Every element of the taxonomy is one record in one register
+(`FEATURE-TAXONOMY-A-REGISTER-IS-RECORDS-BESIDE-THEIR-KERNELS`), and its name,
+its computation, its history and its warm-up are read off that record — so
+adding one is a local edit, and what it costs is known before it is made. The
+rules each element follows are `skills/skill_feature_taxonomy.md`, cited below
+by `rule_id`; this is what each addition touches.
 
 | what you add | where, and how much | what it changes | the gate |
 |---|---|---|---|
-| a timeframe | one token in `HIERARCHY_TIMEFRAMES` (`config.py`, a CONFIGURABLES record) — `<integer><unit>`, the unit one of `m`, `h`, `d` and the integer under 100: `TIMEFRAME_UNIT_MS` and `TIMEFRAME_UNIT_SLOT_FIELD` are the accepted set, and a wider number breaks the fixed-width slot the contract carries; a token finer than `DECISION_TIMEFRAME` is read on the decision grid alone, so a finer grid is a move of that record too, and `LABEL_BARRIER_TRUE_RANGE_TIMEFRAME` of `module_ml/config.py` stays an entry of the hierarchy | a different experiment: both families, the contract and the snapshot, the labels, X and every artifact, the final holdout included; a token above the top also moves the trend gate's timeframe — `trend_gate_timeframe()` of `module_ml/config.py` reads the top of the contract's hierarchy — and `WARMUP_END_MS`, which counts bars of the top timeframe, and leaves `MINIMUM_AGREEING_TREND_TIMEFRAMES` of `module_ml/config.py` at its value over a larger hierarchy — decide it in the same commit; the annualisation reads the decision bar's duration off the contract | nothing stays byte-identical; the whole chain reruns; a drafted profile and a promoted `<TICKER>_feature_set.json` name their columns per timeframe and are drafted again, and a recorded serpentine search starts again by itself; the manifest of `module_skills/glossary.md` § Artifacts follows |
+| a timeframe | one token in `HIERARCHY_TIMEFRAMES` (`config.py`, a CONFIGURABLES record) under `FEATURE-TAXONOMY-A-TIMEFRAME-TOKEN-DIVIDES-THE-DAY` — `<integer><unit>`, the unit one of `m`, `h`, `d` and the integer under 100: `TIMEFRAME_UNIT_MS` and `TIMEFRAME_UNIT_SLOT_FIELD` are the accepted set, and a wider number breaks the fixed-width slot the contract carries; a token finer than `DECISION_TIMEFRAME` is read on the decision grid alone, so a finer grid is a move of that record too, and `LABEL_BARRIER_TRUE_RANGE_TIMEFRAME` of `module_ml/config.py` stays an entry of the hierarchy | a different experiment: both families, the contract and the snapshot, the labels, X and every artifact, the final holdout included; a token above the top also moves the trend gate's timeframe — `trend_gate_timeframe()` of `module_ml/config.py` reads the top of the contract's hierarchy — and `WARMUP_END_MS`, which counts bars of the top timeframe, and leaves `MINIMUM_AGREEING_TREND_TIMEFRAMES` of `module_ml/config.py` at its value over a larger hierarchy — decide it in the same commit; the annualisation reads the decision bar's duration off the contract | nothing stays byte-identical; the whole chain reruns; a drafted profile and a promoted `<TICKER>_feature_set.json` name their columns per timeframe and are drafted again, and a recorded serpentine search starts again by itself; the manifest of `module_skills/glossary.md` § Artifacts follows |
 | an indicator | its kernel and one record in `INDICATORS` (`indicators.py`): its `parameter_word`, its `warmup_multiple`, its fixed `inputs` and bounded `output_range` where it has them, and its `historical_aliases` | nothing, until a catalogue record names it | the existing partitions byte-identical |
 | a derived series | one entry in `SERIES_KERNELS` (`indicators.py`) | nothing, until a term names it | the existing partitions byte-identical |
 | an operator or a normaliser | one record in `OPERATORS` or `NORMALISERS`, beside its kernel (`catalogue.py`) | nothing, until a catalogue record names it | the existing partitions byte-identical |
-| a feature definition | one record appended to `FEATURE_CATALOGUE` (`config.py`), never inserted: its `terms`, its `operators` (one fewer than its terms) and any `normaliser`, its `range`, the `timeframes` it is offered on, its `tier`, any `historical_aliases`, and `definition_in_default_set: False` — the field table is `skills/skill_feature_taxonomy.md` § The catalogue and the feature set; then its equation in `skills/methodology_features.md` § The catalogue, and the counts wherever they are quoted — `skills/skill_feature_taxonomy.md` § The catalogue and the feature set, the lede of `skills/methodology_features.md` § The catalogue, and `README.md` § ML research layer | every `catalogue` partition of a timeframe it is offered on gains a column, `catalogue/schema.json` a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the serpentine search's `inputs` change; a definition whose warm-up exceeds `WARMUP_TOP_TIMEFRAME_BARS` raises it, and the first decision of every asset moves with it | while the warm-up stands, the existing columns byte-identical, `ml-labels` … `ml-strategy` untouched and `features-status` republishing the catalogue; a recorded search starts again from trial 1 by itself, and a model sees the column only after a promotion; `catalogue.nesting` in `features_status.json` shows whether each level's longest history stays below the shortest of the level above — update the *Today* sentence of `skills/skill_feature_taxonomy.md` § Scope nesting in the same commit |
-| a second parameter for an indicator | the record and the name grammar, in one commit (`skills/skill_feature_taxonomy.md` § Series and indicators) | the derived names of existing terms do not change | the existing partitions byte-identical |
+| a feature definition | one record appended to `FEATURE_CATALOGUE` (`config.py`), never inserted (`FEATURE-TAXONOMY-A-DEFINITION-IS-APPENDED`): its `terms`, its `operators` (one fewer than its terms) and any `normaliser`, its `range`, the `timeframes` it is offered on, its `tier`, any `historical_aliases`, and `definition_in_default_set: False` — the fields are `FEATURE-TAXONOMY-A-CATALOGUE-RECORD-CARRIES-EVERY-FIELD`, their table `skills/methodology_features.md` § The catalogue; then its equation in that section's catalogue table, and the counts wherever they are quoted — the lede of `skills/methodology_features.md` § The catalogue and `README.md` § ML research layer | every `catalogue` partition of a timeframe it is offered on gains a column, `catalogue/schema.json` a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the serpentine search's `inputs` change; a definition whose warm-up exceeds `WARMUP_TOP_TIMEFRAME_BARS` raises it, and the first decision of every asset moves with it | while the warm-up stands, the existing columns byte-identical, `ml-labels` … `ml-strategy` untouched and `features-status` republishing the catalogue; a recorded search starts again from trial 1 by itself, and a model sees the column only after a promotion; `catalogue.nesting` in `features_status.json` shows whether each level's longest history stays below the shortest of the level above, a criterion no stage asserts (`FEATURE-TAXONOMY-EFFECTIVE-HISTORIES-ARE-SHOWN-NOT-ASSERTED`) — update the nesting paragraph of `skills/methodology_features.md` § The catalogue in the same commit |
+| a second parameter for an indicator | the record and the name grammar, in one commit (`FEATURE-TAXONOMY-A-TERM-IS-ITS-TOKEN-AND-ONE-PARAMETER`) | the derived names of existing terms do not change | the existing partitions byte-identical |
 
 `definition_in_default_set: True` is a different move: it puts the column into
 every asset's X where no feature set is promoted, so the ML chain reruns,
@@ -122,11 +126,11 @@ drafts first.
 
 ## Design rationale
 
-Why each object of this module sits where it does — the answers of
-`module_skills/skill_self_explaining_naming.md` § The naming review written
-down, one row per object, analogous pair or the module's documents; the mapping
-row it answers to is `module_skills/skill_pre_aws_solution.md` § The mapping
-table, cited by its *responsibility* column and never repeated.
+Why each object of this module sits where it does — the answers the naming review asks for
+(`SELF-EXPLAINING-NAMING-A-NEW-OBJECT-PASSES-THE-NAMING-REVIEW`) written down, one row per object, analogous pair
+or the module's documents; the mapping row it answers to is a row of the mapping table of `module_skills/README.md`
+§ The Pre-AWS mapping, cited by its *responsibility* column and never repeated
+(`PRE-AWS-SOLUTION-A-PLACEMENT-ANSWERS-TO-ONE-RESPONSIBILITY`).
 
 | object | why here | why beside these | why this boundary | answers to |
 |---|---|---|---|---|
@@ -137,8 +141,8 @@ table, cited by its *responsibility* column and never repeated.
 | `dataset.py` | The parquet writer of this layer, `write_parquet()`, the schema read off a written partition, `load_partition_schema()`, its canonical JSON writer, `write_json()`, and the readers and the ledger's batch append the serpentine search reads and writes with, `load_json()`, `load_jsonl()` and `append_jsonl()` — all but `append_jsonl()` twice by extraction, identical in `module_ml/dataset.py` (its docstring). | `bars.py`, `catalogue.py`, `status.py` and the serpentine search import it, and it imports `config.py` alone; nothing outside the module imports it. | It writes to the descriptor it is handed and builds no path of its own, so an artifact lands where a `config.py` says on whatever disk is mounted at `/store`. | STORAGE — research artifacts |
 | `status.py` | The stage that measures this module's own facts — the catalogue as the register presents it, the module's CONFIGURABLES records, and each asset's row counts and serpentine search as it last wrote itself — published as `store/status/features_status.json` (its docstring). | It imports `config.py`, `dataset.py` and the serpentine search's `config.py`, `coordinate_feature_set.py` and `serpentine_search.py`; it reads the partitions `catalogue.py` wrote, the contract, the parameters file, the profile, the state file and its ledger, and writes the snapshot `ml.js` fetches for the catalogue frame. | It takes `--tickers` like every stage and runs once in a one-off container of the `features` runner, writing at `FEATURES_STATUS_JSON_PATH` under the `STORE_STATUS_DIR` the launcher names. | COMPUTE — one stage, one one-off process |
 | `__init__.py` | The package that makes `python -m module_features.<stage>` a command (§ Stages), its docstring the module's responsibility in one line. | It names the register, the bars, the kernels, the catalogue, the contract, the snapshot and the serpentine search, and imports nothing. | The same `python -m module_features.<stage> --tickers <TICKER>` runs in a one-off container of the `features` runner (§ Stages) — the launcher setting the two `STORE_*_DIR` — the command `docker compose run --rm -T features` carries unchanged whichever host starts it. | COMPUTE — one stage, one one-off process |
-| the module's documents — `README_module_features.md` and `skills/` | This orientation and the normative documents of `skills/`, filed by ownership (`../AGENTS.md` § The default choice); the serpentine search has no document of its own — its orientation is § Its sub-modules and its method `skills/methodology_features.md` § The serpentine search. | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no stage and no route reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the module's code, beside it |
-| `sub_module_terminal/` | The module's own terminal — the hand's instrument over this layer: each asset's bars and catalogue partitions, its contract and its serpentine search, then one of the module's targets started through `make`, or the serpentine search's draft, recorded search and promotion (§ Its sub-modules). | It imports the standard library and its own package alone, and nothing of the package above it: `config.py` imports `.indicators` at its thirteenth line, and numpy with it, and the serpentine search's `config.py` imports that one, so it carries registered copies of the store read, the descriptors and the records it reads. | It runs on the host's `python3` with gum, in no container and no venv, and computes nothing: what it starts, the Makefile names — the reasons, object by object, are `sub_module_terminal/skill_features_terminal.md` § Design rationale. | no row — a hand's instrument, beside the stages it starts |
+| the module's documents — `README_module_features.md` and `skills/` | This orientation, the rules of `skills/skill_feature_taxonomy.md` — rendered from the canon's sheet — and the method `skills/methodology_features.md`, a reference for a human, filed by ownership (`../AGENTS.md` § The default choice); the serpentine search's rules are `sub_module_serpentine_search/skill_serpentine_search.md`, beside its code, its orientation § Its sub-modules and its method `skills/methodology_features.md` § The serpentine search. | The orientation points at the documents beside it (§ Its normative skills), and every rule about this module sits in `skills/` (`../AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no stage and no route reads, travelling with the code beside them — the same paths beside the code wherever the code is. | no row — a document that travels with the module's code, beside it |
+| `sub_module_terminal/` | The module's own terminal — the hand's instrument over this layer: each asset's bars and catalogue partitions, its contract and its serpentine search, then one of the module's targets started through `make`, or the serpentine search's draft, recorded search and promotion (§ Its sub-modules). | It imports the standard library and its own package alone, and nothing of the package above it: `config.py` imports `.indicators` at its thirteenth line, and numpy with it, and the serpentine search's `config.py` imports that one, so it carries registered copies of the store read, the descriptors and the records it reads. | It runs on the host's `python3` with gum, in no container and no venv, and computes nothing: what it starts, the Makefile names — its orientation is `sub_module_terminal/README_sub_module_terminal.md`, its rules `module_skills/skill_tui_designer.md`. | no row — a hand's instrument, beside the stages it starts |
 | `sub_module_serpentine_search/` | The serpentine search, a hand's research outside the chain over one asset's feature set, barrier geometry and hyper-parameters: `serpentine_search.py` one turn, `coordinate_barrier.py` and `coordinate_feature_set.py` the moves of the two coordinates it generates, `promote.py` the promotion, and `config.py` its CONFIGURABLES records, its round, the constants of its gate and the one place it builds a path (§ Its sub-modules). | It imports this module's `config.py` and `dataset.py` and nothing of another module — the values a state is made of and the files of the evaluation contract are registered copies — and `status.py` imports it to publish each asset's search. | What a state is worth crosses to `module_ml` as two files, the question and the answer, never as an import; a turn and a promotion each run in a one-off container of the `features` runner with `--tickers <TICKER>`, and the loop that alternates a turn with `ml-score` is the Makefile's. | COMPUTE — one stage for one asset |
 
 ## Its sub-modules
@@ -156,15 +160,15 @@ gum, imports the standard library and its own package alone, and cannot import
 `config.py`, whose thirteenth line imports `.indicators` and numpy with it, so
 it carries registered copies of what it reads (`module_skills/glossary.md`
 § Twice by extraction). Its orientation is
-`sub_module_terminal/README_sub_module_terminal.md`, its rules
-`sub_module_terminal/skill_features_terminal.md` beside it, and the standards of
-its screens `module_skills/skill_tui_designer.md`.
+`sub_module_terminal/README_sub_module_terminal.md`, and its rules — the
+standards of every terminal's screens — `module_skills/skill_tui_designer.md`.
 
 `sub_module_serpentine_search/` is the serpentine search: a hand's research
 outside the chain over one asset's state — its feature set, its barrier geometry
-and its hyper-parameter point — under a profile a hand drafted. It has no
-document of its own; its method, its thresholds and their limits are
-`skills/methodology_features.md` § The serpentine search.
+and its hyper-parameter point — under a profile a hand drafted. Its rules are
+`sub_module_serpentine_search/skill_serpentine_search.md`, beside its code; its
+method, its thresholds and their limits are `skills/methodology_features.md`
+§ The serpentine search.
 
 - **A turn** — `make features-serpentine-turn`, one one-off container of the
   `features` runner per asset — reads the profile, the asset's `best_params`
@@ -209,7 +213,7 @@ document of its own; its method, its thresholds and their limits are
   is read after and never steers. What is kept is the proposal's columns and
   geometry, not the model the search evaluated, so the realised result differs
   from the search's. A search that proposes nothing has ended correctly, with
-  nothing to promote.
+  nothing to promote (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
 - **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` —
   removes `<TICKER>_serpentine_search.json`,
   `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_score_request.json`,
@@ -228,14 +232,17 @@ other change of data or configuration — a CONFIGURABLES record of `module_ml`
 such as the execution cost or the hyper-parameter budget, or new data — first
 `make all ASSET=<TICKER>` recomputes the dependent artifacts, then
 `make features-serpentine-search-reset ASSET=<TICKER>` removes the recorded
-search, and then a new search starts.
+search, and then a new search starts
+(`SERPENTINE-SEARCH-INPUTS-DECIDE-RESUME`,
+`SERPENTINE-SEARCH-A-CHANGE-OUTSIDE-THE-INPUTS-NEEDS-A-RESET`).
 
 ## Its normative skills
 
 | document | answers |
 |---|---|
-| `skills/skill_feature_taxonomy.md` | the timeframe register, the terms, the composition grammar, the scope nesting and the warm-up |
-| `skills/methodology_features.md` | every catalogued definition, equation by equation, with its histories and citations; the feature id; the serpentine search's objective, gate, margin and stopping, and the frozen-inputs rule |
+| `skills/skill_feature_taxonomy.md` | rendered from the canon's sheet: the tokens of the timeframe hierarchy, the registers beside their kernels, the terms and the feature ids, the catalogue record and its order, the default set, the warm-up, the effective histories — published, not asserted — and the two families and the contract |
+| `sub_module_serpentine_search/skill_serpentine_search.md` | rendered from the canon's sheet: the question and the answer across the file boundary, resume and reset, the tracked record, the key of a state, the gate and its noise margin, the beam, the convergence, the proposal and its count, and the promotion |
+| `skills/methodology_features.md` | hand-written, a reference for a human: every catalogued definition, equation by equation, with its histories and citations; the field table; the feature id; the serpentine search's objective, gate, margin and stopping, and the frozen-inputs rule |
 
 Project-wide rules are in `module_skills/`, the canon beside the modules, indexed by
 [module_skills/README.md](../module_skills/README.md); the market object it reads is

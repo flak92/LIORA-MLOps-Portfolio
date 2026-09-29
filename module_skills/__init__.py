@@ -1,0 +1,1 @@
+"""The project's canon: the sheet every Skill and the glossary are rendered from, the sync that renders them beside what each governs, and the crawler that reads each controlled file against the Skills marked for it."""

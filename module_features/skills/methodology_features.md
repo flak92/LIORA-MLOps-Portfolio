@@ -3,12 +3,15 @@
 Per asset, independently, on the one market object the research layer studies: exact bars of the
 canonical 1m series on every timeframe of the register, and the feature catalogue evaluated on each
 of them, aligned to the decision grid — at each decision timestamp a feature is read from the last
-bar of its timeframe that has closed, never from one still open. The names are
-`skill_feature_taxonomy.md`; the definitions are here, equation by equation, with how a feature id
-is read off its computation; the serpentine search that chooses an asset's feature set and barrier
-geometry from them is this module's own, and its mathematics is § The serpentine search. *The
-repository shows the destination, not the road*: the two guards are the finiteness assert of
-`catalogue.build_catalogue` and the causality assert of `indicators.asof_index`.
+bar of its timeframe that has closed, never from one still open. The rules — the tokens, the
+registers, the names, the catalogue record, the warm-up, the two families and the contract — are
+`skill_feature_taxonomy.md`, each cited here by its `rule_id`; the definitions are here, equation by
+equation, with how a feature id is read off its computation and why the rules are what they are.
+The serpentine search that chooses an asset's feature set and barrier geometry from them is this
+module's own: its rules are `module_features/sub_module_serpentine_search/skill_serpentine_search.md`,
+its mathematics § The serpentine search. This page is a reference for a human and holds no rule of
+its own. *The repository shows the destination, not the road*: the two guards are the finiteness
+assert of `catalogue.build_catalogue` and the causality assert of `indicators.asof_index`.
 
 ## The register
 
@@ -22,6 +25,16 @@ duration, its bars per UTC day, its ratio to the level below and its slot (`cata
 The slot travels in the contract and in no file name: a partition names its timeframe as
 `timeframe=<tf>`.
 
+A token enters the hierarchy on two conditions (`FEATURE-TAXONOMY-A-TIMEFRAME-TOKEN-DIVIDES-THE-DAY`).
+Its duration is a whole multiple of the decision timeframe's and divides one UTC day: a bar opens on
+a multiple of its duration from the epoch, so only such a token's bars close on UTC midnight and on
+a decision — a week or a month would need an anchor the token does not carry. And adjacent entries
+keep a ratio of at least three, because two levels closer than that sample the same price movement:
+the triple-screen hierarchy (`module_ml/skills/methodology_ml.md` § 13 [10]). Everything that reads
+the hierarchy is the experiment — the decisions stand on one of its entries, the trend gate reads
+its coarsest and the strategy's agreement counts over all of them — so a new token is a new
+experiment (`README_module_features.md` § Extending).
+
 Bars are exact UTC-aligned aggregations of the canonical 1m series inside the frozen research
 window, each bar opening on a multiple of its duration from the epoch — O first, H max, L min, C
 last, V sum, plus `ffill_bars` and `zero_volume_bars`, the forward-filled and the valid no-trade
@@ -29,7 +42,9 @@ minutes inside each bar, carried up for a reader and read by no later stage; the
 minute are chosen by timestamp (`arg_min` / `arg_max`), never by row order, so the aggregation is
 deterministic — written by `bars.py` as the asset's partitions of the `bars` family,
 `bars/ticker=<TICKER>/timeframe=<tf>/bars.parquet`, one per entry of the hierarchy, with the
-family's `bars/schema.json` beside them.
+family's `bars/schema.json` beside them (`FEATURE-TAXONOMY-TIMEFRAME-ARTIFACTS-FOLLOW-THE-REGISTER`).
+An aggregate is a native bar of its token — the minutes a venue's own candle of that token spans,
+combined the same way — and not a resample.
 
 ## The kernels
 
@@ -68,7 +83,8 @@ name.
 
 An operation that divides names the value it takes where its denominator is zero, and takes it after
 the division rather than guarding before it, so a NaN that came from somewhere else is not quietly
-turned into a number. The value follows the semantics of what the operation returns:
+turned into a number (`FEATURE-TAXONOMY-A-ZERO-DENOMINATOR-HAS-A-NAMED-NEUTRAL`). The value follows
+the semantics of what the operation returns:
 
 | operation | denominator that vanishes | the value it takes | why that value |
 |---|---|---|---|
@@ -87,6 +103,13 @@ turned into a number. The value follows the semantics of what the operation retu
 (x − (low + high) / 2) / ((high − low) / 2), reading the `output_range` of the term's own indicator —
 a 0-to-100 share gives (x − 50) / 50.
 
+The record of each indicator in `INDICATORS` carries what its equation implies
+(`FEATURE-TAXONOMY-A-REGISTER-IS-RECORDS-BESIDE-THEIR-KERNELS`): the bar columns it reads when its
+inputs are fixed, whatever series its term names, and its range when that range is bounded — the
+three shares and the directional imbalance 0 to 100, `rolling_range_position` 0 to 1,
+`rolling_volume_weighted_close_location` −1 to 1. A bounded indicator is the one kind of term a
+normaliser is written on (`FEATURE-TAXONOMY-A-NORMALISER-NEEDS-A-BOUNDED-TERM`).
+
 ## The catalogue
 
 The twenty-one feature definitions as of this commit. A definition is one record of
@@ -98,8 +121,10 @@ set. Its name, its effective history and its warm-up are read off that record �
 and `features_status.json` publishes the whole register with the derived numbers beside each
 definition, the effective history in hours on every timeframe it is offered on. The effective
 history is the longest parameter the definition reads — a window's window, a recursion's span or
-period, the bars carrying most of its weight — given here in bars of the timeframe it is evaluated
-on; the warm-up is what its terms need, in the same bars.
+period, the bars carrying most of its weight: 1 − (1 − α)^n of it, about 86 % for an exponential
+smoothing (α = 2 / (n + 1), tending to 1 − e^−2) and 63 % for a recursive mean (α = 1 / n, tending
+to 1 − e^−1) — given here in bars of the timeframe it is evaluated on; the warm-up is what its terms
+need, in the same bars.
 
 | definition | on the timeframe's own bars | range | effective history (bars) | warm-up (bars) | offered on | tier | default set |
 |---|---|---|---|---|---|---|---|
@@ -108,7 +133,7 @@ on; the warm-up is what its terms need, in the same bars.
 | `true_range_recursive_mean14_over_close` | recursive_mean(true_range, 14) / close | > 0, dimensionless | 14 | 56 | every level | CORE | yes |
 | `rolling_range_position20` | (close − min(low, 20)) / (max(high, 20) − min(low, 20)) | [0, 1] | 20 | 20 | every level | CORE | yes |
 | `logarithmic_volume_rolling_standard_score50` | rolling_standard_score(log1p(volume), 50) | dimensionless | 50 | 50 | every level | CORE | yes |
-| `rolling_standard_score20` | (close − rolling_mean(close, 20)) / rolling_standard_deviation(close, 20) — the Bollinger reading: %b(20, 2σ) = rolling_standard_score20 / 4 + 0.5, an affine map a tree model is invariant to, so no %b column exists | dimensionless | 20 | 20 | every level | CORE | no |
+| `rolling_standard_score20` | (close − rolling_mean(close, 20)) / rolling_standard_deviation(close, 20) — the Bollinger reading: %b(20, 2σ) taken with the same sample σ (`ddof=1`) is rolling_standard_score20 / 4 + 0.5, and with Bollinger's population σ the slope is √(20/19) / 4 — an affine map either way, which a tree model is invariant to, so no %b column exists | dimensionless | 20 | 20 | every level | CORE | no |
 | `close_minus_rolling_mean50_over_true_range_recursive_mean14` | (close − rolling_mean(close, 50)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 50 | 56 | every level | CORE | no |
 | `close_minus_rolling_mean200_over_true_range_recursive_mean14` | (close − rolling_mean(close, 200)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 200 | 200 | the top level alone | CORE | no |
 | `close_minus_exponential_smoothing20_over_true_range_recursive_mean14` | (close − exponential_smoothing(close, 20)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 80 | every level | CORE | no |
@@ -125,6 +150,20 @@ on; the warm-up is what its terms need, in the same bars.
 | `exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14` | (exponential_smoothing(close, 8) − exponential_smoothing(close, 21)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 21 | 84 | every level | COMPOSITE | no |
 | `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14` | (exponential_smoothing(close, 21) − exponential_smoothing(close, 55)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 55 | 220 | every level | COMPOSITE | no |
 
+One record of `FEATURE_CATALOGUE`, field by field — what a record must carry is
+`FEATURE-TAXONOMY-A-CATALOGUE-RECORD-CARRIES-EVERY-FIELD`; what a fault in a field breaks is this:
+
+| field | what it holds | what a fault breaks |
+|---|---|---|
+| `terms` | the terms, each `("<indicator>", <parameter_bars>)` on `close`, `("<series>", "<indicator>", <parameter_bars>)` on another series or `("<series>",)` bare; the first names the definition and is the term a normaliser reads | an indicator outside `INDICATORS` fails the import of `config.py`, which reads every term's warm-up; a series outside `SERIES_KERNELS` and the bar columns fails in `catalogue.py` |
+| `operators` | a key of `OPERATORS` between each pair of terms, one fewer than the terms | a key outside `OPERATORS` fails in `catalogue.py`; a missing operator drops the terms after it from the name and the column alike — `zip` folds both — while the snapshot's `terms`, the warm-up and the effective history still count them |
+| `normaliser` | optional: a key of `NORMALISERS`, applied last | a key outside `NORMALISERS`, or a first term without an `output_range`, fails in `catalogue.py` |
+| `range` | the words the snapshot publishes for the definition's range | `features-status` fails on a record without it |
+| `timeframes` | `HIERARCHY_TIMEFRAMES` or a slice of it | without the key the import of `config.py` fails; a token outside the hierarchy has no bars, is evaluated nowhere and fails `features-status` on its duration |
+| `tier` | `CORE`, `EXTENDED` or `COMPOSITE` — how structurally flexible the definition is | `features-status` fails on a record without it |
+| `historical_aliases` | optional: the popular names that denote the whole definition — provenance, never a key or a column | — |
+| `definition_in_default_set` | `True` puts the column into every asset's X until a promotion — a change of the frozen experiment; `False` offers it to the serpentine search alone | without the key the import of `config.py` fails |
+
 The warm-up a term needs is a multiple of its parameter, the `warmup_multiple` of its record in
 `INDICATORS`: a rolling window is counted settled after one window of bars, a recursion after four
 times its parameter and a recursion of a recursion after eight. The multiples are a convention of
@@ -133,21 +172,37 @@ a recursion's seed still carries. The experiment's `WARMUP_TOP_TIMEFRAME_BARS` i
 them all, read off the catalogue and counted in bars of the top timeframe — today the 220 bars of
 `exponential_smoothing55`'s four spans — so a definition with a longer memory raises it by itself
 and no second number is written to follow it. Decision rows before `WARMUP_END_MS`, the research
-start plus that many bars of the top timeframe, are excluded everywhere; `features_status.json`
-publishes the date (`catalogue.warmup`).
+start plus that many bars of the top timeframe, are excluded everywhere
+(`FEATURE-TAXONOMY-WARM-UP-ROWS-ARE-EXCLUDED`); `features_status.json` publishes the date
+(`catalogue.warmup`). The boundary is inclusive: `asof_index` takes the last bar closed at or before
+the decision, so the first decision reads the top timeframe's `WARMUP_TOP_TIMEFRAME_BARS`-th bar the
+moment it closes. A window of n bars is finite from its n-th bar; a window over changes —
+`relative_change`, `rolling_money_flow_gain_share` — only from its (n + 1)-th, one bar more than its
+`warmup_multiple` counts: a shortfall the finiteness assert would stop the stage on, were one of
+them the widest.
 
-The nesting rule of `skill_feature_taxonomy.md` § Scope nesting holds the longest effective history
-offered on a level below the shortest offered on the level above; `features_status.json` publishes
-both numbers for each adjacent pair (`catalogue.nesting`). This catalogue keeps the rule between the
-finest level and the one above it and breaks it between that level and the top: the longest history
-offered there, `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14_8h`,
-outlasts the shortest on the top, `relative_change10_1d`.
+The nesting criterion holds the longest effective history offered on a level below the shortest
+offered on the level above: a long window on a fine level spans a coarser level's history in many
+more bars, which is how a level smuggles in another level's regime — hence
+`close_minus_rolling_mean200_over_true_range_recursive_mean14` is offered on the top level alone. It
+is a criterion the catalogue's author reads, published and asserted by no stage
+(`FEATURE-TAXONOMY-EFFECTIVE-HISTORIES-ARE-SHOWN-NOT-ASSERTED`): `features_status.json` publishes
+both numbers for each adjacent pair (`catalogue.nesting`). This catalogue keeps it between the finest
+level and the one above it and breaks it between that level and the top: the longest history
+offered on the middle level,
+`exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14`, outlasts
+the shortest on the top, `relative_change10`. The author decides what to offer; the importance
+tables tell what it was worth.
 
 The five definitions of the default set lead the catalogue: on every timeframe they are offered on
 they are the columns of the frozen experiment, in the order it stacks them
 (`DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME`), and an asset's model sees them until a promotion writes
-`<TICKER>_feature_set.json`. The column order is what the model samples by position, so a
-definition is appended to the catalogue and never inserted into it.
+`<TICKER>_feature_set.json` (`FEATURE-TAXONOMY-WITHOUT-A-PROMOTION-THE-DEFAULT-SET-HOLDS`). The
+column order is what the model samples by position, so a definition is appended to the catalogue
+and never inserted into it (`FEATURE-TAXONOMY-A-DEFINITION-IS-APPENDED`). The strategy reads one
+definition by name on every timeframe, whatever the set holds — `TREND_GATE_FEATURE_DEFINITION` of
+`module_ml/config.py`, the catalogue's first — because the hierarchy gate is a rule of the strategy,
+not a feature the model chose; that definition is offered on every level.
 
 `logarithmic_volume_rolling_standard_score50` measures the activity of the **canonical observation
 process**, not venue-independent market activity: the sources differ in liquidity level, so a source
@@ -159,7 +214,8 @@ information about where the price goes, so it is a data-quality signal and never
 Cross-timeframe trend agreement is **not** a feature: the count of timeframes whose trend sign
 matches a given side is a deterministic function of columns the model already has, so it can only
 add representation, never information; the agreement lives where it is used, in the strategy gate
-(`MINIMUM_AGREEING_TREND_TIMEFRAMES`, `module_ml/config.py`).
+(`MINIMUM_AGREEING_TREND_TIMEFRAMES`, `module_ml/config.py`). Both are
+`FEATURE-TAXONOMY-A-QUALITY-SIGNAL-IS-NOT-A-FEATURE`.
 
 The families the catalogue draws on, with the keys of the reference list of
 `module_ml/skills/methodology_ml.md` § 13 — one list for the research layer: smoothed level and the
@@ -169,10 +225,18 @@ imbalance, and price-conditioned volume flow.
 
 ## The feature id
 
+The chain, smallest part first: a **term** — a series, or an indicator with its one parameter; the
+terms of one timeframe composed into a **feature definition**; the definition bound to a timeframe
+as a **feature**, whose id is the column of X and the key of an importance; the features an asset's
+model sees as its **feature set**. The smallest part has one meaning and every larger structure is
+composed deterministically from smaller ones, so any column can be taken apart and made to answer
+what information, from which bars, over what history, with which parameters.
+
 A feature id says what was computed: which series went in, which operations were applied to them,
 with which parameters, normalised how, and on which timeframe. The same computation always carries
-the same id, and one definition never carries two; read with this page, an id is enough to rebuild
-the computation without knowing the popular name of the indicator it resembles.
+the same id, and one definition never carries two (`FEATURE-TAXONOMY-A-NAME-IS-DERIVED`); read with
+this page, an id is enough to rebuild the computation without knowing the popular name of the
+indicator it resembles.
 
     <feature id>  = [<normaliser>_]<term>{_<operator>_<term>}_<timeframe>
     <term>        = [<series>_]<indicator><parameter>  |  <series>
@@ -180,16 +244,19 @@ the computation without knowing the popular name of the indicator it resembles.
 `feature_definition_name()` (`config.py`) reads a definition's name off its record, and
 `feature_id()` appends the timeframe. A term's series is written only when it is neither `close` nor
 fixed by the indicator itself: an indicator whose register record names its `inputs`
-(`rolling_range_position` reads close, high and low) carries no prefix (`term_name()`). An id is
-derived in four steps: the expression is written out; it is cut into terms at its composition
-operators; each term becomes its series, its indicator token and its parameter; `feature_id()` joins
-them and appends the timeframe.
+(`rolling_range_position` reads close, high and low) carries no prefix (`term_name()`,
+`FEATURE-TAXONOMY-A-TERM-IS-ITS-TOKEN-AND-ONE-PARAMETER`). A bare series inside a definition —
+`close` in `close_minus_rolling_mean50_over_true_range_recursive_mean14` — is written because it is
+a term of the composition, not the input of an indicator. An id is derived in four steps: the
+expression is written out; it is cut into terms at its composition operators; each term becomes its
+series, its indicator token and its parameter; `feature_id()` joins them and appends the timeframe.
 
 Every number in an id counts bars of the id's own timeframe: `rolling_range_position20_1d` spans
 twenty daily bars, `rolling_range_position20_1h` twenty hourly ones. Nothing else is written into an
 id — not the decision grid, not the label horizon, not the asset, not a category word, not a
-wall-clock span. A partition's column is the definition's name alone, because the partition's path
-holds the timeframe; the id with its suffix is the column of X and the key of an importance. The one
+wall-clock span (`FEATURE-TAXONOMY-AN-ID-NAMES-ITS-COMPUTATION-ALONE`). A partition's column is the
+definition's name alone, because the partition's path holds the timeframe; the id with its suffix
+is the column of X and the key of an importance. The one
 copy downstream is `module_ml`'s registered, identical `feature_id(definition_name, timeframe)`,
 which composes a name it received in `<TICKER>_catalogue.json` with its timeframe and translates
 nothing.
@@ -203,19 +270,27 @@ nothing.
   `logarithmic_volume_rolling_standard_score50_1h`: the series is neither close nor fixed by the
   indicator, so it prefixes the term.
 
+A definition across timeframes is reserved and not written: it would carry a timeframe on every term
+and no suffix, and be composed on the decision grid after each term is aligned. Until one exists, a
+relation across timeframes stays a rule of the strategy (`module_ml/skills/methodology_ml.md` § 9;
+`FEATURE-TAXONOMY-A-DEFINITION-STAYS-ON-ONE-TIMEFRAME`).
+
 ## The serpentine search
 
 The serpentine search is a hand's research over one asset's state Θ, outside the chain
-(`sub_module_serpentine_search/`; how it runs is `README_module_features.md` § Its sub-modules).
-A state is the columns of a feature set per timeframe, the four barrier coordinates — the multiplier
-the label's barriers stand at, the horizon they stand for, the take-profit and the stop a trade
-leaves at — and the hyper-parameter point `best_params` (`theta()`); its key is its own canonical
-JSON text, so two states are equal exactly or not at all (`state_key()`). A trial is one scored
+(`sub_module_serpentine_search/`; how it runs is `README_module_features.md` § Its sub-modules, its
+rules `module_features/sub_module_serpentine_search/skill_serpentine_search.md`, each cited below by
+its `rule_id`). A state is the columns of a feature set per timeframe, the four barrier coordinates —
+the multiplier the label's barriers stand at, the horizon they stand for, the take-profit and the
+stop a trade leaves at — and the hyper-parameter point `best_params` (`theta()`); its key is its own
+canonical JSON text, so two states are equal exactly or not at all (`state_key()`,
+`SERPENTINE-SEARCH-A-STATE-IS-KEYED-BY-ITS-CANONICAL-TEXT`). A trial is one scored
 state: `ml-score` fits the three boosters before F2, F3 and F4 — a state of the same question that
 differs only in the trade's exit shares those fits (`module_ml/score.py:57–77`) — predicts each fold
 and runs the strategy's threshold selection on the predictions (`module_ml/score.py:145–191`), and
 the answer comes back as `<TICKER>_score_response.json`. The turn computes no metric of a state: every number a
-gate, a ranking or a proposal reads comes off an answer. File addresses below without a file name
+gate, a ranking or a proposal reads comes off an answer (`SERPENTINE-SEARCH-IT-COMPUTES-NO-METRIC`,
+`SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). File addresses below without a file name
 are `sub_module_serpentine_search/serpentine_search.py`'s.
 
 A round is `ROUND_SCHEDULE` (the sub-module's `config.py`) read in order: the barrier loop's `trade`
@@ -224,7 +299,9 @@ moves the label's multiplier and horizon; the feature-set loop's `forward` famil
 one more admitted column, in timeframe and catalogue order; its `backward` family, every state with
 one column fewer, never the last; and the hpo loop's `study` family, one study per beam parent,
 whose best admissible point that beats the parent comes back as its candidate
-(`module_ml/hpo.py:205–220`). A profile searches the loops it names and the round skips the rest.
+(`module_ml/hpo.py:205–220`) — last, so the turn that reads its answer ends the round
+(`SERPENTINE-SEARCH-HPO-ENDS-THE-ROUND`). A profile searches the loops it names and the round skips
+the rest.
 Each family expands the beam once, seeded by the beam the family before it left, and a state already
 in the ledger is looked up, never scored again.
 
@@ -267,19 +344,21 @@ Each family leaves the beam `top_beam(children + beam)` (:498–499): the best
 `SERPENTINE_SEARCH_BEAM_WIDTH` distinct states by the ranking key, among the children that cleared
 the gate and the parents they came from. The parents stay in the race, so a family that finds
 nothing better keeps what it had, and the leader of the beam — the champion, moved once at the end
-of the round — never ranks worse than it did: the best ranked result never gets worse.
+of the round — never ranks worse than it did: the best ranked result never gets worse
+(`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`).
 
 `search_converged = not round_accepted` (:512): the search stops after a round in which no family of
 the executed schedule changed the beam. From that beam another round would offer the same states
 and, every fit and study being seeded, receive the same answers, so the search stands at a fixed
 point of its own schedule and gate. That is not a global optimum, and not a local optimum of the
 objective alone: a neighbour that raised the CAGR by less than the margin, or not on every fold, was
-offered and refused, and a child that cleared the gate but ranked below a full beam was not kept.
+offered and refused, and a child that cleared the gate but ranked below a full beam was not kept
+(`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
 
 ### 4. The thresholds
 
 `is_gate_cleared` (:73–102) keeps a child only when three conditions hold against the parent it came
-from:
+from (`SERPENTINE-SEARCH-A-MOVE-CLEARS-THE-NOISE-OF-ITS-PASS`):
 
 - its threshold constraint is met — some threshold cleared `MINIMUM_TRADES_PER_VALIDATION_FOLD`
   trades on every validation fold (`module_ml/strategy.py:325–328`); a fallback row, scored at the
@@ -308,7 +387,8 @@ constraint is met, it is not the start state, no validation fold's Calmar ratio 
 and its CAGR beats the start's by more than k(N)·σ. N is the sum of `trial_count_by_loop`
 (:222–224): the ledger's lines after the start in the loops that enumerate their moves, and every
 point the studies drew — a study's candidate, itself a drawn point, counted once, as its line
-(:457–459). A calibration run proposes nothing.
+(:457–459; `SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`). A calibration run proposes nothing
+(`SERPENTINE-SEARCH-ONLY-A-CHAMPION-ABOVE-THE-NOISE-IS-PROPOSED`).
 
 These thresholds are this method's assumptions — the baseline it holds itself to — and not
 conditions of correctness for every optimiser: another search could keep other moves and still be a
@@ -328,7 +408,7 @@ halvings, so one n gives one k on every machine; k grows with n.
 
 σ is `path_cagr_noise_standard_deviation` (:143–161), read off the ledgers of calibration runs —
 the last turn of one prints the estimate of its own ledger (:521–524), and a hand drafts the number
-into the profile. A child
+into the profile (`SERPENTINE-SEARCH-THE-NOISE-SIGMA-IS-DRAFTED`). A child
 and the parent its `parent_trial_index` names form one pair when both met the threshold constraint
 and the child was fitted on its own — a move of the trade's exit alone shares its parent's fits and
 is left out — each pair of states once; σ is the median absolute deviation of the pairs' path-CAGR
@@ -360,8 +440,9 @@ experiment, and a serpentine search is one experiment. What the search records i
 (`build_search_inputs`, :228–246) — the research window with the seed and the warm-up, the asset's
 `best_params`, the catalogue's columns, the asset's active columns and barriers, the profile and the
 beam width — is compared by equality at every turn, and a difference starts a fresh state and a
-fresh ledger by itself (:392–397). What the scores depend on beyond those fields is not recorded:
-the canonical data inside the window, the catalogue's values, and the records of
+fresh ledger by itself (:392–397; `SERPENTINE-SEARCH-INPUTS-DECIDE-RESUME`). What the scores depend
+on beyond those fields is not recorded: the canonical data inside the window, the catalogue's
+values, and the records of
 `module_ml/config.py` — the execution cost, the threshold grid, the trade floor, the hyper-parameter
 budget and space, the inner bounds of the folds, the barrier's true-range timeframe and period.
 After any change of data or configuration outside `inputs` — a CONFIGURABLES record of `module_ml`
@@ -369,4 +450,4 @@ such as `EXECUTION_COST_RATE_PER_TRADE_SIDE` or `HYPERPARAMETER_SEARCH_TRIAL_COU
 first `make all ASSET=<TICKER>` recomputes the dependent artifacts, then
 `make features-serpentine-search-reset ASSET=<TICKER>` removes the recorded search, and then a new
 search starts: a line scored before the change is not a state of the new experiment, and a resumed
-search would read it as a cache hit.
+search would read it as a cache hit (`SERPENTINE-SEARCH-A-CHANGE-OUTSIDE-THE-INPUTS-NEEDS-A-RESET`).
