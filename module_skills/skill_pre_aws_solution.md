@@ -54,7 +54,7 @@ The rules that keep this local, academic tree's boundaries the ones a move onto 
 ## Naming
 
 - `PRE-AWS-SOLUTION-CLOUD-NOUNS-STAY-IN-THE-MAPPING`
-  - Description: A cloud proper noun is external vocabulary, spoken only where the stance is stated or a local object is read forward: `AGENTS.md` § Pre-AWS architectural direction and § Skills absent here, described, `README.md` § Architectural direction, `module_skills/README.md` § The Pre-AWS mapping, this document's rules, and the columns External vocabulary and Never of the register's § Pre-AWS direction.
+  - Description: A cloud proper noun is external vocabulary, spoken only where the stance is stated or a local object is read forward: `AGENTS.md` § Pre-AWS architectural direction, § Rejected vocabulary and § Skills absent here, described, `README.md` § Architectural direction, `module_skills/README.md` § The Pre-AWS mapping, this document's rules, and the columns External vocabulary and Never of the register's § Pre-AWS direction.
   - Scope: `**/*`
   - Expected: No cloud proper noun in a make target, a compose service, an environment variable, a payload key, a code comment, an identifier, any other document or a tracked path but the `pre_aws` stem; the repository's own word *Pre-AWS* free.
   - Exception: none
