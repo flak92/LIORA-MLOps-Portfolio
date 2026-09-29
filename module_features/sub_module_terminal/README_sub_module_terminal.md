@@ -103,7 +103,7 @@ from, no recorded search to read, no proposal to promote, or a target that exite
 | `tui.py` | how a screen is drawn and an answer taken — one file with the four other terminals', the canon's among them |
 
 It imports the standard library and its own package alone and runs on the host's `python3` with gum, in no container
-and no virtual environment. It cannot import `module_features/config.py`, whose thirteenth line imports `.indicators`
+and no virtual environment. It cannot import `module_features/config.py`, which imports `.indicators`
 and numpy with it, nor the serpentine search's `config.py`, which imports that one, so what it reads of them is
 carried in its own `config.py`; and no module imports another, so what the terminals share is carried too — `tui.py`,
 `OUTPUT_PLAIN`, `HELP_LINE_PATTERN` and the helpers `_option_rows()`, `_cancelled_exit_code()`,

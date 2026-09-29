@@ -176,51 +176,52 @@ skill is among the measured and the reported; nothing selects on it.
 **The goal is the validation path, the unit of robustness is the fold.** The
 three out-of-fold equity curves are chained into one walk-forward path — each
 fold's 1-minute equity scaled by what the folds before it settled at
-(`validation_path_block`, `module_ml/strategy.py:257–279`) — and the path's
-growth rate, `validation_path.cagr` (`validation_path_cagr`,
-`module_ml/strategy.py:238–246`), is what a move has to raise. A position never
-crosses a fold boundary (§ 9's eligibility requires the whole horizon inside the
-fold), so the chaining is exact, and a drawdown that begins in one fold and ends
-in the next is counted as it happened. The ranking maximises `state_objective`
-(`module_features/sub_module_serpentine_search/serpentine_search.py:64–70`): the
-path's CAGR, then its Calmar ratio, then its profit factor, a path that never
-lost having none and sorting as +∞; `ranking_key` (`serpentine_search.py:164–168`)
-breaks what is left by the smaller column count, then by the earlier trial.
+(`strategy.validation_path_block()`) — and the path's growth rate,
+`validation_path.cagr` (`strategy.validation_path_cagr()`), is what a move has to
+raise. A position never crosses a fold boundary (§ 9's eligibility requires the
+whole horizon inside the fold), so the chaining is exact, and a drawdown that
+begins in one fold and ends in the next is counted as it happened. The ranking
+maximises `state_objective`
+(`module_features/sub_module_serpentine_search/serpentine_search.py`): the path's
+CAGR, then its Calmar ratio, then its profit factor, a path that never lost
+having none and sorting as +∞; `ranking_key` there breaks what is left by the
+smaller column count, then by the earlier trial.
 
 **Two states are compared under the same conditions.** Everything but the state
 is held fixed: the same data — the asset's catalogue, bars and canonical series,
 read once per request (`score.build_asset()`) — the same folds and the same cost,
-`EXECUTION_COST_RATE_PER_TRADE_SIDE` per side (`module_ml/strategy.py:166`); the
-Sharpe ratio annualised by the periods per year of the decision bar
-(`module_ml/strategy.py:211–215`) and every CAGR over a 24/7 year of minutes
-(`validation.cagr`); causality by construction, a higher-timeframe
-value read from the last closed bar alone (`indicators.asof_index`,
-`module_features/indicators.py:200`); the fold contract WARMUP | TRAIN | PURGE |
+`EXECUTION_COST_RATE_PER_TRADE_SIDE` per side (`strategy.backtest()`); the Sharpe
+ratio annualised by the periods per year of the decision bar
+(`strategy.backtest()`) and every CAGR over a 24/7 year of minutes
+(`validation.cagr`); causality by construction, a higher-timeframe value read
+from the last closed bar alone (`asof_index()` of
+`module_features/indicators.py`); the fold contract WARMUP | TRAIN | PURGE |
 OOS | final holdout of § 6 (`module_ml/validation.py`, its bounds
-`module_ml/config.py:211–217`); and every label inside the research window — the
-1m path read inside it alone, and a decision kept only where its whole horizon
-ends by the window's end (`module_ml/labels.py:71–72`, `module_ml/labels.py:186`).
-A move of the label's horizon changes the supervised population itself — a longer
+`FOLD_BOUNDS_UTC` of `module_ml/config.py`); and every label inside the research
+window — the 1m
+path read inside it alone, and a decision kept only where its whole horizon ends
+by the window's end (`labels.load_research_1m()`, `labels.label_events()`). A
+move of the label's horizon changes the supervised population itself — a longer
 horizon drops more of each fold's tail and moves the purge — so parent and child
 are scored on row sets that differ at the edges; the difference is bounded by the
 horizon and the purge width, the comparison is still made on the same calendar
 window and the same capital, and that is a property of the coordinate rather than
 an accident of the code.
 
-**The gate says which children may be ranked at all** (`is_gate_cleared`,
-`serpentine_search.py:73–102`). A child whose threshold fell back to the grid
-floor — the entry-edge-threshold constraint of § 9, the trade floor in every
-fold, unmet — is refused before it is compared, because its numbers stand at a
-threshold nothing qualified for. Otherwise it needs a Calmar ratio strictly above
-its parent's on **every** validation fold, F2, F3 and F4, and a path CAGR above
-its parent's by more than k(n)·σ: n the candidates of its pass — the states its
+**The gate says which children may be ranked at all** (`is_gate_cleared` of
+`serpentine_search.py`). A child whose threshold fell back to the grid floor —
+the entry-edge-threshold constraint of § 9, the trade floor in every fold, unmet
+— is refused before it is compared, because its numbers stand at a threshold
+nothing qualified for. Otherwise it needs a Calmar ratio strictly above its
+parent's on **every** validation fold, F2, F3 and F4, and a path CAGR above its
+parent's by more than k(n)·σ: n the candidates of its pass — the states its
 family offers, or every point the pass's studies drew — and σ the asset's noise,
 `path_cagr_noise_standard_deviation` of its profile. A calibration run, whose
 profile has no σ yet, asks for strictly better on the objective and on every
 fold, and for no worse (`≥`) on a move that shrinks the state. The folds alone
-would admit a child better on all three fold measures while the path's CAGR
-falls — a state worse at the thing searched for because it is better at the
-thing guarding it — so the gate asks for both.
+would admit a child better on all three fold measures while the path's CAGR falls
+— a state worse at the thing searched for because it is better at the thing
+guarding it — so the gate asks for both.
 
 What the fold condition guarantees is a higher Calmar ratio on each validation
 fold, and no more. Where a fold's CAGR is positive that is less drawdown per unit
@@ -229,31 +230,30 @@ ratio toward zero, so on a losing fold a higher Calmar ratio is not a shallower
 drawdown relative to growth — and on no fold does it bound the drawdown in
 absolute terms.
 
-**The proposal** is the champion alone (`proposals_block`,
-`serpentine_search.py:190–210`), proposed only where its threshold constraint is
-met, where it is not the start, where no validation fold scores it below the
-start, and where its path CAGR beats the start's by more than k(N)·σ, N the
-search's whole exposure —
-`trial_count_by_loop` summed, the states its families scored and the points its
-studies drew. A calibration run proposes nothing. These thresholds are the
-method's own assumptions, its baseline, and not conditions of correctness that
-every optimiser would have to meet: a search without them is another method, not
-a wrong one.
+**The proposal** is the champion alone (`proposals_block` of
+`serpentine_search.py`), proposed only where its threshold constraint is met,
+where it is not the start, where no validation fold scores it below the start,
+and where its path CAGR beats the start's by more than k(N)·σ, N the search's
+whole exposure — `trial_count_by_loop` summed, the states its families scored and
+the points its studies drew. A calibration run proposes nothing. These thresholds
+are the method's own assumptions, its baseline, and not conditions of correctness
+that every optimiser would have to meet: a search without them is another method,
+not a wrong one.
 
 **Progress and stopping.** Each family leaves the beam its best
 `SERPENTINE_SEARCH_BEAM_WIDTH` distinct states by the ranking key among its
-gate-cleared children **and the parents they came from**
-(`serpentine_search.py:498–499`), so the best-ranked state — the champion, which
-moves at the round's end — never ranks worse than it did. A round in which no
-family changed the beam ends the search: `search_converged = not round_accepted`
-(`serpentine_search.py:512`). That is a statement about the schedule the round
-executed — every child it scored either failed the gate or ranked below the
-states already there — and not a global optimum, which is not claimed: every
-move is one coordinate, so an improvement that needs several coordinates changed
-at once is out of its reach.
+gate-cleared children **and the parents they came from** (`top_beam()` of
+`serpentine_search.py`), so the best-ranked state — the champion, which moves at
+the round's end — never ranks worse than it did. A round in which no family
+changed the beam ends the search: `search_converged = not round_accepted`
+(`turn()` there). That is a statement about the
+schedule the round executed — every child it scored either failed the gate or
+ranked below the states already there — and not a global optimum, which is not
+claimed: every move is one coordinate, so an improvement that needs several
+coordinates changed at once is out of its reach.
 
 **k(n)·σ is a heuristic, not a guarantee.** `false_exceedance_rate`
-(`serpentine_search.py:112–116`) is
+(`serpentine_search.py`) is
 
 ```
 1 − E_Z[ Φ(k + Z)ⁿ ],   Z standard normal, the expectation by Gauss–Hermite quadrature
@@ -262,16 +262,16 @@ at once is out of its reach.
 the chance that the best of n candidates beats a parent by k noise standard
 deviations when every score is its state's worth plus independent normal noise of
 standard deviation σ and no candidate is truly better; `gate_threshold_multiple`
-(`serpentine_search.py:119–130`) finds by bisection the k at which that chance is
+(`serpentine_search.py`) finds by bisection the k at which that chance is
 `GATE_THRESHOLD_FALSE_EXCEEDANCE_RATE`, one in twenty. σ
-(`path_cagr_noise_standard_deviation`, `serpentine_search.py:143–161`) is read off
-the ledgers of calibration runs and drafted into the profile by a hand: the
-path-CAGR differences between a child and its parent, both meeting the threshold
-constraint and the child fitted on its own, each pair of states once, reduced to
-one evaluation's standard deviation as the median absolute deviation × 1.4826 / √2.
-Those pairs are **different** states, so σ holds the effect of each change as well
-as the variability of one evaluation — which, seeded and single-threaded, gives
-one state one number. And the candidates of an adaptive search are not
+(`path_cagr_noise_standard_deviation`, `serpentine_search.py`) is read off the
+ledgers of calibration runs and drafted into the profile by a hand: the path-CAGR
+differences between a child and its parent, both meeting the threshold constraint
+and the child fitted on its own, each pair of states once, reduced to one
+evaluation's standard deviation as the median absolute deviation × 1.4826 / √2.
+Those pairs are **different** states, so σ holds the effect of each change as
+well as the variability of one evaluation — which, seeded and single-threaded,
+gives one state one number. And the candidates of an adaptive search are not
 independent normal draws around a common worth: they are correlated neighbours,
 and each pass is seeded by what the one before it kept. The one-in-twenty rate is
 the model's, under its assumptions; no 95 % bound on a false move of the search
@@ -706,14 +706,14 @@ boundary; that is the point of chaining rather than averaging.
 
 **Sharpe and drawdown come from one equity process sampled two ways.** The
 backtest writes a continuous 1-minute equity path starting at `E₀ = 1`; the
-Sharpe is annualised by `√(periods per year)`, `MINUTES_PER_YEAR` over the minutes
-of one decision bar (`module_ml/strategy.py:211–215`), from that path sampled at
-the **decision bars' closes**, starting from `E₀` itself so the first decision bar
-of a fold is not silently dropped; the maximum drawdown is measured on the **1m**
-path, also from `E₀` — a sampling at bar closes would report a
+Sharpe is annualised by `√(periods per year)`, `MINUTES_PER_YEAR` over the
+minutes of one decision bar (`strategy.backtest()`), from that path sampled at
+the **decision bars' closes**, starting from `E₀` itself so the first decision
+bar of a fold is not silently dropped; the maximum drawdown is measured on the
+**1m** path, also from `E₀` — a sampling at bar closes would report a
 1.00 → 0.91 → 0.99 excursion as −1 % instead of −9 %. `exposure` is
-`Σ(exit − entry) / fold length`. The reported result is
-**execution-cost-adjusted PnL, excluding funding**.
+`Σ(exit − entry) / fold length`. The reported result is **execution-cost-adjusted
+PnL, excluding funding**.
 
 **What the chosen threshold was chosen out of.** The selection is a maximum over
 the threshold grid, and a maximum reported alone is a number with no spread beside

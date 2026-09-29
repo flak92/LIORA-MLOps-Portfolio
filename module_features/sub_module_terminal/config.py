@@ -3,7 +3,7 @@ screen for, the store reads and the descriptors of the files it shows a hand, th
 drafts and reads back, the grid its draft offers, and whether its output is plain.
 
 It runs on the host, on `python3` and gum, with no virtual environment: it imports the standard library and its own
-package alone. It cannot import `module_features/config.py` — its thirteenth line imports `.indicators`, and numpy
+package alone. It cannot import `module_features/config.py` — it imports `.indicators`, and numpy
 with it — nor the serpentine search's `config.py`, which imports that one, so the store reads, the descriptors, the
 readers and the writer of JSON and the values the draft pins a coordinate to are carried here as registered copies,
 twice by extraction (module_skills/skill_glossary.md § Twice by extraction), each the same as its owner's.
