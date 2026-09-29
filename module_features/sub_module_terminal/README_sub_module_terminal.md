@@ -3,7 +3,7 @@
 The hand's instrument over the feature module: per asset, how many timeframes its bars and its catalogue hold a
 partition for, whether its contract stands, where its serpentine search profile stands and how many trials the
 search's ledger holds; then one action — a target of the module started through `make`, or one of the serpentine
-search's own: draft the profile, read the recorded search, promote a proposal; then it closes. Its screens follow the
+search's own: draft the profile, read the recorded search, promote the proposal; then it closes. Its screens follow the
 `TUI-DESIGNER-` rows of `../../module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file
 says what its screens hold.
 
@@ -52,12 +52,13 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   starts the search detached in the tmux session `features-serpentine-search-<ticker>` — its name behind the compose
   project's under `COMPOSE_PROJECT_NAME` — alive after this terminal closes; there is no stop here: `tmux attach -t`
   that session and Ctrl-C stop it, as `make help` says, and a rerun resumes.
-- **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, since no bare run can
-  answer its form: the proposals as a list under the steps table, then the plan — the asset, the proposal, its trial,
-  the coordinates it moves and what it writes, `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — the line
-  `command  make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` and the gate
-  `promote proposal <n> of <TICKER>?`. The target copies the proposal and reruns the asset's ML chain, `ml-all`, whose
-  lines stay on the screen and which computes the final holdout; the `DONE` block says whose lines they are.
+- **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, whose plan shows the
+  state it promotes: the asset, the proposal's trial, the coordinates it moves and what it writes,
+  `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` — then the line
+  `command  make features-serpentine-search-promote ASSET=<TICKER>` and the gate `promote the proposal of <TICKER>?`.
+  A search proposes one state at most, so nothing is chosen before the gate. The target copies the proposal and
+  reruns the asset's ML chain, `ml-all`, whose lines stay on the screen and which computes the final holdout; the
+  `DONE` block says whose lines they are.
 - **draft** — four forms under the steps table. *columns to admit*: every column of the contract in catalogue order,
   timeframe-major, those the profile admits chosen at the start and all of them when there is no profile — so a
   column the catalogue does not offer on a timeframe cannot be admitted on it. *start state*: the asset's own, or the
@@ -87,7 +88,7 @@ steps table (`step`, `state`, `choice`), the start state form, the loops form an
 | table | columns | left out, in turn |
 |---|---|---|
 | the path table | `#`, `round`, `loop`, `family`, `trial`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `trades`, `path maxDD`, `path Calmar`, `family` |
-| the proposals table; the proposal list | `#`, `trial`, `coordinates moved`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `path maxDD`, `trades`, `path Calmar`, `coordinates moved` |
+| the proposals table | `#`, `trial`, `coordinates moved`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `path maxDD`, `trades`, `path Calmar`, `coordinates moved` |
 | the columns form | `column`, `timeframe`, `definition` | `definition`, `timeframe` |
 | the coordinates form | `coordinate`, `grid`, `points` | `points`, `grid` |
 

@@ -40,8 +40,8 @@ How the serpentine search of `module_features/sub_module_serpentine_search/` mov
   - Exception: none
 - `SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`
   - Description: A proposal becomes an asset's feature set and barrier geometry by a hand's act alone, never because the serpentine search finished; the promotion copies the proposal's columns and geometry, and the asset's ML chain then tunes it anew.
-  - Scope: `module_features/sub_module_serpentine_search/**/*.py`, `Makefile`
-  - Expected: `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` written by `promote.py` alone, for the proposal `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` names, then `ml-all` for that asset; never the proposal's `best_params`; the active state promoted again writing nothing; a converged serpentine search writing neither file.
+  - Scope: `module_features/sub_module_serpentine_search/**/*.py`, `module_features/sub_module_terminal/terminal.py`, `Makefile`
+  - Expected: `<TICKER>_feature_set.json` and `<TICKER>_barriers.json` written by `promote.py` alone, from the one proposal of the asset's search, by `make features-serpentine-search-promote ASSET=<TICKER>`, then `ml-all` for that asset; no rank and no choice among proposals, a search holding one at most; a search that proposes none refused in one line, before either file is written; never the proposal's `best_params`; the active state promoted again writing nothing; a converged serpentine search writing neither file.
   - Exception: none
 
 ## FileLayout

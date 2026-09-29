@@ -85,10 +85,9 @@ The serpentine search is `module_features`', and so are its targets:
 `features-serpentine-search` alternates a turn of the search with `ml-score` while
 the turn leaves a question, `tmux-features-serpentine-search` is its detached
 twin, `features-serpentine-search-reset` removes an asset's search and its
-`score_trials` partition, and `features-serpentine-search-promote ASSET=<TICKER>
-PROPOSAL=<n>` copies a proposal's columns into `<TICKER>_feature_set.json` and its
-barrier geometry into `<TICKER>_barriers.json`, then reruns `ml-all` for the
-asset. That rerun tunes the hyper-parameters anew: the promoted state is
+`score_trials` partition, and `features-serpentine-search-promote ASSET=<TICKER>`
+copies the proposal's columns into `<TICKER>_feature_set.json` and its barrier
+geometry into `<TICKER>_barriers.json`, then reruns `ml-all` for the asset. That rerun tunes the hyper-parameters anew: the promoted state is
 evaluated again on the validation folds F2–F4, F5 is read after them and steers
 no parameter, and what is kept is the state, not the model the search evaluated.
 

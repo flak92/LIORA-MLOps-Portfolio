@@ -69,7 +69,8 @@ the working path.) If a change conflicts with this file, the change is wrong.
   symbol's history starts after the window) — and beside them, not guards:
   the one-line message of a status stage with nothing to report, naming the
   stage to run first, a venue's own error code surfaced as it came, and a stage's one-line refusal of an
-  input it cannot use — a study whose every trial was pruned, a scoring request of an unknown kind. A test suite, a linter,
+  input it cannot use — a study whose every trial was pruned, a scoring request of an unknown kind, a promotion
+  with no proposal. A test suite, a linter,
   a coverage gate, a workflow or a merge block does not belong here. No debt
   marker in a tracked file — this contract names the forbidden form — and no code left inside a comment: a marker is a
   postponed decision, a commented-out line is a version git already holds.

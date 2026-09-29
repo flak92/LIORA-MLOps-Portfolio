@@ -437,10 +437,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: converged
   - Never: done, finished, stopped; optimal, without saying in what
 - the promotion — a hand's copy of one proposal's columns and barrier geometry into the asset's own state, followed by its ML chain, which tunes it again: its realised result differs from the search's, and the same proposal twice changes nothing
-  - Code: `module_features/sub_module_serpentine_search/promote.py`, `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>`
+  - Code: `module_features/sub_module_serpentine_search/promote.py`, `make features-serpentine-search-promote ASSET=<TICKER>`
   - Artifact key: `<TICKER>_feature_set.json` with `columns_by_timeframe` and `<TICKER>_barriers.json` with the four of `BARRIER_COORDINATE_NAMES`, and nothing else
   - Ui label: promote (the features terminal's action); the page shows a promotion only as the set's `source`
-  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history
+  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history; a rank on the make line or the command line, a search holding one proposal at most
 - the feature set source — the promoted file when it exists, else the default set of the catalogue
   - Code: `feature_set_block()`
   - Artifact key: `feature_set` with `source` = `default` / `promoted`, `columns_by_timeframe`
@@ -842,7 +842,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: every terminal uses the same outcome and option conventions, and no terminal imports another module's code; a terminal that asks more than two forms keeps its own step helpers, in its own words
 - `_make()`
   - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_features/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`, `module_monitoring/sub_module_terminal/terminal.py`, `module_skills/sub_module_terminal/terminal.py`
-  - Why twice: the one call of make — a terminal starts a target through it and no other way, its lines uncaptured; it takes its arguments open, `_make(*arguments)`, so a menu target with its asset and the promotion with its proposal pass through one signature
+  - Why twice: the one call of make — a terminal starts a target through it and no other way, its lines uncaptured; it takes its arguments open, `_make(*arguments)`, so a target alone and a target with its asset — the promotion's among them — pass through one signature
 - `HELP_LINE_PATTERN`, `_target_rows()`
   - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_features/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`, `module_monitoring/sub_module_terminal/terminal.py`, `module_skills/sub_module_terminal/terminal.py`
   - Why twice: the one reading of make — the menu is the Makefile's own targets, read from `make help` and filtered by the terminal's `MENU_TARGET_PATTERN`, so a terminal keeps no second list of them and a target gains its option by carrying a `##`
@@ -880,19 +880,19 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `_write_target()`; the `command` line; `_make()`
   - Ui label: `target`, `purpose` and each variable as `parameter` and `value`; `command make <target> ASSET=<TICKER>`; `<target>?` with the target and `cancel`
   - Never: a stage run before the gate; a gate that refuses what a hand confirms; `run`
-- the features terminal's own actions, the serpentine search's: draft the profile, read the recorded serpentine search, promote a proposal
+- the features terminal's own actions, the serpentine search's: draft the profile, read the recorded serpentine search, promote the proposal
   - Code: `_write_search_profile()`, `_recorded_search_tables()`, `_write_promoted_proposal()` in `module_features/sub_module_terminal/terminal.py`
   - Ui label: draft; recorded search; `features-serpentine-search-promote`
   - Never: `status` for the recorded search — the word is a stage's; a start of the serpentine search of its own — the search is the menu's `features-serpentine-search` or its `tmux-` twin; holdout, which the ML chain a promotion is followed by computes; a second menu after the action
-- the steps table: the steps of one of the features terminal's actions in order, above the step it asks — each answered DONE with its choice, the one asked CURRENT, the rest PENDING
-  - Code: `_step_rows()`, `_step_answer()`, `DRAFT_STEPS`, `PROMOTE_STEPS` in `module_features/sub_module_terminal/terminal.py`
+- the steps table: the steps of the features terminal's draft in order, above the step it asks — each answered DONE with its choice, the one asked CURRENT, the rest PENDING
+  - Code: `_step_rows()`, `_step_answer()`, `DRAFT_STEPS` in `module_features/sub_module_terminal/terminal.py`
   - Ui label: step; state; choice; select now
   - Never: workflow, wizard, stepper; the steps of two actions; a step asked when its one option answers it
 - the one file a terminal writes
   - Code: `write_json()`, `serpentine_search_profile_json()` in `module_features/sub_module_terminal/config.py` — the features terminal's draft
   - Artifact key: `<TICKER>_serpentine_search_profile.json`
   - Never: a second file; a file in the sub-module's own folder
-- the target the features terminal opens its own screen for — the promotion, whose proposal's number no bare run can answer
+- the target the features terminal opens its own screen for — the promotion, whose plan shows the one state it promotes
   - Code: `PROMOTE_TARGET` in `module_features/sub_module_terminal/config.py`
   - Ui label: the menu's `features-serpentine-search-promote`
   - Never: a second named target; the module's stages listed beside it; a name for a target that runs bare

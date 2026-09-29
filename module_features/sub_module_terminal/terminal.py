@@ -1,12 +1,12 @@
 """The features terminal — the feature module's text-based user interface (TUI): each asset's bars, its catalogue
 and its contract, then one action a hand chooses in the menu — one of the module's stages started through
 `make`, its lines on this screen as they come, or one of the serpentine search's own: draft the profile, read the
-recorded search or promote a proposal — its forms and its result drawn by tui.py to module_skills/skill_tui_designer.md; then it closes.
+recorded search or promote the proposal — its forms and its result drawn by tui.py to module_skills/skill_tui_designer.md; then it closes.
 
 Outside an action it creates no domain state: how many timeframes an asset's bars and its catalogue hold a partition
 for and whether its contract stands it reads off the artifacts store by the descriptors config.py carries, it reads the serpentine search's files as JSON and
 writes the one file `<TICKER>_serpentine_search_profile.json`, and every stage is `make features-<stage>
-ASSET=<TICKER>`, the promotion with `PROPOSAL=<n>` — the Makefile is where the module's stages are named.
+ASSET=<TICKER>`, the promotion among them — the Makefile is where the module's stages are named.
 
 keys:
   Enter takes the option under the cursor; x toggles a column, a coordinate or a loop; Esc cancels and writes
@@ -37,7 +37,6 @@ import sys
 from . import config, tui
 
 DRAFT_STEPS = ["action", "columns to admit", "start state", "coordinates to search", "loops", "plan"]
-PROMOTE_STEPS = ["action", "proposal", "plan"]
 STATE_COLUMNS = ("asset", "bars", "catalogue", "contract", "profile", "trials")
 STATE_COLUMNS_DROP_ORDER = ("trials", "profile", "catalogue", "contract")
 PROPOSAL_COLUMNS = ("#", "trial", "coordinates moved", "path CAGR", "path Calmar", "path maxDD", "trades")
@@ -397,44 +396,35 @@ def _recorded_search_tables(ticker: str, profile: dict | None, search: dict | No
 
 
 def _write_promoted_proposal(ticker: str, search: dict | None) -> int:
-    """Promote one proposal into the asset's own state, through the Makefile — the target copies the proposal and then
-    reruns the asset's ML chain."""
+    """Promote the proposal into the asset's own state, through the Makefile — the target copies the proposal and then
+    reruns the asset's ML chain. A search proposes one state at most, so the plan shows it and the gate asks whether,
+    with nothing to choose before it."""
     if search is None or not search["proposals"]:
         return _failure_exit_code(f"{ticker} has no proposal to promote",
                                   config.serpentine_search_json(ticker).name,
                                   "no turn has run for this asset" if search is None else "the search proposes none",
                                   "run make features-serpentine-search, then read its tables")
-    chosen = {"action": "promote"}
+    trial_index = search["proposals"][0]["trial_index"]
     trials = _trial_rows(ticker)
-    answer = _step_answer(PROMOTE_STEPS, chosen, _proposal_rows(search, trials), "#", PROPOSAL_COLUMNS_DROP_ORDER)
-    if answer in (None, ""):
-        return _cancelled_exit_code()
-    proposal = next(row for row in search["proposals"] if str(row["proposal"]) == answer)
-    chosen["proposal"] = answer
-    tui.gum_table(("step", "state", "choice"), _step_rows(PROMOTE_STEPS, chosen))
-    print()
+    command = ("make", config.PROMOTE_TARGET, f"ASSET={ticker}")
     tui.gum_table(("parameter", "value"),
                   [{"parameter": "asset", "value": ticker},
-                   {"parameter": "proposal", "value": f"{answer} of {len(search['proposals'])}"},
-                   {"parameter": "trial", "value": proposal["trial_index"]},
-                   {"parameter": "coordinates moved",
-                    "value": _moved(trials[proposal["trial_index"] - 1], search)},
+                   {"parameter": "trial", "value": trial_index},
+                   {"parameter": "coordinates moved", "value": _moved(trials[trial_index - 1], search)},
                    {"parameter": "writes",
                     "value": f"{config.feature_set_json(ticker).name}, {config.barriers_json(ticker).name}"}])
-    print(f"command         {shlex.join(('make', config.PROMOTE_TARGET, f'ASSET={ticker}', f'PROPOSAL={answer}'))}")
+    print(f"command         {shlex.join(command)}")
     print()
-    decision = tui.gum_choose(f"promote proposal {answer} of {ticker}?",
-                              _option_rows("promote", "cancel"), "option")
+    decision = tui.gum_choose(f"promote the proposal of {ticker}?", _option_rows("promote", "cancel"), "option")
     if decision != "promote":
         return _cancelled_exit_code()
     print()
-    code = _make(config.PROMOTE_TARGET, f"ASSET={ticker}", f"PROPOSAL={answer}")
+    code = _make(*command[1:])
     print()
     if code:
-        return _failure_exit_code(f"the promotion of {ticker} did not finish",
-                                  shlex.join(("make", config.PROMOTE_TARGET, f"ASSET={ticker}", f"PROPOSAL={answer}")),
+        return _failure_exit_code(f"the promotion of {ticker} did not finish", shlex.join(command),
                                   f"make exited with {code}", "read make's lines above")
-    tui.gum_style([f"{tui.state_label('DONE')}  promoted proposal {answer} of {ticker}; make's lines above are the "
+    tui.gum_style([f"{tui.state_label('DONE')}  promoted the proposal of {ticker}; make's lines above are the "
                    f"chain's where the Makefile reruns it"], "DONE")
     return 0
 
@@ -487,8 +477,8 @@ def main() -> int:
         if ticker in (None, ""):
             return _cancelled_exit_code()
         catalogue, profile, search = _asset_files(ticker)
-        # the target that opens a form no bare run can answer keeps its own screen; everything else is the
-        # Makefile's own target, run through the one plan and gate
+        # the target whose plan shows the state it promotes keeps its own screen; everything else is the Makefile's
+        # own target, run through the one plan and gate
         if action == config.PROMOTE_TARGET:
             return _write_promoted_proposal(ticker, search)
         if action == "draft":

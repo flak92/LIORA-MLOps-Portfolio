@@ -137,7 +137,7 @@ Every terminal of the tree — `module_<module>/sub_module_terminal/` of the fou
 - `TUI-DESIGNER-A-GATE-IS-NOT-A-GUARD`
   - Description: A gate asks one question and refuses nothing a hand confirms: its affirmative option first, then `back` where the action has forms to ask again, then `cancel`; `back` and `cancel` belong to gates alone.
   - Scope: `module_*/sub_module_terminal/terminal.py`
-  - Expected: A `gum choose` headed `<verb> …?` — `<target>?`, `draft <file>?`, `promote proposal <n> of <TICKER>?`; `back` asking the action's forms again from the first, every default preselected, so that an action with its defaults is one Enter per form and one on the gate; a list of data carrying neither, Esc its cancel; the menu ending on `quit`; no option `exit` or `run`.
+  - Expected: A `gum choose` headed `<verb> …?` — `<target>?`, `draft <file>?`, `promote the proposal of <TICKER>?`; `back` asking the action's forms again from the first, every default preselected, so that an action with its defaults is one Enter per form and one on the gate; a list of data carrying neither, Esc its cancel; the menu ending on `quit`; no option `exit` or `run`.
   - Exception: none
 - `TUI-DESIGNER-NOTHING-WAITS-UNANNOUNCED`
   - Description: Nothing waits unannounced: a line is flushed before anything slow starts, and what the terminal starts keeps the screen as it runs, its own lines uncaptured.

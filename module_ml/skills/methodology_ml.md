@@ -288,8 +288,8 @@ noisier quantity; the per-fold gate and the floor are what hold that in check,
 and the skill is reported beside it so a state that wins on CAGR while losing
 skill is visible by eye.
 
-**A promotion** (`make features-serpentine-search-promote ASSET=<TICKER>
-PROPOSAL=<n>`, one asset at a time, never fanned out) copies the proposal's
+**A promotion** (`make features-serpentine-search-promote ASSET=<TICKER>`, one
+asset at a time, never fanned out) copies the proposal's
 columns into `<TICKER>_feature_set.json` and its barrier geometry into
 `<TICKER>_barriers.json` — those and nothing else; the commit history is the
 record of every promotion — and reruns `ml-all` for the asset, `ml-hpo` included,

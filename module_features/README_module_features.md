@@ -17,8 +17,8 @@ decision grid — the asset's partitions of the `catalogue` family, one per
 timeframe — each family with its `schema.json` beside its partitions. Outside
 the chain it holds the serpentine search: a hand's research over one asset's
 feature set, barrier geometry and hyper-parameters, each state it reaches scored
-by `module_ml` across a file boundary, and the promotion of the proposal a hand
-chooses (§ Its sub-modules).
+by `module_ml` across a file boundary, and a hand's promotion of the one state
+it proposes (§ Its sub-modules).
 
 ## Where the responsibility stops
 
@@ -66,7 +66,7 @@ make line says `JOBS=n`; the promotion runs for the one asset `ASSET` names, and
 | catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
 | status | `make features-status` | `store/status/features_status.json` |
 | serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_trials.jsonl` and the next question `<TICKER>_score_request.json`, or a finished search |
-| promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` | `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`, then the asset's ML chain |
+| promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json` and `<TICKER>_barriers.json`, then the asset's ML chain |
 
 Every stage runs in a one-off container of the `features` runner: a per-asset
 stage one container per asset, `status` once. Each stage takes `--tickers`.
@@ -152,7 +152,7 @@ many timeframes its bars and its catalogue hold a partition for, whether its
 contract stands, where its serpentine search profile stands and how many trials
 the search's ledger holds; then one action — a target of this module started
 through `make` with `ASSET=<TICKER>`, or one of the serpentine search's own:
-draft the profile, read the recorded search, promote a proposal — after which it
+draft the profile, read the recorded search, promote the proposal — after which it
 closes. The Makefile is where a container and the order of the chain are named.
 It computes nothing and writes one file, the draft of
 `<TICKER>_serpentine_search_profile.json`: it runs on the host's `python3` and
@@ -204,18 +204,19 @@ method, its thresholds and their limits are `skills/methodology_features.md`
   asset's noise sigma, `path_cagr_noise_standard_deviation`: `null` on the
   asset's first searches, the calibration runs, whose last turn prints the
   estimate a hand may draft into the file.
-- **The promotion** — `make features-serpentine-search-promote ASSET=<TICKER>
-  PROPOSAL=<n>`, the proposal's rank defaulting to 1, one asset and never fanned
-  out — copies the proposal's columns into `<TICKER>_feature_set.json` and its
-  barrier geometry into `<TICKER>_barriers.json` (`promote.py`), and nothing
-  else, then runs `ml-all` for the asset. That chain tunes the hyper-parameters
-  anew: `ml-hpo` draws its own `best_params` for the promoted columns and
-  geometry — the point the search evaluated, even one its hpo loop found, is not
-  copied — the result is evaluated again on the validation folds F2–F4, and F5
-  is read after and never steers. What is kept is the proposal's columns and
-  geometry, not the model the search evaluated, so the realised result differs
-  from the search's. A search that proposes nothing has ended correctly, with
-  nothing to promote (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
+- **The promotion** — `make features-serpentine-search-promote ASSET=<TICKER>`,
+  one asset and never fanned out — copies the proposal's columns into
+  `<TICKER>_feature_set.json` and its barrier geometry into
+  `<TICKER>_barriers.json` (`promote.py`), and nothing else, then runs `ml-all`
+  for the asset. A search proposes one state at most, its champion, so there is
+  none to choose. That chain tunes the hyper-parameters anew: `ml-hpo` draws its
+  own `best_params` for the promoted columns and geometry — the point the search
+  evaluated, even one its hpo loop found, is not copied — the result is evaluated
+  again on the validation folds F2–F4, and F5 is read after and never steers.
+  What is kept is the proposal's columns and geometry, not the model the search
+  evaluated, so the realised result differs from the search's. A search that
+  proposes nothing has ended correctly, with nothing to promote, and the
+  promotion refuses it in one line (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
 - **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` —
   removes `<TICKER>_serpentine_search.json`,
   `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_score_request.json`,

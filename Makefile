@@ -35,8 +35,6 @@ JOBS ?= 1
 DATA_STAGES     := data-download data-ingest data-status
 FEATURES_STAGES := features-bars features-catalogue features-status
 ML_STAGES       := ml-labels ml-hpo ml-train ml-strategy ml-status
-# the proposal a promotion copies, by its rank in the serpentine search result
-PROPOSAL ?= 1
 # the one asset a hand's action on the serpentine search names: one ticker of TICKERS, or make stops before a line of
 # the recipe runs — the reset removes files by it
 one_asset = $(if $(filter-out $(TICKERS),$(ASSET))$(filter-out 1,$(words $(ASSET))),$(error ASSET=<TICKER> is required, one ticker of TICKERS: $(TICKERS)))
@@ -140,10 +138,11 @@ tmux-features-serpentine-search: ## the serpentine search of one asset detached 
 	$(one_asset)
 	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) '$(if $(COMPOSE_PROJECT_NAME),COMPOSE_PROJECT_NAME=$(COMPOSE_PROJECT_NAME) )make features-serpentine-search ASSET=$(ASSET)'
 # a hand's decision for one asset, never fanned out: the proposal's columns and barrier geometry become the asset's own,
-# and its ML chain runs again, tuning it anew — the search's evaluated point is not what is kept. ASSET= is required
-features-serpentine-search-promote: ## copy proposal PROPOSAL=<n> (default 1) of one asset's serpentine search into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain, which tunes it again; ASSET= is required
-	$(if $(ASSET),,$(error ASSET=<TICKER> is required))
-	$(run) features python -m module_features.sub_module_serpentine_search.promote --tickers $(ASSET) --proposal $(PROPOSAL)
+# and its ML chain runs again, tuning it anew — the search's evaluated point is not what is kept. A search proposes one
+# state at most, so there is none to choose, and a search that proposes none is refused in one line. ASSET= is required
+features-serpentine-search-promote: ## copy the proposal of one asset's serpentine search into <TICKER>_feature_set.json and <TICKER>_barriers.json, then rerun its ML chain, which tunes it again — a search that proposes none refused in one line; ASSET= is required
+	$(one_asset)
+	$(call stage,features,module_features.sub_module_serpentine_search.promote,$(ASSET))
 	$(MAKE) ml-all ASSET=$(ASSET)
 # a new experiment for one asset: every file the turn or ml-score writes for it is removed, on the host, over the stores'
 # host paths — the state, the loop's ledger, the question, the answer and the asset's partition of score_trials; its

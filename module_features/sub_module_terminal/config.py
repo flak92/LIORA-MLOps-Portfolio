@@ -62,8 +62,8 @@ def serpentine_search_profile_json(ticker: str) -> Path:
     return artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
 
 
-# the one target whose form a bare run cannot answer: the proposal it promotes is asked on this terminal's own screen —
-# a record of the serpentine search's CONFIGURABLES
+# the one target this terminal opens its own screen for: its plan shows the proposal it promotes before the gate — a
+# record of the serpentine search's CONFIGURABLES
 # twice by extraction
 PROMOTE_TARGET = "features-serpentine-search-promote"
 

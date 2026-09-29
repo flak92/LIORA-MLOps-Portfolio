@@ -83,12 +83,13 @@ make all ASSET=BTC                               # the dependent artifacts, comp
 make features-serpentine-search-reset ASSET=BTC  # the search's own files go — its state, ledger, question, answer and score_trials partition; its inputs and profile stay
 ```
 
-A search that finds nothing better than where it started proposes nothing, and that is a correct
-result. When it proposes, a hand promotes the proposal — one asset at a time — and the ML chain
-tunes the promoted state again, so the result that counts is the rerun's on the validation folds:
+A search proposes one state at most, its champion. A search that finds nothing better than where it
+started proposes nothing, and that is a correct result — the promotion then refuses in one line.
+When it proposes, a hand promotes the proposal — one asset at a time — and the ML chain tunes the
+promoted state again, so the result that counts is the rerun's on the validation folds:
 
 ```bash
-make features-serpentine-search-promote ASSET=BTC PROPOSAL=1   # the proposal's columns into BTC_feature_set.json and its barrier geometry into BTC_barriers.json, then ml-all for BTC
+make features-serpentine-search-promote ASSET=BTC   # the proposal's columns into BTC_feature_set.json and its barrier geometry into BTC_barriers.json, then ml-all for BTC
 ```
 
 The canon, outside the chain, on the host — every rule a row of one workbook, `module_skills/skills_sheet.xlsx`,
@@ -240,7 +241,7 @@ to its tmux session and puts before the session's name.
 | features status | `make features-status` | the catalogue's partitions and each asset's serpentine search → `store/status/features_status.json` | read-only; the catalogue's facts, each asset's row counts and its search as it last wrote itself |
 | serpentine search | `make features-serpentine-search ASSET=<TICKER>` | the profile, the catalogue, Y and the parameters → `<TICKER>_serpentine_search.json` and its ledger `<TICKER>_serpentine_search_trials.jsonl` | outside the chain: `make features-serpentine-turn` leaves a question, `<TICKER>_score_request.json`, `make ml-score` answers it on the validation folds, and the loop runs while a question stands; resumes where the files stand; promotes nothing; its detached twin `make tmux-features-serpentine-search ASSET=<TICKER>` outlives the terminal and ends with the search |
 | reset | `make features-serpentine-search-reset ASSET=<TICKER>` | the search's state, ledger, question, answer and `score_trials` partition → gone | runs no stage; the inputs and the profile stay — a new experiment starts from the files the chain left |
-| promotion | `make features-serpentine-search-promote ASSET=<TICKER> PROPOSAL=<n>` | one proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset, which tunes it again | a hand's choice, one asset at a time; the same proposal twice changes nothing; the commit history is the record |
+| promotion | `make features-serpentine-search-promote ASSET=<TICKER>` | the proposal's columns → `<TICKER>_feature_set.json` and its barrier geometry → `<TICKER>_barriers.json`, then `ml-all` for that asset, which tunes it again | a hand's choice, one asset at a time; a search that proposes none refused in one line; the same proposal twice changes nothing; the commit history is the record |
 | lifecycle | `make all-record` | one recorded run of the whole chain → `store/run_records/<run_id>/` | one record for the whole basket; every stage measured from outside by `record.py` — its time, its exit code and what it wrote to the four pipeline stores |
 | dashboard | `make on`              | the snapshots and the run records → the seven-tab page on `127.0.0.1:<port>`, the address `make on` prints, served by `module_monitoring/serve.py` in the `dashboard` container under three prefixes — the page's own files, `status/` and `run_records/` | no external resources; every other path 404, and no directory listed |
 
