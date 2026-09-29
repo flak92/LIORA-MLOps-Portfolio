@@ -105,7 +105,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-NO-STUDY-IS-HANDED-A-STARTING-POINT`
   - Description: No study is handed a point to start from: `ml-hpo` is a function of X, Y and the frozen constants, so `<TICKER>_parameters.json` never depends on its own last value, and a beam parent's own parameters are not its study's first trial.
   - Scope: `module_ml/hpo.py`, `module_ml/score.py`
-  - Expected: `hpo.search_hyperparameters()` creating a fresh seeded study with no enqueued trial and reading no parameters file; a best point equal to the parent's own offered as no move.
+  - Expected: `hpo.search_hyperparameters()` creating a fresh seeded study with no enqueued trial and reading no parameters file; the parent's own point never offered, no threshold beating the parent on every fold at it.
   - Exception: none
 - `METHODOLOGY-ML-A-TRIALS-LINE-CARRIES-NO-RUN-IDENTITY`
   - Description: A line of a trials family carries no run id, no timestamp and no host name, so two studies over an emptied partition leave the same bytes.

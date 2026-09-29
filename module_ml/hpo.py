@@ -183,18 +183,20 @@ def trial_row(trial: optuna.trial.FrozenTrial, origin: str, round_number: int | 
     return {column: values[column] for column in TRIAL_COLUMNS}
 
 
-def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray],
+def search_hyperparameters(xy: dict, bars_1m: dict[str, np.ndarray], seed: int,
                            champion_by_fold: dict[int, dict] | None = None) -> optuna.Study:
     """The asset's TPE search over the frozen space, sequential and seeded — the study itself, so a caller
-    reads the point it chose, that point's value and every point it drew from one object.
+    reads the point it chose, that point's value and every point it drew from one object. The chain seeds it with
+    `SEED`; a study of the serpentine search with `SEED` plus its round, so a parent that stays in the beam draws
+    new points in the next round rather than the same ones again.
 
-    No point is drawn first: the parent's own parameters would be stopped by the gate after their first fold —
-    equality does not beat a strict inequality — a fit spent on a point that cannot be a candidate. The
-    guarantee lives in the gate: a candidate must beat the parent, so a study that finds nothing better offers
-    nothing."""
+    No point is drawn first: the parent's own parameters can never be offered — at its own threshold every fold
+    equals the parent's, and no other threshold beats the parent on every fold, or the parent would stand there —
+    so a trial spent on them is a fit that cannot become a candidate. The guarantee lives in the gate: a candidate
+    must beat the parent, so a study that finds nothing better offers nothing."""
     study = optuna.create_study(
         direction="maximize",
-        sampler=optuna.samplers.TPESampler(seed=config.SEED,
+        sampler=optuna.samplers.TPESampler(seed=seed,
                                            n_startup_trials=config.HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT),
     )
     study.optimize(build_objective(xy, bars_1m, champion_by_fold),
@@ -226,7 +228,7 @@ def main() -> int:
         # the stage has no champion to beat and no point to start from: it is a function of X, Y and the
         # frozen constants, so <TICKER>_parameters.json is a function of the raw store and this code and
         # never of its own last value
-        study = search_hyperparameters(xy, bars_1m)
+        study = search_hyperparameters(xy, bars_1m, config.SEED)
         if not study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
             raise SystemExit(f"{ticker}: no admissible strategy on every validation fold at any threshold — "
                              f"every one of the {config.HYPERPARAMETER_SEARCH_TRIAL_COUNT} trials was pruned")

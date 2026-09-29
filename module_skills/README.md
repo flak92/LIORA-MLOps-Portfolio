@@ -20,7 +20,7 @@ is named below by the path it holds in the tree.
 |---|---|
 | [skill_agent_first_development.md](skill_agent_first_development.md) | how an agent works on this project — extend the owner, register a name in its commit, prove a change by running it; subtract, don't add |
 | [skill_asset_containers.md](skill_asset_containers.md) | the compose topology: one image, three runners and one resident under two anchors, the store mounts each service is given, the `fanout` and `basket` macros, the host user, the one memory ceiling and the measured host port; the runtime contract every module runs inside |
-| [skill_determinism.md](skill_determinism.md) | bit parity, thread caps, the one seed and the pinned orders, and where speed is allowed to come from |
+| [skill_determinism.md](skill_determinism.md) | bit parity, thread caps, the fixed seeds and the pinned orders, and where speed is allowed to come from |
 | [skill_files_and_folders.md](skill_files_and_folders.md) | the kinds of file and folder the tree holds, what each is for, and which are generated |
 | [skill_glossary.md](skill_glossary.md) | the name register: one concept, one name, in code, artifacts and interface — and the register of the copies no module may import across |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the rules that keep every local boundary the one a move onto standard cloud primitives would keep, with nothing built for it; the mapping itself is § The Pre-AWS mapping below |

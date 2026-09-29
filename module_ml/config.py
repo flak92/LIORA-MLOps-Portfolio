@@ -20,7 +20,8 @@ from pathlib import Path
 CONFIGURABLES = (
     # twice by extraction
     {"name": "SEED", "value": 42, "class": "DEFAULT", "unit": "seed",
-     "meaning": "the one seed of every study and every fit", "tui": False, "experiment_identity": True,
+     "meaning": "the seed of every fit and of the chain's study; a study of the serpentine search takes it plus its "
+                "round", "tui": False, "experiment_identity": True,
      "requires_rerun": "ml-all, features-serpentine-search", "risk": "another experiment: every study, fit and trade changes"},
     {"name": "FOLD_BOUNDS_UTC", "class": "DEFAULT", "unit": "UTC days, the first inclusive and the last exclusive",
      "value": ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01", "2025-01-01", "2026-08-26"),

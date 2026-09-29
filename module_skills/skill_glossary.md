@@ -431,7 +431,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: — (a turn's progress line prints them; no page shows a move)
   - Never: add / drop, greedy, step; a ceiling or a floor on the count of columns
   - External vocabulary: stepwise feature selection (forward / backward)
-- the convergence — a round in which no family of the executed schedule changed the beam, after which the serpentine search is over: a fixed point of its own schedule and gate, not an optimum
+- the convergence — a round in which no family of the executed schedule changed the beam, after which the serpentine search is over: the end of its own schedule and gate, not an optimum
   - Code: `search_converged`
   - Artifact key: `search_converged`
   - Ui label: converged

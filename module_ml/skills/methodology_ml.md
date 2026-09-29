@@ -341,12 +341,13 @@ model, call the same fold out-of-sample again.
 
 ## 7. Hyper-parameter search
 
-Optuna TPE seeded with `SEED`, `HYPERPARAMETER_SEARCH_TRIAL_COUNT` sequential
-trials, in-memory study — sequential because a parallel study draws its trials in
+Optuna TPE seeded with `SEED` — with `SEED` plus its round in a study of the
+serpentine search — `HYPERPARAMETER_SEARCH_TRIAL_COUNT` sequential trials,
+in-memory study — sequential because a parallel study draws its trials in
 nondeterministic order, and single-threaded because multi-threaded float
 summation reorders and two runs diverge. The objective is the quantity the
-serpentine search selects on: the CAGR of the validation path at the threshold
-§ 9's rule would pick, maximised (`hpo.sweep_selection()`).
+serpentine search selects on: the CAGR of the validation path at the threshold §
+9's rule would pick, maximised (`hpo.sweep_selection()`).
 
 **The first `HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT` trials are the sampler's
 random start.** TPE fits its two densities only once it holds `n_startup_trials`
@@ -443,18 +444,20 @@ Inside the serpentine search the study is itself a coordinate — one candidate 
 beam member, drawn on that member's own X and Y by `score.hpo_results()`. It
 cannot answer worse than the member it ran on because a candidate has to beat it:
 the guarantee is the gate's. The study is handed no point: the member's own
-parameters as a first trial would be stopped by the gate after one fold —
-equality does not beat a strict inequality — a fit spent on a point that could not
-be a candidate, and a trial pruned before it reports anything tells the sampler
-nothing. **One** gate stops a trial early, and it is the state gate's own
-condition read one fold at a time (`hpo.admissible_thresholds()`): after each
-validation fold, the thresholds at which every fold so far clears the trade floor
-**and** beats the champion's CAGR there. The set only shrinks as folds are
-added, and the child the search would keep needs one threshold inside it over all
-three folds, so a trial whose set has gone empty cannot produce one however the
-folds it has not run land. Nothing admissible is discarded. The count after each
-fold is written into the ledger whether or not the gate is armed, so what the
-gate saw is readable and not inferred.
+parameters could never be offered — at its own threshold every fold equals the
+member's, and no other threshold beats it on every fold, or the member would
+stand there — so a trial on them is a fit that cannot become a candidate. Its
+seed moves with the round, so a member that stays in the beam draws new points in
+the next round rather than the same ones again. **One** gate stops a trial early,
+and it is the state gate's own condition read one fold at a time
+(`hpo.admissible_thresholds()`): after each validation fold, the thresholds at
+which every fold so far clears the trade floor **and** beats the champion's CAGR
+there. The set only shrinks as folds are added, and the child the search would
+keep needs one threshold inside it over all three folds, so a trial whose set has
+gone empty cannot produce one however the folds it has not run land. Nothing
+admissible is discarded. The count after each fold is written into the ledger
+whether or not the gate is armed, so what the gate saw is readable and not
+inferred.
 
 Bounds — the best growth rate each fold could still reach over the whole grid,
 read fold by fold and never jointly — would not do: each is true of *some*

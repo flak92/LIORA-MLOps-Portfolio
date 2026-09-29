@@ -329,14 +329,15 @@ canonical 1m series inside the frozen research window, read only there
 trained on the folds before it with its training rows purged at the fold's start and scored on the
 rows whose horizon fits the block; F5 enters no trial. The same cost,
 `EXECUTION_COST_RATE_PER_TRADE_SIDE`, on the entry and the exit of every trade
-(`strategy.backtest()`), and the one seed of every fit and study, `SEED`. The same annualisation: a
-CAGR over the path's own minutes in a 365-day year (`validation.cagr()`), the Sharpe ratio reported
-beside it by the periods per year of the decision bar (`strategy.backtest()`). The same causality:
-every feature value read from the last closed bar of its timeframe (`indicators.asof_index`). A move
-of the label's horizon changes the supervised population itself — a longer horizon drops more of
-each fold's tail — so parent and child are scored on row sets that differ at the edges, on the same
-calendar and the same capital: a property of the coordinate. These conditions hold inside one
-experiment and nowhere else (§ One search, one experiment).
+(`strategy.backtest()`), and the seeds — `SEED` for every fit, `SEED` plus the round for a study of
+the search. The same annualisation: a CAGR over the path's own minutes in a 365-day year
+(`validation.cagr()`), the Sharpe ratio reported beside it by the periods per year of the decision
+bar (`strategy.backtest()`). The same causality: every feature value read from the last closed bar
+of its timeframe (`indicators.asof_index`). A move of the label's horizon changes the supervised
+population itself — a longer horizon drops more of each fold's tail — so parent and child are scored
+on row sets that differ at the edges, on the same calendar and the same capital: a property of the
+coordinate. These conditions hold inside one experiment and nowhere else (§ One search, one
+experiment).
 
 ### 3. Progress and stopping
 
@@ -348,12 +349,12 @@ than it did: the best ranked result never gets worse
 (`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`).
 
 `search_converged = not round_accepted` (`turn()`): the search stops after a round in which no
-family of the executed schedule changed the beam. From that beam another round would offer the same
-states and, every fit and study being seeded, receive the same answers, so the search stands at a
-fixed point of its own schedule and gate. That is not a global optimum, and not a local optimum of
-the objective alone: a neighbour that raised the path's CAGR but not every fold's was offered and
-refused, and a child that cleared the gate but ranked below a full beam was not kept
-(`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
+family of the executed schedule changed the beam. Another round would offer the barrier and
+feature-set families the same states and receive the same answers, while its studies would draw new
+points, so the end is the end of this schedule and gate, not a fixed point. That is not a global
+optimum, and not a local optimum of the objective alone: a neighbour that raised the path's CAGR but
+not every fold's was offered and refused, and a child that cleared the gate but ranked below a full
+beam was not kept (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
 
 ### 4. The thresholds
 
@@ -411,7 +412,7 @@ pair of states once; σ is the median absolute deviation of the pairs' path-CAGR
 × 1.4826 / √2, the factor that makes a normal sample's median absolute deviation its standard
 deviation, over the √2 of a difference of two scores. The pairs are pairs of different states, so σ
 holds the effect of each change as well as the variability of an evaluation; a state scored twice
-scores the same, every fit and study being seeded.
+scores the same, every fit being seeded.
 
 k(N)·σ is therefore a margin that grows with the size of the search — a heuristic, not a test. Its
 model assumes independent normal noise of one size; the states of a search are correlated, each one

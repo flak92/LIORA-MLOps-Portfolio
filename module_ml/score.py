@@ -90,7 +90,8 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
         state = theta(parent)
         champion_by_fold = {fold_id: parent["validation"][f"fold_{fold_id}"]
                             for fold_id in config.VALIDATION_FOLD_IDS}
-        study = hpo.search_hyperparameters(xy_for_state(asset, state), asset["bars_1m"], champion_by_fold)
+        study = hpo.search_hyperparameters(xy_for_state(asset, state), asset["bars_1m"],
+                                           config.SEED + round_number, champion_by_fold)
         studies.append(study)
         params = hpo.admissible_point(study)
         candidate = None
@@ -133,7 +134,8 @@ def xy_for_state(asset: dict, state: dict) -> dict:
     stacked again — else Y walked down the 1m path in process and the feature grids joined to the decisions
     the new horizon admits."""
     barriers = dataset.barriers_from({name: state[name] for name in config.BARRIER_COORDINATE_NAMES})
-    if all(asset["xy"]["barriers"][name] == barriers[name] for name in config.BARRIER_COORDINATE_NAMES):
+    if all(asset["xy"]["barriers"][name] == barriers[name] for name in config.BARRIER_COORDINATE_NAMES
+           if name not in config.TRADE_EXIT_COORDINATE_NAMES):
         x, feature_columns = dataset.build_x(asset["xy"]["catalogue_values"],
                                              state["columns_by_timeframe"], asset["timeframes"])
         return {**asset["xy"], "x": x, "feature_columns": feature_columns, "barriers": barriers}
