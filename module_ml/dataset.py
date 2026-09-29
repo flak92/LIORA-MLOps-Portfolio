@@ -102,6 +102,7 @@ def load_catalogue(ticker: str) -> dict:
     return load_json(config.catalogue_json(ticker))
 
 
+# twice by extraction
 def load_feature_columns(ticker: str, cat: dict) -> dict[str, tuple[str, ...]]:
     """The asset's feature set by timeframe: the promoted file's columns, in catalogue order, else the default set."""
     path = config.feature_set_json(ticker)

@@ -1,6 +1,6 @@
 """Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
 reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
-shares, and the null-tolerant rounding the two snapshots share. The basket is not here: the launcher names it
+shares, and the null-tolerant rounding of its snapshot. The basket is not here: the launcher names it
 (`TICKERS` in the Makefile, `ASSET` on the make line) and every stage is told its assets."""
 
 from __future__ import annotations
@@ -22,8 +22,6 @@ MILLISECONDS_PER_SECOND = 1000
 MILLISECONDS_PER_MINUTE = 60_000
 # twice by extraction
 MILLISECONDS_PER_DAY = 86_400_000
-# twice by extraction
-BYTES_PER_KIBIBYTE = 1024
 CANONICAL_GRID_INTERVAL_MS = MILLISECONDS_PER_MINUTE   # this module's alone: the canonical grid is the minute
 
 

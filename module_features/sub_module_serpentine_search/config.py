@@ -12,8 +12,9 @@ from __future__ import annotations
 from .. import config as features_config
 
 # ---- CONFIGURABLES: what an operator may set in the serpentine search, one record each, its value written nowhere
-# else — the constants below and the features terminal's copies read it, the module's snapshot publishes the records.
-# DEFAULT is a starting point of the experiment, SPECTRUM the legal values of one knob, WIRING a technical contract
+# else but in the features terminal's registered copies, which act on the grid and the target; the module's snapshot
+# publishes the records. DEFAULT is a starting point of the experiment, SPECTRUM the legal values of one knob, WIRING a
+# technical contract
 CONFIGURABLES = (
     {"name": "SERPENTINE_SEARCH_BEAM_WIDTH", "value": 3, "class": "DEFAULT", "unit": "states",
      "meaning": "the branches a family keeps; 1 is one champion moved one move at a time", "tui": False,
@@ -53,8 +54,6 @@ ROUND_SCHEDULE = ((SERPENTINE_SEARCH_LOOP_BARRIER, "trade"),
                   (SERPENTINE_SEARCH_LOOP_FEATURE_SET, SERPENTINE_SEARCH_MOVE_FORWARD),
                   (SERPENTINE_SEARCH_LOOP_FEATURE_SET, SERPENTINE_SEARCH_MOVE_BACKWARD),
                   (SERPENTINE_SEARCH_LOOP_HPO, "study"))
-# twice by extraction
-SERPENTINE_SEARCH_ROUND_LOOPS = tuple(dict.fromkeys(loop for loop, _ in ROUND_SCHEDULE))
 
 # twice by extraction
 SELECTION_FOLD_MEASURE = "cagr"   # the measure the fold gate reads; the study's own gate reads the copy in ML

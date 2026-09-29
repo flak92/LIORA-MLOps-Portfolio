@@ -720,8 +720,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `MILLISECONDS_PER_SECOND` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/page.js`; `MILLISECONDS_PER_MINUTE` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`; `MILLISECONDS_PER_DAY` in `module_data/config.py`, `module_features/config.py`; `MINUTES_PER_HOUR` in `module_features/config.py`, `module_monitoring/data.js`; `HOURS_PER_DAY` in `module_monitoring/data.js`; `SECONDS_PER_MINUTE` in `module_monitoring/page.js`
   - Why twice: a unit is a unit: importing one across a boundary would drag the module behind it (`AGENTS.md` D02), and the page's scripts import no Python
 - `BYTES_PER_KIBIBYTE` — equal by value
-  - Code: `module_data/config.py`, `module_ml/config.py`; the browser's own in `module_monitoring/page.js`
-  - Why twice: a unit, like the unit constants: the data and ML modules and the page each size a file, and none of them imports another
+  - Code: `module_ml/config.py`; the browser's own in `module_monitoring/page.js`
+  - Why twice: a unit, like the unit constants: the ML module and the page each size a file, and neither imports the other
 - `DUCKDB_MEMORY_LIMIT` — equal by value
   - Code: a constant in `module_data/config.py`; a CONFIGURABLES record and the constant read from it in `module_features/config.py` and `module_ml/config.py`
   - Why twice: every DuckDB connection of every module pins the same ceiling beside `threads=1`, and no module imports another
@@ -813,6 +813,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `parameters_json()` — equal by value
   - Code: `module_ml/config.py`, over its own `artifact_dir()`; `module_features/sub_module_serpentine_search/config.py`, over its module's
   - Why twice: the ML chain writes the tuned parameters the serpentine search starts from; the writer and the reader of a boundary name one artifact
+- `load_feature_columns()` — equal by value
+  - Code: `module_ml/dataset.py`; `module_features/sub_module_serpentine_search/serpentine_search.py`
+  - Why twice: the asset's feature set — the promoted file's columns in catalogue order, else the default set — is read by the chain that fits it and by the search that starts from it, and neither module imports the other
 - `feature_set_json()`, `barriers_json()`, `hyperparameter_point_json()` — equal by value
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`, `module_features/sub_module_terminal/config.py`, each over its own `artifact_dir()` or its module's
   - Why twice: the promotion writes the three, the ML chain reads them and the serpentine search the first two, and the features terminal names them on its promotion screen; the writer and the reader of a boundary must name one artifact, and the terminal cannot import the sub-module's `config.py`, which imports numpy through the module's
@@ -825,8 +828,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `serpentine_search_json()`, `serpentine_search_trials_jsonl()`, `serpentine_search_profile_json()` — equal by value
   - Code: `module_features/sub_module_serpentine_search/config.py`, over its module's `artifact_dir()`; `module_features/sub_module_terminal/config.py`, over its own
   - Why twice: the features terminal reads the state and the ledger and writes the profile on the host's `python3`, and the sub-module's `config.py` imports the module's, which imports numpy
-- `SERPENTINE_SEARCH_ROUND_LOOPS` — equal by value
-  - Code: `module_features/sub_module_serpentine_search/config.py`, derived from `ROUND_SCHEDULE`; `module_features/sub_module_terminal/config.py`, written out
+- `SERPENTINE_SEARCH_ROUND_LOOPS` — equal by value to the loops of `ROUND_SCHEDULE`
+  - Code: `module_features/sub_module_terminal/config.py`, written out; `ROUND_SCHEDULE` in `module_features/sub_module_serpentine_search/config.py`, its loops in their order
   - Why twice: the loops a round runs, in its order: the features terminal offers them to a draft, and it cannot import the sub-module's `config.py`, which imports numpy through the module's
 - `GRID_BY_COORDINATE_DEFAULT`, `PROMOTE_TARGET` — equal by value
   - Code: CONFIGURABLES records of `module_features/sub_module_serpentine_search/config.py`; constants of `module_features/sub_module_terminal/config.py`
@@ -905,8 +908,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `grid_by_coordinate`
   - Ui label: grid; points
   - Never: a grid typed into a prompt; a point the terminal offers outside the preset
-- gum: the terminal instrument the TUI speaks — `gum table --print`, `gum style`, `gum choose`, `gum filter`, `gum input`; gum 2, a binary of the host
-  - Code: `gum`, over `subprocess` in `tui.py` alone: `gum_table()`, `gum_style()`, `gum_choose()`, `gum_filter()`, `gum_input()`, `_gum()`
+- gum: the terminal instrument the TUI speaks — `gum table --print`, `gum style`, `gum choose`, `gum input`; gum 2, a binary of the host
+  - Code: `gum`, over `subprocess` in `tui.py` alone: `gum_table()`, `gum_style()`, `gum_choose()`, `gum_input()`, `_gum()`
   - Never: a Python dependency, Rich among them; a chooser, a table or a colour written over curses or escape codes; a gum configuration in the tree; `gum spin`, `gum confirm`; `gum input` for a value the tree already holds, which is a selection and belongs to `gum choose`; gum's own pink and purple
   - External vocabulary: gum
 - plain output: the screens without colour, symbol or border, chosen by the environment alone — `NO_COLOR` set and not empty, `TERM=dumb`, or standard output not a terminal
@@ -915,7 +918,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: a flag, `--no-color`, `--simple`, `--a11y`; a theme or a gum configuration in the tree; a meaning a colour alone carries
 - a state word: the closed list of words that say how a step, a file or an action stands — its symbol and colour beside it in normal output, the word in brackets in plain output
   - Code: `STATE_SYMBOLS`, `STATE_COLOURS`, `state_label()` in `tui.py`
-  - Ui label: DONE; CURRENT; PENDING; CANCELLED; WARN; FAILED; ERROR — and CRAWLING, NOT CRAWLED, which `STATE_SYMBOLS` still holds and no screen draws since the crawler has no screen
+  - Ui label: DONE; CURRENT; PENDING; CANCELLED; WARN; ERROR
   - Never: a colour or a symbol without its word; a coloured row; `ok`, `success` as a state word
 - the failure block and the exits: a failure on stderr as what failed, where, why and what next, the run's last block — 0 an action done or cancelled, 1 a failure, 2 an unknown argument, 130 Ctrl-C
   - Code: `error_lines()`, `INTERRUPTED_EXIT_CODE` in `tui.py`; `_failure_exit_code()`, `_cancelled_exit_code()` in each `terminal.py`
@@ -1300,7 +1303,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: vendor
   - Never: an API key; a vendor named in the code; a form for its model, effort or permissions; a vendor chosen on a screen; two active vendors; every vendor run in turn
 - a report: the one current file per controlled file — the file's key, the vendor and the time, then the answer as it came; reset by every crawl, never tracked
-  - Code: `REPORTS_DIR`, `report_path()` in the crawler's `config.py` — `store/status/reports_after_crawled_files/<path>.report.md`; `write_atomically()` in `status.py`
+  - Code: `REPORTS_DIR`, `report_path()` in the crawler's `config.py` — `store/status/reports_after_crawled_files/<path>.report.md`; `write_text()` in `module_skills/sync.py`
   - Artifact key: `report`
   - Ui label: report
   - Never: a history of entries; an append; a report in the sub-module's folder; a commit in its first line; a report tracked
@@ -1320,7 +1323,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `SystemExit` in `module_skills/sheet.py`, `module_skills/sync.py` and the crawler's `crawl.py`
   - Never: a traceback for an expected failure; exit 0 after a failure; a crawl that stops at the first failed file
 - the snapshot: `skills_status.json`, the current state of every controlled file, sorted by path and rewritten whole at every change; tracked in its neutral state, every controlled file `pending` with no report
-  - Code: `SKILLS_STATUS_JSON_PATH` in the crawler's `config.py`; `row()`, `write_skills_status()`, `write_atomically()` in `status.py`
+  - Code: `SKILLS_STATUS_JSON_PATH` in the crawler's `config.py`; `row()`, `write_skills_status()` in `status.py`, through `write_text()` of `module_skills/sync.py`
   - Artifact key: `files`, each `path`, `state`, `vendor`, `finished_at_utc`, `report`
   - Ui label: file; state; vendor; finished_at_utc; report
   - Never: a count of crawls; an age; a clock but `finished_at_utc`; a snapshot that reads itself back; a partial file

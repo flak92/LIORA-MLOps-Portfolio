@@ -69,8 +69,7 @@ def score_results(asset: dict, states: list[dict]) -> list[dict]:
     for state in states:
         identity = fit_identity(state)
         inherited = fitted.get(identity)
-        material = state_material(asset, state,
-                                  config.REBUILD_BACKTEST if inherited else config.REBUILD_FITS, inherited)
+        material = state_material(asset, state, inherited)
         if inherited is None:
             fitted[identity] = material
         results.append(trial_result(asset, state, material))
@@ -98,7 +97,7 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
         if params is not None:
             offered = {**state, "best_params": params}
             candidate = trial_result(asset, offered,
-                                     state_material(asset, offered, config.REBUILD_FITS, None))
+                                     state_material(asset, offered, None))
         results.append({"state_key": state_key(state), "trial_count_drawn": len(study.trials),
                         "candidate": candidate})
     for study in studies:
@@ -122,7 +121,7 @@ def main() -> int:
         elif kind == KIND_HYPERPARAMETER:
             results = hpo_results(ticker, asset, states, round_number)
         else:
-            raise ValueError(f"{ticker}: {kind!r} is no kind of scoring this stage answers")
+            raise SystemExit(f"{ticker}: {kind!r} is no kind of scoring this stage answers")
         dataset.write_json(config.score_response_json(ticker),
                            {"kind": kind, "round": round_number, "results": results})
         print(f"{ticker} {kind} round {round_number}: {len(results)} scored", flush=True)
@@ -144,14 +143,14 @@ def xy_for_state(asset: dict, state: dict) -> dict:
                             asset["decision_grids"], label_events, state["columns_by_timeframe"], barriers)
 
 
-def state_material(asset: dict, state: dict, rebuild: str, inherited: dict | None) -> dict:
+def state_material(asset: dict, state: dict, inherited: dict | None) -> dict:
     """What a state is scored from — X and Y, the three boosters' out-of-fold predictions and their skill.
 
-    A move of the trade's own exit inherits all of it: neither a fit nor a prediction depends on where a
-    position leaves, so only the geometry the backtest reads is replaced. Anything else is three fits, and Y
+    A state of the fit identity of an earlier one inherits all of it: neither a fit nor a prediction depends on where
+    a position leaves, so only the geometry the backtest reads is replaced. Anything else is three fits, and Y
     before them when the label's own geometry moved."""
     barriers = dataset.barriers_from({name: state[name] for name in config.BARRIER_COORDINATE_NAMES})
-    if rebuild == config.REBUILD_BACKTEST:
+    if inherited is not None:
         return {**inherited, "xy": {**inherited["xy"], "barriers": barriers}}
     xy = xy_for_state(asset, state)
     y_cls = model.to_class(xy["y"])

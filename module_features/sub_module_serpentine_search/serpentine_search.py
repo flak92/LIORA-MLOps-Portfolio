@@ -251,7 +251,8 @@ def progress_line(ticker: str, round_number: int, loop: str, family: str, label:
 
 # ---- what the asset holds today, read without the module that labels ------------------------------------
 
-def active_columns(ticker: str, cat: dict) -> dict:
+# twice by extraction
+def load_feature_columns(ticker: str, cat: dict) -> dict:
     """The asset's feature set by timeframe: the promoted file's columns, in catalogue order, else the
     default set. The order is the catalogue's and not the file's, because a set is one state however a hand
     wrote it down."""
@@ -264,7 +265,7 @@ def active_columns(ticker: str, cat: dict) -> dict:
             for timeframe in config.timeframes(cat)}
 
 
-def active_barriers(ticker: str) -> dict:
+def load_barrier_coordinates(ticker: str) -> dict:
     """The asset's barrier geometry: the promoted file's when it exists, else the geometry the chain stands
     at. Each value passes its own cast, so 2 and 2.0 are one state however a hand wrote them. The horizon
     stays the token it travels as — the minute it stands for is the labelling layer's to read."""
@@ -274,7 +275,7 @@ def active_barriers(ticker: str) -> dict:
             for name, start in config.START_BY_COORDINATE_DEFAULT.items()}
 
 
-def active_best_params(ticker: str) -> dict:
+def load_best_params(ticker: str) -> dict:
     """The asset's hyper-parameter point: the one its ML chain chose last."""
     return dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
 
@@ -361,10 +362,10 @@ def turn(ticker: str) -> None:
     profile = dataset.load_json(config.serpentine_search_profile_json(ticker))
     # the asset's noise sigma, or None on the calibration run that measures it
     noise_sigma = profile["path_cagr_noise_standard_deviation"]
-    best = active_best_params(ticker)
+    best = load_best_params(ticker)
     cat = dataset.load_json(features_config.catalogue_json(ticker))
     timeframes = config.timeframes(cat)
-    columns, barriers = active_columns(ticker, cat), active_barriers(ticker)
+    columns, barriers = load_feature_columns(ticker, cat), load_barrier_coordinates(ticker)
     inputs = dataset.to_json_safe(build_search_inputs(best, columns, barriers, cat, profile))
 
     state_path = config.serpentine_search_json(ticker)

@@ -7,27 +7,17 @@ whole, through a temporary file and `os.replace`, so the dashboard never reads a
 from __future__ import annotations
 
 import json
-import os
-import tempfile
-from pathlib import Path
 
 from . import config
+from .. import sync
 
 
 def row(key: str, state: str = "pending", vendor: str | None = None, finished_at_utc: str | None = None,
         report: str | None = None) -> dict:
     """One file of the snapshot: `report` only once it is `done`, every missing value `null`."""
     return {"path": key, "state": state, "vendor": vendor, "finished_at_utc": finished_at_utc,
-            "report": report if state == "done" else None}
-
-
-def write_atomically(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
-    with os.fdopen(handle, "w", encoding="utf-8", newline="\n") as stream:
-        stream.write(text)
-    os.replace(temporary, path)
+            "report": report}
 
 
 def write_skills_status(rows: list[dict]) -> None:
-    write_atomically(config.SKILLS_STATUS_JSON_PATH, json.dumps({"files": rows}, sort_keys=True, indent=1) + "\n")
+    sync.write_text(config.SKILLS_STATUS_JSON_PATH, json.dumps({"files": rows}, sort_keys=True, indent=1) + "\n")

@@ -121,9 +121,9 @@ def serpentine_search_block(ticker: str) -> dict | None:
     # here — the page, the terminal and the state file show one number because one of them computed it
     trials = dataset.load_jsonl(ledger) if ledger.exists() else []
     inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
-        serpentine_search.build_search_inputs(serpentine_search.active_best_params(ticker),
-                                              serpentine_search.active_columns(ticker, cat),
-                                              serpentine_search.active_barriers(ticker), cat,
+        serpentine_search.build_search_inputs(serpentine_search.load_best_params(ticker),
+                                              serpentine_search.load_feature_columns(ticker, cat),
+                                              serpentine_search.load_barrier_coordinates(ticker), cat,
                                               dataset.load_json(profile_path)))
     return {
         "trial_count": len(trials),

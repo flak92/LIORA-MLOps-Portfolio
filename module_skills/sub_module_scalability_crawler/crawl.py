@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from . import config, status
-from .. import config as skills_config, sheet
+from .. import config as skills_config, sheet, sync
 
 
 class ControlledFile(NamedTuple):
@@ -132,7 +132,7 @@ def main() -> int:
         finished = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         if why is None:
             report = config.report_path(controlled_file.key)
-            status.write_atomically(report, f"{controlled_file.key} · {vendor} · {finished}\n\n{text}\n")
+            sync.write_text(report, f"{controlled_file.key} · {vendor} · {finished}\n\n{text}\n")
             rows[controlled_file.key] = status.row(controlled_file.key, "done", vendor, finished,
                                                    report.relative_to(config.REPORTS_DIR).as_posix())
             print(f"{number}/{total} | {controlled_file.key} | {vendor} | done", flush=True)

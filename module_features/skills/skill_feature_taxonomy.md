@@ -88,7 +88,7 @@ How the feature layer builds and names what it computes: the tokens of the timef
 - `FEATURE-TAXONOMY-WITHOUT-A-PROMOTION-THE-DEFAULT-SET-HOLDS`
   - Description: Until a promotion writes its `<TICKER>_feature_set.json`, an asset's feature set is the default set — every definition its record marks `definition_in_default_set`, on every timeframe it is offered on, in catalogue order — and a definition marked `False` is offered to the serpentine search alone.
   - Scope: `module_features/config.py`, `module_features/sub_module_serpentine_search/serpentine_search.py`
-  - Expected: `DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME` read off the records and published as `default_columns_by_timeframe` in `<TICKER>_catalogue.json`; `active_columns()` returning it where the asset has no promoted file, else the file's columns in catalogue order; a flag turned `True` a change of the frozen experiment for every asset without a promoted set, never a setting of one asset.
+  - Expected: `DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME` read off the records and published as `default_columns_by_timeframe` in `<TICKER>_catalogue.json`; `load_feature_columns()` returning it where the asset has no promoted file, else the file's columns in catalogue order; a flag turned `True` a change of the frozen experiment for every asset without a promoted set, never a setting of one asset.
   - Exception: none
 - `FEATURE-TAXONOMY-WARM-UP-ROWS-ARE-EXCLUDED`
   - Description: Every decision row before the warm-up is excluded: the warm-up is the widest any definition of the catalogue needs, read off the catalogue in bars of the top timeframe and never written as a literal, and the first decision of every asset stands at its end.

@@ -18,9 +18,8 @@ from . import config
 
 # a state's symbol and its colour, a number of the terminal's own palette, in normal output; plain output shows the word
 # alone, in brackets, and a state with no colour is drawn in the terminal's default
-STATE_SYMBOLS = {"DONE": "✓", "CURRENT": "→", "CRAWLING": "→", "PENDING": "○", "NOT CRAWLED": "○", "CANCELLED": "⚠",
-                 "WARN": "⚠", "FAILED": "✕", "ERROR": "✕"}
-STATE_COLOURS = {"DONE": "2", "CURRENT": "6", "CRAWLING": "6", "CANCELLED": "3", "WARN": "3", "FAILED": "1", "ERROR": "1"}
+STATE_SYMBOLS = {"DONE": "✓", "CURRENT": "→", "PENDING": "○", "CANCELLED": "⚠", "WARN": "⚠", "ERROR": "✕"}
+STATE_COLOURS = {"DONE": "2", "CURRENT": "6", "CANCELLED": "3", "WARN": "3", "ERROR": "1"}
 INTERRUPTED_EXIT_CODE = 130   # a process ended by Ctrl-C, 128 + SIGINT: gum's own, and this program's
 LIST_MARGIN_COLUMNS = 6       # what a list draws before a label: the cursor `> ` and the selection prefix `[x] `
 
@@ -120,20 +119,10 @@ def gum_choose(header: str, rows: list[dict], value_column: str, drop_order: tup
                 "--", *(f"{label}\t{row[value_column]}" for label, row in zip(labels, rows)))
 
 
-def gum_filter(header: str, candidates: list[str], placeholder: str, value: str = "") -> str | None:
-    """The candidate a hand picks under header by typing part of it, drawn inline under the screen above it.
-    The placeholder is an example of what is being filtered, so it is the caller's sentence and not this file's."""
-    colours = () if config.OUTPUT_PLAIN else tuple(
-        argument for flag in ("--indicator.foreground", "--match.foreground", "--header.foreground")
-        for argument in (flag, STATE_COLOURS["CURRENT"]))
-    return _gum("filter", "--header", header, "--placeholder", placeholder,
-                f"--value={value}", "--height", "12", "--prompt", "> ", "--indicator", ">", *colours, "--", *candidates)
-
-def gum_input(header: str, placeholder: str, value: str = "") -> str | None:
+def gum_input(header: str, placeholder: str) -> str | None:
     """The line a hand types under header — the answer no list in the tree can offer yet. The placeholder is an example
     of what is being asked, so it is the caller's sentence and not this file's."""
     colours = () if config.OUTPUT_PLAIN else tuple(
         argument for flag in ("--prompt.foreground", "--header.foreground")
         for argument in (flag, STATE_COLOURS["CURRENT"]))
-    return _gum("input", "--header", header, "--placeholder", placeholder,
-                f"--value={value}", "--prompt", "> ", *colours)
+    return _gum("input", "--header", header, "--placeholder", placeholder, "--prompt", "> ", *colours)

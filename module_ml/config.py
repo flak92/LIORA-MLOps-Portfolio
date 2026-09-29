@@ -12,8 +12,8 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-# ---- CONFIGURABLES: what an operator may set in this module, one record each, its value written nowhere else — the
-# constants below read it, the module's snapshot publishes the records and `make skills-configurables` renders every
+# ---- CONFIGURABLES: what an operator may set in this module, one record each, its value written nowhere else but in
+# its registered copies — the constants below read it, the module's snapshot publishes the records and `make skills-configurables` renders every
 # module's into one table. DEFAULT is a starting point of the experiment, SPECTRUM the legal values of one knob and
 # WIRING a technical setting of a run; a value derived from them and a constant of the method stand below the block,
 # and a register is no configurable
@@ -220,10 +220,9 @@ VALIDATION_FOLD_IDS = (2, 3, 4)
 FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 
 # ---- HPO (Optuna TPE, sequential, in-memory)
-# activation values, not calibration — held until the method is calibrated; the 16-core machine and a recomputed
-# feature layer are a new experiment. They are the smallest counts at which every part of the method runs: TPE draws at
-# random until it has HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT trials to fit on — completed and pruned alike, in this
-# Optuna — and models from the next one, so trials 6 to 8 of every study are the sampler's own, and a trial count at or
+# the smallest counts at which every part of the method runs: TPE draws at random until it has
+# HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT trials to fit on — completed and pruned alike, in this Optuna — and models
+# from the next one, so trials 6 to 8 of every study are the sampler's own, and a trial count at or
 # below the startup count would be a random search wearing its name. The startup count is written here rather than left
 # to the library: a number that decides how the experiment searches is the experiment's, and a default that moves with a
 # version bump is not a frozen method
@@ -264,11 +263,6 @@ BARRIER_COORDINATE_NAMES = tuple(BARRIER_COORDINATE_CASTS)
 # them, so two states differing only here are one fit identity and share one set of fits
 # twice by extraction
 TRADE_EXIT_COORDINATE_NAMES = ("take_profit_true_range_multiplier", "stop_loss_true_range_multiplier")
-# what a state of a request must build again before it can be scored: the trade's own exit alone, or the model's
-# matrix and its three fits, Y walked again before them where the label's own geometry moved — score.fit_identity()
-# decides which, and nothing asks which coordinate moved
-REBUILD_BACKTEST = "backtest"
-REBUILD_FITS = "fits"
 
 # ---- the feature layer's contract, per asset: <TICKER>_catalogue.json, written by module_features.catalogue and read once
 # per stage by dataset.load_catalogue — carried as `cat` (xy["catalogue"]) into every helper below; a helper reads the

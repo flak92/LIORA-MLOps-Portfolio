@@ -21,7 +21,7 @@ Every terminal of the tree — `module_<module>/sub_module_terminal/` of the fou
 - `TUI-DESIGNER-GUM-CALL-NAMED-FOR-ITS-SUBCOMMAND`
   - Description: A call into the drawing tool is named for the subcommand it runs, so the screen's vocabulary and the tool's are one.
   - Scope: `module_*/sub_module_terminal/tui.py`
-  - Expected: `gum_<subcommand>` — `gum_table()`, `gum_style()`, `gum_choose()`, `gum_filter()`, `gum_input()` — and `_gum()`, the one private call that runs a prompt and returns its answer; never `render_`, `show_`, `print_` or `draw_`.
+  - Expected: `gum_<subcommand>` — `gum_table()`, `gum_style()`, `gum_choose()`, `gum_input()` — and `_gum()`, the one private call that runs a prompt and returns its answer; never `render_`, `show_`, `print_` or `draw_`.
   - Exception: none
 - `TUI-DESIGNER-A-SCREEN-ROW-IS-A-DESCRIPTOR`
   - Description: A function that builds the rows of a screen is named for the rows it builds.
@@ -60,14 +60,14 @@ Every terminal of the tree — `module_<module>/sub_module_terminal/` of the fou
   - Expected: A single decision asked on a screen; no heading above a table, its header row being its heading; the same rows never drawn twice on one screen; no ASCII art, emoji or gradient.
   - Exception: none
 - `TUI-DESIGNER-ONE-INSTRUMENT-PER-ROLE`
-  - Description: Each role on a screen takes one instrument: a block for the context and the outcome, a printed table for rows read, a choice for every decision, a filter for a value of a set too long to list, an input for a line no list can offer, and a printed line for one fact.
+  - Description: Each role on a screen takes one instrument: a block for the context and the outcome, a printed table for rows read, a choice for every decision, an input for a line no list can offer, and a printed line for one fact.
   - Scope: `module_*/sub_module_terminal/terminal.py`, `module_*/sub_module_terminal/tui.py`
-  - Expected: `gum style` in a rounded border for the header block, the `DONE` block and the failure, never a banner, a block inside a block or a block around a table; `gum table --print`, never the interactive table; `gum choose` for the menu, the asset, each form and every gate, never `gum confirm`; `gum filter` without `--no-strict`, its placeholder the caller's; `gum input` only for what no list of the tree holds, the assets a direct call did not name; Python's `print` for a fact beside a table, the `CURRENT` line of a command, `WARN` and `CANCELLED`; never `gum spin`.
+  - Expected: `gum style` in a rounded border for the header block, the `DONE` block and the failure, never a banner, a block inside a block or a block around a table; `gum table --print`, never the interactive table; `gum choose` for the menu, the asset, each form and every gate, never `gum confirm`; `gum input` only for what no list of the tree holds, the assets a direct call did not name; Python's `print` for a fact beside a table, the `CURRENT` line of a command, `WARN` and `CANCELLED`; never `gum spin`.
   - Exception: none
 - `TUI-DESIGNER-A-STATE-IS-A-WORD-OF-ONE-CLOSED-LIST`
   - Description: A state on a screen is a word of the one closed list `tui.py` holds, and a symbol and a colour repeat the word and never replace it.
   - Scope: `module_*/sub_module_terminal/tui.py`, `module_*/sub_module_terminal/terminal.py`
-  - Expected: Every state drawn by `state_label()` from a key of `STATE_SYMBOLS`: `DONE` an action carried out or a step answered, `CURRENT` what is asked or started now, `PENDING` a step still to come, `WARN` what an action will overwrite, `CANCELLED` Esc, `cancel`, `quit` or Ctrl-C with nothing more written, `FAILED` one item not carried out, `ERROR` the failure that ends the run; never a colour or a symbol without its word, a coloured row, or `running`, `ok` or `success` as a state of the screen — a state a file holds, the crawl snapshot's among them, is a value shown as the file holds it.
+  - Expected: Every state drawn by `state_label()` from a key of `STATE_SYMBOLS`: `DONE` an action carried out or a step answered, `CURRENT` what is asked or started now, `PENDING` a step still to come, `WARN` what an action will overwrite, `CANCELLED` Esc, `cancel`, `quit` or Ctrl-C with nothing more written, `ERROR` the failure that ends the run; never a colour or a symbol without its word, a coloured row, or `running`, `ok` or `success` as a state of the screen — a state a file holds, the crawl snapshot's among them, is a value shown as the file holds it.
   - Exception: none
 - `TUI-DESIGNER-A-COLOUR-IS-A-PALETTE-NUMBER`
   - Description: A colour is a number of the terminal's own palette, so a hand's theme decides its shade, and gum alone draws it — on a block's border and on a prompt's own parts, never on a table or a printed line.

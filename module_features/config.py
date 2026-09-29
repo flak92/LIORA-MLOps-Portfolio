@@ -12,8 +12,8 @@ from pathlib import Path
 
 from .indicators import INDICATORS  # re-exported: the indicator register, one record per token beside its kernel
 
-# ---- CONFIGURABLES: what an operator may set in this module, one record each, its value written nowhere else — the
-# constants below read it, the module's snapshot publishes the records and `make skills-configurables` renders every
+# ---- CONFIGURABLES: what an operator may set in this module, one record each, its value written nowhere else but in
+# its registered copies — the constants below read it, the module's snapshot publishes the records and `make skills-configurables` renders every
 # module's into one table. DEFAULT is a starting point of the experiment and WIRING a technical setting of a run; a
 # value derived from them and a constant of the method stand below the block, and a register is no configurable
 CONFIGURABLES = (

@@ -31,9 +31,9 @@ def main() -> int:
         # the asset's own state as a search starts from it: the active columns, the active geometry and the point
         # its ML chain chose last
         active = {"columns_by_timeframe": {timeframe: list(columns) for timeframe, columns
-                                           in serpentine_search.active_columns(ticker, cat).items()},
-                  "best_params": serpentine_search.active_best_params(ticker),
-                  **serpentine_search.active_barriers(ticker)}
+                                           in serpentine_search.load_feature_columns(ticker, cat).items()},
+                  "best_params": serpentine_search.load_best_params(ticker),
+                  **serpentine_search.load_barrier_coordinates(ticker)}
         if state == active:
             print(f"{ticker} state unchanged — the proposal, trial {trial_index}, is the active state", flush=True)
             continue
