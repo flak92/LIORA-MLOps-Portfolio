@@ -724,7 +724,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: a constant in `module_data/config.py`; a CONFIGURABLES record and the constant read from it in `module_features/config.py` and `module_ml/config.py`
   - Why twice: every DuckDB connection of every module pins the same ceiling beside `threads=1`, and no module imports another
 - the store reads — each holder reading the stores it touches, identical but where the row says
-  - Code: `STORE_ASSETS_ARTIFACTS_DIR` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_features/sub_module_terminal/config.py`; `STORE_STATUS_DIR` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/config.py`, `module_monitoring/sub_module_terminal/config.py`, and resolved in `module_skills/sub_module_scalability_crawler/config.py`; `STORE_RAW_1M_DIR` in `module_data/config.py`; `STORE_TRIALS_DIR` in `module_ml/config.py`
+  - Code: `STORE_ASSETS_ARTIFACTS_DIR` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_features/sub_module_terminal/config.py`; `STORE_STATUS_DIR` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/config.py`, `module_monitoring/sub_module_terminal/config.py`, and resolved in `module_skills/sub_module_scalability_crawler/config.py`; `STORE_RAW_1M_DIR` in `module_data/config.py`; `STORE_TRIALS_DIR` in `module_ml/config.py`; `STORE_RUN_RECORDS_DIR` in `module_monitoring/config.py`
   - Why twice: the store contract is read as `Path(os.environ[...])` where it is used, and no module imports another: the artifacts and status stores every module of the chain touches, the status store the dashboard's server and the monitoring terminal each read for themselves, the snapshot the crawler writes — resolved there because the crawl compares it with the resolved paths the files matrix reaches — the raw store the data module alone touches, the trials store the ML module alone writes
 - `artifact_dir()` — identical
   - Code: `module_features/config.py`, `module_ml/config.py`, `module_features/sub_module_terminal/config.py`
@@ -851,8 +851,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_features/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`
   - Why twice: the three terminals whose module takes an asset read the assets `--tickers` names and ask for them only when a direct run named none; no module defines a basket of its own, and no terminal imports another module's code
 - `_present()`
-  - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_features/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`
-  - Why twice: the three terminals whose module keeps an asset's files answer whether one stands in the same word, and a terminal reads another module's files through none of that module's code
+  - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`
+  - Why twice: the data and ML terminals answer whether an asset's file stands in the same word, and a terminal reads another module's files through none of that module's code
 
 ## Terminals
 

@@ -25,8 +25,6 @@ it chose. The ledger is JSON Lines appended a line at a time — the technique t
 uses, written by `dataset.append_jsonl` and by nothing else — and the family's `schema.json` is written from the
 one constant the row is built from."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np
@@ -177,7 +175,7 @@ def trial_row(trial: optuna.trial.FrozenTrial, origin: str, round_number: int | 
               "params": trial.params,
               "floor_clearing_threshold_count_by_fold": floor_counts,
               "admissible_threshold_count_by_fold": admissible_counts,
-              "admissible": None if admissible is None else bool(admissible),
+              "admissible": admissible,
               "pruned_at_fold": config.VALIDATION_FOLD_IDS[len(floor_counts) - 1] if pruned else None,
               TRIAL_METRIC_KEY: None if pruned else trial.value}
     return {column: values[column] for column in TRIAL_COLUMNS}

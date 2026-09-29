@@ -8,8 +8,6 @@ That ordering is the whole economy of the loop: the children of the trade family
 in where a position leaves, and the evaluator reads that off the states themselves and fits them once. This
 coordinate says which states there are, never what they cost."""
 
-from __future__ import annotations
-
 from . import config
 
 # which coordinates each family of `config.ROUND_SCHEDULE` moves

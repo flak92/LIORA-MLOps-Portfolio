@@ -3,8 +3,6 @@ the feature catalogue: the one definition every timeframe-shaped and feature-sha
 descriptors of the two families this module writes. What an operator may set is a record of CONFIGURABLES, fixed a priori; changing one
 defines a different experiment or run, and the git commit is the record of which one ran."""
 
-from __future__ import annotations
-
 import argparse
 import os
 from datetime import UTC, datetime

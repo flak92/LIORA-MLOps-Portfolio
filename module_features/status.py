@@ -4,8 +4,6 @@ per asset, the row counts of the catalogue's partitions and the serpentine searc
 module's CONFIGURABLES records — assembled from the register and from what the stages and the turns wrote, and
 computing no metric."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 
 import duckdb

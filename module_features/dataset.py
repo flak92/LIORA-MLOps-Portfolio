@@ -2,8 +2,6 @@
 module_ml/dataset.py — the canonical JSON writer of the feature layer, and the readers a search of this layer needs:
 the per-asset contract, and the state, the ledger and the answers the serpentine search reads back."""
 
-from __future__ import annotations
-
 import csv
 import json
 import tempfile

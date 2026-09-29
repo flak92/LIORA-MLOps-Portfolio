@@ -6,8 +6,6 @@ package alone. `module_ml/config.py` is standard library and is imported by term
 file this terminal reads; `module_ml/dataset.py` is not — it imports duckdb and numpy — so the reader of JSON it shares
 with that module is carried here, twice by extraction."""
 
-from __future__ import annotations
-
 import json
 import os
 import re

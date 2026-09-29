@@ -19,8 +19,6 @@ entry edge threshold is the grid point maximising the CAGR of the chained valida
 least MINIMUM_TRADES_PER_VALIDATION_FOLD trades in every fold, ties to the smaller threshold.
 """
 
-from __future__ import annotations
-
 import duckdb
 import numpy as np
 

@@ -15,8 +15,6 @@ with its records — the one file the page reads to find a run. Both files are w
 moved onto it, so a reader finds the old file or the new one and never half of one. It takes no lock: no second
 recorder writes the index at once (PRE-AWS-SOLUTION-ONE-OPERATION-WRITES-AT-A-TIME-AND-NOTHING-LOCKS)."""
 
-from __future__ import annotations
-
 import json
 import os
 import stat

@@ -16,8 +16,6 @@ The crawl asks nothing and prints one line per file on stdout, after its result,
 <state>`, the files processed being those that reached `done` or `failed`; a refusal, and the reason a file failed, are one line each on stderr.
 """
 
-from __future__ import annotations
-
 import shutil
 import subprocess
 import sys

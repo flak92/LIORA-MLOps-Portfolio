@@ -4,8 +4,6 @@ order, the second seeded by what the first left, which is what makes a pass one 
 
 It scores nothing and runs nothing: a turn asks for a state to be scored and decides which moves it keeps."""
 
-from __future__ import annotations
-
 from . import config
 from .. import config as features_config
 
@@ -35,7 +33,6 @@ def with_column(columns_by_timeframe: dict, timeframe: str, name: str, catalogue
 def without_column(columns_by_timeframe: dict, timeframe: str, name: str) -> dict:
     return {**columns_by_timeframe,
             timeframe: [column for column in columns_by_timeframe[timeframe] if column != name]}
-
 
 
 def moves(state: dict, cat: dict, profile: dict, family: str) -> tuple:

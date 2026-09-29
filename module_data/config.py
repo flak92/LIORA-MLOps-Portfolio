@@ -3,8 +3,6 @@ reconstructs the dataset for the window from the public market APIs; beside them
 shares, and the null-tolerant rounding of its snapshot. The basket is not here: the launcher names it
 (`TICKERS` in the Makefile, `ASSET` on the make line) and every stage is told its assets."""
 
-from __future__ import annotations
-
 import argparse
 import os
 
@@ -45,6 +43,7 @@ BYBIT_CATEGORY = "linear"
 BYBIT_KLINE_REQUEST_LIMIT = 1000          # < 1440 -> one day = 2 windows of 720 minutes
 BYBIT_REQUEST_DELAY_SECONDS = 0.1
 USER_AGENT = "liora-module-data/1.0"
+REQUEST_ATTEMPT_COUNT = 6                 # the tries of one venue request, the wait doubling after each failure
 
 SOURCE_VENUES = ("binance", "bybit")
 

@@ -43,8 +43,8 @@ the two venues' raw data never share a file
 
 ## 2. Retries, backoff and pacing
 
-Every request carries `USER_AGENT` = `liora-module-data/1.0`. A request is tried up to six
-times (`fetch_klines(retries=6)`) with an exponential backoff that starts at one
+Every request carries `USER_AGENT` = `liora-module-data/1.0`. A request is tried up to
+`REQUEST_ATTEMPT_COUNT` times (`fetch_klines()`) with an exponential backoff that starts at one
 second and doubles: Binance retries on HTTP 418 and 429, sleeping at least what
 `Retry-After` asks; Bybit retries on `retCode 10006`, its rate-limit code, and raises
 on any other code. Between two written days the downloader sleeps a fixed

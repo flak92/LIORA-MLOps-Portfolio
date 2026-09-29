@@ -13,8 +13,6 @@ Output tree (Lean-exact, the same format as the Binance tree):
 Volume is BASE volume (v5 row column 5), matching the Binance tree.
 """
 
-from __future__ import annotations
-
 import json
 import time
 import urllib.error
@@ -31,10 +29,10 @@ from .lean import (LEAN_DAY_ZIP_NAME_PATTERN, MILLISECONDS_PER_DAY, MINUTES_PER_
 KLINE_REQUEST_WINDOW_MS = 720 * config.MILLISECONDS_PER_MINUTE  # half a day fits in one 1000-candle response
 
 
-def fetch_klines(params: dict, retries: int = 6) -> list[list]:
+def fetch_klines(params: dict) -> list[list]:
     url = f"{config.BYBIT_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
-    for attempt in range(retries):
+    for attempt in range(config.REQUEST_ATTEMPT_COUNT):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
@@ -42,13 +40,13 @@ def fetch_klines(params: dict, retries: int = 6) -> list[list]:
             ret_code = data.get("retCode")
             if ret_code == 0:
                 return data["result"]["list"]
-            if ret_code == 10006 and attempt < retries - 1:  # rate limit
+            if ret_code == 10006 and attempt < config.REQUEST_ATTEMPT_COUNT - 1:  # rate limit
                 time.sleep(backoff)
                 backoff *= 2
                 continue
             raise RuntimeError(f"Bybit retCode={ret_code} {data.get('retMsg')}")
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
-            if attempt == retries - 1:
+            if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
             time.sleep(backoff)
             backoff *= 2

@@ -9,8 +9,6 @@ It runs on the host, on `python3` and gum, with no virtual environment: it impor
 package alone, and every action it starts, it starts through `make`, the Makefile being where the canon's stages
 are named."""
 
-from __future__ import annotations
-
 import os
 import re
 import sys

@@ -25,8 +25,6 @@ examples:
   NO_COLOR=1 make data-terminal  the TUI in plain output
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import shlex

@@ -5,8 +5,6 @@ module_skills/skill_tui_designer.md; what a screen holds is the action module's.
 sentence about a screen's content is the caller's; its own words are the block labels and the line naming the
 columns a narrow terminal leaves out."""
 
-from __future__ import annotations
-
 import csv
 import io
 import os

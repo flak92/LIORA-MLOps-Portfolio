@@ -4,8 +4,6 @@
 with the vendor, the time it finished and where its report is. Nothing historical: the snapshot is overwritten
 whole, through a temporary file and `os.replace`, so the dashboard never reads a part of it."""
 
-from __future__ import annotations
-
 import json
 
 from . import config

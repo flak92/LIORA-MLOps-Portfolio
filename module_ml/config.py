@@ -5,8 +5,6 @@ What an operator may set is a record of CONFIGURABLES, fixed a priori and never 
 different experiment or run, and the git commit is the record of which one ran.
 """
 
-from __future__ import annotations
-
 import argparse
 import os
 from datetime import UTC, datetime

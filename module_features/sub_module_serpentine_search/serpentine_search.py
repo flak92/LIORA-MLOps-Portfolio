@@ -13,8 +13,6 @@ pass reconstructs its own membership from the provenance each line carries: a st
 family and this first move belonged to the pass in flight, and an older line is a cache hit that did not.
 """
 
-from __future__ import annotations
-
 import collections
 import json
 import math

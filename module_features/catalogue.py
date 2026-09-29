@@ -2,8 +2,6 @@
 each value from the last closed bar of its timeframe; the family `catalogue`, one partition per asset and timeframe, from
 the research warm-up onward, and the asset's copy of the contract the ML layer reads."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import duckdb

@@ -1,8 +1,6 @@
 """Frozen-parameter training: out-of-fold predictions per validation fold with the two importances of that fold's
 booster, then the final-holdout report — the numbers are persisted, the model is not."""
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import numpy as np

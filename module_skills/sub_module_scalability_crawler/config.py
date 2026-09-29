@@ -3,8 +3,6 @@ reports directory in the status store — entirely generated: reset and written 
 one controlled file's report lies in it, and the vendor's time limit. The root of the tree and the sheet are the package's
 own, in `module_skills/config.py`."""
 
-from __future__ import annotations
-
 import os
 from pathlib import Path
 

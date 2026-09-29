@@ -3,8 +3,6 @@ a lookback warm-up are NaN. The two registers at the end name each kernel's inva
 that are not bar columns, and the indicators that take one integer parameter. Every token is the word of its
 operation: the name of a kernel is the name of what it computes."""
 
-from __future__ import annotations
-
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 

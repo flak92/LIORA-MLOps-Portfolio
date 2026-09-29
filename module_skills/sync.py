@@ -7,8 +7,6 @@ line carries the marker, so a hand-written document is never touched. The sync k
 the crawler: it reads no store, clears no report and writes no snapshot.
 """
 
-from __future__ import annotations
-
 import os
 import tempfile
 from pathlib import Path

@@ -7,8 +7,6 @@ values a state is made of and the files the evaluation contract names are regist
 this sub-module moves is the state that module scores, and a copy that drifts makes every cache lookup miss.
 """
 
-from __future__ import annotations
-
 from .. import config as features_config
 
 # ---- CONFIGURABLES: what an operator may set in the serpentine search, one record each, its value written nowhere

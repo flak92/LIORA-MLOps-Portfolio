@@ -11,8 +11,6 @@ Output tree (Lean-exact):
 Volume is BASE volume (klines column 5), not quote turnover.
 """
 
-from __future__ import annotations
-
 import json
 import time
 import urllib.error
@@ -28,25 +26,25 @@ def to_utc_day(epoch_ms: int) -> str:
     return datetime.fromtimestamp(epoch_ms / config.MILLISECONDS_PER_SECOND, tz=UTC).strftime("%Y-%m-%d")
 
 
-def fetch_klines(params: dict, retries: int = 6) -> list[list]:
+def fetch_klines(params: dict) -> list[list]:
     url = f"{config.BINANCE_KLINE_URL}?{urllib.parse.urlencode(params)}"
     backoff = 1.0
-    for attempt in range(retries):
+    for attempt in range(config.REQUEST_ATTEMPT_COUNT):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
             with urllib.request.urlopen(req, timeout=30) as r:
                 return json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
-            if e.code in (418, 429) and attempt < retries - 1:  # rate limit / ban
+            if e.code in (418, 429) and attempt < config.REQUEST_ATTEMPT_COUNT - 1:  # rate limit / ban
                 time.sleep(max(backoff, float(e.headers.get("Retry-After", 0) or 0)))
                 backoff *= 2
                 continue
-            if attempt == retries - 1:
+            if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
             time.sleep(backoff)
             backoff *= 2
         except (urllib.error.URLError, TimeoutError):
-            if attempt == retries - 1:
+            if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
             time.sleep(backoff)
             backoff *= 2

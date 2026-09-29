@@ -12,8 +12,6 @@ barriers inside one minute leave the order unknowable: label_valid = false, neve
 barriers, which the backtest rescales to a trade's own exit.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import duckdb

@@ -10,8 +10,6 @@ twice by extraction (module_skills/skill_glossary.md § Twice by extraction), ea
 The store is read from `STORE_ASSETS_ARTIFACTS_DIR`, so a shell that lacks it fails here, at import, before a hand
 chooses a stage."""
 
-from __future__ import annotations
-
 import json
 import os
 import re

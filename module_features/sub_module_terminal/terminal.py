@@ -25,8 +25,6 @@ examples:
   NO_COLOR=1 make features-terminal  the TUI in plain output
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import shlex
@@ -139,23 +137,18 @@ def _trial_rows(ticker: str) -> list[dict]:
     return config.load_jsonl(ledger) if ledger.exists() else []
 
 
-# twice by extraction
-def _present(path) -> str:
-    return "yes" if path.exists() else "no"
-
-
 def _asset_rows(tickers: list[str]) -> list[dict]:
     """One row per asset — how many timeframes its bars and its catalogue hold a partition for, whether its contract
     stands, where its serpentine search profile stands and how many trials its ledger holds; every cell a value as it
     stands, the count 0 where a family holds no partition of the asset and `—` where no ledger names a trial."""
     rows = []
     for ticker in tickers:
-        _, profile, search = _asset_files(ticker)
+        catalogue, profile, search = _asset_files(ticker)
         trials = _trial_rows(ticker)
         rows.append({"asset": ticker,
                      "bars": len(list(config.partition_dir("bars", ticker).glob("timeframe=*/bars.parquet"))),
                      "catalogue": len(list(config.partition_dir("catalogue", ticker).glob("timeframe=*/catalogue.parquet"))),
-                     "contract": _present(config.catalogue_json(ticker)),
+                     "contract": "no" if catalogue is None else "yes",
                      "profile": _profile_state(profile, search),
                      "trials": len(trials) if trials else "—"})
     return rows

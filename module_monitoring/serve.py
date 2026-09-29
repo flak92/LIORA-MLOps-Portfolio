@@ -9,8 +9,6 @@ Every other path is 404, and so is a directory: nothing is listed. A path is tra
 it, from the directory its prefix names.
 """
 
-from __future__ import annotations
-
 import os
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer

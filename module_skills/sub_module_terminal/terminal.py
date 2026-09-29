@@ -22,8 +22,6 @@ examples:
   NO_COLOR=1 make skills-terminal  the TUI in plain output
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import re

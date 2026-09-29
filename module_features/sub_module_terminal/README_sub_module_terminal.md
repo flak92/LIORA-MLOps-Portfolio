@@ -108,7 +108,7 @@ and no virtual environment. It cannot import `module_features/config.py`, which 
 and numpy with it, nor the serpentine search's `config.py`, which imports that one, so what it reads of them is
 carried in its own `config.py`; and no module imports another, so what the terminals share is carried too — `tui.py`,
 `OUTPUT_PLAIN`, `HELP_LINE_PATTERN` and the helpers `_option_rows()`, `_cancelled_exit_code()`,
-`_failure_exit_code()`, `_make()`, `_target_rows()`, `_present()`, `_write_target()` and `_tickers()`. Each copy is
+`_failure_exit_code()`, `_make()`, `_target_rows()`, `_write_target()` and `_tickers()`. Each copy is
 marked `# twice by extraction`, registered in `module_skills/skill_glossary.md` and changed on every side at once. The
 profile is written by `write_json()` in the tree's canonical JSON form, so the same decisions write the same bytes and
 a draft that changes nothing leaves git unmoved.

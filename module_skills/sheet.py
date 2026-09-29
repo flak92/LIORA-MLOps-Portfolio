@@ -8,8 +8,6 @@ matrix — and refuses, in one line, a workbook that is not structurally whole. 
 file, no directory, and it writes nothing.
 """
 
-from __future__ import annotations
-
 import zipfile
 from pathlib import Path, PurePosixPath
 from typing import NamedTuple
@@ -149,13 +147,13 @@ def _filled(cells: dict[str, str], where: str) -> None:
         _refuse(f"{where} leaves {', '.join(empty)} empty")
 
 
-def load_sheet(path: Path = config.SKILLS_SHEET_PATH) -> Sheet:
+def load_sheet() -> Sheet:
     try:
-        with zipfile.ZipFile(path) as package:
+        with zipfile.ZipFile(config.SKILLS_SHEET_PATH) as package:
             shared = _shared_strings(package)
             tabs = {name: _tables(_grid(package, member, shared)) for name, member in _sheet_parts(package)}
     except (OSError, zipfile.BadZipFile, KeyError, ElementTree.ParseError, ValueError) as failure:
-        raise SystemExit(f"{path} cannot be read as a workbook: {failure}")
+        raise SystemExit(f"{config.SKILLS_SHEET_PATH} cannot be read as a workbook: {failure}")
     rule_tables: dict[str, list[list[str]]] = {}
     for tab, tables in tabs.items():
         for header, rows in tables:

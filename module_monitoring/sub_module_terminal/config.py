@@ -6,8 +6,6 @@ package alone. The status store arrives as `STORE_STATUS_DIR`, which the Makefil
 extraction, is that store's variable, the one reader of JSON and the plain-output conditions every `tui.py` reads from
 its own `config.py`; the names of the four snapshots the page reads are this terminal's own."""
 
-from __future__ import annotations
-
 import json
 import os
 import re

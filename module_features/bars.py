@@ -2,8 +2,6 @@
 window — the family `bars`, one partition per asset and timeframe, its `schema.json` beside them; the one write of the
 feature layer beside the catalogue, DuckDB the engine in memory and the canonical family read as a file."""
 
-from __future__ import annotations
-
 import duckdb
 
 from . import config, dataset

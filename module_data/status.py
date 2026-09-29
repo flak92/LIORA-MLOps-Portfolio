@@ -6,8 +6,6 @@ and the venue set is one definition — `config.SOURCE_VENUES`, published as `so
 derives the tier order from a key order.
 """
 
-from __future__ import annotations
-
 import json
 from datetime import UTC, datetime
 

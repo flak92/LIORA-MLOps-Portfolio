@@ -2,8 +2,6 @@
 <TICKER>_README.md — assembled from the three per-asset result files, deriving nothing of their own — beside the
 module's CONFIGURABLES records."""
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 
 

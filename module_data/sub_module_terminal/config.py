@@ -6,8 +6,6 @@ descriptors of every path this terminal reads — each venue's raw leaf and the 
 is carried here; what is carried, twice by extraction, is the plain-output conditions every `tui.py` reads from its
 own `config.py`."""
 
-from __future__ import annotations
-
 import os
 import re
 import sys

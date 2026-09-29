@@ -7,8 +7,6 @@ live in first. The table is rendered from the records and written nowhere, so it
 written; the same records print the same bytes.
 """
 
-from __future__ import annotations
-
 import ast
 import json
 

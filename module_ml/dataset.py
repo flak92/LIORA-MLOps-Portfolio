@@ -3,8 +3,6 @@ and build_xy with the asset's feature set, load_barriers, load_feature_columns, 
 parquet writer and the schema read off a written partition the label and prediction writers use — twice by extraction,
 identical in module_features/dataset.py."""
 
-from __future__ import annotations
-
 import csv
 import json
 import tempfile

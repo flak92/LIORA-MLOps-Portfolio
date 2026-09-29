@@ -7,8 +7,6 @@ one. It names no module: a tab is found by its family, so a new module is rows o
 run on the host over the tree this package sits in, its root one level up.
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 TREE_ROOT_DIR = Path(__file__).resolve().parent.parent

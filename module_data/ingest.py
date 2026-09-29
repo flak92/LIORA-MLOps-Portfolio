@@ -10,8 +10,6 @@ provenance columns are this module's own contract, skills/skill_candle_canonical
 normative source; this file is its one implementation and keeps no second copy of it.
 """
 
-from __future__ import annotations
-
 import csv
 import io
 import json

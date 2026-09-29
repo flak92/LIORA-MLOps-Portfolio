@@ -6,8 +6,6 @@ under run_records/, each prefix one store — the store contract, one variable p
 stay in the configs of the modules that produce them; this module reads no artifacts store.
 """
 
-from __future__ import annotations
-
 import os
 from pathlib import Path
 
@@ -20,6 +18,7 @@ BIND_ADDRESS = "0.0.0.0"                 # every interface of the container's ow
 MODULE_MONITORING_DIR = Path(__file__).resolve().parent
 PAGE_FILE_SUFFIXES = (".html", ".js", ".css")
 PAGE_INDEX_FILE_NAME = "index.html"
+# twice by extraction
 STORE_RUN_RECORDS_DIR = Path(os.environ["STORE_RUN_RECORDS_DIR"])
 # twice by extraction
 STORE_STATUS_DIR = Path(os.environ["STORE_STATUS_DIR"])

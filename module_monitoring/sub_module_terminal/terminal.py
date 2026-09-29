@@ -22,8 +22,6 @@ examples:
   NO_COLOR=1 make monitoring-terminal  the TUI in plain output
 """
 
-from __future__ import annotations
-
 import argparse
 import re
 import shlex
@@ -37,8 +35,6 @@ from . import config, tui
 # purpose holding more of them, and the lower case refuses a variable that carries a `##` by accident
 # twice by extraction
 HELP_LINE_PATTERN = re.compile(r"^([a-z][a-z0-9-]*) — (.+)$")
-
-
 
 
 # ---- the screens' own rows ------------------------------------------------------------------------------

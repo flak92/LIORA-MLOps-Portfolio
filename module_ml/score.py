@@ -5,8 +5,6 @@ of the serpentine search asks, answered in its response file. They read a state 
 hold no beam, no round, no ledger and no order of families, and they decide nothing.
 """
 
-from __future__ import annotations
-
 import json
 
 import numpy as np

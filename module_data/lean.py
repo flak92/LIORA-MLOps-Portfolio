@@ -6,8 +6,6 @@ venue-neutral rows, ingest reads the tree it writes, and the tree above the file
 name (`cryptofuture/<venue>/minute/<symbol>/`) comes from config.py.
 """
 
-from __future__ import annotations
-
 import io
 import re
 import zipfile

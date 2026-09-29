@@ -1,8 +1,6 @@
 """Fold contract WARMUP | TRAIN | PURGE | OOS | final holdout, and the metrics. Pure numpy; a population and its
 average-uniqueness weights are returned together, so a population is never used with somebody else's weights."""
 
-from __future__ import annotations
-
 import numpy as np
 
 from . import config

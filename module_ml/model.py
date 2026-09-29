@@ -7,8 +7,6 @@ num_boost_round is a tuned hyper-parameter. `fit`, `predict_proba`, `pred_contri
 `suggest_*` are the libraries' own vocabulary at their boundary.
 """
 
-from __future__ import annotations
-
 import numpy as np
 import xgboost as xgb
 

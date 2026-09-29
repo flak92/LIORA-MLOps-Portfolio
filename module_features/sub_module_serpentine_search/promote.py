@@ -6,8 +6,6 @@ is refused in one line. The ML chain is rerun after it, and its study starts fro
 state's own X and Y, so the point it keeps is worth at least the proposal's path CAGR; the commit history is the
 record of every promotion, and the same proposal again changes nothing."""
 
-from __future__ import annotations
-
 from .. import config as features_config
 from .. import dataset
 from . import config, coordinate_feature_set, serpentine_search
