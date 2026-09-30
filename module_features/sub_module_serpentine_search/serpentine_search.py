@@ -60,13 +60,12 @@ def fold_objective(row: dict) -> list[float]:
             for fold_id in config.VALIDATION_FOLD_IDS]
 
 
-def search_state_objective(row: dict) -> tuple:
-    """What the ranking maximises over a whole search state, most significant first: the chained validation path's
-    CAGR, then its Calmar ratio, then its profit factor. A path that never lost has no profit factor and is
-    the best there is, so it sorts first."""
-    path = row["validation_path"]
-    profit_factor = math.inf if path["profit_factor"] is None else path["profit_factor"]
-    return (path["cagr"], path["calmar"], profit_factor)
+def search_state_objective(row: dict) -> float:
+    """What the ranking maximises over a whole search state: the chained validation path's CAGR, the one objective
+    the experiment froze. Its Calmar ratio and its profit factor are reported beside it and belong neither to the
+    objective nor to the order that breaks a tie on it, which is the smaller set and then the earlier state
+    evaluation."""
+    return row["validation_path"]["cagr"]
 
 
 def is_gate_cleared(row: dict, parent: dict, move: str) -> bool:
@@ -138,7 +137,7 @@ def path_cagr_noise_standard_deviation(ledgers: list[list[dict]]) -> float:
             if (row["entry_edge_threshold_constraint_met"] and parent["entry_edge_threshold_constraint_met"]
                     and _fitted_part(theta(row)) != _fitted_part(theta(parent))):
                 differences.setdefault((search_state_key(theta(parent)), search_state_key(theta(row))),
-                                       search_state_objective(row)[0] - search_state_objective(parent)[0])
+                                       search_state_objective(row) - search_state_objective(parent))
     values = list(differences.values())
     centre = statistics.median(values)
     return (config.NOISE_MEDIAN_ABSOLUTE_DEVIATION_SCALE * statistics.median([abs(value - centre) for value in values])
@@ -148,8 +147,8 @@ def path_cagr_noise_standard_deviation(ledgers: list[list[dict]]) -> float:
 def ranking_key(state_evaluations: list[dict], index: int, timeframes: tuple[str, ...]) -> tuple:
     """The one order the beam takes: the objective down, then the smaller set, then the earlier state evaluation."""
     row = state_evaluations[index - 1]
-    return (*(-value for value in search_state_objective(row)),
-            axis_feature_set.column_count(row["columns_by_timeframe"], timeframes), index)
+    return (-search_state_objective(row), axis_feature_set.column_count(row["columns_by_timeframe"], timeframes),
+            index)
 
 
 def top_beam(children: list[int], state_evaluations: list[dict], timeframes: tuple[str, ...]) -> list[int]:
@@ -187,8 +186,8 @@ def proposals_block(state_evaluations: list[dict], champion_state_evaluation_ind
     every number are the ledger's line, so each stands in one file and a reader joins it by the index."""
     if search_outcome is None or noise_sigma is None or champion_state_evaluation_index == 1:
         return []
-    gain = (search_state_objective(state_evaluations[champion_state_evaluation_index - 1])[0]
-            - search_state_objective(state_evaluations[0])[0])
+    gain = (search_state_objective(state_evaluations[champion_state_evaluation_index - 1])
+            - search_state_objective(state_evaluations[0]))
     if gain > proposal_threshold_multiple(selection_hypothesis_count) * noise_sigma:
         return [{"proposal": 1, "state_evaluation_index": champion_state_evaluation_index}]
     return []
@@ -245,7 +244,7 @@ def start_search_state(profile: dict, active_columns_by_timeframe: dict, active_
 
 def objective_line(row: dict) -> str:
     """A search state's objective and the folds the gate reads."""
-    return (f"cagr {search_state_objective(row)[0]:+.4f} "
+    return (f"cagr {search_state_objective(row):+.4f} "
             f"folds {config.SELECTION_FOLD_MEASURE} {'/'.join(f'{value:+.4f}' for value in fold_objective(row))} "
             f"trades {'/'.join(str(row['validation'][f'fold_{fold_id}']['trade_count']) for fold_id in config.VALIDATION_FOLD_IDS)}")
 
@@ -253,7 +252,7 @@ def objective_line(row: dict) -> str:
 def progress_line(ticker: str, round_number: int, search_axis: str, search_family: str, label: str,
                   parent: dict, row: dict) -> str:
     return (f"{ticker} round {round_number} {search_axis}/{search_family} {label} "
-            f"cagr {search_state_objective(parent)[0]:+.4f} -> {search_state_objective(row)[0]:+.4f} "
+            f"cagr {search_state_objective(parent):+.4f} -> {search_state_objective(row):+.4f} "
             f"folds {'/'.join(f'{value:+.4f}' for value in fold_objective(row))}")
 
 

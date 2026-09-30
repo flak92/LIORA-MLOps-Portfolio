@@ -575,11 +575,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `experiment_identity` of a record in `configurables` of `features_status.json` and `ml_status.json`
   - Ui label: the CONFIGURABLES frames of the Features and ML Research tabs, `experiment identity` = yes
   - Never: a searched parameter among them; a value changed without a commit that says so; a feature parameter copied out of the catalogue into a named constant; `ATR_WILDER_SMOOTHING_PERIOD_BARS`; `LABEL_BARRIER_TRUE_RANGE_MULTIPLIER`, `LABEL_HORIZON`, `LABEL_HORIZON_MINUTES` — names no code carries
-- the Sharpe — annualised Sharpe of the equity path sampled at decision-bar closes, reported beside the objective and never selected on
+- the Sharpe — annualised Sharpe of the equity path sampled at decision-bar closes, reported beside the objective and never selected on; null where the returns never varied, a fold that took no trade
   - Code: `sharpe`, `sharpe_annualised()`
   - Artifact key: `sharpe`
   - Ui label: Sharpe
-  - Never: return/risk; a deflated Sharpe ratio of nested trials
+  - Never: return/risk; a deflated Sharpe ratio of nested trials; 0 for a path that never varied
   - External vocabulary: finance (Sharpe ratio)
 - the selection population — the grid points that cleared the trade floor in every validation fold, and the spread of the objective over them; `null` when nothing qualified
   - Code: `entry_edge_threshold_selection()`, `SELECTION_EXPOSURE_KEYS`
@@ -597,17 +597,17 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: CAGR
   - Never: annualised return, APY, growth; a year of trading days
   - External vocabulary: finance (compound annual growth rate)
-- the Calmar ratio — growth per unit of maximum drawdown, reported for every fold and for the path, and the path's second ranking key
+- the Calmar ratio — growth per unit of maximum drawdown, reported for every fold and for the path and never selected on; null where the path never drew down
   - Code: `validation.calmar()`
   - Artifact key: `calmar`
   - Ui label: Calmar
-  - Never: return/risk, MAR; a Calmar of a fold with no trade in it
+  - Never: return/risk, MAR; 0 for a path that never drew down; a ranking key
   - External vocabulary: finance (Calmar ratio)
 - the profit factor — gross profit over gross loss of a population of trades; null where nothing was lost, as a hit rate with no trade
   - Code: `validation.profit_factor()`
   - Artifact key: `profit_factor`
   - Ui label: PF
-  - Never: win/loss ratio; a profit factor of one trade
+  - Never: win/loss ratio; a profit factor of one trade; +∞ for a path without a losing trade; a ranking key
   - External vocabulary: finance (profit factor)
 - the validation path — F2, F3 and F4 chained into one walk-forward equity, each fold's 1m curve scaled by what the folds before it settled at
   - Code: `strategy.validation_path_block()`, `strategy.validation_path_cagr()`

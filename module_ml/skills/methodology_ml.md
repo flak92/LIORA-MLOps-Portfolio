@@ -654,7 +654,9 @@ equity a fold reports its CAGR — `final_equity ** (MINUTES_PER_YEAR / minutes)
 a 24/7 year of 365 days, so a fold that holds a 29 February has an exponent
 slightly under one rather than being idealised away — its maximum drawdown, their
 ratio as the Calmar ratio, its profit factor over the trades it took, and its
-trade count. The three validation folds chain into `validation_path`, which
+trade count; a ratio without a denominator — the Calmar ratio of a path that never
+drew down, the profit factor of one that never lost — is null, never a number
+standing in for it. The three validation folds chain into `validation_path`, which
 carries the same five for the path as a whole. The path's maximum drawdown is at
 least the largest of the folds' own, because a drawdown may run across a fold
 boundary; that is the point of chaining rather than averaging.
@@ -664,7 +666,8 @@ backtest writes a continuous 1-minute equity path starting at `E₀ = 1`; the
 Sharpe is annualised by `√(decision bars per year)`, `MINUTES_PER_YEAR` over the
 minutes of one decision bar (`strategy.backtest()`), from that path sampled at
 the **decision bars' closes**, starting from `E₀` itself so the first decision
-bar of a fold is not silently dropped; the maximum drawdown is measured on the
+bar of a fold is not silently dropped, and null where those returns never varied —
+a fold that took no trade; the maximum drawdown is measured on the
 **1m** path, also from `E₀` — a sampling at bar closes would report a
 1.00 → 0.91 → 0.99 excursion as −1 % instead of −9 %. `exposure` is
 `Σ(exit − entry) / fold length`. The reported result is **execution-cost-adjusted

@@ -379,7 +379,8 @@ def main() -> int:
         }
         out = config.strategy_evaluation_json(ticker)
         dataset.write_json(out, payload)
-        print(f"{ticker} {out.name}: threshold={entry_edge_threshold} sharpe {final_holdout['sharpe']:.3f} "
+        print(f"{ticker} {out.name}: threshold={entry_edge_threshold} "
+              f"sharpe {config.rounded(final_holdout['sharpe'], 3)} "
               f"trades {final_holdout['trade_count']} maxDD {final_holdout['max_drawdown']:.3f} "
               f"final equity {final_holdout['final_equity']:.3f}", flush=True)
     return 0

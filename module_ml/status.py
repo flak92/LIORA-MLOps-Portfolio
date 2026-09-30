@@ -57,10 +57,10 @@ def equity_curve_block(curve: dict, final_equity: float) -> dict:
 
 def _pnl_block(block: dict) -> dict:
     return {
-        "sharpe": round(block["sharpe"], 3),
+        "sharpe": config.rounded(block["sharpe"], 3),
         "cagr": round(block["cagr"], 6),
         "max_drawdown": round(block["max_drawdown"], 4),
-        "calmar": round(block["calmar"], 4),
+        "calmar": config.rounded(block["calmar"], 4),
         "profit_factor": config.rounded(block["profit_factor"], 4),
         "trade_count": block["trade_count"],
         "hit_rate": config.rounded(block["hit_rate"], 4),
@@ -198,7 +198,8 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
                 for k in folds + [holdout]]
 
     def pnl_row(label, block):
-        return [label, f"{block['sharpe']:+.3f}", f"{100 * block['max_drawdown']:.1f}%",
+        return [label, f"{block['sharpe']:+.3f}" if block["sharpe"] is not None else "—",
+                f"{100 * block['max_drawdown']:.1f}%",
                 f"{block['trade_count']:,}",
                 f"{100 * block['hit_rate']:.1f}%" if block["hit_rate"] is not None else "—",
                 f"{100 * block['exposure']:.2f}%", f"{block['final_equity']:.4f}"]

@@ -81,10 +81,12 @@ def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> f
     return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 
-def sharpe_annualised(bar_returns: np.ndarray, decision_bars_per_year: float) -> float:
+def sharpe_annualised(bar_returns: np.ndarray, decision_bars_per_year: float) -> float | None:
+    """The mean decision-bar return over its standard deviation, annualised; None where the returns never varied —
+    a fold that took no trade — the ratio having no denominator, as calmar() and profit_factor() are None."""
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:
-        return 0.0
+        return None
     return float(bar_returns.mean() / sd * np.sqrt(decision_bars_per_year))
 
 
@@ -94,12 +96,11 @@ def cagr(final_equity: float, minute_count: int) -> float:
     return float(final_equity ** (config.MINUTES_PER_YEAR / minute_count) - 1.0)
 
 
-def calmar(cagr_annual_rate: float, max_drawdown_fraction: float) -> float:
-    """CAGR per unit of maximum drawdown. A path that never drew down has no ratio and earned nothing
-    per unit of a risk it never took — the shape sharpe_annualised() carries for a zero deviation; under
-    the trade floor such a fold has no trade in it, so the value is reported and never selected on."""
+def calmar(cagr_annual_rate: float, max_drawdown_fraction: float) -> float | None:
+    """CAGR per unit of maximum drawdown; None where the path never drew down, the ratio having no denominator — as
+    profit_factor() is None where nothing lost. It is reported and never selected on."""
     if max_drawdown_fraction == 0.0:
-        return 0.0
+        return None
     return float(cagr_annual_rate / max_drawdown_fraction)
 
 

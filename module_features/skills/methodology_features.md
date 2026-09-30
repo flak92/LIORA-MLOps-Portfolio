@@ -306,9 +306,7 @@ it left, and a search state already in the ledger is looked up, never scored aga
 
 ### 1. The objective
 
-A search state's objective is the triple `search_state_objective`, compared most significant first:
-the CAGR of the chained validation path, then that path's Calmar ratio, then its profit factor, where
-a path without a losing trade has no profit factor (`validation.profit_factor()`) and counts as +∞.
+A search state's objective is `search_state_objective`, the CAGR of the chained validation path.
 The path chains F2, F3 and F4 — each fold's 1m equity scaled by what the folds before it settled at —
 and its CAGR is the product of the three folds' final equities annualised over their minutes
 (`strategy.validation_path_cagr()`; `strategy.validation_path_block()`). A state evaluation stands at
@@ -316,7 +314,15 @@ the entry edge threshold the one selection rule picks for it (`strategy.entry_ed
 the point of `ENTRY_EDGE_THRESHOLD_GRID` maximising that same CAGR among the points that clear the
 trade floor on every validation fold, ties to the smaller threshold. `ranking_key` orders state
 evaluations by the objective, descending, then by the smaller column count, then by the earlier state
-evaluation.
+evaluation. The path's Calmar ratio and its profit factor are reported beside the objective and
+belong neither to it nor to the order that breaks a tie on it: two search states of one CAGR are
+ordered by parsimony, the smaller set first, and then by a deterministic order, the earlier state
+evaluation first. An equal CAGR is no evidence of equal trades — two paths can settle at one final
+equity by different trades — so the order of a tie is a choice this section makes, not a consequence
+of the objective, and a second key read off the same path would be a second objective nobody froze.
+A ratio without a denominator — the Calmar ratio of a path that never drew down, the profit factor of
+one that never lost, the Sharpe ratio of a fold that never traded — is null, never a number standing
+in for it.
 
 ### 2. The conditions every comparison shares
 
