@@ -35,9 +35,9 @@ and the contract, the profile, the search's progress and its ledger as JSON. It 
 `features_status.json` is only as fresh as the last `make features-status`, and a catalogue written a minute ago
 would read as absent. The one comparison it makes is the `profile` cell — the profile it holds against the profile the
 recorded search was run with, as parsed objects and never bytes, because the search records that profile verbatim
-among its inputs. The snapshot's `inputs_current`, which the page reads, is a wider question — it folds the
-parameters, the catalogue and the asset's own search state — and stays `module_features/status.py`'s, because answering it
-needs numpy.
+among its inputs. The snapshot's `search_inputs_current`, which the page reads, is a wider question — it folds the
+parameters, the catalogue and the asset's own search state, and never the evaluation contract, which the next turn's
+probe compares — and stays `module_features/status.py`'s, because answering it needs numpy.
 
 ## The actions
 

@@ -542,11 +542,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `leave_question(…, [])` in `turn()`; `score.main()` building no material for it
   - Artifact key: `search_states` = `[]` of `<TICKER>_score_request.json`; `results` = `[]` of its answer
   - Never: a health check, a ping; a probe of a search still in progress, whose every answer already carries the contract
-- current inputs — a recorded serpentine search's inputs that are still the asset's own
+- the current search inputs — whether a recorded serpentine search's inputs are the ones a turn would build now, and nothing else: the evaluation contract is no part of it, the next turn's probe comparing that
   - Code: `serpentine_search_block()` in `module_features/status.py`
-  - Artifact key: `inputs_current`
+  - Artifact key: `search_inputs_current`
   - Ui label: the note *the serpentine search predates the asset's search state, its profile, its parameters or a record of the search*, in place of PROPOSALS and in the Features tab's table
-  - Never: stale, dirty, outdated; a guard that refuses the promotion
+  - Never: stale, dirty, outdated; a guard that refuses the promotion; `inputs_current`; an evaluation contract rebuilt in `module_features`
 - the trial objective — the CAGR of the validation path at the threshold the selection rule picks; none for a pruned trial
   - Code: `sweep_selection()`, the return of `objective()` inside `build_objective()` in `module_ml/hpo.py`, logged per trial by `log_trials()` under `TRIAL_METRIC_KEY`
   - Artifact key: `cagr_validation_path` of a row of the families `hpo_trials` and `score_trials`, `null` for a pruned trial
@@ -692,7 +692,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`
   - Holds: which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads
 - the feature layer's snapshot
-  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `state_evaluation_count`, `selection_hypothesis_count`, `round_count`, `beam_changed`, `search_outcome`, `inputs_current`, `proposals`)
+  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `state_evaluation_count`, `selection_hypothesis_count`, `round_count`, `beam_changed`, `search_outcome`, `search_inputs_current`, `proposals`)
   - Holds: the catalogue as the register presents it, the one run-state fact the feature layer has per asset — the rows of its catalogue partitions, the last line of the register box — and the serpentine search as it last wrote itself; written by `module_features/status.py`
 - the catalogue block — of `features_status.json`
   - Artifact key: `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range`, `historical_aliases` —, `operators`, `normaliser`, `range`, `tier`, `historical_aliases`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`)
@@ -992,7 +992,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the profile state: where the asset's profile stands against the serpentine search recorded under it — the one comparison the features terminal makes, on parsed objects and not on bytes
   - Code: `_profile_state()`
   - Ui label: `not drafted` / `no search` / `matches the search` / `differs from the search`
-  - Never: `inputs_current`, which folds the parameters, the catalogue and the asset's own search state and stays the page's
+  - Never: `search_inputs_current`, which folds the parameters, the catalogue and the asset's own search state and stays the page's
 - the coordinate grid: what each coordinate is searched over, one preset, so a grid is a decision of the file and not of a form
   - Code: `GRID_BY_COORDINATE_DEFAULT`
   - Artifact key: `grid_by_coordinate`

@@ -99,11 +99,12 @@ def proposal_block(proposal: dict, state_evaluation: dict, active_columns_by_tim
 
 
 def serpentine_search_block(ticker: str) -> dict | None:
-    """The serpentine search as it last wrote itself, and whether its inputs are still the asset's — a promotion, a
-    retuning, a catalogue change, an edited profile or a changed beam width or round budget makes a recorded serpentine
-    search describe a search state that has gone; None while the asset has no progress file, and false rather than an
-    error while it has no profile. The parameters and the contract are read the way a turn reads them, and a progress
-    file is written only by a turn that read both."""
+    """The serpentine search as it last wrote itself, and `search_inputs_current`: whether its recorded inputs are the
+    ones a turn would build now — a promotion, a retuning, a catalogue change, an edited profile or a changed beam
+    width or round budget makes a recorded serpentine search describe a search state that has gone; None while the
+    asset has no progress file, and false rather than an error while it has no profile. The parameters and the
+    catalogue contract, `<TICKER>_catalogue.json`, are read the way a turn reads them. The evaluation contract is no
+    part of it: this module cannot know the one the next answer will carry, and the next turn's probe compares it."""
     path = serpentine_search_config.serpentine_search_json(ticker)
     if not path.exists():
         return None
@@ -113,7 +114,7 @@ def serpentine_search_block(ticker: str) -> dict | None:
     ledger = serpentine_search_config.serpentine_search_state_evaluations_jsonl(ticker)
     # the state evaluations are the ledger's lines, and a proposal is read off the line its index names
     state_evaluations = dataset.load_jsonl(ledger) if ledger.exists() else []
-    inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
+    search_inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
         serpentine_search.build_search_inputs(serpentine_search.load_best_params(ticker),
                                               serpentine_search.load_feature_columns(ticker, cat),
                                               serpentine_search.load_barrier_coordinates(ticker), cat,
@@ -124,13 +125,13 @@ def serpentine_search_block(ticker: str) -> dict | None:
         "round_count": search["round_count"],
         "beam_changed": search["beam_changed"],
         "search_outcome": search["search_outcome"],
-        "inputs_current": inputs_current,
+        "search_inputs_current": search_inputs_current,
         # a serpentine search whose inputs have gone describes another experiment, and its proposals are numbers of
         # that one: the page shows none of them, and the snapshot publishes none either
         "proposals": [proposal_block(proposal, state_evaluations[proposal["state_evaluation_index"] - 1],
                                      search["inputs"]["active_columns_by_timeframe"],
                                      serpentine_search_config.timeframes(cat))
-                      for proposal in search["proposals"]] if inputs_current else [],
+                      for proposal in search["proposals"]] if search_inputs_current else [],
     }
 
 

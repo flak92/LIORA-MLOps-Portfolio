@@ -8,9 +8,9 @@
    },
    "serpentine_search": {
     "beam_changed": false,
-    "inputs_current": true,
     "proposals": [],
     "round_count": 5,
+    "search_inputs_current": true,
     "search_outcome": "stopped_by_budget",
     "selection_hypothesis_count": 70,
     "state_evaluation_count": 31

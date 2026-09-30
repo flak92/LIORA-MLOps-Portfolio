@@ -37,7 +37,7 @@ function buildProposalsFrame(asset) {
   }
   /* a recorded serpentine search conditioned on another set or other parameters compares against a baseline that
      has gone, so the frame states that and shows nothing rather than a delta against the wrong set */
-  if (!search.inputs_current) {
+  if (!search.search_inputs_current) {
     frame.body.appendChild(buildFootnote("the serpentine search predates the asset's search state, its profile, its parameters or a "
       + "record of the search — run `make features-serpentine-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
@@ -84,7 +84,7 @@ function renderSerpentineSearch(mlStatus) {
   const meanValidationSkill = (asset) => mean(validationFolds(asset).map((fold) => asset.validation[fold].relative_logloss_skill));
   const deltas = mlStatus.assets.map((asset) => {
     const search = serpentineSearch(asset.ticker);
-    const proposal = search && search.inputs_current && search.proposals.length ? search.proposals[0] : null;
+    const proposal = search && search.search_inputs_current && search.proposals.length ? search.proposals[0] : null;
     return proposal === null ? null : proposal.mean_relative_logloss_skill - meanValidationSkill(asset);
   });
   const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
@@ -98,7 +98,7 @@ function renderSerpentineSearch(mlStatus) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
         deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
       } else if (search === null) deltaCell.textContent = "no serpentine search yet";
-      else if (!search.inputs_current) deltaCell.textContent = "the serpentine search predates the asset's search state, its profile, its parameters or a record of the search";
+      else if (!search.search_inputs_current) deltaCell.textContent = "the serpentine search predates the asset's search state, its profile, its parameters or a record of the search";
       else if (search.search_outcome === null) deltaCell.textContent = "no proposal before the search's outcome";
       else deltaCell.textContent = "no proposal";
       return [
