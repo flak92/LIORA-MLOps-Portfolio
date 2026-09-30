@@ -35,8 +35,9 @@ this file holds the values and the shape the rows serve. If a change conflicts w
   partitions with each other, X with Y; a finite catalogue after the warm-up (`catalogue.build_catalogue`); and the
   download that aborts on a short post-listing day, with the listing probe that aborts when a symbol's history starts
   after the window (`CANDLE-CANONICALISATION-A-SHORT-DAY-ABORTS-THE-DOWNLOAD`). Beside them, and no guard: a status
-  stage's one line when it has nothing to report, a venue's own error code as it came, and a stage's one-line refusal
-  of an input it cannot use. No debt marker in a tracked file and no code inside a comment: a marker is a postponed
+  stage's one line when it has nothing to report, naming the stage to run first; a venue's own error code as it came;
+  and a stage's one-line refusal of an input it cannot use — a study whose every trial was pruned, a scoring request of
+  an unknown kind, a promotion with no proposal. No debt marker in a tracked file and no code inside a comment: a marker is a postponed
   decision, a commented-out line is a version git already holds. Thread caps are correctness, not a setting
   (`DETERMINISM-THREAD-CAPS-FROZEN-AT-ONE`).
 - **Research logic over tooling.** External sources, libraries and infrastructure are implementation details; the
@@ -67,7 +68,7 @@ the root             the Makefile and docker-compose.yml that run the four, reco
 ```
 
 Each module holds its package, its orientation `README_module_<domain>.md` and its own `skills/` under one directory;
-nothing above it belongs to one module alone. A reference is a path in backticks, always.
+nothing above it belongs to one module alone. The canon's orientation is its index, `module_skills/README.md`. A reference is a path in backticks, always.
 
 **No module imports another** (D02); `module_skills` takes part in no runtime import and no dataflow of the chain.
 What would cross a boundary as an import crosses it as a file in a store — the families, the per-asset contract
@@ -164,7 +165,7 @@ Every layer has a closed grammar, the way CSS has BEM, and a name is derived fro
 | layer | grammar | in this repo | what it forbids |
 |---|---|---|---|
 | constants | `<OBJECT>_<ROLE>_<PARAMETER>_<UNIT>` | `LABEL_BARRIER_TRUE_RANGE_SMOOTHING_PERIOD_BARS` | `BARRIER_N` |
-| constant comments | PEP 8's inline comment for one constant, a block comment above several or above one whose value spans lines; the marker `# twice by extraction` explains nothing and stands where D14 places it | `BYBIT_KLINE_REQUEST_LIMIT = 1000   # < 1440 -> …` | a block comment above a one-line constant it alone explains |
+| constant comments | PEP 8's inline comment for one constant, a block comment above several or above one whose value spans lines; the marker `# twice by extraction` explains nothing and stands where D14 places it; a file that departs moves its comments with its next change | `BYBIT_KLINE_REQUEST_LIMIT = 1000   # < 1440 -> …` | a block comment above a one-line constant it alone explains |
 | external I/O functions | `<verb>_<object>`, the verb `fetch_` (network), `load_` (storage → memory), `write_` (persist) or `parse_` (bytes → values) | `fetch_klines`, `load_xy`, `write_parquet`, `parse_zip` | `get_`, `process_`, `handle_` |
 | conversions | `to_<representation>` | `to_class`, `to_json_safe` | `convert` |
 | composite constructors | `build_<object>` | `build_x` | `make_stuff` |
@@ -186,7 +187,7 @@ Every layer has a closed grammar, the way CSS has BEM, and a name is derived fro
 | Makefile targets | `<module>-<stage>` for a stage, `<module>-all` for a module's chain, `<module>-<process>` for a process of stages on the host, `<module>-<process>-<action>` for a hand's action on its files, `tmux-<target>` for the detached twin of one that resumes, `<module>-terminal` for a module's terminal, `skills-<action>` for the canon's tools; the lifecycle targets bare (`all`, `build`, `help`, `on`, `off`, `all-record`); every action carries its `##`, `help` and a terminal none | `data-ingest`, `features-serpentine-search-promote`, `tmux-features-serpentine-search`, `ml-terminal`, `skills-sync` | a bare stage, a `docker-` twin, a second switch pair, a `tmux-` twin of a terminal, a second Makefile |
 | a terminal's menu | the actions of the one Makefile its `MENU_TARGET_PATTERN` gives its module, read off `make help` (`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`) | `^(tmux-)?features-` | a menu written out by hand; an action offered in a second terminal |
 | directories | `<category>_<detail>/` for a module; `store/<content>/` for a store; `ticker=<TICKER>/` and `timeframe=<timeframe>/` for a partition, Hive's `key=value` | `module_*`, `store/raw_1m`, `ticker=BTC/`, `timeframe=1h/` | `store_<content>/` at the root, `<TICKER>/` without its key |
-| sub-modules | `sub_module_<subject>/` inside the module, or the canon, that owns it — its own `config.py`, an action module with `main()` per action of a hand, its `README_sub_module_<subject>.md` and its rule `skill_<subject>.md` beside it; no part in the chain's dataflow (§ The default choice) | `module_skills/sub_module_scalability_crawler/`, `module_features/sub_module_serpentine_search/`, `module_<domain>/sub_module_terminal/` | a sub-module at the root or of a sub-module; one that imports another module |
+| sub-modules | `sub_module_<subject>/` inside the module, or the canon, that owns it — its own `config.py`, an action module with `main()` per action of a hand, its `README_sub_module_<subject>.md` and, where it has a rule of its own, `skill_<subject>.md` beside it; no part in the chain's dataflow (§ The default choice) | `module_skills/sub_module_scalability_crawler/`, `module_features/sub_module_serpentine_search/`, `module_<domain>/sub_module_terminal/` | a sub-module at the root or of a sub-module; one that imports another module |
 | images and compose services | the one image `liora-1m-pipeline`; a service named for its runtime role (`ASSET-CONTAINERS-THREE-RUNNERS-AND-ONE-RESIDENT`) | `ml`, `dashboard` | an image per service; a service named for a tool or a ticker |
 | store paths | `store/<content>/` on the host, `/store/<content>` in a container, `STORE_<CONTENT>_DIR` between them (`ASSET-CONTAINERS-A-CONTAINER-ADDRESSES-A-STORE-AT-ITS-MOUNT`) | `STORE_RAW_1M_DIR` | a path derived from `__file__`; a store literal at the point of use |
 | a module's own skills | `module_<name>/skills/`, every rule about that module and nothing else | `module_ml/skills/` | a single module's rule kept in `module_skills/` |
@@ -197,7 +198,7 @@ Every layer has a closed grammar, the way CSS has BEM, and a name is derived fro
 
 A numeric constant carries its unit — `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_ROWS`, `_FOLD_ID`, `_RATE`,
 `_COUNT` — unless its name already says what is counted; a setting handed to a tool as text carries its unit in the
-value (`DUCKDB_MEMORY_LIMIT`). The parameter word follows the mechanics — `SPAN` for an exponential smoothing,
+value (`DUCKDB_MEMORY_LIMIT`). No name is invented just to satisfy the schema. The parameter word follows the mechanics — `SPAN` for an exponential smoothing,
 `SMOOTHING_PERIOD` for a recursive mean, `LOOKBACK` for a rolling window, `HORIZON` for the future of a label,
 `INTERVAL` for a sampling step — and a parameter of a catalogue term lives in its term
 (`FEATURE-TAXONOMY-A-PARAMETER-LIVES-IN-ITS-TERM`). A compact timeframe token inside an identifier (`equity_1m`) is the
@@ -211,8 +212,8 @@ At an external boundary the external vocabulary wins inside the call that speaks
 return value (`SELF-EXPLAINING-NAMING-EXTERNAL-VOCABULARY-IS-REGISTERED`). The boundaries, each with the file that
 owns it: the Lean tree (`module_data/lean.py`); the Binance and Bybit REST parameters (the two downloaders, and
 `module_data/config.py` for the constants carrying `KLINE`); xgboost and optuna (`module_ml/model.py`,
-`module_ml/hpo.py`); numpy and DuckDB SQL (every module that computes or queries); argparse (the one parser of each
-runtime `config.py`, `promote.py` and every terminal); Hive's `key=value` (every `config.py` that builds a partition);
+`module_ml/hpo.py`); numpy and DuckDB SQL (every module that computes or queries); argparse (the one parser of the
+data, feature and ML `config.py`, `promote.py` and every terminal); Hive's `key=value` (every `config.py` that builds a partition);
 SVG and the DOM (the page's scripts); docker compose and tmux (`Makefile`, `docker-compose.yml`); `urllib` (the two
 downloaders); `subprocess` over a stage's command line (`record.py`), a vendor's (`crawl.py`), gum's (`tui.py`) and
 make's (every `terminal.py`); TOML (`vendors_for_crawling.toml`, read by `crawl.py` and the canon's terminal); a
@@ -223,7 +224,8 @@ workbook's XML parts (`module_skills/sheet.py`); `NO_COLOR` and `TERM` (each ter
 
 A list of words that steers the repository toward concrete, minimally correct solutions; no check gates it. The last
 column of the grammar table holds the forms bound to one rule and the register's `never` columns the synonyms bound
-to one concept; this list gathers the words bound to neither.
+to one concept; this list gathers the words bound to neither, and repeats the few the register already binds that are
+worth steering away from on sight.
 
 - **directories and path segments:** `src`, `core`, `lib`, `common`, `utils`, `helpers`, `manager`, `service`,
   `assets`, `artifacts`, `data`, `db`, `database`, `raw_data`, a lowercase ticker folder, a venue symbol as a folder;
@@ -288,13 +290,13 @@ The conditions below hold at every commit; a change that breaks one is wrong.
 | D09 | artifact names and keys move only with the register: every key of every payload, file and family has a row of it, and a key added, dropped or renamed moves that row in the same commit (`AGENT-FIRST-DEVELOPMENT-NAME-ENTERS-THE-REGISTER`) |
 | D10 | determinism is unchanged: the caps, the seeds, the pinned orders (`module_skills/skill_determinism.md`) |
 | D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest (`README.md` § Parity). A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` alone. The files a hand drafts stand outside the proof, and so do the serpentine search's own — its state, its ledger and the asset's partition of `score_trials` — whose proof is that a search reset and run again over the same inputs gives the same bytes, and that a search stopped and run again ends on the same state and ledger; the one exception, `score_trials` holding a study twice after a stop between its lines and the answer (`score.hpo_results()`). The state and the ledger are tracked all the same, because `features_status.json` reads them and is inside the proof. A change that reshapes one of the chain's files re-bases its line and no other, compared field by field, every kept field byte-identical |
-| D12 | zero cloud mechanisms: nothing reaches a service off this host but the venues' public endpoints the two downloaders read and the crawler's one active vendor command line, outside the chain; the trial ledgers are partitions of `STORE_TRIALS_DIR` (`METHODOLOGY-ML-LEDGER-IS-APPEND-ONLY`), never a network location; the four pins of `requirements.txt` are the project's, and a fifth moves this line in the commit that adds it |
+| D12 | zero cloud mechanisms: nothing in the tree calls a service off this host but the venues' public endpoints the two downloaders read and the crawler's one active vendor command line, outside the chain; the trial ledgers are partitions of `STORE_TRIALS_DIR` (`METHODOLOGY-ML-LEDGER-IS-APPEND-ONLY`), never a network location; the four pins of `requirements.txt` are the project's, and a fifth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
-| D14 | every object of `module_skills/skill_glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — one marker per object — and changed on every side at once |
+| D14 | every object of `module_skills/skill_glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — `/* twice by extraction */` in JavaScript, a whole file in its docstring, one marker per object — identical to the byte on every side unless its row says equal by value, and changed on every side at once |
 | D15 | the tracked remnant of the artifacts store (`SERPENTINE-SEARCH-ITS-RECORD-IS-TRACKED`, the register's asset folder) and the four snapshots are tracked, so a fresh clone opens on real numbers and on the profile the last search ran under |
 | D16 | the fan-out, the serpentine search's loop and its detached twin run through `docker compose run --rm`, one one-off container per step; nothing is `exec`'d into a resident |
 | D17 | the crawler's snapshot and reports are written by the crawler alone (`FILES-AND-FOLDERS-GENERATED-BY-THE-CRAWL`); the snapshot is tracked in its neutral state — every controlled file `pending`, no report — and rewritten by every crawl, the reports untracked |
-| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it, and a hand alone starts it |
+| D18 | the crawler gates nothing: no target of the chain, no service and no merge depends on it; it writes only its reports and its snapshot, commits nothing, and a hand alone starts it |
 | D19 | a module's terminal imports the standard library and its own package alone and starts every stage through `make` (`TUI-DESIGNER-ONE-TERMINAL-PER-MODULE`); the features terminal carries registered copies of what it reads, and writes one file, the profile its draft makes; no terminal runs `tmux` or `docker` |
 
 ## Skills absent here, described

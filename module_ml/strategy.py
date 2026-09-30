@@ -282,9 +282,9 @@ def equity_curve(equity_1m: np.ndarray) -> dict:
     return {"equity": np.round(equity_1m[idx], 6).tolist()}
 
 
-# the key the selection score is published under, named for what it is under the objective the experiment froze
+# the key the selection score is published under, named for what it is under the objective the experiment froze, and
+# the keys of what the chosen threshold was chosen out of — reported beside the score, never used to change it
 SELECTION_SCORE_KEY = "selection_score_cagr_validation_path"
-# what the chosen threshold was chosen out of — reported beside the score, never used to change it
 SELECTION_EXPOSURE_KEYS = ("cleared_point_count", "median_cagr_over_cleared", "max_cagr_over_cleared")
 
 

@@ -47,6 +47,7 @@ SERPENTINE_SEARCH_LOOP_FEATURE_SET = "feature_set"
 SERPENTINE_SEARCH_LOOP_HPO = "hpo"
 # one round, family by family, in the order it runs them. The hyper-parameter family is last, so the turn that
 # reads its answer ends the round and no later turn has to recover a study; moving it is a new decision.
+# twice by extraction
 ROUND_SCHEDULE = ((SERPENTINE_SEARCH_LOOP_BARRIER, "trade"),
                   (SERPENTINE_SEARCH_LOOP_BARRIER, "label"),
                   (SERPENTINE_SEARCH_LOOP_FEATURE_SET, SERPENTINE_SEARCH_MOVE_FORWARD),
