@@ -31,7 +31,7 @@ is named below by the path it holds in the tree.
 
 ## Described, not written
 
-Skills the tree does not hold yet — each a row of [../AGENTS.md](../AGENTS.md) § Skills absent here, described, placed
+Skills the tree does not hold yet — each a row of [AGENTS.md](../AGENTS.md) § Skills absent here, described, placed
 by ownership, with the one condition under which it is written. This index holds none of them.
 
 ## module_data

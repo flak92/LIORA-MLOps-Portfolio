@@ -3,7 +3,7 @@
 The hand's instrument over the data module: each asset's raw days and whether its canonical series stands, then
 one of the module's targets — every target of the root `Makefile` that carries a `##` and that `MENU_TARGET_PATTERN`
 matches, today `data-download`, `data-ingest`, `data-status` and `data-all` — started through `make`; then it closes.
-Its screens follow the `TUI-DESIGNER-` rows of `../../module_skills/skill_tui_designer.md`, which every terminal of
+Its screens follow the `TUI-DESIGNER-` rows of `module_skills/skill_tui_designer.md`, which every terminal of
 this tree obeys; this file says what its screen holds.
 
 ```bash

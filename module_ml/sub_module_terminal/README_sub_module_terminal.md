@@ -3,7 +3,7 @@
 The hand's instrument over the ML module: each asset's artifacts, then one action — a target of this module that
 carries a `##` in the Makefile: a stage of the chain, the chain whole or the scoring of a request — started through
 `make` for one asset; then it closes. Its screens follow the `TUI-DESIGNER-` rows of
-`../../module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file says what its screen
+`module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file says what its screen
 holds.
 
 ```bash

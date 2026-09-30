@@ -212,7 +212,8 @@ HORIZON_TOKEN_MINUTES = {"1h": 60, "2h": 120, "4h": 240, "8h": 480, "12h": 720, 
 # ---- folds: WARMUP | TRAIN | PURGE | OOS validation | final holdout
 FOLD_BOUNDS_UTC = VALUE_BY_CONFIGURABLE["FOLD_BOUNDS_UTC"]
 FOLD_BOUNDS_MS = tuple(to_utc_ms(d) for d in FOLD_BOUNDS_UTC)
-# F2, F3, F4 — the data-driven selection of the hyper-parameters, the threshold and, once a set is promoted, the feature set
+# F2, F3, F4 — the data-driven selection of the hyper-parameters, the threshold and, once a state is promoted, the feature
+# set and the barrier geometry
 # twice by extraction
 VALIDATION_FOLD_IDS = (2, 3, 4)
 FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on

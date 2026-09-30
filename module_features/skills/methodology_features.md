@@ -33,7 +33,7 @@ keep a ratio of at least three, because two levels closer than that sample the s
 the triple-screen hierarchy (`module_ml/skills/methodology_ml.md` § 13 [10]). Everything that reads
 the hierarchy is the experiment — the decisions stand on one of its entries, the trend gate reads
 its coarsest and the strategy's agreement counts over all of them — so a new token is a new
-experiment (`README_module_features.md` § Extending).
+experiment (`module_features/README_module_features.md` § Extending).
 
 Bars are exact UTC-aligned aggregations of the canonical 1m series inside the frozen research
 window, each bar opening on a multiple of its duration from the epoch — O first, H max, L min, C
@@ -278,7 +278,8 @@ relation across timeframes stays a rule of the strategy (`module_ml/skills/metho
 ## The serpentine search
 
 The serpentine search is a hand's research over one asset's state Θ, outside the chain
-(`sub_module_serpentine_search/`; how it runs is its `README_sub_module_serpentine_search.md`, its
+(`module_features/sub_module_serpentine_search/`; how it runs is its
+`module_features/sub_module_serpentine_search/README_sub_module_serpentine_search.md`, its
 rules `module_features/sub_module_serpentine_search/skill_serpentine_search.md`, each cited below by
 its `rule_id`). A state is the columns of a feature set per timeframe, the four barrier coordinates
 — the multiplier the label's barriers stand at, the horizon they stand for, the take-profit and the
@@ -292,7 +293,7 @@ fold and runs the strategy's threshold selection on the predictions (`score.stat
 computes no metric of a state: every number a gate, a ranking or a proposal reads comes off an
 answer (`SERPENTINE-SEARCH-IT-COMPUTES-NO-METRIC`,
 `SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). A function named below without its module is
-`sub_module_serpentine_search/serpentine_search.py`'s.
+`module_features/sub_module_serpentine_search/serpentine_search.py`'s.
 
 A round is `ROUND_SCHEDULE` (the sub-module's `config.py`) read in order: the barrier loop's `trade`
 family, which moves the take-profit and the stop one grid point down or up; its `label` family, which

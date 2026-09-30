@@ -52,4 +52,4 @@ A normative rule of this project is a **row of a table**, not a paragraph. The r
   - Description: A rule is cited by its `rule_id`, because a generated document has no numbered or titled section to cite.
   - Scope: `**/*.md`, `**/*.py`, `**/*.js`, `Makefile`, `docker-compose.yml`
   - Expected: A rule named by its `rule_id` wherever a hand-written document, a comment or a docstring cites it, and a generated document cited whole by its path; no `§` into a generated document.
-  - Exception: A row of the contract, cited by its number in `AGENTS.md`.
+  - Exception: A section of the register, `module_skills/skill_glossary.md` § <section>, titled by the register's own `section` column; a row of the contract, cited by its number in `AGENTS.md`.

@@ -3,7 +3,7 @@
 The hand's instrument over the monitoring module: the four snapshots the page reads, then one position of the
 presentation switch — `on` or `off`, the targets of the Makefile carrying a `##` that `MENU_TARGET_PATTERN` gives
 this module — started through `make`; then it closes. Its screens follow the `TUI-DESIGNER-` rows of
-`../../module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file says what its screen
+`module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file says what its screen
 holds.
 
 ```bash

@@ -4,7 +4,7 @@ The hand's instrument over the feature module: per asset, how many timeframes it
 partition for, whether its contract stands, where its serpentine search profile stands and how many trials the
 search's ledger holds; then one action — a target of the module started through `make`, or one of the serpentine
 search's own: draft the profile, read the recorded search, promote the proposal; then it closes. Its screens follow the
-`TUI-DESIGNER-` rows of `../../module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file
+`TUI-DESIGNER-` rows of `module_skills/skill_tui_designer.md`, which every terminal of this tree obeys; this file
 says what its screens hold.
 
 ```bash
