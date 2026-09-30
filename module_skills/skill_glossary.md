@@ -416,10 +416,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `serpentine_search` (a block of each asset of features_status.json), `<TICKER>_serpentine_search.json`
   - Ui label: serpentine search
   - Never: the coordinate search, its name while `module_ml` held it; feature-set search (one of its search axes, not the serpentine search); feature selection (as a name), optimisation, the search (HPO's word); "no overfitting"
-- a turn — one call of the serpentine search: it reads where the serpentine search stands, carries it as far as the answers on disk allow, and leaves the next question or an ended search
+- a turn — one resumable step of a serpentine search: it reads where the serpentine search stands, carries it as far as the answers on disk allow, and leaves the next question or an ended search
   - Code: `turn()` in `module_features/sub_module_serpentine_search/serpentine_search.py`; `make features-serpentine-turn`
   - Ui label: `features-serpentine-turn` in the features terminal's menu
-  - Never: a step, an iteration, a tick; a turn that asks two questions; a cursor, a journal or a lock recording where a turn stopped — the ledger and the search's progress are the record
+  - Never: a run; an iteration, a tick; a turn that asks two questions; a cursor, a journal or a lock recording where a turn stopped — the ledger and the search's progress are the record
 - a search axis — the part of a search state the serpentine search moves: its barrier geometry, its feature set or its hyper-parameter point, each with its own generator of moves; the search state is the whole of them, and a state evaluation carries all of it
   - Code: `SERPENTINE_SEARCH_AXIS_BARRIER`, `SERPENTINE_SEARCH_AXIS_FEATURE_SET`, `SERPENTINE_SEARCH_AXIS_HPO`; `SERPENTINE_SEARCH_AXES` of the features terminal; the generators `moves()` of `axis_barrier.py` and `axis_feature_set.py`, and the study of `score.hpo_results()`; `candidates_of()`, `ROUND_SCHEDULE`, `search_state_key()`, `theta()`
   - Artifact key: `search_axis` = `barrier` / `feature_set` / `hpo`, of a state evaluation and of a path entry; `search_axes` of a profile
@@ -1180,16 +1180,16 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `run_id`
   - Ui label: run
   - Never: build, job, a content hash; a generated run id bound to no project name; a run id inside an artifact or a ledger
-- a run — one execution of an experiment, resumable from what its files say: a recorded run of the chain, one make invocation, the turns of one serpentine search
-  - Code: `RUN_ID` of the `Makefile`; a turn's resume from the ledger and the search's progress
+- a run — one execution of an experiment, resumable from what its files say: a recorded run of the chain, or a serpentine search carried from its start to its outcome, however many invocations it takes
+  - Code: `RUN_ID` of the `Makefile`; a search's resume from its ledger and its progress
   - Artifact key: `run_id`
   - Ui label: run
-  - Never: an experiment; a streak of minutes; the methodology
-- a stage of a run: one make target of `RECORDED_STAGES`, wrapped by `record.py` from outside every container; one seam, `data-download`, runs the two download commands in one target
+  - Never: an experiment; a turn; a stage; a make invocation as such; a streak of minutes; the methodology
+- a stage — one pipeline stage: one make target of `RECORDED_STAGES`, wrapped by `record.py` from outside every container; one seam, `data-download`, runs the two download commands in one target
   - Code: the target name; `RECORDED_STAGES` in the `Makefile` — `DATA_STAGES`, `FEATURES_STAGES`, `ML_STAGES` in order; `make all-record`
   - Artifact key: `stage` — the file name `<stage>.json`
   - Ui label: stage
-  - Never: step, task; a stage naming itself in its record
+  - Never: step, task; a run; a stage naming itself in its record
 - the command the recorder ran
   - Code: `command` — the make command line, joined by spaces
   - Artifact key: `command`

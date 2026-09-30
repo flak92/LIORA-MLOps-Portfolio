@@ -51,9 +51,9 @@ Every research name says what kind of object it denotes — a point in time, an 
   - Expected: `experiment_scope`, `selection_scope`, `evaluation_scope`, `feature_scope`, `asset_scope`; a set of folds `VALIDATION_FOLD_IDS` and an interval a window, never a scope.
   - Exception: The rule table's `scope` column — the files a rule governs — and the lexical scope of a programming language.
 - `RESEARCH-SEMANTICS-AN-EXPERIMENT-IS-FROZEN-AND-A-RUN-EXECUTES-IT`
-  - Description: An experiment is the frozen context a comparison is made in, and a run is one execution of it, resumable from what its files say; a calibration search is an experiment of its own, and a streak of minutes is never a run.
+  - Description: An experiment is a frozen comparison contract, a run is one execution of an experiment, resumable from what its files say, a turn is one resumable step of a serpentine search and a stage is one pipeline stage; a turn, a stage and a make invocation as such are never a run, a calibration search is an experiment of its own, and a streak of minutes is never a run.
   - Scope: `**/*`
-  - Expected: The chain's CONFIGURABLES records at a commit and a serpentine search's `inputs` as experiments; `run_id` and the turns of one search as runs; a calibration search; `longest_flat_streak_minutes`; no calibration run.
+  - Expected: The chain's CONFIGURABLES records at a commit and a serpentine search's `inputs` as experiments; a recorded run of the chain (`run_id`) and a serpentine search carried from its start to its outcome, however many invocations it takes, as runs; `turn()` as a turn; a target of `RECORDED_STAGES` as a stage; a calibration search; `longest_flat_streak_minutes`; no calibration run.
   - Exception: none
 - `RESEARCH-SEMANTICS-A-SEARCH-STATE-HAS-ONE-IDENTITY`
   - Description: A search state is one complete point of the serpentine search's space with one identity, and its one scored computation is a state evaluation; a bare `state` never names it, and Optuna's trial state stops at the call that reads it.
@@ -86,7 +86,7 @@ Every research name says what kind of object it denotes — a point in time, an 
 - `RESEARCH-SEMANTICS-ONE-CONCEPT-HAS-ONE-DEFINITION`
   - Description: One concept is defined once: this Skill states its meaning and how it relates to the others, the register its canonical name and surface forms, a methodology the values and derivations of this method, and code uses the name.
   - Scope: `**/*`
-  - Expected: A rule of meaning here, a row of `module_skills/skill_glossary.md`, a value in `methodology_features.md` or `methodology_ml.md` citing the rule, a name in code; no second definition in a README, a docstring or a comment.
+  - Expected: A rule of meaning here, a row of `module_skills/skill_glossary.md`, a value in `methodology_features.md` or `methodology_ml.md` citing the rule, a name in code; a docstring or a comment may describe a local consequence or an invariant of a concept but never gives it a second meaning or a second canonical name, and neither does a README.
   - Exception: none
 
 ## Methodology
