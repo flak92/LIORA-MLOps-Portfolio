@@ -122,7 +122,7 @@ def main() -> int:
             "labels": {
                 "decision_count": int(xy["y"].size),
                 "ambiguous_event_count": int((~xy["label_valid"]).sum()),
-                "unobservable_entry_count": int((~xy["entry_observable"]).sum()),
+                "untraded_entry_minute_count": int((~xy["entry_minute_traded"]).sum()),
                 "trainable_row_count": int(trainable.sum()),
             },
             "segments": {

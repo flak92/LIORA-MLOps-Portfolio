@@ -69,7 +69,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-ENTRY-IS-ONE-MINUTE-AFTER-THE-DECISION`
   - Description: The decision is taken at a decision-bar close and the entry happens one minute later, a signal computed at a close not being fillable at that close.
   - Scope: `module_ml/**/*.py`
-  - Expected: `t_0 = t_d + 1 min`, the entry price the `open` of the minute beginning at `t_0`, and no entry where that minute printed no trade — `labels.label_events()` for the event, `entry_observable` in `strategy.signals_for_fold()` for the trade.
+  - Expected: `t_0 = t_d + 1 min`, the entry price the `open` of the minute beginning at `t_0`, and no entry where that minute printed no trade — `labels.label_events()` for the event, `entry_minute_traded` in `strategy.signals_for_fold()` for the trade.
   - Exception: none
 - `METHODOLOGY-ML-PURGE-IS-THE-OVERLAP-TEST`
   - Description: Purge is the overlap test itself and adds no artificial gap.
@@ -131,9 +131,9 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Expected: `label_valid = false` on such a row, set from the ambiguous `event_resolution` of its walk; the `0` its `y` column carries never read as the neutral class, every population and every published class count reading `y` through `sample_valid`.
   - Exception: none
 - `METHODOLOGY-ML-LABEL-VALIDITY-NEVER-GATES-AN-ENTRY`
-  - Description: An entry may be gated on `entry_observable`, known at `t_0`, and never on `label_valid`, known only afterwards; a signal whose event turns out ambiguous is a trade, settled on the side adverse to the position.
+  - Description: An entry may be gated on `entry_minute_traded`, the fill condition of an entry at that minute's open, and never on `label_valid`, known only after the event; a signal whose event turns out ambiguous is a trade, settled on the side adverse to the position.
   - Scope: `module_ml/strategy.py`, `module_ml/dataset.py`, `module_ml/validation.py`
-  - Expected: `strategy.signals_for_fold()` admitting an entry on `entry_observable` and reading no `label_valid`; `sample_valid = entry_observable & label_valid` the supervised population `training_set()` and `scoring_set()` draw from.
+  - Expected: `strategy.signals_for_fold()` admitting an entry on `entry_minute_traded` and reading no `label_valid`; `sample_valid = entry_minute_traded & label_valid` the supervised population `training_set()` and `scoring_set()` draw from.
   - Exception: none
 - `METHODOLOGY-ML-WEIGHT-BELONGS-TO-A-POPULATION`
   - Description: The sample weight is a property of the population that carries it and not of the event, so it is measured where it is used.
@@ -146,9 +146,9 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Expected: `model.fit()` handed the training population's uniqueness weight and no class weight; `class_counts` over `sample_valid` in `<TICKER>_model_evaluation.json`.
   - Exception: none
 - `METHODOLOGY-ML-ONE-EVALUATION-POPULATION-FOR-EVERY-SEARCH-STATE`
-  - Description: A fold scores, and the strategy admits, only the rows that leave room for the experiment's maximum label horizon before the fold's end, decided at `t_0` and never by where the event actually ended, so every search state of one experiment and the chain are scored on one population (`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`); predictions cover every decision of the fold's OOS block.
+  - Description: A fold's evaluation population is its decisions that leave room for the experiment's maximum label horizon before the fold's end, decided at `t_0` and never by where the event actually ended, one population for every search state of one experiment and for the chain (`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`); the strategy's eligible entries and the fold's scoring rows are chosen inside it and are no part of it; predictions cover every decision of the fold's OOS block.
   - Scope: `module_ml/validation.py`, `module_ml/strategy.py`, `module_ml/dataset.py`, `module_ml/score.py`
-  - Expected: `entry_ts + maximum_label_horizon_minutes <= fold_end_ms` in `validation.scoring_set()` and in `strategy.signals_for_fold()`, `maximum_label_horizon_minutes` from `dataset.load_maximum_label_horizon_minutes()` — the longest of the tokens of the profile's `grid_by_coordinate["label_horizon"]` and of the asset's own label horizon — carried in X and Y and in every answer's `evaluation_contract`; the label and a trade's exit walked with the search state's own `label_horizon_minutes`; `validation.oos_block_rows()` every decision row of the OOS block, label validity deciding none.
+  - Expected: `entry_ts + maximum_label_horizon_minutes <= fold_end_ms` in `validation.scoring_set()` and in `strategy.signals_for_fold()`, `maximum_label_horizon_minutes` from `dataset.load_maximum_label_horizon_minutes()` — the longest of the tokens of the profile's `grid_by_coordinate["label_horizon"]` and of the asset's own label horizon — carried in X and Y and in every answer's `evaluation_contract`; `entry_eligible = decision_in_evaluation_population & gate_open & entry_minute_traded`, and the scoring rows the supervised population (`sample_valid`) inside the evaluation population; the label and a trade's exit walked with the search state's own `label_horizon_minutes`; `validation.oos_block_rows()` every decision row of the OOS block, label validity deciding none.
   - Exception: none
 - `METHODOLOGY-ML-SKILL-AND-IMPORTANCE-SELECT-NOTHING`
   - Description: The model's skill and its two importances are reported and select nothing: a study and the threshold selection rank by the validation path's growth rate, and the final holdout is attributed nothing.

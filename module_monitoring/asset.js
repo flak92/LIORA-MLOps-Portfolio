@@ -53,7 +53,7 @@ function buildLabelFrame(asset) {
     ["trainable rows", formatCount(asset.sample.trainable_row_count) + " of " + formatCount(asset.sample.decision_count)
       + " (" + asset.sample.trainable_row_pct.toFixed(3) + "%)"],
     ["excluded", formatCount(asset.sample.ambiguous_event_count) + " ambiguous · "
-      + formatCount(asset.sample.unobservable_entry_count) + " unobservable entry"],
+      + formatCount(asset.sample.untraded_entry_minute_count) + " untraded entry minute"],
     ["warm-up excluded", formatCount(asset.sample.warmup_excluded_decision_count) + " decisions"],
   ]));
   return frame.frame;

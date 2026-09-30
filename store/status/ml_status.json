@@ -74,7 +74,7 @@
     "decision_count": 44228,
     "trainable_row_count": 44227,
     "trainable_row_pct": 99.9977,
-    "unobservable_entry_count": 0,
+    "untraded_entry_minute_count": 0,
     "warmup_excluded_decision_count": 5280
    },
    "strategy": {

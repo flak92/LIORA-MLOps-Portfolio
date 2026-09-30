@@ -7,8 +7,9 @@
 Entry is the canonical 1m open at t_0; the barriers are P0 ± m·ATR14 of the last closed 1h bar, m the asset's
 multiplier; a touch requires
 volume > 0; event_end_ts is the exclusive end of the event, so the purge rule is event_end_ts <= fold_start_ms. Both
-barriers inside one minute leave the order unknowable: label_valid = false, never relabelled 0. entry_observable
-(the entry minute traded) may gate an entry; label_valid never does. Y also carries the entry price and the two
+barriers inside one minute leave the order unknowable: label_valid = false, never relabelled 0. entry_minute_traded
+(the entry minute printed a trade, the fill condition of an entry at its open) may gate an entry; label_valid never
+does. Y also carries the entry price and the two
 barriers, which the backtest rescales to a trade's own exit.
 """
 
@@ -55,7 +56,7 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ms: np.ndarray,
 
 Y_COLUMNS = {
     "decision_ts": "BIGINT", "entry_ts": "BIGINT", "y": "TINYINT",
-    "event_end_ts": "BIGINT", "entry_observable": "BOOLEAN",
+    "event_end_ts": "BIGINT", "entry_minute_traded": "BOOLEAN",
     "label_valid": "BOOLEAN", "entry_price": "DOUBLE",
     "upper_barrier": "DOUBLE", "lower_barrier": "DOUBLE",
 }
@@ -139,7 +140,7 @@ def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
         Y_COLUMNS,
         ([
             int(cols["decision_ts"][i]), int(cols["entry_ts"][i]), int(cols["y"][i]),
-            int(cols["event_end_ts"][i]), int(cols["entry_observable"][i]),
+            int(cols["event_end_ts"][i]), int(cols["entry_minute_traded"][i]),
             int(cols["label_valid"][i]),
             repr(float(cols["entry_price"][i])), repr(float(cols["upper_barrier"][i])),
             repr(float(cols["lower_barrier"][i])),
@@ -197,7 +198,7 @@ def label_events(label_inputs: dict, cat: dict, barriers: dict) -> dict[str, np.
     return {
         "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
         "event_end_ts": event_end_ts(entry_ts, t_res, label_horizon_minutes),
-        "entry_observable": bars_1m["volume"][entry_rows(entry_ts)] > 0,
+        "entry_minute_traded": bars_1m["volume"][entry_rows(entry_ts)] > 0,
         "label_valid": event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS, "entry_price": entry_price,
         "upper_barrier": upper_barrier, "lower_barrier": lower_barrier,
         "t_res": t_res,                        # the walk's own, for the stage's count of vertical exits
@@ -212,12 +213,12 @@ def main() -> int:
         cols = label_events(load_label_inputs(ticker, cat), cat, barriers)
 
         y, t_res = cols["y"], cols["t_res"]
-        sample_valid = cols["entry_observable"] & cols["label_valid"]
+        sample_valid = cols["entry_minute_traded"] & cols["label_valid"]
         out = write_y(ticker, cat, cols)
         print(f"{ticker} {out.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}: {cols['decision_ts'].size} rows  classes(-1/0/+1)="
               f"{int((y == -1).sum())}/{int((y == 0).sum())}/{int((y == 1).sum())}  "
               f"ambiguous={int((~cols['label_valid']).sum())}  "
-              f"unobservable={int((~cols['entry_observable']).sum())}  "
+              f"untraded_entry_minutes={int((~cols['entry_minute_traded']).sum())}  "
               f"trainable={int(sample_valid.sum())}  "
               f"vertical={int((t_res == barriers['label_horizon_minutes']).sum())}", flush=True)
     return 0

@@ -232,10 +232,10 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
         "catalogue_values": catalogue_values,
         "y": label_events["y"].astype(np.int8),
         "event_end_ts": label_events["event_end_ts"].astype(np.int64),
-        "entry_observable": label_events["entry_observable"].astype(bool),
+        "entry_minute_traded": label_events["entry_minute_traded"].astype(bool),
         "label_valid": label_events["label_valid"].astype(bool),
-        # the supervised population: an observable entry and an unambiguous event
-        "sample_valid": label_events["entry_observable"].astype(bool) & label_events["label_valid"].astype(bool),
+        # the supervised population: a traded entry minute and an unambiguous event
+        "sample_valid": label_events["entry_minute_traded"].astype(bool) & label_events["label_valid"].astype(bool),
         "entry_price": label_events["entry_price"].astype(np.float64),
         "upper_barrier": label_events["upper_barrier"].astype(np.float64),
         "lower_barrier": label_events["lower_barrier"].astype(np.float64),

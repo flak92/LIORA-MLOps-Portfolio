@@ -48,10 +48,11 @@ def training_set(entry_ts: np.ndarray, event_end_ts: np.ndarray,
 def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
                 sample_valid: np.ndarray, fold_start_ms: int, fold_end_ms: int,
                 maximum_label_horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
-    """Supervised rows of the OOS block that leave room for the maximum label horizon before its end — decidable at
-    t_0 — and their weights, with concurrency counted among the scored events alone. The horizon is the
-    experiment's, not the search state's, so two search states of one experiment score one population whatever label
-    horizon each holds."""
+    """The fold's scoring rows and their weights: the supervised population (`sample_valid`) inside the fold's
+    evaluation population — the decisions of the fold that leave room for the experiment's maximum label horizon
+    before its end, decided at t_0 and one for every search state — with concurrency counted among the scored events
+    alone. A search state's ambiguous labels leave its supervised population, so two search states may score a few
+    rows apart; the metrics these rows feed select nothing."""
     keep = (sample_valid & (decision_ts >= fold_start_ms)
             & (entry_ts + maximum_label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
     idx = np.flatnonzero(keep)

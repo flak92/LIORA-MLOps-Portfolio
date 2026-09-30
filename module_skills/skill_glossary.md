@@ -49,9 +49,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `maximum_label_horizon_minutes` of an answer's `evaluation_contract`
   - Ui label: the experiment's maximum label horizon (the asset README)
   - Never: `maximum_search_horizon`, a search horizon; the search state's own label horizon, where the maximum is meant; a configurable number of its own
-- the evaluation population — the decisions every search state of one experiment and the chain are scored on: an observable entry inside the fold that leaves room for the maximum label horizon before the fold's end — the strategy's eligible entries whatever the search state, and, where the search state's label is valid, the rows the model's metrics score
-  - Code: `validation.scoring_set()`, `entry_eligible` of `strategy.signals_for_fold()`
-  - Never: a population that follows a search state's own label horizon; one fold's population chosen by where an event ended
+- the evaluation population — a fold's decisions whose entry leaves room for the experiment's maximum label horizon before the fold's end, decided at t_0 and defined by nothing else: one population for every search state of one experiment and for the chain; a search state's eligible entries and the fold's scoring rows are chosen inside it
+  - Code: `decision_in_evaluation_population` in `strategy.signals_for_fold()`; the same two conditions in `validation.scoring_set()`
+  - Never: a population that follows a search state's own label horizon; one fold's population chosen by where an event ended; the eligible entries, which a search state's gate and the traded entry minute choose; the scoring rows, its supervised part
 - the purge — dropping training events that overlap the evaluated block
   - Code: `training_set()` — `event_end_ts <= fold_start_ms`, the event's end being exclusive
   - Ui label: purged (the asset README's fold geometry)
@@ -194,11 +194,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the four resolutions
   - Code: `EVENT_RESOLUTION_{UPPER_BARRIER, LOWER_BARRIER, VERTICAL, AMBIGUOUS}`, named by `EVENT_RESOLUTION_NAMES`
   - Never: bare 1 / −1 / 0 / 9
-- the entry minute traded at all — knowable at `entry_ts`, may gate an entry
-  - Code: `entry_observable`
-  - Artifact key: `entry_observable`; its complement is counted as `unobservable_entry_count`
-  - Ui label: unobservable entry
-  - Never: tradable, valid entry
+- the entry minute traded at all — whether the minute at `entry_ts` printed a trade, the fill condition of an entry at its open; may gate an entry
+  - Code: `entry_minute_traded`
+  - Artifact key: `entry_minute_traded`; its complement is counted as `untraded_entry_minute_count`
+  - Ui label: untraded entry minute
+  - Never: tradable, valid entry; `entry_observable`, an observable or unobservable entry, which says what is known at `entry_ts` where the minute's trade is what is measured; `unobservable_entry_count`
 - label validity — the event can be classified, knowable only afterwards, so it never gates an entry
   - Code: `label_valid`
   - Artifact key: `label_valid`; its complement is counted as `ambiguous_event_count`
@@ -268,8 +268,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `decision_count`
   - Ui label: decisions
   - Never: rows, `n`
-- the scored row count — rows a fold's metrics are computed on
-  - Code: `scored_row_count`
+- the scored row count — the fold's scoring rows, the supervised population inside its evaluation population, which its metrics are computed on
+  - Code: `scoring_rows` of `validation.scoring_set()`, `scored_row_count`
   - Artifact key: `scored_row_count`
   - Ui label: scored rows; scored (holdout)
   - Never: `n`
@@ -1028,7 +1028,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `decision_ts` and every definition offered on the partition's timeframe, on the decision grid; untracked
 - the family `labels`: Y on the decision timeframe, one partition per asset and timeframe
   - Code: `module_ml/labels.py` writes `labels/ticker=<TICKER>/timeframe=<timeframe>/labels.parquet` and the family's `schema.json`; `labels_parquet()`
-  - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `entry_price`, `upper_barrier`, `lower_barrier`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
+  - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_minute_traded`, `label_valid`, `entry_price`, `upper_barrier`, `lower_barrier`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
 - the family `oos_predictions`: the out-of-sample class probabilities, one partition per asset and timeframe
   - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
   - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the whole OOS block of every validation fold and of the final holdout; metrics score only the supervised subset; untracked

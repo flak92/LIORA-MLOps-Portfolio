@@ -5,7 +5,7 @@
     enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral  AND  side != 0
             AND side == sign(TREND_GATE_FEATURE_DEFINITION_<TREND_GATE_TIMEFRAME>)
             AND agreeing_trend_timeframe_count >= 2
-            AND entry_observable
+            AND entry_minute_traded
 
 USDT-perpetual PnL at a fixed quantity, linear in price (compounding per-bar returns would misprice shorts):
 
@@ -110,12 +110,14 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     label_horizon_minutes = barriers["label_horizon_minutes"]
     entry_ts, entry_price = xy["entry_ts"][pos], xy["entry_price"][pos]
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
-    # eligibility must be decidable at t_0 and the same for every search state of the experiment, so the maximum label
-    # horizon is tested — neither the search state's own, nor the event that follows; the trade then walks its own
-    entry_eligible = (gate_open & xy["entry_observable"][pos]
-                      & (entry_ts >= fold_start_ms)
-                      & (entry_ts + xy["maximum_label_horizon_minutes"] * config.MILLISECONDS_PER_MINUTE
-                         <= fold_end_ms))
+    # the evaluation population, the experiment's and one for every search state: a decision of the fold whose entry
+    # leaves room for the maximum label horizon before the fold's end, decided at t_0 and never by the search state's
+    # own horizon or by the event that follows. The gate, which reads the search state's predictions, and the traded
+    # entry minute choose the eligible entries among it; the trade then walks the search state's own label horizon
+    decision_in_evaluation_population = ((ts >= fold_start_ms)
+                                         & (entry_ts + xy["maximum_label_horizon_minutes"]
+                                            * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
+    entry_eligible = decision_in_evaluation_population & gate_open & xy["entry_minute_traded"][pos]
     eligible_rows = np.flatnonzero(entry_eligible)
 
     upper_barrier, lower_barrier = trade_barriers(

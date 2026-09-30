@@ -15,7 +15,7 @@ def sample_block(metrics: dict) -> dict:
     return {
         "decision_count": labels["decision_count"],
         "ambiguous_event_count": labels["ambiguous_event_count"],
-        "unobservable_entry_count": labels["unobservable_entry_count"],
+        "untraded_entry_minute_count": labels["untraded_entry_minute_count"],
         "trainable_row_count": labels["trainable_row_count"],
         "trainable_row_pct": round(100.0 * labels["trainable_row_count"] / labels["decision_count"], 4),
         "warmup_excluded_decision_count": metrics["segments"]["warmup_excluded_decision_count"],
@@ -247,7 +247,7 @@ Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers
 
 ## Labels
 
-{labels['decision_count']:,} decisions, of which **{labels['trainable_row_count']:,} supervised** ({100 * labels['trainable_row_count'] / labels['decision_count']:.3f}%) — {labels['ambiguous_event_count']:,} events resolve ambiguously and {labels['unobservable_entry_count']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
+{labels['decision_count']:,} decisions, of which **{labels['trainable_row_count']:,} supervised** ({100 * labels['trainable_row_count'] / labels['decision_count']:.3f}%) — {labels['ambiguous_event_count']:,} events resolve ambiguously and {labels['untraded_entry_minute_count']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
 
 ## Model
 

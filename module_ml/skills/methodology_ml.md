@@ -248,8 +248,8 @@ Four places compute with one of the two, and each is handed the one it needs:
 |---|---|---|
 | `labels.label_events()` | the search state's | which decisions are labelled at all — the grid keeps only those whose whole label horizon fits inside the research window |
 | `labels.triple_barrier()` | the search state's | how far down the 1m path a walk goes — the label's, and the trade's in `strategy.signals_for_fold()` — and where a vertical exit is marked |
-| `validation.scoring_set()` | the experiment's maximum | which supervised rows a fold scores — those that leave room for it before the fold's end, decided at t₀ |
-| `strategy.signals_for_fold()` | the experiment's maximum | which entries are eligible in a fold — the same test, on the trade's side |
+| `validation.scoring_set()` | the experiment's maximum | the fold's evaluation population — its decisions that leave room for it before the fold's end, decided at t₀ — whose supervised population gives the scoring rows |
+| `strategy.signals_for_fold()` | the experiment's maximum | the same evaluation population, among which the gate and the traded entry minute choose the eligible entries |
 
 `validation.training_set()` is **not** among them: the purge is
 `event_end_ts <= fold_start_ms`, and `event_end_ts` is a column of Y that already
@@ -269,23 +269,25 @@ observation, not a third outcome.
 **Two conditions that look alike and must not be merged:**
 
 ```
-entry_observable = volume(entry_ts) > 0   known at t_0        MAY gate an entry
-label_valid      = event classifiable     known afterwards    NEVER gates an entry
-sample_valid     = entry_observable & label_valid             the supervised population
+entry_minute_traded = volume(entry_ts) > 0   the fill condition   MAY gate an entry
+label_valid         = event classifiable     known afterwards     NEVER gates an entry
+sample_valid        = entry_minute_traded & label_valid           the supervised population
 ```
 
-Whether the entry minute traded at all is visible at the time, so the strategy
-may refuse it. Whether the event will resolve ambiguously is not, so using
-`label_valid` as an entry condition would be look-ahead: a signal whose event
+Whether the entry minute printed a trade is the fill condition of an entry at
+that minute's open: a minute without a trade has no price an order could fill at,
+so the strategy takes no entry there. Whether the event will resolve ambiguously is
+known only after the event, so using `label_valid` as an entry condition would be
+look-ahead: a signal whose event
 later turns out ambiguous **is a trade**, settled at the barrier adverse to the
 position.
 
-Supervision uses both. An unobservable entry gives `P₀ = open` of a minute that
+Supervision uses both. An untraded entry minute gives `P₀ = open` of a minute that
 printed no trade, so its barriers are anchored to a quote nothing traded at: not an executable decision and not a sound
 measurement. `sample_valid` therefore governs the training rows, the HPO
 objective and the classification metrics — and, through them, the populations
 the uniqueness weights are measured on — while the strategy gates on
-`entry_observable` alone.
+`entry_minute_traded` alone.
 
 Sample weight = **average uniqueness** [4, ch. 4]: the mean over the event's
 minutes of `1 / (concurrently open events)`, exact via prefix sums. It is the
@@ -356,11 +358,11 @@ without removing leakage. A classical embargo after the evaluated block
 [4, ch. 7] is not required in forward chaining: no training observation lies
 after the OOS block.
 
-**Scoring** mirrors the purge at the other boundary: a fold scores only the
-supervised rows that leave room for the experiment's maximum label horizon before
-its end (`entry_ts + maximum_label_horizon <= fold_end_ms`), decided at t₀ — the
-real `event_end_ts` is path-dependent, so admitting by it would let the future
-choose the scored population. The horizon is the experiment's and not the search
+**Scoring** mirrors the purge at the other boundary. A fold's **evaluation
+population** is its decisions that leave room for the experiment's maximum label
+horizon before its end (`entry_ts + maximum_label_horizon <= fold_end_ms`), decided
+at t₀ — the real `event_end_ts` is path-dependent, so admitting by it would let the
+future choose the population. The horizon is the experiment's and not the search
 state's (`METHODOLOGY-ML-ONE-EVALUATION-POPULATION-FOR-EVERY-SEARCH-STATE`): rows
 admitted by a search state's own label horizon would score it on another
 population than its parent, and a move of the label horizon would be judged in
@@ -369,11 +371,13 @@ part on which decisions it scores
 maximum is the longest label horizon the experiment's frozen grid admits — every
 token of the profile's label_horizon grid and the asset's own, which is the whole
 grid of an asset with no profile — so the chain and every search state of the
-experiment score one population, and a promoted search state scores in the chain
-what it scored in the search. The strategy's eligible entries are that population
-itself, whatever the search state; the model's metrics score its supervised subset,
-which each search state's own ambiguous labels narrow (§ 5) and on which nothing is
-selected. Its price is each fold's tail that the longest
+experiment share one evaluation population, and a promoted search state scores in
+the chain what it scored in the search. Two things are chosen inside it and differ
+between search states: the strategy's eligible entries, where the gate a search
+state's predictions open meets a traded entry minute (§ 9), and the fold's scoring
+rows, its supervised population (`sample_valid`), which a search state's own
+ambiguous labels narrow (§ 5) and on which nothing is selected. Its price is each
+fold's tail that the longest
 horizon leaves no room in: a decision there is labelled and predicted, and no
 search state scores it.
 
@@ -549,9 +553,8 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 how often each class occurs? — and is reported beside every search state and selects nothing: the
 hyper-parameter search maximises the validation path's CAGR (§ 7), and the serpentine search
 gates a move on each fold's CAGR and ranks it by the path's CAGR (§ 4). Metrics score the
-supervised subset of a fold that leaves room for the experiment's maximum label horizon before
-the fold's end — the same t₀-decidable rule that governs strategy eligibility (§ 9); predictions
-cover the whole OOS block.
+fold's scoring rows — the supervised population inside its evaluation population (§ 6), the
+population strategy eligibility is chosen from too (§ 9); predictions cover the whole OOS block.
 
 **Two importances per validation fold**, each of that fold's own booster, none
 of the final holdout's: `gain_importance`, XGBoost's total gain per column;
@@ -570,7 +573,7 @@ agreeing_trend_timeframe_count =
 enter = |edge| ≥ τ ∧ max(p_long, p_short) > p_neutral ∧ side ≠ 0
         ∧ side = sign(TREND_GATE_FEATURE_DEFINITION_<top timeframe>)
         ∧ agreeing_trend_timeframe_count ≥ MINIMUM_AGREEING_TREND_TIMEFRAMES
-        ∧ entry_observable
+        ∧ entry_minute_traded
 ```
 
 `TREND_GATE_FEATURE_DEFINITION` is
@@ -580,10 +583,12 @@ range — read by its feature id on every timeframe from the catalogue, in the
 feature set or not; the top timeframe is the coarsest of the hierarchy the
 contract lists. The **model decides the side; the top timeframe gates it**. One
 unit position at a time, new signals ignored while in a position, and a signal is
-eligible only where it leaves room for the experiment's maximum label horizon before
-the fold's end (`entry_ts + maximum_label_horizon <= fold_end_ms`) — decided at t₀,
-never by where the trade actually ended, and one test for every search state of the
-experiment (§ 6); the trade then walks its own label horizon.
+eligible only inside the fold's evaluation population — where it leaves room for the
+experiment's maximum label horizon before the fold's end
+(`entry_ts + maximum_label_horizon <= fold_end_ms`), decided at t₀ and never by where
+the trade actually ended, one population for every search state of the experiment
+(§ 6) — where the gate is open and the entry minute printed a trade; the trade then
+walks its own label horizon.
 
 **PnL — one formula.** The simulation applies USDT-perpetual PnL algebra to the
 canonical price path: a position held at a fixed
