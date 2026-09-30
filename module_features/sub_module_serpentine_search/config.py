@@ -53,14 +53,16 @@ SERPENTINE_SEARCH_AXIS_BARRIER = "barrier"
 SERPENTINE_SEARCH_AXIS_FEATURE_SET = "feature_set"
 SERPENTINE_SEARCH_AXIS_HPO = "hpo"
 # one round, search family by search family, in the order it runs them. The study family is last, so the turn that
-# reads its answer ends the round and no later turn has to recover a study; moving it is a new decision. Every search
-# family but the study generates its neighbourhood from the beam alone; the study is seeded anew each round.
+# reads its answer ends the round and no later turn has to recover a study; moving it is a new decision.
 # twice by extraction
 ROUND_SCHEDULE = ((SERPENTINE_SEARCH_AXIS_BARRIER, "trade"),
                   (SERPENTINE_SEARCH_AXIS_BARRIER, "label"),
                   (SERPENTINE_SEARCH_AXIS_FEATURE_SET, SERPENTINE_SEARCH_MOVE_FORWARD),
                   (SERPENTINE_SEARCH_AXIS_FEATURE_SET, SERPENTINE_SEARCH_MOVE_BACKWARD),
                   (SERPENTINE_SEARCH_AXIS_HPO, "study"))
+# the search families whose neighbourhood depends on the round, as their lines of ROUND_SCHEDULE: the study, seeded SEED
+# plus the round, draws new points from an unchanged beam, so a quiet round that ran one proves no fixed point
+ROUND_DEPENDENT_SEARCH_FAMILIES = ((SERPENTINE_SEARCH_AXIS_HPO, "study"),)
 
 # twice by extraction
 SELECTION_FOLD_MEASURE = "cagr"   # the measure the fold gate reads; the study's own gate reads the copy in ML

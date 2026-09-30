@@ -435,6 +435,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `search_family` = `trade` / `label` / `forward` / `backward` / `study`
   - Ui label: search family (the features terminal's path table)
   - Never: a stage, a step, a phase, a round; a family whose order a profile chooses; a table family — a different meaning
+- the round-dependent search families — the lines of `ROUND_SCHEDULE` whose neighbourhood depends on the round: the study, seeded `SEED` plus the round; a quiet round whose schedule ran one proves no fixed point
+  - Code: `ROUND_DEPENDENT_SEARCH_FAMILIES` in `module_features/sub_module_serpentine_search/config.py`; `fixed_point_provable` in `turn()`
+  - Never: a stochastic flag in the profile; a family named without its search axis; a test on the hpo search axis in its place
 - a search family's pass — the search states one search family offers, scored in one call of the evaluator; the unit the boundary between the serpentine search and the evaluator carries
   - Code: `score_results()`, `hpo_results()` in `module_ml/score.py`
   - Artifact key: `search_states` of a request, `results` of a response

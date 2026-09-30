@@ -412,6 +412,11 @@ def turn(ticker: str) -> None:
         - collections.Counter(row["search_axis"] for row in state_evaluations
                               if row["search_axis"] and row["round"] <= search_progress["round_count"]))
     start = start_search_state(profile, columns, barriers, best, timeframes)
+    # a quiet round proves a fixed point only where no search family the profile runs draws its neighbourhood anew
+    # each round
+    fixed_point_provable = not any((search_axis, search_family) in config.ROUND_DEPENDENT_SEARCH_FAMILIES
+                                   for search_axis, search_family in config.ROUND_SCHEDULE
+                                   if search_axis in profile["search_axes"])
 
     while True:
         write_search_progress(ticker, search_progress, state_evaluations)
@@ -524,13 +529,10 @@ def turn(ticker: str) -> None:
         search_progress["beam"] = list(beam)
         search_progress["champion_state_evaluation_index"] = beam[0]
         search_progress["round_count"] = round_number
-        # a quiet round proves a fixed point only where every search family of the round draws its neighbourhood from
-        # the beam alone — the study is seeded anew each round, so with it a quiet round is one that moved nothing.
-        # The proof comes first: a fixed point proven in the budget's last round is a converged search
+        # the proof comes first: a fixed point proven in the budget's last round is a converged search
         search_progress["beam_changed"] = beam != round_start_beam
         search_progress["search_outcome"] = (
-            "converged" if not search_progress["beam_changed"]
-            and config.SERPENTINE_SEARCH_AXIS_HPO not in profile["search_axes"]
+            "converged" if not search_progress["beam_changed"] and fixed_point_provable
             else "stopped_by_budget" if round_number >= config.SERPENTINE_SEARCH_ROUND_BUDGET
             else None)
 

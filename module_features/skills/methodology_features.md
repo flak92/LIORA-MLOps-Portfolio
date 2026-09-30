@@ -369,11 +369,13 @@ search family of the schedule the profile runs draws its neighbourhood determini
 beam: the barrier and feature-set search families offer an unchanged beam the same search states and
 receive the same answers, so another round would repeat this one. The study family does not — its
 study is seeded `SEED` plus the round, so the next round draws new points from the same beam — and a
-quiet round with the hpo search axis among the profile's `search_axes` is a round that moved nothing,
-and no more. The search therefore ends one of two ways, and `search_outcome` records which:
-`converged` after a quiet round whose search families are all deterministic, and `stopped_by_budget`
-after `SERPENTINE_SEARCH_ROUND_BUDGET` rounds without that proof; it is `null` while neither holds,
-and a fixed point proven in the budget's last round is convergence
+quiet round whose schedule ran it is a round that moved nothing, and no more.
+`ROUND_DEPENDENT_SEARCH_FAMILIES` names such search families as their lines of `ROUND_SCHEDULE`, the
+study alone today, and `turn()` asks whether the schedule the profile runs holds one. The search
+therefore ends one of two ways, and `search_outcome` records which: `converged` after a quiet round
+whose search families are all deterministic, and `stopped_by_budget` after
+`SERPENTINE_SEARCH_ROUND_BUDGET` rounds without that proof; it is `null` while neither holds, and a
+fixed point proven in the budget's last round is convergence
 (`SERPENTINE-SEARCH-A-SEARCH-ENDS-AT-A-PROVEN-FIXED-POINT-OR-ITS-BUDGET`). The budget is one of the
 search's inputs, so a search under another budget is another experiment, and the proposal waits for
 the outcome: a proposal read while the search runs would let the round a hand happened to read it at
