@@ -177,7 +177,9 @@ def _state_rows(ticker: str, profile: dict | None, search: dict | None,
              {"parameter": "selection hypotheses by search axis",
               "value": " ".join(f"{search_axis} {count}"
                                 for search_axis, count in sorted(by_search_axis.items())) or "—"},
-             {"parameter": "converged", "value": "yes" if search["search_converged"] else "no"},
+             {"parameter": "outcome", "value": (search["search_outcome"] or "in progress").replace("_", " ")},
+             {"parameter": "beam changed in the last round",
+              "value": {None: "—", True: "yes", False: "no"}[search["beam_changed"]]},
              {"parameter": "champion", "value": search["champion_state_evaluation_index"] or "—"},
              {"parameter": "proposals", "value": len(search["proposals"])}]
     return rows

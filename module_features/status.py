@@ -100,10 +100,10 @@ def proposal_block(proposal: dict, state_evaluation: dict, active_columns_by_tim
 
 def serpentine_search_block(ticker: str) -> dict | None:
     """The serpentine search as it last wrote itself, and whether its inputs are still the asset's — a promotion, a
-    retuning, a catalogue change, an edited profile or a changed beam width makes a recorded serpentine search describe
-    a search state that has gone; None while the asset has no progress file, and false rather than an error while it
-    has no profile. The parameters and the contract are read the way a turn reads them, and a progress file is written
-    only by a turn that read both."""
+    retuning, a catalogue change, an edited profile or a changed beam width or round budget makes a recorded serpentine
+    search describe a search state that has gone; None while the asset has no progress file, and false rather than an
+    error while it has no profile. The parameters and the contract are read the way a turn reads them, and a progress
+    file is written only by a turn that read both."""
     path = serpentine_search_config.serpentine_search_json(ticker)
     if not path.exists():
         return None
@@ -122,7 +122,8 @@ def serpentine_search_block(ticker: str) -> dict | None:
         "state_evaluation_count": len(state_evaluations),
         "selection_hypothesis_count": search["selection_hypothesis_count"],
         "round_count": search["round_count"],
-        "search_converged": search["search_converged"],
+        "beam_changed": search["beam_changed"],
+        "search_outcome": search["search_outcome"],
         "inputs_current": inputs_current,
         # a serpentine search whose inputs have gone describes another experiment, and its proposals are numbers of
         # that one: the page shows none of them, and the snapshot publishes none either

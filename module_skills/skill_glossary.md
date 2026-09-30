@@ -487,11 +487,20 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: — (a turn's progress line prints them; no page shows a move)
   - Never: add / drop, greedy, step; a ceiling or a floor on the count of columns
   - External vocabulary: stepwise feature selection (forward / backward)
-- the convergence — a round in which no search family of the executed schedule changed the beam, after which the serpentine search is over: the end of its own schedule and gate, not an optimum
-  - Code: `search_converged`
-  - Artifact key: `search_converged`
-  - Ui label: converged
-  - Never: done, finished, stopped; optimal, without saying in what
+- the search outcome — how a serpentine search ended, `null` while it runs: converged, a quiet round of a schedule whose every search family is deterministic having proved a fixed point of its schedule and gate, or stopped by its budget, the round budget spent without that proof; a proof in the budget's last round is convergence
+  - Code: `search_outcome`
+  - Artifact key: `search_outcome` = `converged` / `stopped_by_budget` / `null`
+  - Ui label: converged / stopped by budget / in progress
+  - Never: done, finished, stopped, over; converged for a quiet round alone; optimal, without saying in what
+- a quiet round — a round that leaves the beam it started from: `beam_changed` false, a fixed point where every search family of the round is deterministic and otherwise a round that moved nothing
+  - Code: `beam_changed`
+  - Artifact key: `beam_changed`
+  - Ui label: beam changed in the last round (the features terminal); its last round changing / leaving the beam (the page)
+  - Never: a converged round, convergence; `round_accepted`
+- the round budget — the rounds a serpentine search may run before it stops by its budget, one of its inputs
+  - Code: `SERPENTINE_SEARCH_ROUND_BUDGET` (a CONFIGURABLES record)
+  - Artifact key: `round_budget`, inside `inputs`
+  - Never: max rounds, an iteration limit; a stop a hand or a reader applies mid-search
 - the promotion — a hand's copy of one proposal's whole search state — its columns, its barrier geometry and its hyper-parameter point — into the asset's own, followed by its ML chain, whose study starts from that point, so the point it keeps is worth at least the proposal's path CAGR; the same proposal twice changes nothing
   - Code: `module_features/sub_module_serpentine_search/promote.py`, `make features-serpentine-search-promote ASSET=<TICKER>`
   - Artifact key: `<TICKER>_feature_set.json` with `columns_by_timeframe`, `<TICKER>_barriers.json` with the four of `BARRIER_COORDINATE_NAMES` and `<TICKER>_hyperparameter_point.json` with `best_params`, and nothing else
@@ -520,8 +529,8 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: k95; a table of k by N; a margin per move, per family or per ticker
 - the inputs of the serpentine search — what it was run under, recorded in its progress and compared by equality on the next turn: equal, it resumes; different, it starts again
   - Code: `build_search_inputs()`, `inputs`
-  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`), `seed`, `warmup_top_timeframe_bars`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
-  - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's state evaluations under another's rules
+  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`), `seed`, `warmup_top_timeframe_bars`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`), `round_budget`
+  - Never: fingerprint, hash, checksum; a selection or a round budget left out of it, which would resume one experiment's state evaluations under another's rules
 - the evaluation contract — the records of `module_ml` that name the experiment's identity, by name, and the experiment's maximum label horizon, as every answer of `ml-score` carries them: the serpentine search records the first answer's and starts afresh when an answer carries another
   - Code: `evaluation_contract()` in `module_ml/score.py`; `experiment_identity` of a CONFIGURABLES record
   - Artifact key: `evaluation_contract` of `<TICKER>_score_response.json` and of `<TICKER>_serpentine_search.json`
@@ -533,7 +542,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - current inputs — a recorded serpentine search's inputs that are still the asset's own
   - Code: `serpentine_search_block()` in `module_features/status.py`
   - Artifact key: `inputs_current`
-  - Ui label: the note *the serpentine search predates the asset's search state, its profile or its parameters*, in place of PROPOSALS and in the Features tab's table
+  - Ui label: the note *the serpentine search predates the asset's search state, its profile, its parameters or a record of the search*, in place of PROPOSALS and in the Features tab's table
   - Never: stale, dirty, outdated; a guard that refuses the promotion
 - the trial objective — the CAGR of the validation path at the threshold the selection rule picks; none for a pruned trial
   - Code: `sweep_selection()`, the return of `objective()` inside `build_objective()` in `module_ml/hpo.py`, logged per trial by `log_trials()` under `TRIAL_METRIC_KEY`
@@ -680,7 +689,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`
   - Holds: which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads
 - the feature layer's snapshot
-  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `state_evaluation_count`, `selection_hypothesis_count`, `round_count`, `search_converged`, `inputs_current`, `proposals`)
+  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `state_evaluation_count`, `selection_hypothesis_count`, `round_count`, `beam_changed`, `search_outcome`, `inputs_current`, `proposals`)
   - Holds: the catalogue as the register presents it, the one run-state fact the feature layer has per asset — the rows of its catalogue partitions, the last line of the register box — and the serpentine search as it last wrote itself; written by `module_features/status.py`
 - the catalogue block — of `features_status.json`
   - Artifact key: `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range`, `historical_aliases` —, `operators`, `normaliser`, `range`, `tier`, `historical_aliases`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`)
@@ -1056,7 +1065,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: what the search states of one request are worth, in the order the request named them; `candidate` a state evaluation or `null`, and `null` is an answer; untracked
 - `<TICKER>_serpentine_search.json`
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_json()`
-  - Holds: `inputs`, `evaluation_contract`, `beam`, `champion_state_evaluation_index`, `round_count`, `search_converged`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
+  - Holds: `inputs`, `evaluation_contract`, `beam`, `champion_state_evaluation_index`, `round_count`, `beam_changed`, `search_outcome`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
 - `<TICKER>_serpentine_search_profile.json`
   - Code: a hand, in the file or through the features terminal's draft; `serpentine_search_profile_json()`
   - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `search_axes` (a subset of `SERPENTINE_SEARCH_AXES`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration search) — what a hand asks the serpentine search to look at, its label_horizon grid read by the chain too for the maximum label horizon; drafted, never derived, and tracked

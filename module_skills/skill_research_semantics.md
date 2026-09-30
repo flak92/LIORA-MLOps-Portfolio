@@ -96,3 +96,8 @@ Every research name says what kind of object it denotes — a point in time, an 
   - Scope: `module_ml/*.py`, `module_features/sub_module_serpentine_search/**/*.py`
   - Expected: `entry_ts + maximum_label_horizon <= fold_end` for every search state of the experiment and for the chain that certifies one, `maximum_label_horizon` the longest label horizon the experiment's frozen grid admits; the label and the trade's exit still walked with the search state's own `label_horizon`.
   - Exception: none
+- `RESEARCH-SEMANTICS-A-QUIET-ROUND-IS-NOT-CONVERGENCE`
+  - Description: A round that leaves the beam where it was is a quiet round and nothing more: a search has converged only when a quiet round proves a fixed point — every search family it runs draws its neighbourhood deterministically from the beam, so another round would ask and be answered the same — and a search that spends its round budget without that proof has stopped by its budget; a proof in the budget's last round is convergence.
+  - Scope: `module_features/sub_module_serpentine_search/**/*.py`, `module_features/status.py`, `module_features/sub_module_terminal/*.py`, `module_monitoring/features.js`
+  - Expected: `beam_changed` for what a round did to the beam; `search_outcome` `converged` for a proven fixed point, `stopped_by_budget` for a spent budget without one, `null` for neither; a search family whose neighbourhood depends on the round — a study seeded anew each round — proving no fixed point, so a search that runs one ends by its budget; the proof tested before the budget.
+  - Exception: none

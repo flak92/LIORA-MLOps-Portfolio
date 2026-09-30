@@ -12,6 +12,12 @@ function serpentineSearch(ticker) {
   return entry ? entry.serpentine_search : null;
 }
 
+/* how a serpentine search ended — converged at a proven fixed point or stopped by its round budget — and in progress
+   while it has no outcome */
+function formatSearchOutcome(search) {
+  return search.search_outcome === null ? "in progress" : search.search_outcome.replace(/_/g, " ");
+}
+
 /* what the serpentine search found: the proposal with what it adds and removes against the active search state, the
    validation skill it was chosen on and what the strategy would do with it; the delta against the asset's mean
    validation skill is page arithmetic, like the mean validation skill itself */
@@ -32,8 +38,8 @@ function buildProposalsFrame(asset) {
   /* a recorded serpentine search conditioned on another set or other parameters compares against a baseline that
      has gone, so the frame states that and shows nothing rather than a delta against the wrong set */
   if (!search.inputs_current) {
-    frame.body.appendChild(buildFootnote("the serpentine search predates the asset's search state, its profile or its parameters — run "
-      + "`make features-serpentine-search ASSET=" + asset.ticker + "`"));
+    frame.body.appendChild(buildFootnote("the serpentine search predates the asset's search state, its profile, its parameters or a "
+      + "record of the search — run `make features-serpentine-search ASSET=" + asset.ticker + "`"));
     return frame.frame;
   }
   const timeframes = FEATURES_STATUS.catalogue.timeframes.map((entry) => entry.timeframe);
@@ -41,7 +47,8 @@ function buildProposalsFrame(asset) {
   const meanValidationSkill = mean(folds.map((fold) => asset.validation[fold].relative_logloss_skill));
   frame.body.appendChild(buildKeyValueBox([
     ["serpentine search", search.state_evaluation_count + " state evaluations in " + search.round_count + " rounds · "
-      + search.selection_hypothesis_count + " selection hypotheses · " + (search.search_converged ? "converged" : "not converged")
+      + search.selection_hypothesis_count + " selection hypotheses · " + formatSearchOutcome(search)
+      + (search.beam_changed === null ? "" : ", its last round " + (search.beam_changed ? "changing" : "leaving") + " the beam")
       + " · the active search state's mean validation skill " + formatPercent(meanValidationSkill, 2)],
   ]));
   frame.body.appendChild(buildTable(
@@ -82,7 +89,7 @@ function renderSerpentineSearch(mlStatus) {
   });
   const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
   renderTable("serpentine-search",
-    ["asset", "state evaluations", "selection hypotheses", "rounds", "converged", "proposal &Delta; skill"],
+    ["asset", "state evaluations", "selection hypotheses", "rounds", "outcome", "proposal &Delta; skill"],
     mlStatus.assets.map((asset, i) => {
       const search = serpentineSearch(asset.ticker);
       const delta = deltas[i];
@@ -91,14 +98,15 @@ function renderSerpentineSearch(mlStatus) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
         deltaCell.appendChild(document.createTextNode((delta >= 0 ? "+" : "") + (100 * delta).toFixed(2) + " pp"));
       } else if (search === null) deltaCell.textContent = "no serpentine search yet";
-      else if (!search.inputs_current) deltaCell.textContent = "the serpentine search predates the asset's search state, its profile or its parameters";
+      else if (!search.inputs_current) deltaCell.textContent = "the serpentine search predates the asset's search state, its profile, its parameters or a record of the search";
+      else if (search.search_outcome === null) deltaCell.textContent = "no proposal before the search's outcome";
       else deltaCell.textContent = "no proposal";
       return [
         asset.ticker,
         search === null ? "-" : formatCount(search.state_evaluation_count),
         search === null ? "-" : formatCount(search.selection_hypothesis_count),
         search === null ? "-" : formatCount(search.round_count),
-        search === null ? "-" : (search.search_converged ? "yes" : "no"),
+        search === null ? "-" : formatSearchOutcome(search),
         deltaCell,
       ];
     }));

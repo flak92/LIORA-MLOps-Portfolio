@@ -71,9 +71,10 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   `make features-catalogue ASSET=<TICKER>`.
 - **recorded search** — writes nothing and ends on its last table: the state table, `parameter | value` — the asset,
   the profile, the coordinates searched, the search axes, the state evaluations and the rounds, the selection
-  hypotheses and their terms by search axis as the search counted them at a round boundary, whether it converged,
-  the champion and the proposal count — then the path table and the proposals table, or the lines `no accepted
-  move` and `no proposal`. Which state evaluations the path and the proposals hold comes from the search's progress;
+  hypotheses and their terms by search axis as the search counted them at a round boundary, its outcome
+  (`converged`, `stopped by budget` or `in progress`) and whether its last round changed the beam, the champion and
+  the proposal count — then the path table and the proposals table, or the lines `no accepted move` and
+  `no proposal`. Which state evaluations the path and the proposals hold comes from the search's progress;
   each one's numbers from its line of the ledger; the coordinates a proposal moves are that line against the asset's
   own search state the search recorded in its inputs. The word is
   *recorded search* and not *status*, which is a stage's.

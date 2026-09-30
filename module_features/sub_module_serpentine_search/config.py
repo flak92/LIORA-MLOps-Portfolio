@@ -19,6 +19,10 @@ CONFIGURABLES = (
      "meaning": "the branches a search family keeps; 1 is one champion moved one move at a time", "tui": False,
      "experiment_identity": True, "requires_rerun": "features-serpentine-search",
      "risk": "another experiment: the recorded serpentine search starts again"},
+    {"name": "SERPENTINE_SEARCH_ROUND_BUDGET", "value": 5, "class": "DEFAULT", "unit": "rounds",
+     "meaning": "the rounds a search may run; one that proves no fixed point before its last ends stopped by its "
+                "budget", "tui": False, "experiment_identity": True, "requires_rerun": "features-serpentine-search",
+     "risk": "another experiment: the recorded serpentine search starts again"},
     # twice by extraction
     {"name": "GRID_BY_COORDINATE_DEFAULT", "class": "SPECTRUM", "unit": "grid points per barrier coordinate",
      "value": {"label_barrier_true_range_multiplier": [1.75, 2.0, 2.25],
@@ -39,6 +43,7 @@ CONFIGURABLES = (
 VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURABLES}
 
 SERPENTINE_SEARCH_BEAM_WIDTH = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_BEAM_WIDTH"]
+SERPENTINE_SEARCH_ROUND_BUDGET = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_ROUND_BUDGET"]
 
 # ---- what the search is made of ---------------------------------------------------------------------------
 SERPENTINE_SEARCH_MOVE_FORWARD = "forward"     # a move that grows the search state
@@ -48,7 +53,8 @@ SERPENTINE_SEARCH_AXIS_BARRIER = "barrier"
 SERPENTINE_SEARCH_AXIS_FEATURE_SET = "feature_set"
 SERPENTINE_SEARCH_AXIS_HPO = "hpo"
 # one round, search family by search family, in the order it runs them. The study family is last, so the turn that
-# reads its answer ends the round and no later turn has to recover a study; moving it is a new decision.
+# reads its answer ends the round and no later turn has to recover a study; moving it is a new decision. Every search
+# family but the study generates its neighbourhood from the beam alone; the study is seeded anew each round.
 # twice by extraction
 ROUND_SCHEDULE = ((SERPENTINE_SEARCH_AXIS_BARRIER, "trade"),
                   (SERPENTINE_SEARCH_AXIS_BARRIER, "label"),

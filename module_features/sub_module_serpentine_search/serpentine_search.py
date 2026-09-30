@@ -173,17 +173,19 @@ def path_entry(round_number: int, search_axis: str, search_family: str, move: st
 
 
 def proposals_block(state_evaluations: list[dict], champion_state_evaluation_index: int,
-                    noise_sigma: float | None, selection_hypothesis_count: int) -> list[dict]:
+                    noise_sigma: float | None, selection_hypothesis_count: int,
+                    search_outcome: str | None) -> list[dict]:
     """The search state a hand may promote: the champion alone, and only when it is not the search state the search
     started from and beats it by more than the noise of the whole search — k(N) times the asset's noise sigma, N the
     selection hypotheses the search tested, because the champion is the best of all of them. Its threshold
     constraint and its folds need no test here: every member of the beam cleared the gate against its parent, so the
     champion meets the constraint and stands at or above the start on every fold. A calibration search, whose
-    profile has no sigma yet, proposes nothing.
+    profile has no sigma yet, proposes nothing, and neither does a search with no outcome yet: a proposal published
+    mid-search would let the round a hand happened to read it at choose the search state — an optional stop.
 
     A proposal is its rank and the index of its state evaluation, and nothing else: the columns, the geometry and
     every number are the ledger's line, so each stands in one file and a reader joins it by the index."""
-    if noise_sigma is None or champion_state_evaluation_index == 1:
+    if search_outcome is None or noise_sigma is None or champion_state_evaluation_index == 1:
         return []
     gain = (search_state_objective(state_evaluations[champion_state_evaluation_index - 1])[0]
             - search_state_objective(state_evaluations[0])[0])
@@ -204,17 +206,17 @@ def write_search_progress(ticker: str, search_progress: dict, state_evaluations:
     search_progress["proposals"] = proposals_block(
         state_evaluations, search_progress["champion_state_evaluation_index"] or 1,
         search_progress["inputs"]["profile"]["path_cagr_noise_standard_deviation"],
-        search_progress["selection_hypothesis_count"])
+        search_progress["selection_hypothesis_count"], search_progress["search_outcome"])
     dataset.write_json(config.serpentine_search_json(ticker), search_progress)
 
 
 def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, active_barriers: dict,
                         cat: dict, profile: dict) -> dict:
     """What a search is conditioned on: the frozen research window, the seed and the warm-up, the parameters and
-    the barrier geometry it starts from, the catalogue it draws from, the profile a hand drafted and the selection
-    the experiment froze — recorded in the search's progress and compared by equality on a rerun. The selection is
-    the beam width and the fold measure, and it belongs here because a rerun under another of either is another
-    experiment: it starts its own state evaluations instead of resuming these."""
+    the barrier geometry it starts from, the catalogue it draws from, the profile a hand drafted, the selection
+    the experiment froze and its round budget — recorded in the search's progress and compared by equality on a
+    rerun. The selection is the beam width and the fold measure, and it and the budget belong here because a rerun
+    under another of any is another experiment: it starts its own state evaluations instead of resuming these."""
     return {
         "research_window": {"start_utc": features_config.RESEARCH_START_UTC,
                             "end_utc": features_config.RESEARCH_END_UTC},
@@ -227,6 +229,7 @@ def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, ac
         "active_barriers": {name: active_barriers[name] for name in config.BARRIER_COORDINATE_NAMES},
         "profile": profile,
         "selection": {"beam_width": config.SERPENTINE_SEARCH_BEAM_WIDTH, "fold_measure": config.SELECTION_FOLD_MEASURE},
+        "round_budget": config.SERPENTINE_SEARCH_ROUND_BUDGET,
     }
 
 
@@ -388,8 +391,8 @@ def turn(ticker: str) -> None:
             or response is not None
             and search_progress["evaluation_contract"] not in (None, response["evaluation_contract"])):
         search_progress = {"inputs": inputs, "evaluation_contract": None, "beam": [],
-                           "champion_state_evaluation_index": None, "round_count": 0, "search_converged": False,
-                           "path": [], "selection_hypothesis_count_by_search_axis": {},
+                           "champion_state_evaluation_index": None, "round_count": 0, "beam_changed": None,
+                           "search_outcome": None, "path": [], "selection_hypothesis_count_by_search_axis": {},
                            "selection_hypothesis_count": 0}
         ledger.unlink(missing_ok=True)
         request.unlink(missing_ok=True)
@@ -413,7 +416,7 @@ def turn(ticker: str) -> None:
 
     while True:
         write_search_progress(ticker, search_progress, state_evaluations)
-        if search_progress["search_converged"]:
+        if search_progress["search_outcome"] is not None:
             # an ended search stays ended only under the contract it was scored under: a turn that read no answer
             # asks one question naming no search state — the probe — and the answer's contract decides
             if not contract_confirmed:
@@ -434,7 +437,7 @@ def turn(ticker: str) -> None:
         # state evaluation 1 is the search state the search started from — the champion until a search family keeps a
         # move
         beam = search_progress["beam"] or [search_progress["champion_state_evaluation_index"] or 1]
-        round_accepted, round_path, round_drawn = False, [], collections.Counter()
+        round_start_beam, round_path, round_drawn = beam, [], collections.Counter()
         for search_axis, search_family in config.ROUND_SCHEDULE:
             if search_axis not in profile["search_axes"]:
                 continue
@@ -508,7 +511,6 @@ def turn(ticker: str) -> None:
             previous_beam = beam
             beam = top_beam(children + beam, state_evaluations, timeframes)
             if beam != previous_beam:
-                round_accepted = True
                 # every edge of one search family walks one direction, so the family's direction is its first edge's
                 round_path.append(path_entry(round_number, search_axis, search_family, reached[0][3], beam))
         # the counters, the beam and the champion move together at the round's end
@@ -523,12 +525,21 @@ def turn(ticker: str) -> None:
         search_progress["beam"] = list(beam)
         search_progress["champion_state_evaluation_index"] = beam[0]
         search_progress["round_count"] = round_number
-        search_progress["search_converged"] = not round_accepted
+        # a quiet round proves a fixed point only where every search family of the round draws its neighbourhood from
+        # the beam alone — the study is seeded anew each round, so with it a quiet round is one that moved nothing.
+        # The proof comes first: a fixed point proven in the budget's last round is a converged search
+        search_progress["beam_changed"] = beam != round_start_beam
+        search_progress["search_outcome"] = (
+            "converged" if not search_progress["beam_changed"]
+            and config.SERPENTINE_SEARCH_AXIS_HPO not in profile["search_axes"]
+            else "stopped_by_budget" if round_number >= config.SERPENTINE_SEARCH_ROUND_BUDGET
+            else None)
 
     request.unlink(missing_ok=True)
     response_path.unlink(missing_ok=True)
     champion_row = state_evaluations[search_progress["champion_state_evaluation_index"] - 1]
-    print(f"{ticker} {search_progress_path.name}: converged after {search_progress['round_count']} rounds, "
+    print(f"{ticker} {search_progress_path.name}: {search_progress['search_outcome'].replace('_', ' ')} after "
+          f"{search_progress['round_count']} rounds, "
           f"{len(state_evaluations)} state evaluations and "
           f"{search_progress['selection_hypothesis_count']} selection hypotheses, "
           f"champion {objective_line(champion_row)} "

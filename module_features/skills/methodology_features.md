@@ -351,13 +351,28 @@ it had, and the leader of the beam — the champion, moved once at the end of th
 worse than it did: the best ranked result never gets worse
 (`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`).
 
-`search_converged = not round_accepted` (`turn()`): the search stops after a round in which no
-search family of the executed schedule changed the beam. Another round would offer the barrier and
-feature-set search families the same search states and receive the same answers, while its studies
-would draw new points, so the end is the end of this schedule and gate, not a fixed point. That is
-not a global optimum, and not a local optimum of the objective alone: a neighbour that raised the
-path's CAGR but not every fold's was offered and refused, and a child that cleared the gate but ranked
-below a full beam was not kept (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
+`beam_changed` (`turn()`) says whether a round left another beam than the one it started from; a
+round that did not is a quiet round, and a quiet round is not yet convergence
+(`RESEARCH-SEMANTICS-A-QUIET-ROUND-IS-NOT-CONVERGENCE`). It proves a fixed point only where every
+search family of the schedule the profile runs draws its neighbourhood deterministically from the
+beam: the barrier and feature-set search families offer an unchanged beam the same search states and
+receive the same answers, so another round would repeat this one. The study family does not — its
+study is seeded `SEED` plus the round, so the next round draws new points from the same beam — and a
+quiet round with the hpo search axis among the profile's `search_axes` is a round that moved nothing,
+and no more. The search therefore ends one of two ways, and `search_outcome` records which:
+`converged` after a quiet round whose search families are all deterministic, and `stopped_by_budget`
+after `SERPENTINE_SEARCH_ROUND_BUDGET` rounds without that proof; it is `null` while neither holds,
+and a fixed point proven in the budget's last round is convergence
+(`SERPENTINE-SEARCH-A-SEARCH-ENDS-AT-A-PROVEN-FIXED-POINT-OR-ITS-BUDGET`). The budget is one of the
+search's inputs, so a search under another budget is another experiment, and the proposal waits for
+the outcome: a proposal read while the search runs would let the round a hand happened to read it at
+choose the search state — an optional stop.
+
+A converged search stands at a fixed point of this schedule and gate, which is not a global optimum,
+and not a local optimum of the objective alone: a neighbour that raised the path's CAGR but not every
+fold's was offered and refused, and a child that cleared the gate but ranked below a full beam was not
+kept. A search stopped by its budget is not even at that: its last round may have moved the beam, and
+another round's studies would have drawn more.
 
 ### 4. The thresholds
 

@@ -7,10 +7,11 @@
     "8h": 44232
    },
    "serpentine_search": {
-    "inputs_current": true,
+    "beam_changed": false,
+    "inputs_current": false,
     "proposals": [],
     "round_count": 1,
-    "search_converged": true,
+    "search_outcome": null,
     "selection_hypothesis_count": 38,
     "state_evaluation_count": 31
    },
@@ -1143,6 +1144,17 @@
    "tui": false,
    "unit": "search states",
    "value": 3
+  },
+  {
+   "class": "DEFAULT",
+   "experiment_identity": true,
+   "meaning": "the rounds a search may run; one that proves no fixed point before its last ends stopped by its budget",
+   "name": "SERPENTINE_SEARCH_ROUND_BUDGET",
+   "requires_rerun": "features-serpentine-search",
+   "risk": "another experiment: the recorded serpentine search starts again",
+   "tui": false,
+   "unit": "rounds",
+   "value": 5
   },
   {
    "class": "SPECTRUM",

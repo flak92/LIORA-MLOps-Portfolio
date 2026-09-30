@@ -2,6 +2,7 @@
  "beam": [
   1
  ],
+ "beam_changed": false,
  "champion_state_evaluation_index": 1,
  "evaluation_contract": {
   "ENTRY_EDGE_THRESHOLD_GRID": [
@@ -319,7 +320,7 @@
  "path": [],
  "proposals": [],
  "round_count": 1,
- "search_converged": true,
+ "search_outcome": null,
  "selection_hypothesis_count": 38,
  "selection_hypothesis_count_by_search_axis": {
   "barrier": 8,

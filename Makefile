@@ -128,7 +128,7 @@ ml-score:        ## score the search states of <TICKER>_score_request.json -> <T
 	$(call each,$(JOBS),$(call serpentine_score,{}))
 # the loop over them, per asset: a turn, then — while the turn has left a question — ml-score and a turn again, each step
 # a one-off container of its module's runner; the question is the one file the loop tests. Never inside all or all-record
-features-serpentine-search: ## the serpentine search per asset: a turn, then ml-score and a turn while the turn leaves a question; resumes where the files stand
+features-serpentine-search: ## the serpentine search per asset: a turn, then ml-score and a turn while the turn leaves a question, until the search converges or its round budget ends it; resumes where the files stand
 	$(call each,$(JOBS),sh -c '$(call serpentine_turn,{}) && while [ -e "$(STORE_ASSETS_ARTIFACTS_DIR)/ticker={}/{}_score_request.json" ]; do $(call serpentine_score,{}) && $(call serpentine_turn,{}) || exit $$?; done')
 # the detached twin: the same search in a tmux session that outlives the terminal, started in this checkout, one asset per
 # session; the session ends with the search — `<TICKER>_serpentine_search.json` and the page are the record. The session
