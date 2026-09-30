@@ -28,24 +28,16 @@ narrow terminal:
 | `model` | `yes` / `no` — `<TICKER>_model_evaluation.json` | second |
 | `strategy` | `yes` / `no` — `<TICKER>_strategy_evaluation.json` | first |
 
-Then the menu, `gum choose` headed *action*: the targets `make help` lists that `MENU_TARGET_PATTERN` matches — the
-stages of the chain, `ml-all` and `ml-score` — in the Makefile's order, then `quit`; `ml-terminal` carries no `##`
-(`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`).
+Then the menu, the targets `make help` lists that `MENU_TARGET_PATTERN` matches
+(`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`), then the asset, the plan and the gate
+(`TUI-DESIGNER-A-PLAN-NAMES-WHAT-WILL-RUN`, `TUI-DESIGNER-A-GATE-IS-NOT-A-GUARD`). The terminal knows no order of the
+chain and no precondition of a stage: a stage started before the one it reads from fails in its own words, on the file
+it did not find. `ml-status` folds the whole basket whatever `ASSET` says.
 
 Every descriptor it reads is `module_ml/config.py`'s own, imported, that file being standard library: the contract it
 reads as JSON, every other file by its presence alone. It reads no snapshot — `ml_status.json` is only as fresh as the
 last `make ml-status` — and no file of the serpentine search, whose draft, reading and promotion are the features
 terminal's.
-
-## The actions
-
-After the menu, the asset form — the assets of `--tickers` as rows, one answered without asking — then the plan:
-`target`, the `purpose` its `##` carries and `ASSET`, the line `command  make <target> ASSET=<TICKER>`, and the gate
-`<target>?` with the target first and `cancel`. The target's own lines stay on the screen as they come, and the run
-ends on the `DONE` block or on the failure block carrying make's exit code. The terminal knows no order of the chain
-and no precondition of a stage: a stage started before the one it reads from fails in its own words, on the file it
-did not find, and those words stand above the block. `ml-status` folds the whole basket whatever `ASSET` says; the
-Makefile runs every stage in a one-off container of the `ml` runner.
 
 The failures it names itself: no terminal on standard input, no gum on `PATH`, no asset named, or a target that
 exited non-zero.
@@ -56,12 +48,8 @@ exited non-zero.
 |---|---|
 | `terminal.py` | the opening screen, the menu of targets, the asset, the plan and its gate; the only file that calls `make`; `--tickers` its one argument beside `-h`, `--help` |
 | `config.py` | `load_json()`, the reader `module_ml/dataset.py` cannot lend a host without duckdb and numpy; `OUTPUT_PLAIN` and `MENU_TARGET_PATTERN` |
-| `tui.py` | how a screen is drawn and an answer taken — one file with the four other terminals', the canon's among them |
+| `tui.py` | how a screen is drawn and an answer taken — one file with every other terminal's |
 
-It imports the standard library and its own package alone and runs on the host's `python3` with gum, in no container
-and no virtual environment. The catalogue it reads is a store file the feature layer wrote — the per-asset contract,
-crossing as a file and never as an import — so nothing of `module_features` is imported. What it shares with the other
-terminals, and the reader `dataset.py` cannot lend it, it carries: `load_json()`, `tui.py`, `OUTPUT_PLAIN`,
-`HELP_LINE_PATTERN` and the helpers `_option_rows()`, `_cancelled_exit_code()`, `_failure_exit_code()`, `_make()`,
-`_target_rows()`, `_present()`, `_write_target()` and `_tickers()`, each marked `# twice by extraction`, registered in
-`module_skills/skill_glossary.md` and changed on every side at once.
+It runs on the host's `python3` with gum and imports the standard library and its own package alone
+(`TUI-DESIGNER-ONE-TERMINAL-PER-MODULE`); the contract it reads is a store file the feature layer wrote, and what it
+shares with the other terminals is registered in `module_skills/skill_glossary.md` § Twice by extraction.

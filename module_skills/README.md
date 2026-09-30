@@ -4,7 +4,7 @@ Where every rule of the project is written down, and the canon's prose that is n
 `module_skills/skill_glossary.md` is rendered from `module_skills/skills_sheet.xlsx` by `make skills-sync` and never edited by
 hand; this file links to each, holds no rule of its own, and keeps what the rules leave out — the explanations, the
 worked examples and the mapping read forward — so nothing here can disagree with a rule. A rule is cited by its
-`rule_id`. *The repository shows the destination, not the road*.
+`rule_id`.
 
 Ownership decides location, and `AGENTS.md` § The default choice holds the rule: a module's own Skills live in that
 module's `skills/` or beside its sub-module, the Skills that cross modules live here, in `module_skills/` — the canon,
@@ -42,9 +42,7 @@ Orientation: `module_data/README_module_data.md`
 |---|---|
 | `module_data/skills/skill_candle_canonicalisation.md` | the one candle schema of the raw tree, validity, the primary-failover decision table, the complete grid and its forward fill, provenance, the one copy of the canonical series and the invariants of the data snapshot |
 
-Reference for a human, never sent by the crawler: `module_data/skills/methodology_data.md` — the venue endpoints, units
-and time, the raw tree, the decision table written out, the volume cases, the columns, the storage, the observations,
-and the limitations of acquisition and of the canonical series.
+Its method, for a human: `module_data/skills/methodology_data.md`.
 
 ## module_features
 
@@ -55,9 +53,7 @@ Orientation: `module_features/README_module_features.md`
 | `module_features/skills/skill_feature_taxonomy.md` | the timeframe register, the registers of series, indicators, operators and normalisers, the terms and feature definitions and the ids derived from them, the default set, the warm-up and the effective histories, and the two families and the contract the layer writes |
 | `module_features/sub_module_serpentine_search/skill_serpentine_search.md` | the serpentine search: the question and the answer, resume and reset, the tracked record, the key of a state, the gate, the beam, the convergence, the proposal with its noise margin, and the promotion a hand makes |
 
-Reference for a human, never sent by the crawler: `module_features/skills/methodology_features.md` — every catalogued
-feature definition, equation by equation, with its histories and citations, the feature id, and the serpentine
-search's objective, gate, margin and stopping.
+Its method, for a human: `module_features/skills/methodology_features.md`.
 
 ## module_ml
 
@@ -67,8 +63,7 @@ Orientation: `module_ml/README_module_ml.md`
 |---|---|
 | `module_ml/skills/skill_methodology_ml.md` | the research layer's rules: one canonical series read through closed bars, the entry a minute after the decision, the labels, the folds and their weights, the hyper-parameter search and its trials families, the entry edge threshold, the backtest and the artifacts |
 
-Reference for a human, never sent by the crawler: `module_ml/skills/methodology_ml.md` — the research layer equation by
-equation, with its citations.
+Its method, for a human: `module_ml/skills/methodology_ml.md`.
 
 ## module_monitoring
 
@@ -121,13 +116,6 @@ minute, hour or day slot: `1m` → `ss-01-hh-dd-MM`, `15m` → `ss-15-hh-dd-MM`,
 each token is written in its coarsest whole unit: `90m` would list before `1h`, and `36h` before `1d`
 (`SORTING-FILES-NAMING-STANDARD-TIMEFRAME-SLOTS`).
 
-The slots are for names with siblings of another granularity to sort against. The raw store has none — `raw_1m`
-is the one raw child of `store/` — so it keeps the compact token the code and the schema already speak, as every
-serialised name does: a family, a feature id and a key are contracts with the files on disk. A partition
-`timeframe=<timeframe>/` carries the compact token as its value, and the columns of a `catalogue` partition carry no
-timeframe at all, the partition already saying which; `feature_id()` adds it where no partition stands beside the
-name — a column of X, the key of an importance.
-
 A module's orientation carries the module in its name, `README_module_<name>.md`: detached from its folder — in a
 search result or a diff — a bare `README.md` no longer says which module it opens.
 
@@ -146,13 +134,6 @@ where am I — the header block and a prompt's header; what is there — the sta
 table, the plan, the changes; what am I choosing now — the prompt's header and the step shown `CURRENT`; what comes
 next — the `PENDING` steps and a gate's question; what exactly runs — the plan's `command` line, verbatim.
 
-What they decline follows from the same reading, and from a hand alone running a terminal, one action per run: Rich,
-Textual or curses, the host being the standard library and gum 2; `--json`, the snapshot or the artifact being the
-machine-readable state; `--no-input`, `--simple`, `--a11y`, `--no-color` or `--no-animation`, plain output following the
-environment and nothing animating; a spinner, a bar or a percentage, since a spinner hides the lines of what a
-terminal started, whose length is unknown until it ends; a pager, a second screen to leave before the decision; a
-coloured cell, which gum strips and the word already says; `--lang`, the tree speaking one language, British English.
-
 ## The Pre-AWS mapping
 
 LIORA is an academic, portfolio and research demonstration of an MLOps and quant-research architecture. It is not a
@@ -163,7 +144,7 @@ standard equivalents on AWS. This section reads the tree that way. *Read forward
 elsewhere, with nothing moved, and nothing of it is built. The rules are `module_skills/skill_pre_aws_solution.md` and
 `module_skills/skill_asset_containers.md`; this section restates none of them.
 
-The proof is the whole chain, run end to end on a very small basket: `BTC` today, and at most one to three more. A
+The proof is the whole chain, run end to end on a very small basket: one asset, `BTC`, and at most one to three more. A
 second asset proves the architecture, and the hundredth proves nothing more. When production realism and academic
 simplicity conflict, simplicity wins, as long as it leaves no boundary a move would have to redraw. Parquet families
 partitioned by asset, with DuckDB in memory, are trivial here, and later they are the same files on a durable volume.
@@ -368,20 +349,14 @@ machine and no SDK.
 
 ### What stays as it is, and why
 
-| current | problem | Pre-AWS direction | change now? |
-|---|---|---|---|
-| every status stage folds the basket the launcher names, once, in its module's runner | one object per basket, safe because it has one writer | written only by the one-off `basket` run, never fanned out; a per-asset object and a reader-side fold if the basket grows (`skill_per_asset_status.md`) | no — described |
-| `module_ml.status` writes the basket snapshot and each `<TICKER>_README.md` | two namespaces in one stage | the README is an asset artifact of an asset-scoped part, the snapshot a fold over completed assets | no — described |
-| the snapshots in `store/status/`, tracked | none | STORAGE of the three computational modules and the crawler, tracked so that a fresh clone opens on real numbers; answers `skill_status_prefix.md` | yes — done |
-| the root `Dockerfile` installs the pins and copies no code | the image is a dependency layer | the tree mount carries the code; *the image carries the code* stays elsewhere; answers `skill_image_contents.md` | yes — done |
-| `record.py` measures each stage from outside and rewrites `run_records/index.json` | no stage → artifact map anywhere | what a task scheduler records about a task; the stage order stays the Makefile's | yes — done |
-| a recorded run stops at the first stage that exits non-zero, keeping its record | the verdict is the exit codes | the judgement an execution record makes anywhere; a clause of `skill_stage_state_machine.md` | yes — done |
-| `module_monitoring/serve.py` serves three prefixes and answers 404 for everything else | one process serves the page's files and two stores | static objects behind a front once a reader outside the host appears (`skill_dashboard_front.md`) | no — described |
-| no callable asks "does this asset need a rebuild?" | the condition has no home; nothing is wrongly fused | compute stays unconditional (`PRE-AWS-SOLUTION-THE-REBUILD-CONDITION-STAYS-SEPARABLE`) | no — described |
-| `btc-all`, `btc-lifecycle` | a ticker in a target name | nothing depends on them; retired when the basket grows, as their sunset notes say | no — described |
-| the compose project is named `liora` in the file | none | one name every document can spell; two checkouts on one host share it, so run one at a time or set `COMPOSE_PROJECT_NAME` | yes — done |
-| the image is named `liora-1m-pipeline` | none | the project and what the tree is, with no ticker; two checkouts that build one tag share the last build | yes — done |
-| `hpo` names the stage and the file, `hyperparameter_search_result` the key | one term in two forms | a domain abbreviation, spelled out where a key has no file name beside it (`AGENTS.md` § Canonical vocabulary) | no — described |
+| current | problem | Pre-AWS direction |
+|---|---|---|
+| every status stage folds the basket the launcher names, once, in its module's runner | one object per basket, safe because it has one writer | written only by the one-off `basket` run, never fanned out; a per-asset object and a reader-side fold if the basket grows (`skill_per_asset_status.md`) |
+| `module_ml.status` writes the basket snapshot and each `<TICKER>_README.md` | two namespaces in one stage | the README is an asset artifact of an asset-scoped part, the snapshot a fold over completed assets |
+| `module_monitoring/serve.py` serves three prefixes and answers 404 for everything else | one process serves the page's files and two stores | static objects behind a front once a reader outside the host appears (`skill_dashboard_front.md`) |
+| no callable asks "does this asset need a rebuild?" | the condition has no home; nothing is wrongly fused | compute stays unconditional (`PRE-AWS-SOLUTION-THE-REBUILD-CONDITION-STAYS-SEPARABLE`) |
+| `btc-all`, `btc-lifecycle` | a ticker in a target name | nothing depends on them; retired when the basket grows, as their sunset notes say |
+| `hpo` names the stage and the file, `hyperparameter_search_result` the key | one term in two forms | a domain abbreviation, spelled out where a key has no file name beside it (`AGENTS.md` § Canonical vocabulary) |
 
 ### One day, told forward
 

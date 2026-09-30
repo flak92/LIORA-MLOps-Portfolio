@@ -41,7 +41,7 @@ The kinds of file and folder this repository holds and what each is for: which a
   - Expected: What the vendor receives, in what order, and the two forms of its answer — `OK`, or one line per departure, `rule_id | file:line | problem | correction` — and nothing else.
   - Exception: none
 - `FILES-AND-FOLDERS-GENERATED-BY-THE-CRAWL`
-  - Description: `store/status/reports_after_crawled_files/` and `store/status/skills_status.json` are written by the crawler's own writer alone, `status.py`, and reset by the crawl; neither is written by hand nor a row of the files matrix.
+  - Description: `store/status/reports_after_crawled_files/` and `store/status/skills_status.json` are written by the crawler alone — the snapshot by `status.py`, a report by `crawl.py`, each whole through `write_text()` of `module_skills/sync.py` — and reset by the crawl; neither is written by hand nor a row of the files matrix.
   - Scope: `module_skills/sub_module_scalability_crawler/crawl.py`, `module_skills/sub_module_scalability_crawler/status.py`, `.gitignore`
   - Expected: Reports removed and every controlled file `pending` before the first vendor call; each file's state `running`, then `done`, `failed` or `interrupted`, its report written once it is `done`; the reports never committed, and the snapshot committed on the branch in its neutral state — every controlled file `pending`, no report.
   - Exception: none

@@ -30,16 +30,8 @@ method, its thresholds and their limits are `module_features/skills/methodology_
   — the loops a round runs, and the asset's noise sigma, `path_cagr_noise_standard_deviation`: `null` on the asset's
   first searches, the calibration runs, whose last turn prints the estimate a hand may draft into the file.
 - **The promotion** — `make features-serpentine-search-promote ASSET=<TICKER>`, one asset and never fanned out —
-  copies the proposal's whole state, its columns into `<TICKER>_feature_set.json`, its barrier geometry into
-  `<TICKER>_barriers.json` and its hyper-parameter point into `<TICKER>_hyperparameter_point.json` (`promote.py`),
-  and nothing else, then runs `ml-all` for the asset, whose study starts from that point. A search proposes one
-  state at most, its champion, so there is none to choose; a search that proposes nothing has ended correctly, and
-  the promotion refuses it in one line (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
-- **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` — removes `<TICKER>_serpentine_search.json`,
-  `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_score_request.json`, `<TICKER>_score_response.json` and
-  `store/trials/score_trials/ticker=<TICKER>/`, and keeps the search's inputs — the chain's files, the promoted state
-  and the profile — and `hpo_trials`. It runs no stage.
-
-**One search, one experiment.** What a change of data or configuration asks of a hand before the next search — the
-chain, the reset and a new search, or the next turn alone — is one rule,
-`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.
+  copies the proposal's whole state (`promote.py`) and runs `ml-all` for the asset, whose study starts from the
+  promoted point (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
+- **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` — removes the search's own files and keeps
+  its inputs and its profile; it runs no stage. What a change of data or configuration asks of a hand before the next
+  search is one rule, `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

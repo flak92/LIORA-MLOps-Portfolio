@@ -27,10 +27,8 @@ hold a contract. Then the state table, one row per asset, its columns left out i
 | `profile` | where the asset's profile stands against the recorded search: `not drafted`, `no search`, `matches the search` or `differs from the search` | second |
 | `trials` | the lines of the search's ledger, `—` where no ledger names a trial | first |
 
-Then the menu, `gum choose` headed *action*: the targets `make help` lists that `MENU_TARGET_PATTERN` matches — the
-module's stages, `features-all`, the serpentine search's targets and its `tmux-` twin — in the Makefile's
-order, then the terminal's own `draft` and `recorded search`, then `quit`; `features-terminal` carries no `##` and is
-no option of the menu it opens (`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`).
+Then the menu: the targets `make help` lists that `MENU_TARGET_PATTERN` matches
+(`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`), then the terminal's own `draft` and `recorded search`, then `quit`.
 
 It reads the artifacts store by the descriptors its `config.py` carries: the partitions by name, no parquet opened,
 and the contract, the profile, the search's state file and its ledger as JSON. It reads no snapshot:
@@ -45,13 +43,10 @@ needs numpy.
 
 After the menu, the asset form — the assets of `--tickers` as rows, one answered without asking. Then:
 
-- **a target** — the plan, `target`, the `purpose` its `##` carries and `ASSET`, the line
-  `command  make <target> ASSET=<TICKER>` and the gate `<target>?`; the target's own lines stay on the screen as they
-  come, and the run ends on the `DONE` block or on the failure block carrying make's exit code. `features-status`
-  folds the whole basket whatever `ASSET` says — the Makefile passes `TICKERS_CSV`. `tmux-features-serpentine-search`
-  starts the search detached in the tmux session `features-serpentine-search-<ticker>` — its name behind the compose
-  project's under `COMPOSE_PROJECT_NAME` — alive after this terminal closes; there is no stop here: `tmux attach -t`
-  that session and Ctrl-C stop it, as `make help` says, and a rerun resumes.
+- **a target** — the plan and the gate (`TUI-DESIGNER-A-PLAN-NAMES-WHAT-WILL-RUN`, `TUI-DESIGNER-A-GATE-IS-NOT-A-GUARD`).
+  `features-status` folds the whole basket whatever `ASSET` says. `tmux-features-serpentine-search` starts the search
+  detached, alive after this terminal closes; there is no stop here: `tmux attach -t` its session and Ctrl-C stop it,
+  as `make help` says, and a rerun resumes.
 - **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, whose plan shows the
   state it promotes: the asset, the proposal's trial, the coordinates it moves and what it writes,
   `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json` — then the line
@@ -101,14 +96,10 @@ from, no recorded search to read, no proposal to promote, or a target that exite
 |---|---|
 | `terminal.py` | the opening screen, the menu and the actions — a target started through make, the draft, the recorded search, the promotion; the only file that calls `make`, and the one that writes the profile; `--tickers` its one argument beside `-h`, `--help` |
 | `config.py` | registered copies of the store read, the descriptors of the files it shows, the promotion's target, the loops, the start geometry and the grid the draft offers, and the readers and the writer of JSON; `OUTPUT_PLAIN` and `MENU_TARGET_PATTERN` |
-| `tui.py` | how a screen is drawn and an answer taken — one file with the four other terminals', the canon's among them |
+| `tui.py` | how a screen is drawn and an answer taken — one file with every other terminal's |
 
-It imports the standard library and its own package alone and runs on the host's `python3` with gum, in no container
-and no virtual environment. It cannot import `module_features/config.py`, which imports `.indicators`
-and numpy with it, nor the serpentine search's `config.py`, which imports that one, so what it reads of them is
-carried in its own `config.py`; and no module imports another, so what the terminals share is carried too — `tui.py`,
-`OUTPUT_PLAIN`, `HELP_LINE_PATTERN` and the helpers `_option_rows()`, `_cancelled_exit_code()`,
-`_failure_exit_code()`, `_make()`, `_target_rows()`, `_write_target()` and `_tickers()`. Each copy is
-marked `# twice by extraction`, registered in `module_skills/skill_glossary.md` and changed on every side at once. The
-profile is written by `write_json()` in the tree's canonical JSON form, so the same decisions write the same bytes and
-a draft that changes nothing leaves git unmoved.
+It runs on the host's `python3` with gum and imports the standard library and its own package alone
+(`TUI-DESIGNER-ONE-TERMINAL-PER-MODULE`): `module_features/config.py` imports numpy, so what it reads of this module
+and of the serpentine search is carried in its own `config.py`, registered in `module_skills/skill_glossary.md`
+§ Twice by extraction with what it shares with the other terminals. The profile is written in the tree's canonical
+JSON form, so the same decisions write the same bytes and a draft that changes nothing leaves git unmoved.
