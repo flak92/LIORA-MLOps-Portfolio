@@ -20,10 +20,10 @@ The rules of the status page `module_monitoring` serves: one static page of plai
   - Scope: `module_monitoring/**/*.js`
   - Expected: A share of two published counts (`realDataPct`, `buildShareCell`), a mean over the validation folds (`mean` over `validationFolds`), a difference of two reported metrics (the holdout degradation, the delta against the active state), a sum over a record's entries (`bytesWritten`), an age against the browser's clock (`ageCell`); no label, fit, model metric or strategy number computed in a script.
   - Exception: none
-- `DASHBOARD-CONVENTIONS-THREE-STATE-GLOBALS`
-  - Description: The page keeps three state globals — `ML_STATUS` and `FEATURES_STATUS` in `ml.js`, `SKILLS_STATUS` in `scalability.js` — the snapshots it holds after their fetch; the data snapshot and the run records are rendered as they arrive and held nowhere.
+- `DASHBOARD-CONVENTIONS-TWO-STATE-GLOBALS`
+  - Description: The page keeps two state globals — `ML_STATUS` and `FEATURES_STATUS` in `ml.js` — the snapshots it holds after their fetch because more than one tab renders from them; the data snapshot, the crawl snapshot and the run records are rendered as they arrive and held nowhere.
   - Scope: `module_monitoring/**/*.js`
-  - Expected: A file-scope `let` for those three alone and a `const` for every other file-scope binding; `PILL_HOOKS`, the pill-hook registry of `page.js`, a registry and not state; a new state global entering this rule in the commit that adds it.
+  - Expected: A file-scope `let` for those two alone and a `const` for every other file-scope binding; `PILL_HOOKS`, the pill-hook registry of `page.js`, a registry and not state; a new state global entering this rule in the commit that adds it.
   - Exception: none
 - `DASHBOARD-CONVENTIONS-REACHABLE-ON-LOOPBACK-ONLY`
   - Description: The page is reachable on the host's loopback alone: the server binds every interface of its container's own namespace, compose publishes it on `127.0.0.1` only, and a remote reader comes through an SSH tunnel, never through a bind on a public interface of the host.
@@ -54,7 +54,7 @@ The rules of the status page `module_monitoring` serves: one static page of plai
 - `DASHBOARD-CONVENTIONS-A-TAB-MOVES-EVERY-LIST-OF-THE-TABS`
   - Description: A tab added, renamed or removed changes, in the same commit, every document that lists the tabs.
   - Scope: `module_monitoring/index.html`, `README.md`, `module_monitoring/README_module_monitoring.md`, `module_skills/skill_glossary.md`
-  - Expected: The tabs of `#tabs` in `index.html`, in their order and by their labels, named alike by `README.md` (its quickstart and its Dashboard section), by the tab's row in `module_monitoring/README_module_monitoring.md` and by the register wherever it lists them.
+  - Expected: The tabs of the `data-pills="tab"` nav of `index.html`, in their order and by their labels, named alike by `README.md` (its quickstart and its Dashboard section), by the tab's row in `module_monitoring/README_module_monitoring.md` and by the register wherever it lists them.
   - Exception: none
 
 ## FileLayout

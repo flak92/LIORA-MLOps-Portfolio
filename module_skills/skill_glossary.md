@@ -1326,6 +1326,6 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: file; state; vendor; finished_at_utc; report
   - Never: a count of crawls; an age; a clock but `finished_at_utc`; a snapshot that reads itself back; a partial file
 - the page's view of the reports
-  - Code: `scalability.js` — `SKILLS_STATUS`, `renderCrawlState()`
+  - Code: `scalability.js` — `renderCrawlState()`
   - Ui label: Scalability — CRAWL STATE
   - Never: a tab named for a tool; scale for a larger basket, which is `ASSET=<TICKER>`
