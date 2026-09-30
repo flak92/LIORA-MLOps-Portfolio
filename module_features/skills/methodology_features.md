@@ -455,9 +455,11 @@ profile (`SERPENTINE-SEARCH-THE-NOISE-SIGMA-IS-DRAFTED`). A child and the parent
 child was fitted on its own — a move of the trade's exit alone shares its parent's fits and is left
 out — each pair of search states once; σ is the median absolute deviation of the pairs' path-CAGR
 differences × 1.4826 / √2, the factor that makes a normal sample's median absolute deviation its
-standard deviation, over the √2 of a difference of two scores. The pairs are pairs of different
-search states, so σ holds the effect of each change as well as the variability of an evaluation; a
-search state scored twice scores the same, every fit being seeded.
+standard deviation, over the √2 of a difference of two scores. With fewer than two such pairs σ is
+not measurable — the median absolute deviation of none has no value, and of one is zero, which is no
+noise — so the estimate is none, the profile keeps `null` and the search proposes nothing. The pairs
+are pairs of different search states, so σ holds the effect of each change as well as the variability
+of an evaluation; a search state scored twice scores the same, every fit being seeded.
 
 k(N)·σ is therefore a margin that grows with the size of the search — a heuristic, not a test. Its
 model assumes independent normal noise of one size; the search states of a search are correlated,

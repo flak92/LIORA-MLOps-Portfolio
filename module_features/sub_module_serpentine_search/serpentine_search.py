@@ -123,13 +123,14 @@ def _fitted_part(search_state: dict) -> dict:
     return {name: value for name, value in search_state.items() if name not in config.TRADE_EXIT_COORDINATE_NAMES}
 
 
-def path_cagr_noise_standard_deviation(ledgers: list[list[dict]]) -> float:
+def path_cagr_noise_standard_deviation(ledgers: list[list[dict]]) -> float | None:
     """The asset's noise sigma: the standard deviation of one evaluation's path CAGR, read off the ledgers of its
     calibration searches. Each line and the parent its `parent_state_evaluation_index` names are one pair when both
     met the threshold constraint and the child was fitted on its own — a move of the trade's exit alone shares its
     parent's fits and so its noise, and would read as none — each pair of search states once over all the ledgers; of
     the pairs' path CAGR differences, the median absolute deviation scaled to a standard deviation, over the
-    square root of two, because a difference carries the noise of two evaluations."""
+    square root of two, because a difference carries the noise of two evaluations. None, not measurable, with fewer
+    than two pairs: the median absolute deviation of none has no value, and of one is zero, which is no noise."""
     differences = {}
     for state_evaluations in ledgers:
         for row in state_evaluations[1:]:
@@ -139,6 +140,8 @@ def path_cagr_noise_standard_deviation(ledgers: list[list[dict]]) -> float:
                 differences.setdefault((search_state_key(theta(parent)), search_state_key(theta(row))),
                                        search_state_objective(row) - search_state_objective(parent))
     values = list(differences.values())
+    if len(values) < 2:
+        return None
     centre = statistics.median(values)
     return (config.NOISE_MEDIAN_ABSOLUTE_DEVIATION_SCALE * statistics.median([abs(value - centre) for value in values])
             / math.sqrt(2.0))
@@ -547,9 +550,11 @@ def turn(ticker: str) -> None:
           f"({axis_feature_set.column_count(champion_row['columns_by_timeframe'], timeframes)} columns), "
           f"{len(search_progress['proposals'])} proposals", flush=True)
     if noise_sigma is None:
-        # a calibration search: what it measured is the noise sigma a hand may draft into the profile, by a decision
+        # a calibration search: what it measured is the noise sigma a hand may draft into the profile, by a decision;
+        # a ledger with fewer than two fit-changing pairs measures none
+        ledger_noise_sigma = path_cagr_noise_standard_deviation([state_evaluations])
         print(f"{ticker} calibration search: path CAGR noise standard deviation of this ledger "
-              f"{path_cagr_noise_standard_deviation([state_evaluations]):.6f}", flush=True)
+              f"{'not measurable' if ledger_noise_sigma is None else format(ledger_noise_sigma, '.6f')}", flush=True)
 
 
 def main() -> int:
