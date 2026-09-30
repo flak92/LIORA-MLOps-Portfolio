@@ -132,7 +132,8 @@
    "label_horizon": "4h",
    "stop_loss_true_range_multiplier": 2.0,
    "take_profit_true_range_multiplier": 2.0
-  }
+  },
+  "maximum_label_horizon_minutes": 1440
  },
  "inputs": {
   "active_barriers": {
@@ -298,7 +299,7 @@
      2.5
     ]
    },
-   "path_cagr_noise_standard_deviation": 0.016462179017285163,
+   "path_cagr_noise_standard_deviation": 0.01617443644117703,
    "search_axes": [
     "barrier",
     "feature_set",
@@ -310,6 +311,7 @@
    "end_utc": "2026-08-26",
    "start_utc": "2021-01-01"
   },
+  "round_budget": 5,
   "seed": 42,
   "selection": {
    "beam_width": 3,
@@ -319,12 +321,12 @@
  },
  "path": [],
  "proposals": [],
- "round_count": 1,
- "search_outcome": null,
- "selection_hypothesis_count": 38,
+ "round_count": 5,
+ "search_outcome": "stopped_by_budget",
+ "selection_hypothesis_count": 70,
  "selection_hypothesis_count_by_search_axis": {
   "barrier": 8,
   "feature_set": 22,
-  "hpo": 8
+  "hpo": 40
  }
 }

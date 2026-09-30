@@ -8,11 +8,11 @@
    },
    "serpentine_search": {
     "beam_changed": false,
-    "inputs_current": false,
+    "inputs_current": true,
     "proposals": [],
-    "round_count": 1,
-    "search_outcome": null,
-    "selection_hypothesis_count": 38,
+    "round_count": 5,
+    "search_outcome": "stopped_by_budget",
+    "selection_hypothesis_count": 70,
     "state_evaluation_count": 31
    },
    "ticker": "BTC"
@@ -1202,5 +1202,5 @@
    "value": "features-serpentine-search-promote"
   }
  ],
- "generated_at_utc": "2026-09-30 00:29:58"
+ "generated_at_utc": "2026-09-30 22:08:38"
 }

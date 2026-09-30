@@ -1,6 +1,6 @@
 {
  "hyperparameter_search_result": {
-  "best_cagr_validation_path": -0.06734947303600092,
+  "best_cagr_validation_path": -0.06740365105220203,
   "best_params": {
    "alpha": 0.02310201887845294,
    "colsample_bytree": 0.9162213204002109,

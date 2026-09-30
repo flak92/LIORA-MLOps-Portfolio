@@ -20,7 +20,7 @@ Research window 2021-01-01 → 2026-08-26, seed 42. One folder per asset, `ticke
 | `ticker=BTC/BTC_parameters.json` | the one parameters file: what the HPO chose | 390 B |
 | `ticker=BTC/BTC_strategy_evaluation.json` | threshold, PnL and the equity curve | 11 KB |
 
-Each of the 3 catalogue partitions carries 4 rows more than `labels/ticker=BTC/timeframe=1h/labels.parquet`: the tail decisions whose full 240-minute label horizon does not fit inside the research window have features but no label. `oos_predictions/ticker=BTC/timeframe=1h/oos_predictions.parquet` holds the 4 OOS blocks end to end; the metrics score only the supervised, label-horizon-fitting subset of each.
+Each of the 3 catalogue partitions carries 4 rows more than `labels/ticker=BTC/timeframe=1h/labels.parquet`: the tail decisions whose full 240-minute label horizon does not fit inside the research window have features but no label. `oos_predictions/ticker=BTC/timeframe=1h/oos_predictions.parquet` holds the 4 OOS blocks end to end; the metrics score only the supervised rows of each that leave room for the experiment's maximum label horizon, 1440 minutes, before the fold's end.
 
 ## Feature set
 
@@ -38,23 +38,23 @@ The default set of the catalogue — no promoted file. The asset's feature set b
 
 ## Model
 
-HPO: 8 Optuna trials, best best_cagr_validation_path -0.067349. Winner: depth 5, eta 0.1111, 150 boosting rounds, subsample 0.985, colsample 0.916, min_child_weight 2, lambda 0.2659, alpha 0.0231.
+HPO: 8 Optuna trials, best best_cagr_validation_path -0.067404. Winner: depth 5, eta 0.1111, 150 boosting rounds, subsample 0.985, colsample 0.916, min_child_weight 2, lambda 0.2659, alpha 0.0231.
 
 | fold | prior log-loss | model log-loss | rel. skill | scored |
 | --- | --- | --- | --- | --- |
-| F2 | 0.822111 | 1.054633 | -28.28% | 8,756 |
-| F3 | 0.851337 | 0.915151 | -7.50% | 8,755 |
-| F4 | 0.839082 | 0.811663 | +3.27% | 8,780 |
-| **F5 — final holdout** | 0.826613 | 0.798614 | +3.39% | 14,444 |
+| F2 | 0.822824 | 1.054711 | -28.18% | 8,736 |
+| F3 | 0.851443 | 0.915069 | -7.47% | 8,735 |
+| F4 | 0.838043 | 0.811093 | +3.22% | 8,760 |
+| **F5 — final holdout** | 0.826734 | 0.798677 | +3.39% | 14,424 |
 
 ## Fold geometry
 
 | fold | trained on | purged | OOS block rows | scored |
 | --- | --- | --- | --- | --- |
-| F2 | 3,476 | 4 | 8,760 | 8,756 |
-| F3 | 12,239 | 1 | 8,760 | 8,755 |
-| F4 | 20,998 | 1 | 8,784 | 8,780 |
-| F5 | 29,779 | 4 | 14,444 | 14,444 |
+| F2 | 3,476 | 4 | 8,760 | 8,736 |
+| F3 | 12,239 | 1 | 8,760 | 8,735 |
+| F4 | 20,998 | 1 | 8,784 | 8,760 |
+| F5 | 29,779 | 4 | 14,444 | 14,424 |
 
 `purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
@@ -64,7 +64,7 @@ Entry edge threshold **0.3**. Cost 0.06% per side; the hierarchy gate requires t
 
 | fold | Sharpe | maxDD | trades | hit rate | exposure | final equity |
 | --- | --- | --- | --- | --- | --- | --- |
-| F2 | -1.076 | 22.2% | 304 | 43.4% | 11.67% | 0.8514 |
+| F2 | -1.077 | 22.2% | 303 | 43.2% | 11.63% | 0.8513 |
 | F3 | -1.939 | 5.7% | 30 | 33.3% | 1.00% | 0.9583 |
 | F4 | -0.088 | 5.5% | 36 | 50.0% | 1.20% | 0.9941 |
 | **F5 — final holdout** | -0.602 | 11.8% | 85 | 45.9% | 1.77% | 0.9461 |
