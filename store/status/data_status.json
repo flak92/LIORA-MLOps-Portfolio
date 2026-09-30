@@ -3,8 +3,8 @@
   {
    "ffill_bars": 0,
    "last_observation_utc": "2026-09-29 23:59",
-   "longest_ffill_run_minutes": 0,
-   "longest_flat_run_minutes": 0,
+   "longest_ffill_streak_minutes": 0,
+   "longest_flat_streak_minutes": 0,
    "max_abs_return_1m": 0.063069,
    "max_abs_return_at_switch": 0.004821,
    "ohlc_violation_count": 0,
@@ -22,6 +22,7 @@
    "zero_volume_bars": 0
   }
  ],
+ "data_window_start_utc": "2021-01-01 00:00",
  "download_cadence_minutes": 1440,
  "generated_at_utc": "2026-09-30 00:19:16",
  "source_venues": [
@@ -63,6 +64,5 @@
     "zero_volume_bars": 92
    }
   ]
- },
- "window_start_utc": "2021-01-01 00:00"
+ }
 }

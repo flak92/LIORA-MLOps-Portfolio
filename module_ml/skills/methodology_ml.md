@@ -37,7 +37,7 @@ Everything below is these nine rules written out.
 
 Why this shape: the label is a **decision indication**, not a price forecast —
 the triple barrier [4] asks "which barrier does the market touch first from
-here: profit, stop, or neither within the horizon?", which is exactly the
+here: profit, stop, or neither within the label horizon?", which is exactly the
 question a rule-based exit answers. Tree ensembles are the strongest
 general-purpose learner for tabular financial features [3][9], short-horizon
 crypto predictability from technical features is documented in [1][2], and the
@@ -69,7 +69,7 @@ series whose every candle is a real observation of one of them (bar an explicit
 forward fill), and the research layer studies that series and nothing else:
 
 ```
-X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+H})        M = canonical series
+X_t = f(M_{<=t})        Y_t = g(M_{t+1 : t+label_horizon})        M = canonical series
 ```
 
 Features and target therefore describe the same canonical research object by
@@ -84,9 +84,9 @@ simulates a strategy on a canonical market model, with the costs stated.
 ```
 … ─┤ decision bar ├─┤ decision bar ├─ …
                     ▲ t_d = decision_ts, a bar close of the decision timeframe
-features: on every timeframe of the register, the last bar with close_ts <= t_d — never one still open
+features: on every timeframe of the register, the last bar closed at or before t_d — never one still open
 entry:    t_0 = t_d + 1 min, on the first observed trade of that minute — its OPEN
-event:    [t_0, t_v),  t_v = t_0 + H, H the asset's horizon — the barrier examines minutes t_0 … t_v − 1 min
+event:    [t_0, t_v),  t_v = t_0 + label_horizon — the barrier examines minutes t_0 … t_v − 1 min
 ```
 
 The decision timeframe and the hierarchy are the feature layer's register, read
@@ -103,7 +103,7 @@ trade there is no entry. The exact intra-minute execution time is unobserved at
 at an earlier price: it is the statement that the trade whose price is `open`
 happened at all.
 `event_end_ts` is the **exclusive** end of the event, which is what makes the
-purge rule exactly `event_end_ts <= oos_start` — an event ending at the first
+purge rule exactly `event_end_ts <= fold_start_ms` — an event ending at the first
 minute of the OOS block does not overlap it.
 
 Higher-timeframe features come from the last **closed** bar of their timeframe
@@ -137,39 +137,39 @@ survives it (asserted, in `catalogue.build_catalogue`).
 **The serpentine search asks; this layer answers.** The search is
 `module_features`' — its rounds and families, its beam, its profile, its resume,
 its ledger and its promotion are `module_features/skills/methodology_features.md`
-— and it computes no metric of a state: every number it reads is an answer of
+— and it computes no metric of a search state: every number it reads is an answer of
 `ml-score`, `module_ml/score.py`. A turn of the search leaves its question as
-`<TICKER>_score_request.json` — the kind of scoring, the round and the states —
+`<TICKER>_score_request.json` — the kind of scoring, the round and the search states —
 and `ml-score` answers in `<TICKER>_score_response.json`, in the order the
-request named the states, written only once every one of them has an answer;
+request named the search states, written only once every one of them has an answer;
 `make features-serpentine-search` alternates a turn and `ml-score`, a one-off
-container each, while the turn leaves a question. A state Θ is the whole of what
+container each, while the turn leaves a question. A search state Θ is the whole of what
 is evaluated (`score.theta()`): the set's columns by timeframe, the barrier
-geometry — the multiplier the label's barriers stand at, the horizon they stand
+geometry — the multiplier the label's barriers stand at, the label horizon they stand
 for, and the take-profit and the stop a **trade** leaves at — and the
 hyper-parameter point, `best_params`. Its key is its own canonical JSON text,
-compared by equality (`score.state_key()`).
+compared by equality (`score.search_state_key()`).
 
-**What one evaluation computes.** For the kind `score`, one trial row per state
-(`score.score_results()`): X and Y for the state — the asset's own Y where the
+**What one evaluation computes.** For the kind `score`, one state evaluation per search state
+(`score.score_results()`): X and Y for the search state — the asset's own Y where the
 label's geometry is the asset's, else Y walked again down the 1m path in process
-(`score.xy_for_state()`) — three boosters fitted before F2, F3 and F4 as § 6
-fits them under the state's `best_params`, scored as § 8 scores them, then the
+(`score.xy_for_search_state()`) — three boosters fitted before F2, F3 and F4 as § 6
+fits them under the search state's `best_params`, scored as § 8 scores them, then the
 threshold selection of § 9 on their out-of-fold predictions
-(`score.trial_result()`), which gives each validation fold's realised CAGR,
+(`score.state_evaluation()`), which gives each validation fold's realised CAGR,
 maximum drawdown, Calmar ratio, profit factor, Sharpe ratio and trade count, and
-the path the three chain into. States of one request that differ only where a
+the path the three chain into. Search states of one request that differ only where a
 trade leaves share one fit identity (`score.fit_identity()`): the first of them
 pays for the three fits and the rest inherit its predictions, because neither a
 fit nor a prediction reads a trade's exit, and only the backtest is replayed. For
 the kind `hpo`, the request names beam parents, and each gets one study of § 7 on
 its own X and Y, its gate reading that parent's folds; the study's best
-admissible point that beats the parent's path, scored as a state, is the
+admissible point that beats the parent's path, scored as a search state, is the
 candidate it offers, or `null` — which is an answer (`score.hpo_results()`).
 Every point of every study goes to the asset's partition of `score_trials` once
 the last study has ended, and the response after them.
 
-**One row, one schema.** A trial's row carries the whole of Θ and every quantity
+**One state evaluation, one schema.** A state evaluation carries the whole of Θ and every quantity
 measured on it — each fold's skill, Sharpe ratio, CAGR, drawdown, Calmar ratio,
 profit factor and trade count, the mean skill, the chained path, the chosen
 threshold, whether it met the trade floor and what it was chosen out of — under
@@ -179,25 +179,25 @@ skill is among the measured and the reported; nothing selects on it.
 **The search's method is `module_features/skills/methodology_features.md` § The
 serpentine search** — its objective, the conditions every comparison shares, the
 gate, the beam, the stopping, the proposal and its margin — and this layer holds
-only what it answers with: a trial row per state, scored on the same data, folds
+only what it answers with: a state evaluation per search state, scored on the same data, folds
 and cost as the chain, and a study per beam parent whose gate reads the parent's
 CAGR on every validation fold (§ 7). Selection overfitting is bounded and
 exposed, never absent: a move is kept only where every validation fold agrees,
 under a trade floor that keeps a fold's CAGR from standing on a handful of
-trades, and the proposal must clear the noise of every state the search scored.
+trades, and the proposal must clear the noise of every selection hypothesis the search tested.
 The objective is a strategy number measured on
 `MINIMUM_TRADES_PER_VALIDATION_FOLD` to a few hundred trades a fold, where the
 model's own skill stands on some 10⁴ decisions, so it is the noisier quantity;
-the skill is reported beside it so a state that wins on CAGR while losing skill
+the skill is reported beside it so a search state that wins on CAGR while losing skill
 is visible by eye.
 
 **A promotion** (`make features-serpentine-search-promote ASSET=<TICKER>`, one
-asset at a time, never fanned out) copies the proposal's whole state — its
+asset at a time, never fanned out) copies the proposal's whole search state — its
 columns into `<TICKER>_feature_set.json`, its barrier geometry into
 `<TICKER>_barriers.json` and its hyper-parameter point into
 `<TICKER>_hyperparameter_point.json`, and nothing else; the commit history is the
 record of every promotion — and reruns `ml-all` for the asset, `ml-hpo` included.
-That study takes the promoted point as its first trial: on the promoted state's
+That study takes the promoted point as its first trial: on the promoted search state's
 own X and Y, with the same fits and the same threshold rule, the trial scores the
 proposal's path CAGR, so the point the stage keeps is worth at least that on
 F2–F4, and F5 is read after it and steers no parameter. A search that proposes
@@ -211,8 +211,8 @@ warm-up. Entry `P₀ = entry_price = canonical 1m open(t_0)`; horizontal barrier
 `LABEL_BARRIER_TRUE_RANGE_SMOOTHING_PERIOD_BARS` bars of
 `LABEL_BARRIER_TRUE_RANGE_TIMEFRAME`, read off its last closed **canonical** bar
 at t_d and asserted finite and positive at every decision
-(`labels.label_events()`); vertical barrier the asset's horizon H. m and H are
-coordinates of the serpentine search and are promoted into
+(`labels.label_events()`); vertical barrier the asset's label horizon. m and the label horizon are
+coordinates of the serpentine search's barrier axis and are promoted into
 `<TICKER>_barriers.json`; until one is, an asset holds the geometry of
 `START_BY_COORDINATE_DEFAULT`. Resolution walks the canonical 1m path: the first
 minute whose high touches `upper_barrier` gives `y = +1`, whose low touches
@@ -231,24 +231,24 @@ upper_hit = (volume > 0) & (high >= upper_barrier)
 lower_hit = (volume > 0) & (low  <= lower_barrier)
 ```
 
-**The horizon travels as a duration token and becomes a number once.**
+**The label horizon travels as a duration token and becomes a number once.**
 `HORIZON_TOKEN_MINUTES` maps the tokens of the timeframe grammar to minutes, and
 `dataset.barriers_from()` resolves a geometry's token there and nowhere else —
-the promoted file's through `dataset.load_barriers()`, a state's of the search in
-`score.py` — so a search that moves the coordinate moves one number. Four places
+the promoted file's through `dataset.load_barriers()`, a search state's in
+`score.py` — so a search that moves the coordinate moves one number, `label_horizon_minutes`. Four places
 compute with that number, and each is handed it:
 
-| reader | what it decides with the horizon |
+| reader | what it decides with the label horizon |
 |---|---|
-| `labels.label_events()` | which decisions are labelled at all — the grid keeps only those whose whole horizon fits inside the research window |
+| `labels.label_events()` | which decisions are labelled at all — the grid keeps only those whose whole label horizon fits inside the research window |
 | `labels.triple_barrier()` | how far down the 1m path a walk goes, and where a vertical exit is marked |
-| `validation.scoring_set()` | which supervised rows a fold scores — those whose maximum horizon fits the block, decided at t₀ |
+| `validation.scoring_set()` | which supervised rows a fold scores — those whose label horizon fits its OOS block, decided at t₀ |
 | `strategy.signals_for_fold()` | which entries are eligible in a fold — the same test, on the trade's side |
 
 `validation.training_set()` is **not** among them: the purge is
-`event_end_ts <= oos_start`, and `event_end_ts` is a column of Y that already
-carries the horizon the labels were written with. A fifth reader is prose —
-`status.py` states the horizon and the tail it costs in `<TICKER>_README.md`.
+`event_end_ts <= fold_start_ms`, and `event_end_ts` is a column of Y that already
+carries the label horizon the labels were written with. A fifth reader is prose —
+`status.py` states the label horizon and the tail it costs in `<TICKER>_README.md`.
 
 If the vertical-barrier minute contains no trade, its canonical close is a
 **last-observed-price mark** used by the research simulation, not an observed
@@ -301,21 +301,34 @@ event — `entry_price`, `upper_barrier` and `lower_barrier`, the half-widths a
 trade's own exit is rescaled from (§ 9); the trade's event is its own walk, never
 the label's.
 
-## 6. Folds — WARMUP | TRAIN | PURGE | OOS | final holdout
+## 6. Folds — the geometry of time
 
 ```
-b₀           warmup_end     b₁             b₂             b₃             b₄                   b₅
-|-- WARMUP --|----- F1 -----|----- F2 -----|----- F3 -----|----- F4 -----|-------- F5 ---------|
-                                                                         (final holdout fold)
-Fold 2:  TRAIN = F1            | PURGE | OOS = F2
-Fold 3:  TRAIN = F1–F2         | PURGE | OOS = F3
-Fold 4:  TRAIN = F1–F3         | PURGE | OOS = F4
-Holdout: TRAIN = F1–F4         | PURGE | F5   (frozen params, frozen threshold)
+past <----------------------------- decision_ts -----------------------------> future
+              lookback                  |
+     <----------------------------------|
+                                        |------ label_horizon ------> event_end_ts
+
+b₀        warmup_end   b₁            b₂            b₃            b₄                   b₅
+[--------------------------------- research_window ----------------------------------)
+[---------- F1 --------)[---- F2 ----)[---- F3 ----)[---- F4 ----)[-------- F5 --------)
+[= warm-up: excluded =)                                           (final holdout fold)
+
+Fold 2:  TRAIN = F1 after the warm-up | PURGE | OOS block = F2
+Fold 3:  TRAIN = F1–F2                | PURGE | OOS block = F3
+Fold 4:  TRAIN = F1–F3                | PURGE | OOS block = F4
+Holdout: TRAIN = F1–F4                | PURGE | OOS block = F5   (frozen params, frozen threshold)
 ```
 
 b₀ … b₅ are `FOLD_BOUNDS_UTC`, b₀ and b₅ the research window, the first
 inclusive and the last exclusive; `warmup_end` is the contract's
-`warmup_end_ms`, before which no decision row exists.
+`warmup_end_ms`, before which no decision row exists. F1 is `[b₀, b₁)` and the
+warm-up lies inside it: it excludes F1's first decisions and is no training window
+and no fold of its own. A lookback points backward from a decision, a label
+horizon forward; each fold's OOS block is the whole fold. The names are
+`module_skills/skill_research_semantics.md`'s
+(`RESEARCH-SEMANTICS-A-FOLD-IS-A-NAMED-SEGMENT-OF-THE-RESEARCH-WINDOW`,
+`RESEARCH-SEMANTICS-THE-WARM-UP-PRECEDES-THE-FIRST-DECISION`).
 
 **F1 is mostly warm-up.** The catalogue's warm-up, `WARMUP_TOP_TIMEFRAME_BARS`
 bars of the top timeframe counted from b₀, ends at the frozen constants on
@@ -325,20 +338,20 @@ holdout — the Fold geometry table of `<TICKER>_README.md` counts them. The
 path's log growth rate is the sum of the folds' log final equities over the
 path's years, so the fold whose final equity moves furthest from one moves the
 objective most — as a rule the fold that trades most; where that is F2, as for
-BTC at the default state, the objective of `ml-hpo` and of the serpentine search
-measures mostly the model trained on the least data. The window stays as frozen:
+BTC at the default search state, the objective of `ml-hpo` and of the serpentine search
+measures mostly the model trained on the least data. The research window stays as frozen:
 an earlier b₀, or validation from F3 on, is another experiment.
 
-**Purge** keeps a training row only if `event_end_ts <= oos_start`. Because
+**Purge** keeps a training row only if `event_end_ts <= fold_start_ms`. Because
 `event_end_ts` is exclusive, that inequality *is* "no overlap" — no artificial
-gap is added, since a gap wider than the event horizon removes information
+gap is added, since a gap wider than the label horizon removes information
 without removing leakage. A classical embargo after the evaluated block
 [4, ch. 7] is not required in forward chaining: no training observation lies
 after the OOS block.
 
 **Scoring** mirrors the purge at the other boundary: a fold scores only the
-supervised rows whose maximum horizon fits inside the block
-(`entry_ts + the horizon <= oos_end`), decided at t₀ — the real
+supervised rows whose label horizon fits inside its OOS block
+(`entry_ts + label_horizon <= fold_end_ms`), decided at t₀ — the real
 `event_end_ts` is path-dependent, so admitting by it would let the future
 choose the scored population.
 
@@ -350,7 +363,7 @@ the hyper-parameters, the entry edge threshold and, once a promotion writes them
 the feature set and the barrier geometry; until one does, the geometry is
 `START_BY_COORDINATE_DEFAULT`, and the cost is frozen a priori.
 F5 is evaluated against them — a promotion is decided on F2–F4 before F5 is
-seen under the new state, and F5 is report-only. Recomputing F5 deterministically — after a refactor, on another
+seen under the new search state, and F5 is report-only. Recomputing F5 deterministically — after a refactor, on another
 machine, in a later run — changes nothing, because nothing is chosen by
 looking at it. What the contract forbids is the loop: read F5, change the
 model, call the same fold out-of-sample again.
@@ -401,8 +414,8 @@ stage alone. Both families carry one row, `TRIAL_COLUMNS`, and each family's
 `schema.json` beside its partitions is written from that one constant. A line
 carries where it was drawn — `origin`, `hpo` for the stage and
 `serpentine_search` for the search's studies — the round when the search drew it,
-the study's place in its partition (`search_index`), the trial's place in the
-study, its state, the point the sampler drew and what the trial left. It carries
+the study's place in its partition (`study_index`), the trial's place in the
+study (`hpo_trial_index`), its outcome (`hpo_trial_outcome`), the point the sampler drew and what the trial left. It carries
 **no run id, no timestamp and no host name**, which is the property that matters:
 two studies over an empty store leave the same bytes, so two runs over an asset's
 emptied partition are a comparison and not an anecdote. A record that cannot be
@@ -410,10 +423,10 @@ compared is a note; this one is evidence.
 
 **A partition counts every study that ran.** A request answered twice — `ml-score`
 stopped after its studies' lines and before its response, then run again — leaves
-its studies twice, under a later `search_index`. That is what a partition is for,
+its studies twice, under a later `study_index`. That is what a partition is for,
 a record of the work done, and it is why it is not the exposure a proposal is read
-against: that number is the search's own `trial_count_by_loop` (§ 4). A study's
-`search_index` is read off its partition before its lines are appended, so a
+against: that number is the search's own `selection_hypothesis_count` (§ 4). A study's
+`study_index` is read off its partition before its lines are appended, so a
 partition takes one writer at a time: each family is written by its own stage
 alone, one process per asset.
 
@@ -421,19 +434,19 @@ alone, one process per asset.
 every line, `null` where it does not apply, so the file reads as one table. A
 completed trial carries `cagr_validation_path`, the chained path's growth rate at
 the threshold the rule chose, and `admissible`, whether that threshold beats the
-champion on every fold — `null` for the stage, which has no champion. A pruned one
+parent on every fold — `null` for the stage, which has no parent. A pruned one
 carries `null` in both and the fold it stopped at, `pruned_at_fold`. Both carry two
 counts, one per fold the trial reached — what the gate saw, written down rather
 than inferred from the fact that the trial survived:
 `floor_clearing_threshold_count_by_fold`, the thresholds at which every fold so
 far clears the trade floor, asked in both modes; and
-`admissible_threshold_count_by_fold`, those of them that also beat the champion's
+`admissible_threshold_count_by_fold`, those of them that also beat the parent's
 CAGR, `null` for the stage. One key answering whichever of the two questions its
 writer had in mind would be a key the register could not define. The count the
 gate stops on is zero on a pruned trial's last fold and on no completed trial's —
-the floor's for the stage, the champion's for the search — which is the whole of
-the gate's story on one line. The state is read from `trial.state` and never
-inferred from the value, and a pruned trial's line carries no value.
+the floor's for the stage, the parent's for the search — which is the whole of
+the gate's story on one line. The outcome is read from `trial.state`, Optuna's own
+word, and never inferred from the value, and a pruned trial's line carries no value.
 
 **The stage starts from no point but a promoted one.** It is a function of X,
 Y, the frozen constants and the point a hand promoted,
@@ -442,21 +455,21 @@ exists, so `<TICKER>_parameters.json` is a function of the raw store, the files 
 hand drafted and this code, and never of its own last value: a derived artifact that read
 itself would make the chain a fixed-point iteration, and two runs of `ml-all`
 would not have to agree until it settled. What a study is compared against
-belongs to the serpentine search's hyper-parameter family below, where a beam
+belongs to the serpentine search's study family below, where a beam
 parent is an input the search itself holds. Space: `HYPERPARAMETER_SEARCH_SPACE`,
 one entry per hyper-parameter in xgboost's own spelling, with the kind of its
 draw and its bounds. Fixed: `multi:softprob`, `num_class = 3`,
 `tree_method = hist`, `nthread = 1`, the seed `SEED`, no early stopping — which is
-why `num_boost_round` is itself a coordinate of the space, and why its ceiling has
+why `num_boost_round` is itself a dimension of the space, and why its ceiling has
 to be high: at the bottom of the `eta` range a short run of rounds cannot
 converge, so a low ceiling would leave the low end of `eta` unreachable rather
 than merely unchosen. The barrier geometry, the costs and the entry-edge-threshold grid are
-**never** in the space: the geometry is a coordinate of the serpentine search and
+**never** in the space: the geometry is the serpentine search's barrier axis and
 is promoted, not tuned. The `hyperparameter_search_result` section of
 `<TICKER>_parameters.json` keeps the chosen point, its value under the frozen
-objective and the trial count.
+objective and the HPO trial count.
 
-Inside the serpentine search the study is itself a coordinate — one candidate per
+Inside the serpentine search the study is itself the hpo axis — one candidate per
 beam member, drawn on that member's own X and Y by `score.hpo_results()`. It
 cannot answer worse than the member it ran on because a candidate has to beat it:
 the guarantee is the gate's. The study is handed no point: the member's own
@@ -465,9 +478,9 @@ member's, and no other threshold beats it on every fold, or the member would
 stand there — so a trial on them is a fit that cannot become a candidate. Its
 seed moves with the round, so a member that stays in the beam draws new points in
 the next round rather than the same ones again. **One** gate stops a trial early,
-and it is the state gate's own condition read one fold at a time
+and it is the serpentine search's gate read one fold at a time
 (`hpo.admissible_thresholds()`): after each validation fold, the thresholds at
-which every fold so far clears the trade floor **and** beats the champion's CAGR
+which every fold so far clears the trade floor **and** beats the parent's CAGR
 there. The set only shrinks as folds are added, and the child the search would
 keep needs one threshold inside it over all three folds, so a trial whose set has
 gone empty cannot produce one however the folds it has not run land. Nothing
@@ -478,7 +491,7 @@ inferred.
 Bounds — the best growth rate each fold could still reach over the whole grid,
 read fold by fold and never jointly — would not do: each is true of *some*
 threshold, and together they say nothing about *one* threshold admissible on
-every fold, which is what the state gate needs. The set is that quantity, so the
+every fold, which is what the serpentine search's gate needs. The set is that quantity, so the
 gate stops a trial exactly when it can no longer produce a child the search would
 keep.
 
@@ -490,10 +503,10 @@ offers nothing that round — which is an answer, not a failure.
 
 **The study offers the best admissible point, not the best point**
 (`hpo.admissible_point()`). A study's best trial by value may be one whose chosen
-threshold does not beat the champion on every fold; the state gate refuses that
+threshold does not beat the parent on every fold; the serpentine search's gate refuses that
 child. Offering it would mean the study answered nothing while holding, further
 down its own list, a point the gate would have kept — so the trials are read by
-value, descending, and the first admissible one that beats the champion's own path
+value, descending, and the first admissible one that beats the parent's own path
 is offered; where that point is the parent's own parameters, it is no move and
 nothing is offered. Whether a trial's chosen threshold was admissible is decided
 where the sweeps already are, and carried on its ledger line as `admissible`, so
@@ -511,12 +524,12 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 ```
 
 `relative_logloss_skill` answers one question — does the model add information beyond knowing
-how often each class occurs? — and is reported beside every state and selects nothing: the
+how often each class occurs? — and is reported beside every search state and selects nothing: the
 hyper-parameter search maximises the validation path's CAGR (§ 7), and the serpentine search
 gates a move on each fold's CAGR and ranks it by the path's CAGR (§ 4). Metrics score the
 supervised subset of a fold
-whose maximum horizon fits inside it — the same t₀-decidable rule that governs
-strategy eligibility (§ 9); predictions cover the full fold.
+whose label horizon fits inside its OOS block — the same t₀-decidable rule that governs
+strategy eligibility (§ 9); predictions cover the whole OOS block.
 
 **Two importances per validation fold**, each of that fold's own booster, none
 of the final holdout's: `gain_importance`, XGBoost's total gain per column;
@@ -545,8 +558,8 @@ range — read by its feature id on every timeframe from the catalogue, in the
 feature set or not; the top timeframe is the coarsest of the hierarchy the
 contract lists. The **model decides the side; the top timeframe gates it**. One
 unit position at a time, new signals ignored while in a position, and a signal is
-eligible only where its whole horizon fits inside the fold
-(`entry_ts + the horizon <= fold_end`) — decided at t₀, never by where the
+eligible only where its whole label horizon fits inside the fold
+(`entry_ts + label_horizon <= fold_end_ms`) — decided at t₀, never by where the
 trade actually ended.
 
 **PnL — one formula.** The simulation applies USDT-perpetual PnL algebra to the
@@ -601,7 +614,7 @@ where `⌢` is the chaining of § 4: each fold's 1-minute equity scaled by what 
 folds before it settled at, so the validation folds are one walk-forward path and
 its CAGR is the growth of one capital through them. It is the **same function**
 the stage and `ml-score` both call (`strategy.entry_edge_threshold_selection()`) —
-the latter for every state the serpentine search asks about — so the chain and
+the latter for every search state the serpentine search asks about — so the chain and
 the search can never choose a different threshold for the same predictions. The
 rule reads what each fold settled at and nothing else: the path's drawdown and its
 profit factor need the folds' curves chained, its growth rate does not, and a
@@ -610,7 +623,7 @@ selection walks every point of the grid.
 The trade floor keeps a threshold from winning on three or five trades with an
 accidentally high number. If no point of the grid meets it, the run falls back to
 the grid's first point and reports `entry_edge_threshold_constraint_met = false`;
-the serpentine search refuses such a state before it compares it (§ 4), because
+the serpentine search refuses such a search state before it compares it (§ 4), because
 its numbers stand at a threshold nothing qualified for.
 
 **A fold's own numbers, and the path they chain into.** From the same 1-minute
@@ -625,7 +638,7 @@ boundary; that is the point of chaining rather than averaging.
 
 **Sharpe and drawdown come from one equity process sampled two ways.** The
 backtest writes a continuous 1-minute equity path starting at `E₀ = 1`; the
-Sharpe is annualised by `√(periods per year)`, `MINUTES_PER_YEAR` over the
+Sharpe is annualised by `√(decision bars per year)`, `MINUTES_PER_YEAR` over the
 minutes of one decision bar (`strategy.backtest()`), from that path sampled at
 the **decision bars' closes**, starting from `E₀` itself so the first decision
 bar of a fold is not silently dropped; the maximum drawdown is measured on the
@@ -639,7 +652,7 @@ the threshold grid, and a maximum reported alone is a number with no spread besi
 it: the same score means one thing as the only point that qualified and another as
 the best of eleven. `cleared_point_count`, `median_cagr_over_cleared` and
 `max_cagr_over_cleared` ride beside it in `<TICKER>_strategy_evaluation.json`, in
-every trial row of the serpentine search and in `ml_status.json` — three plain
+every state evaluation of the serpentine search and in `ml_status.json` — three plain
 statistics of the grid, with **no correction applied and none implied**. This layer
 does not deflate the score, and saying so is the point: the correction belongs to
 whoever reads the number, and it cannot be made at all without the population it
@@ -650,8 +663,8 @@ fell back to the grid floor, which is itself the loudest thing the three can say
 
 Per asset, the research artifacts are named in `module_skills/skill_glossary.md` § Artifacts and listed with their
 sizes in the Files table of `<TICKER>_README.md`. The data files are regenerable; `<TICKER>_parameters.json` and
-`<TICKER>_README.md` are tracked beside the serpentine search's profile, state and ledger and the promoted state,
-because the parameters are tuned for the state they were searched under, so they travel together. Every JSON is
+`<TICKER>_README.md` are tracked beside the serpentine search's profile, progress and ledger and the promoted search state,
+because the parameters are tuned for the search state they were searched under, so they travel together. Every JSON is
 canonical and carries only what it computed, no timestamp among it, so an unchanged experiment reproduces it byte
 for byte (`METHODOLOGY-ML-AN-ARTIFACT-CARRIES-ONLY-WHAT-IT-COMPUTED`); the settings a run used are
 `module_ml/config.py` at the commit that ran it (`METHODOLOGY-ML-AN-EXPERIMENT-CONSTANT-LIVES-IN-CONFIG`), and
@@ -687,7 +700,7 @@ stages, and most edits do not touch them:
 
 A recorded serpentine search is one experiment: after a change this table sends
 through the chain, the asset's search is reset and run again, in the order
-`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT` sets, so that no trial of
+`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT` sets, so that no state evaluation of
 another experiment is read as a cache hit.
 
 This table is the layer's rebuild condition, held in a document a reader applies
@@ -716,8 +729,9 @@ no meta-labelling, no fractional differentiation, fixed costs, unit position
 sizing. The class distribution is dominated by `y = 0` — at the geometry of
 `START_BY_COORDINATE_DEFAULT` most events reach the vertical barrier before either
 horizontal one — reported per asset, not resampled. Every move of the serpentine
-search is one coordinate, so an improvement that needs several coordinates changed at
-once is out of its reach: a property of the search's geometry, not solved here.
+search changes one component of the search state — a column, a barrier coordinate or the
+hyper-parameter point — so an improvement that needs several changed at once is out of its
+reach: a property of the search's geometry, not solved here.
 
 ## 13. References (DOIs resolve)
 

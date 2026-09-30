@@ -50,7 +50,7 @@ OHLC_INTACT_PREDICATE = """(isfinite(open) AND isfinite(high) AND isfinite(low)
 
 # use_binance: the primary venue wins whenever it is valid and either traded, or Bybit did not trade
 # either; end_ms is the asset's own grid end, the last minute either venue printed for it. The columns: the full grid,
-# every minute of the window; OHLC and the verbatim venue volume (0 on ffill rows); source 'binance' / 'bybit' / 'ffill';
+# every minute of the data window; OHLC and the verbatim venue volume (0 on ffill rows); source 'binance' / 'bybit' / 'ffill';
 # zero_volume — the winning candle was valid and traded nothing; <venue>_valid — the venue's row present with intact
 # OHLC; rel_divergence — |c_bin - c_byb| / mid when both valid: a quality measurement, never a selection rule (`CANDLE-CANONICALISATION-PRIMARY-FAILOVER-IS-A-TABLE`).
 # One asset's partition of the canonical family: one Parquet file, zstd, the rows in grid order
@@ -215,7 +215,7 @@ def main() -> int:
         canonical_row_count = write_partition(con, "ohlcv_1m_canonical", canonical_copy, path)
         con.close()
         print(f"canonical {symbol}: {canonical_row_count} rows in {path.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR)} "
-              f"(window start {config.DATA_WINDOW_START_UTC})", flush=True)
+              f"(data window start {config.DATA_WINDOW_START_UTC})", flush=True)
     return 0
 
 

@@ -1,6 +1,6 @@
 """The parquet writer of the feature layer and the schema read off a written partition — twice by extraction, identical in
 module_ml/dataset.py — the canonical JSON writer of the feature layer, and the readers a search of this layer needs:
-the per-asset contract, and the state, the ledger and the answers the serpentine search reads back."""
+the per-asset contract, and the progress, the ledger and the answers the serpentine search reads back."""
 
 import csv
 import json
@@ -89,7 +89,7 @@ def append_jsonl(path: Path, payloads: list[dict]) -> None:
     """A batch of objects, one a line, appended in the order given: a ledger grows by what it gains and is never
     rewritten. The batch is one open, because what a search learns from one answer it learns at once; a stop during
     the write leaves either whole lines, which read back and say which of them are there, or a last line cut short,
-    which fails its read as a cut-short state file does."""
+    which fails its read as a cut-short progress file does."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as ledger:
         ledger.write("".join(json.dumps(to_json_safe(payload), sort_keys=True) + "\n" for payload in payloads))

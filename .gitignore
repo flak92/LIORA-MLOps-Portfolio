@@ -12,7 +12,7 @@ store/assets_artifacts/**
 !store/assets_artifacts/ticker=*/*_hyperparameter_point.json
 !store/assets_artifacts/ticker=*/*_serpentine_search_profile.json
 !store/assets_artifacts/ticker=*/*_serpentine_search.json
-!store/assets_artifacts/ticker=*/*_serpentine_search_trials.jsonl
+!store/assets_artifacts/ticker=*/*_serpentine_search_state_evaluations.jsonl
 # the crawler's reports: reset and written by every crawl, never committed
 store/status/reports_after_crawled_files/
 # what a spreadsheet leaves beside itself while it is open

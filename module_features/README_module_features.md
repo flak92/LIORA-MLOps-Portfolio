@@ -9,7 +9,7 @@ bars on every timeframe of the register — the asset's partitions of the `bars`
 definition evaluated on every timeframe it is offered on, aligned to the decision grid — the asset's partitions of the
 `catalogue` family, one per timeframe — each family with its `schema.json` beside its partitions. Outside the chain it
 holds the serpentine search: a hand's research over one asset's feature set, barrier geometry and hyper-parameter
-point, each state it reaches scored by `module_ml` across a file boundary, and a hand's promotion of the one state it
+point, each search state it reaches scored by `module_ml` across a file boundary, and a hand's promotion of the one search state it
 proposes (§ Its sub-modules).
 
 ## Where the responsibility stops
@@ -18,7 +18,7 @@ It begins at the asset's partition of `ohlcv_1m_canonical`, read as a file, and 
 from; it ends at the two families, the contract beside them and one snapshot. The labels, the hyper-parameter search,
 the model and the strategy belong to `module_ml`; presentation belongs to `module_monitoring`. The columns a model
 sees are the asset's feature set — the default set until a hand promotes a proposal of the serpentine search — and
-what a state of that search is worth is `module_ml`'s to compute: the search asks in one file and reads the answer in
+what a search state is worth is `module_ml`'s to compute: the search asks in one file and reads the answer in
 another. The bars are this module's own family, read by the catalogue and by `module_ml`'s labels through a registered
 copy of their descriptor.
 
@@ -41,7 +41,7 @@ for the one asset `ASSET` names, and `status` once over the whole basket.
 | bars | `make features-bars` | `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet`, one partition per entry of the register, and `bars/schema.json` |
 | catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
 | status | `make features-status` | `store/status/features_status.json` |
-| serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_trials.jsonl` and the next question `<TICKER>_score_request.json`, or a finished search |
+| serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_state_evaluations.jsonl` and the next question `<TICKER>_score_request.json`, or an ended search |
 | promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, then the asset's ML chain |
 
 ## What it writes
@@ -96,7 +96,7 @@ responsibility of the mapping table in `module_skills/README.md` § The Pre-AWS 
 | `__init__.py` | The package that makes `python -m module_features.<stage>` a command, its docstring the module's responsibility in one line. | It imports nothing. | The same command runs in a one-off container of the `features` runner. | COMPUTE — one stage, one one-off process |
 | the module's documents — `README_module_features.md` and `skills/` | This orientation, the rendered Skill and the methodology, filed by ownership (`AGENTS.md` § The default choice); the serpentine search's rules and orientation lie beside its code. | Every rule about this module sits in `skills/` (`AGENTS.md` § Canonical vocabulary, the row *a module's own skills*). | Tracked files under `module_features/` that no stage and no route reads. | no row — a document that travels with the module's code, beside it |
 | `sub_module_terminal/` | The module's own terminal, the hand's instrument over this layer and over the serpentine search's own actions. | It imports the standard library and its own package alone — this module's `config.py` imports numpy — so it carries registered copies of what it reads. | It runs on the host's `python3` with gum and starts every stage through `make` (`TUI-DESIGNER-ONE-TERMINAL-PER-MODULE`). | no row — a hand's instrument, beside the stages it starts |
-| `sub_module_serpentine_search/` | The serpentine search, a hand's research outside the chain: `serpentine_search.py` one turn, `coordinate_barrier.py` and `coordinate_feature_set.py` the moves, `promote.py` the promotion, `config.py` its records, its round and its paths. | It imports this module's `config.py` and `dataset.py` and nothing of another module; `status.py` imports it to publish each asset's search. | What a state is worth crosses to `module_ml` as two files, the question and the answer, never as an import (`SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). | COMPUTE — one stage for one asset |
+| `sub_module_serpentine_search/` | The serpentine search, a hand's research outside the chain: `serpentine_search.py` one turn, `axis_barrier.py` and `axis_feature_set.py` the moves of two search axes, `promote.py` the promotion, `config.py` its records, its round and its paths. | It imports this module's `config.py` and `dataset.py` and nothing of another module; `status.py` imports it to publish each asset's search. | What a search state is worth crosses to `module_ml` as two files, the question and the answer, never as an import (`SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). | COMPUTE — one stage for one asset |
 
 ## Its sub-modules
 
@@ -105,7 +105,7 @@ serpentine search, then one action — a target of this module started through `
 own: draft the profile, read the recorded search, promote the proposal. It writes one file, the draft of
 `<TICKER>_serpentine_search_profile.json`. Its orientation is `sub_module_terminal/README_sub_module_terminal.md`.
 
-`sub_module_serpentine_search/` is the serpentine search: a hand's research outside the chain over one asset's state —
+`sub_module_serpentine_search/` is the serpentine search: a hand's research outside the chain over one asset's search state —
 its feature set, its barrier geometry and its hyper-parameter point — under a profile a hand drafted. Its orientation is
 `sub_module_serpentine_search/README_sub_module_serpentine_search.md`, its rules
 `sub_module_serpentine_search/skill_serpentine_search.md`, and its method `skills/methodology_features.md` § The

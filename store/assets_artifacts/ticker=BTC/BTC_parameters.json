@@ -11,6 +11,6 @@
    "num_boost_round": 150,
    "subsample": 0.9849549260809971
   },
-  "trial_count": 8
+  "hpo_trial_count": 8
  }
 }

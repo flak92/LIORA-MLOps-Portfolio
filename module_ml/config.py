@@ -37,7 +37,8 @@ CONFIGURABLES = (
      "requires_rerun": "ml-all, features-serpentine-search", "risk": "another label: every fit and trade changes"},
     # twice by extraction
     {"name": "START_BY_COORDINATE_DEFAULT", "class": "DEFAULT",
-     "unit": "the label's multiplier of the true range, the horizon token, the stop's and the take-profit's multipliers",
+     "unit": "the label's multiplier of the true range, the label horizon token, the stop's and the take-profit's "
+             "multipliers",
      "value": {"label_barrier_true_range_multiplier": 2.0, "label_horizon": "4h",
                "stop_loss_true_range_multiplier": 2.0, "take_profit_true_range_multiplier": 2.0},
      "meaning": "where each barrier coordinate stands until a promotion writes another: the geometry the chain falls "
@@ -205,15 +206,16 @@ EVENT_RESOLUTION_NAMES = {               # the name of each code, used wherever
     EVENT_RESOLUTION_VERTICAL: "vertical",
     EVENT_RESOLUTION_AMBIGUOUS: "ambiguous",
 }
-# the vertical barrier, a duration token of the timeframe grammar: the serpentine search moves it a
-# token at a time, and one place turns a token into minutes — dataset.barriers_from()
+# the label horizon — the vertical barrier, a duration token of the timeframe grammar that names no timeframe: the
+# serpentine search moves it a token at a time, and one place turns a token into minutes — dataset.barriers_from()
 HORIZON_TOKEN_MINUTES = {"1h": 60, "2h": 120, "4h": 240, "8h": 480, "12h": 720, "1d": 1440}
 
-# ---- folds: WARMUP | TRAIN | PURGE | OOS validation | final holdout
+# ---- folds: F1 to F5, consecutive segments of the research window, the warm-up inside F1 — the geometry of time
+# module_ml/skills/methodology_ml.md draws
 FOLD_BOUNDS_UTC = VALUE_BY_CONFIGURABLE["FOLD_BOUNDS_UTC"]
 FOLD_BOUNDS_MS = tuple(to_utc_ms(d) for d in FOLD_BOUNDS_UTC)
-# F2, F3, F4 — the data-driven selection of the hyper-parameters, the threshold and, once a state is promoted, the feature
-# set and the barrier geometry
+# F2, F3, F4 — the data-driven selection of the hyper-parameters, the threshold and, once a search state is promoted, the
+# feature set and the barrier geometry
 # twice by extraction
 VALIDATION_FOLD_IDS = (2, 3, 4)
 FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
@@ -243,7 +245,7 @@ MINIMUM_TRADES_PER_VALIDATION_FOLD = VALUE_BY_CONFIGURABLE["MINIMUM_TRADES_PER_V
 MINUTES_PER_YEAR = 365 * 1440                   # crypto trades 24/7: the year of a path measured in minutes and of the bars it is sampled at
 MINIMUM_AGREEING_TREND_TIMEFRAMES = VALUE_BY_CONFIGURABLE["MINIMUM_AGREEING_TREND_TIMEFRAMES"]
 
-# ---- a state of the serpentine search as this module scores it: the values a state is made of and the measure the
+# ---- a search state as this module scores it: the values a search state is made of and the measure the
 # gate inside a study reads, each of which the feature layer's copy must equal; the final holdout never chooses
 # what the gate compares fold by fold: the growth a fold earned, so a better fold is a higher final equity and the
 # validation path, which compounds the folds' final equities, is better too. The fold is the unit of robustness and
@@ -251,15 +253,15 @@ MINIMUM_AGREEING_TREND_TIMEFRAMES = VALUE_BY_CONFIGURABLE["MINIMUM_AGREEING_TREN
 # selected on by nothing
 # twice by extraction
 SELECTION_FOLD_MEASURE = "cagr"
-# the barrier geometry a promotion writes, in the order a state keys it, and what each value is however a
-# hand wrote it in a grid: a multiplier is a float, a horizon a token of HORIZON_TOKEN_MINUTES
+# the barrier geometry a promotion writes, in the order a search state keys it, and what each value is however a
+# hand wrote it in a grid: a multiplier is a float, a label horizon a token of HORIZON_TOKEN_MINUTES
 # twice by extraction
 BARRIER_COORDINATE_CASTS = {"label_barrier_true_range_multiplier": float, "label_horizon": str,
                             "take_profit_true_range_multiplier": float, "stop_loss_true_range_multiplier": float}
 # twice by extraction
 BARRIER_COORDINATE_NAMES = tuple(BARRIER_COORDINATE_CASTS)
 # the coordinates a move of which changes only where a position leaves: neither a fit nor a prediction depends on
-# them, so two states differing only here are one fit identity and share one set of fits
+# them, so two search states differing only here are one fit identity and share one set of fits
 # twice by extraction
 TRADE_EXIT_COORDINATE_NAMES = ("take_profit_true_range_multiplier", "stop_loss_true_range_multiplier")
 
@@ -356,15 +358,15 @@ def score_trials_jsonl(ticker: str) -> Path:
 
 # twice by extraction
 def score_request_json(ticker):
-    """The states to score, written by whoever drives the serpentine search and read by this module: the kind of scoring
-    asked for, the round it runs in, and the states themselves. This module reads it and writes nothing back
-    into it."""
+    """The search states to score, written by whoever drives the serpentine search and read by this module: the kind
+    of scoring asked for, the round it runs in, and the search states themselves. This module reads it and writes
+    nothing back into it."""
     return artifact_dir(ticker) / f"{ticker}_score_request.json"
 
 
 # twice by extraction
 def score_response_json(ticker):
-    """What the states of one request are worth, in the order the request named them. Written once the whole
+    """What the search states of one request are worth, in the order the request named them. Written once the whole
     request has been answered, so a stop leaves no half answer behind."""
     return artifact_dir(ticker) / f"{ticker}_score_response.json"
 

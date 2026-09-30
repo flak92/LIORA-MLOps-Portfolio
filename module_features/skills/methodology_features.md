@@ -21,7 +21,7 @@ entry the trend gate's. `DECISION_TIMEFRAME`, the record beside it, is the grid 
 labels and the strategy stand on. The duration and the slot of each token are read off the token
 (`timeframe_duration_ms()`, `timeframe_slot()`). The values of both records stand in the records,
 which `features_status.json` publishes (`configurables`), and it publishes, per timeframe, its
-duration, its bars per UTC day, its ratio to the level below and its slot (`catalogue.timeframes`).
+duration, its bars per UTC day, its ratio to the next finer timeframe and its slot (`catalogue.timeframes`).
 The slot travels in the snapshot and in no file name: a partition names its timeframe as
 `timeframe=<timeframe>`.
 
@@ -29,7 +29,7 @@ A token enters the hierarchy on two conditions (`FEATURE-TAXONOMY-A-TIMEFRAME-TO
 Its duration is a whole multiple of the decision timeframe's and divides one UTC day: a bar opens on
 a multiple of its duration from the epoch, so only such a token's bars close on UTC midnight and on
 a decision — a week or a month would need an anchor the token does not carry. And adjacent entries
-keep a ratio of at least three, because two levels closer than that sample the same price movement:
+keep a ratio of at least three, because two timeframes closer than that sample the same price movement:
 the triple-screen hierarchy (`module_ml/skills/methodology_ml.md` § 13 [10]). Everything that reads
 the hierarchy is the experiment — the decisions stand on one of its entries, the trend gate reads
 its coarsest and the strategy's agreement counts over all of them — so a new token is a new
@@ -127,27 +127,27 @@ need, in the same bars.
 
 | definition | on the timeframe's own bars | range | effective history (bars) | warm-up (bars) | offered on | tier | default set |
 |---|---|---|---|---|---|---|---|
-| `exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14` | (exponential_smoothing(close, 20) − exponential_smoothing(close, 50)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 50 | 200 | every level | CORE | yes |
-| `centered_recursive_mean_gain_share14` | (recursive_mean_gain_share(close, 14) − 50) / 50 | [−1, 1] | 14 | 56 | every level | EXTENDED | yes |
-| `true_range_recursive_mean14_over_close` | recursive_mean(true_range, 14) / close | > 0, dimensionless | 14 | 56 | every level | CORE | yes |
-| `rolling_range_position20` | (close − min(low, 20)) / (max(high, 20) − min(low, 20)) | [0, 1] | 20 | 20 | every level | CORE | yes |
-| `logarithmic_volume_rolling_standard_score50` | rolling_standard_score(log1p(volume), 50) | dimensionless | 50 | 50 | every level | CORE | yes |
-| `rolling_standard_score20` | (close − rolling_mean(close, 20)) / rolling_standard_deviation(close, 20) — the Bollinger reading: %b(20, 2σ) taken with the same sample σ (`ddof=1`) is rolling_standard_score20 / 4 + 0.5, and with Bollinger's population σ the slope is √(20/19) / 4 — an affine map either way, which a tree model is invariant to, so no %b column exists | dimensionless | 20 | 20 | every level | CORE | no |
-| `close_minus_rolling_mean50_over_true_range_recursive_mean14` | (close − rolling_mean(close, 50)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 50 | 56 | every level | CORE | no |
-| `close_minus_rolling_mean200_over_true_range_recursive_mean14` | (close − rolling_mean(close, 200)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 200 | 200 | the top level alone | CORE | no |
-| `close_minus_exponential_smoothing20_over_true_range_recursive_mean14` | (close − exponential_smoothing(close, 20)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 80 | every level | CORE | no |
-| `rolling_standard_deviation20_over_close` | rolling_standard_deviation(close, 20) / close | > 0, dimensionless | 20 | 20 | every level | CORE | no |
-| `relative_change10` | close_t / close_{t−10} − 1 | unbounded, dimensionless | 10 | 11 | every level | CORE | no |
-| `close_minus_open_over_true_range_recursive_mean14` | (close − open) / recursive_mean(true_range, 14) | unbounded, dimensionless | 14 | 56 | every level | CORE | no |
-| `high_minus_low_over_true_range_recursive_mean14` | (high − low) / recursive_mean(true_range, 14) | ≥ 0, dimensionless | 14 | 56 | every level | CORE | no |
-| `centered_recursive_mean_upward_movement_share14` | (recursive_mean_upward_movement_share(high, low, 14) − 50) / 50 | [−1, 1] | 14 | 56 | every level | EXTENDED | no |
-| `recursive_mean_directional_movement_imbalance14` | recursive_mean_directional_movement_imbalance(high, low, 14) | [0, 100] | 14 | 112 | every level | EXTENDED | no |
-| `close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14` | (close − Σ₂₀(close · volume) / Σ₂₀(volume)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 56 | every level | EXTENDED | no |
-| `cumulative_signed_volume_rolling_standard_score50` | rolling_standard_score(cumulative_signed_volume, 50) | dimensionless | 50 | 50 | every level | EXTENDED | no |
-| `rolling_volume_weighted_close_location20` | Σ₂₀(location · volume) / Σ₂₀(volume) | [−1, 1] | 20 | 20 | every level | EXTENDED | no |
-| `centered_rolling_money_flow_gain_share14` | (rolling_money_flow_gain_share(high, low, close, volume, 14) − 50) / 50 | [−1, 1] | 14 | 15 | every level | EXTENDED | no |
-| `exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14` | (exponential_smoothing(close, 8) − exponential_smoothing(close, 21)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 21 | 84 | every level | COMPOSITE | no |
-| `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14` | (exponential_smoothing(close, 21) − exponential_smoothing(close, 55)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 55 | 220 | every level | COMPOSITE | no |
+| `exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14` | (exponential_smoothing(close, 20) − exponential_smoothing(close, 50)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 50 | 200 | every timeframe | CORE | yes |
+| `centered_recursive_mean_gain_share14` | (recursive_mean_gain_share(close, 14) − 50) / 50 | [−1, 1] | 14 | 56 | every timeframe | EXTENDED | yes |
+| `true_range_recursive_mean14_over_close` | recursive_mean(true_range, 14) / close | > 0, dimensionless | 14 | 56 | every timeframe | CORE | yes |
+| `rolling_range_position20` | (close − min(low, 20)) / (max(high, 20) − min(low, 20)) | [0, 1] | 20 | 20 | every timeframe | CORE | yes |
+| `logarithmic_volume_rolling_standard_score50` | rolling_standard_score(log1p(volume), 50) | dimensionless | 50 | 50 | every timeframe | CORE | yes |
+| `rolling_standard_score20` | (close − rolling_mean(close, 20)) / rolling_standard_deviation(close, 20) — the Bollinger reading: %b(20, 2σ) taken with the same sample σ (`ddof=1`) is rolling_standard_score20 / 4 + 0.5, and with Bollinger's population σ the slope is √(20/19) / 4 — an affine map either way, which a tree model is invariant to, so no %b column exists | dimensionless | 20 | 20 | every timeframe | CORE | no |
+| `close_minus_rolling_mean50_over_true_range_recursive_mean14` | (close − rolling_mean(close, 50)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 50 | 56 | every timeframe | CORE | no |
+| `close_minus_rolling_mean200_over_true_range_recursive_mean14` | (close − rolling_mean(close, 200)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 200 | 200 | the top timeframe alone | CORE | no |
+| `close_minus_exponential_smoothing20_over_true_range_recursive_mean14` | (close − exponential_smoothing(close, 20)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 80 | every timeframe | CORE | no |
+| `rolling_standard_deviation20_over_close` | rolling_standard_deviation(close, 20) / close | > 0, dimensionless | 20 | 20 | every timeframe | CORE | no |
+| `relative_change10` | close_t / close_{t−10} − 1 | unbounded, dimensionless | 10 | 11 | every timeframe | CORE | no |
+| `close_minus_open_over_true_range_recursive_mean14` | (close − open) / recursive_mean(true_range, 14) | unbounded, dimensionless | 14 | 56 | every timeframe | CORE | no |
+| `high_minus_low_over_true_range_recursive_mean14` | (high − low) / recursive_mean(true_range, 14) | ≥ 0, dimensionless | 14 | 56 | every timeframe | CORE | no |
+| `centered_recursive_mean_upward_movement_share14` | (recursive_mean_upward_movement_share(high, low, 14) − 50) / 50 | [−1, 1] | 14 | 56 | every timeframe | EXTENDED | no |
+| `recursive_mean_directional_movement_imbalance14` | recursive_mean_directional_movement_imbalance(high, low, 14) | [0, 100] | 14 | 112 | every timeframe | EXTENDED | no |
+| `close_minus_rolling_volume_weighted_mean20_over_true_range_recursive_mean14` | (close − Σ₂₀(close · volume) / Σ₂₀(volume)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 20 | 56 | every timeframe | EXTENDED | no |
+| `cumulative_signed_volume_rolling_standard_score50` | rolling_standard_score(cumulative_signed_volume, 50) | dimensionless | 50 | 50 | every timeframe | EXTENDED | no |
+| `rolling_volume_weighted_close_location20` | Σ₂₀(location · volume) / Σ₂₀(volume) | [−1, 1] | 20 | 20 | every timeframe | EXTENDED | no |
+| `centered_rolling_money_flow_gain_share14` | (rolling_money_flow_gain_share(high, low, close, volume, 14) − 50) / 50 | [−1, 1] | 14 | 15 | every timeframe | EXTENDED | no |
+| `exponential_smoothing8_minus_exponential_smoothing21_over_true_range_recursive_mean14` | (exponential_smoothing(close, 8) − exponential_smoothing(close, 21)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 21 | 84 | every timeframe | COMPOSITE | no |
+| `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14` | (exponential_smoothing(close, 21) − exponential_smoothing(close, 55)) / recursive_mean(true_range, 14) | unbounded, dimensionless | 55 | 220 | every timeframe | COMPOSITE | no |
 
 One record of `FEATURE_CATALOGUE`, field by field — what a record must carry is
 `FEATURE-TAXONOMY-A-CATALOGUE-RECORD-CARRIES-EVERY-FIELD`; what a fault in a field breaks is this:
@@ -180,15 +180,15 @@ moment it closes. A window of n bars is finite from its n-th bar; a window over 
 `relative_change`, `rolling_money_flow_gain_share` — only from its (n + 1)-th, since its first change
 is taken off the bar before the window, which `warmup_offset_bars` counts.
 
-The nesting criterion holds the longest effective history offered on a level below the shortest
-offered on the level above: a long window on a fine level spans a coarser level's history in many
-more bars, which is how a level smuggles in another level's regime — hence
-`close_minus_rolling_mean200_over_true_range_recursive_mean14` is offered on the top level alone. It
+The nesting criterion holds the longest effective history offered on a timeframe below the shortest
+offered on the next coarser one: a long lookback window on a fine timeframe spans a coarser timeframe's
+history in many more bars, which is how a timeframe smuggles in another timeframe's regime — hence
+`close_minus_rolling_mean200_over_true_range_recursive_mean14` is offered on the top timeframe alone. It
 is a criterion the catalogue's author reads, published and asserted by no stage
 (`FEATURE-TAXONOMY-EFFECTIVE-HISTORIES-ARE-SHOWN-NOT-ASSERTED`): `features_status.json` publishes
 both numbers for each adjacent pair (`catalogue.nesting`). This catalogue keeps it between the finest
-level and the one above it and breaks it between that level and the top: the longest history
-offered on the middle level,
+timeframe and the one above it and breaks it between that timeframe and the top: the longest history
+offered on the middle timeframe,
 `exponential_smoothing21_minus_exponential_smoothing55_over_true_range_recursive_mean14`, outlasts
 the shortest on the top, `relative_change10`. The author decides what to offer; the importance
 tables tell what it was worth.
@@ -201,7 +201,7 @@ column order is what the model samples by position, so a definition is appended 
 and never inserted into it (`FEATURE-TAXONOMY-A-DEFINITION-IS-APPENDED`). The strategy reads one
 definition by name on every timeframe, whatever the set holds — `TREND_GATE_FEATURE_DEFINITION` of
 `module_ml/config.py`, the catalogue's first — because the hierarchy gate is a rule of the strategy,
-not a feature the model chose; that definition is offered on every level.
+not a feature the model chose; that definition is offered on every timeframe.
 
 `logarithmic_volume_rolling_standard_score50` measures the activity of the **canonical observation
 process**, not venue-independent market activity: the sources differ in liquidity level, so a source
@@ -274,85 +274,86 @@ A relation across timeframes is a rule of the strategy, never a definition
 
 ## The serpentine search
 
-The serpentine search is a hand's research over one asset's state Θ, outside the chain
+The serpentine search is a hand's research over one asset's search state Θ, outside the chain
 (`module_features/sub_module_serpentine_search/`; how it runs is its
 `module_features/sub_module_serpentine_search/README_sub_module_serpentine_search.md`, its
 rules `module_features/sub_module_serpentine_search/skill_serpentine_search.md`, each cited below by
-its `rule_id`). A state is the columns of a feature set per timeframe, the four barrier coordinates
-— the multiplier the label's barriers stand at, the horizon they stand for, the take-profit and the
-stop a trade leaves at — and the hyper-parameter point `best_params` (`theta()`); its key is its own
-canonical JSON text, so two states are equal exactly or not at all (`state_key()`,
-`SERPENTINE-SEARCH-A-STATE-IS-KEYED-BY-ITS-CANONICAL-TEXT`). A trial is one scored state: `ml-score`
-fits the three boosters before F2, F3 and F4 — a state of the same question that differs only in the
-trade's exit shares those fits (`score.fit_identity()`, `score.score_results()`) — predicts each
-fold and runs the strategy's threshold selection on the predictions (`score.state_material()`,
-`score.trial_result()`), and the answer comes back as `<TICKER>_score_response.json`. The turn
-computes no metric of a state: every number a gate, a ranking or a proposal reads comes off an
-answer (`SERPENTINE-SEARCH-IT-COMPUTES-NO-METRIC`,
-`SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). A function named below without its module is
-`module_features/sub_module_serpentine_search/serpentine_search.py`'s.
+its `rule_id`; the meaning of every name is `module_skills/skill_research_semantics.md`'s). A search
+state is the columns of a feature set per timeframe, the four barrier coordinates — the multiplier
+the label's barriers stand at, the label horizon they stand for, the take-profit and the stop a trade
+leaves at — and the hyper-parameter point `best_params` (`theta()`); its key is its own canonical JSON
+text, so two search states are equal exactly or not at all (`search_state_key()`,
+`SERPENTINE-SEARCH-A-SEARCH-STATE-IS-KEYED-BY-ITS-CANONICAL-TEXT`). A state evaluation is the one
+scored computation of a search state: `ml-score` fits the three boosters before F2, F3 and F4 — a
+search state of the same question that differs only in the trade's exit shares those fits
+(`score.fit_identity()`, `score.score_results()`) — predicts each fold and runs the strategy's
+threshold selection on the predictions (`score.search_state_material()`, `score.state_evaluation()`),
+and the answer comes back as `<TICKER>_score_response.json`. The turn computes no metric of a search
+state: every number a gate, a ranking or a proposal reads comes off an answer
+(`SERPENTINE-SEARCH-IT-COMPUTES-NO-METRIC`, `SERPENTINE-SEARCH-THE-EVALUATOR-IS-A-FILE-AWAY`). A
+function named below without its module is `module_features/sub_module_serpentine_search/serpentine_search.py`'s.
 
-A round is `ROUND_SCHEDULE` (the sub-module's `config.py`) read in order: the barrier loop's `trade`
-family, which moves the take-profit and the stop one grid point down or up; its `label` family, which
-moves the label's multiplier and horizon; the feature-set loop's `forward` family, every state with
-one more admitted column, in timeframe and catalogue order; its `backward` family, every state with
-one column fewer, never the last; and the hpo loop's `study` family, one study per beam parent,
-whose best admissible point that beats the parent comes back as its candidate
-(`hpo.admissible_point()`) — last, so the turn that reads its answer ends the round
-(`SERPENTINE-SEARCH-HPO-ENDS-THE-ROUND`). A profile searches the loops it names and the round skips
-the rest.
-Each family expands the beam once, seeded by the beam the family before it left, and a state already
-in the ledger is looked up, never scored again.
+A round is one pass through the frozen `ROUND_SCHEDULE` (the sub-module's `config.py`): the barrier
+axis's `trade` search family, which moves the take-profit and the stop one grid point down or up; its
+`label` family, which moves the label's multiplier and label horizon; the feature-set axis's `forward`
+family, every search state with one more admitted column, in timeframe and catalogue order; its
+`backward` family, every search state with one column fewer, never the last; and the hpo axis's
+`study` family, one study per beam parent, whose best admissible point that beats the parent comes
+back as its candidate (`hpo.admissible_point()`) — last, so the turn that reads its answer ends the
+round (`SERPENTINE-SEARCH-HPO-ENDS-THE-ROUND`). A profile searches the search axes it names and the
+round skips the rest. Each search family expands the beam once, seeded by the beam the family before
+it left, and a search state already in the ledger is looked up, never scored again.
 
 ### 1. The objective
 
-A state's objective is the triple `state_objective`, compared most significant first: the CAGR of
-the chained validation path, then that path's Calmar ratio, then its profit factor, where a path
-without a losing trade has no profit factor (`validation.profit_factor()`) and counts as +∞. The
-path chains F2, F3 and F4 — each fold's 1m equity scaled by what the folds before it settled at —
+A search state's objective is the triple `search_state_objective`, compared most significant first:
+the CAGR of the chained validation path, then that path's Calmar ratio, then its profit factor, where
+a path without a losing trade has no profit factor (`validation.profit_factor()`) and counts as +∞.
+The path chains F2, F3 and F4 — each fold's 1m equity scaled by what the folds before it settled at —
 and its CAGR is the product of the three folds' final equities annualised over their minutes
-(`strategy.validation_path_cagr()`; `strategy.validation_path_block()`). A trial stands at the entry
-edge threshold the one selection rule picks for it (`strategy.entry_edge_threshold_selection()`):
+(`strategy.validation_path_cagr()`; `strategy.validation_path_block()`). A state evaluation stands at
+the entry edge threshold the one selection rule picks for it (`strategy.entry_edge_threshold_selection()`):
 the point of `ENTRY_EDGE_THRESHOLD_GRID` maximising that same CAGR among the points that clear the
-trade floor on every validation fold, ties to the smaller threshold. `ranking_key` orders trials by
-the objective, descending, then by the smaller column count, then by the earlier trial.
+trade floor on every validation fold, ties to the smaller threshold. `ranking_key` orders state
+evaluations by the objective, descending, then by the smaller column count, then by the earlier state
+evaluation.
 
 ### 2. The conditions every comparison shares
 
-Two states are compared because both were scored under the same conditions. The same data: the
-canonical 1m series inside the frozen research window, read only there
-(`labels.load_research_1m()`), a label kept only where its event's horizon ends inside it
-(`labels.label_events()`). The same folds: WARMUP | TRAIN | PURGE | OOS | final holdout
-(`FOLD_BOUNDS_UTC` of `module_ml/config.py`, `module_ml/validation.py`), each validation fold
-trained on the folds before it with its training rows purged at the fold's start and scored on the
-rows whose horizon fits the block; F5 enters no trial. The same cost,
-`EXECUTION_COST_RATE_PER_TRADE_SIDE`, on the entry and the exit of every trade
+Two search states are compared because both were scored under the same conditions. The same data:
+the canonical 1m series inside the frozen research window, read only there
+(`labels.load_research_1m()`), a label kept only where its event's label horizon ends inside it
+(`labels.label_events()`). The same folds: F1 to F5 of `FOLD_BOUNDS_UTC` (`module_ml/config.py`,
+`module_ml/validation.py`; the geometry of time is `module_ml/skills/methodology_ml.md` § 6), each
+validation fold trained on the folds before it with its training rows purged at the fold's start and
+scored on the rows of its OOS block whose label horizon fits it; F5 enters no state evaluation. The
+same cost, `EXECUTION_COST_RATE_PER_TRADE_SIDE`, on the entry and the exit of every trade
 (`strategy.backtest()`), and the seeds — `SEED` for every fit, `SEED` plus the round for a study of
 the search. The same annualisation: a CAGR over the path's own minutes in a 365-day year
-(`validation.cagr()`), the Sharpe ratio reported beside it by the periods per year of the decision
-bar (`strategy.backtest()`). The same causality: every feature value read from the last closed bar
-of its timeframe (`indicators.asof_index`). A move of the label's horizon changes the supervised
-population itself — a longer horizon drops more of each fold's tail — so parent and child are scored
-on row sets that differ at the edges, on the same calendar and the same capital: a property of the
-coordinate. These conditions hold inside one experiment and nowhere else (§ One search, one
+(`validation.cagr()`), the Sharpe ratio reported beside it by the decision bars per year
+(`strategy.backtest()`). The same causality: every feature value read from the last closed bar
+of its timeframe (`indicators.asof_index`). A move of the label horizon changes the supervised
+population itself — a longer label horizon drops more of each fold's tail — so parent and child are
+scored on row sets that differ at the edges, on the same calendar and the same capital: a property
+of the coordinate. These conditions hold inside one experiment and nowhere else (§ One search, one
 experiment).
 
 ### 3. Progress and stopping
 
-Each family leaves the beam `top_beam(children + beam)`: the best `SERPENTINE_SEARCH_BEAM_WIDTH`
-distinct states by the ranking key, among the children that cleared the gate and the parents they
-came from. The parents stay in the race, so a family that finds nothing better keeps what it had,
-and the leader of the beam — the champion, moved once at the end of the round — never ranks worse
-than it did: the best ranked result never gets worse
+Each search family leaves the beam `top_beam(children + beam)`: the best `SERPENTINE_SEARCH_BEAM_WIDTH`
+distinct search states by the ranking key, among the children that cleared the gate and the parents
+they came from. The parents stay in the race, so a search family that finds nothing better keeps what
+it had, and the leader of the beam — the champion, moved once at the end of the round — never ranks
+worse than it did: the best ranked result never gets worse
 (`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`).
 
 `search_converged = not round_accepted` (`turn()`): the search stops after a round in which no
-family of the executed schedule changed the beam. Another round would offer the barrier and
-feature-set families the same states and receive the same answers, while its studies would draw new
-points, so the end is the end of this schedule and gate, not a fixed point. That is not a global
-optimum, and not a local optimum of the objective alone: a neighbour that raised the path's CAGR but
-not every fold's was offered and refused, and a child that cleared the gate but ranked below a full
-beam was not kept (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
+search family of the executed schedule changed the beam. Another round would offer the barrier and
+feature-set search families the same search states and receive the same answers, while its studies
+would draw new points, so the end is the end of this schedule and gate, not a fixed point. That is
+not a global optimum, and not a local optimum of the objective alone: a neighbour that raised the
+path's CAGR but not every fold's was offered and refused, and a child that cleared the gate but ranked
+below a full beam was not kept (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`).
 
 ### 4. The thresholds
 
@@ -360,30 +361,44 @@ beam was not kept (`SERPENTINE-SEARCH-CONVERGED-MEANS-NO-FAMILY-MOVED-THE-BEAM`)
 (`SERPENTINE-SEARCH-A-MOVE-BEATS-ITS-PARENT-ON-EVERY-FOLD`):
 
 - its threshold constraint is met — some threshold cleared `MINIMUM_TRADES_PER_VALIDATION_FOLD`
-  trades on every validation fold (`strategy.entry_edge_threshold_selection()`); a fallback row,
-  scored at the grid floor nothing qualified for, is refused before it is compared;
+  trades on every validation fold (`strategy.entry_edge_threshold_selection()`); a fallback state
+  evaluation, scored at the grid floor nothing qualified for, is refused before it is compared;
 - its CAGR, `SELECTION_FOLD_MEASURE`, is strictly higher than its parent's on every validation fold
-  F2–F4, and no lower for a move that shrinks the state, which then ranks first for its fewer
+  F2–F4, and no lower for a move that shrinks the search state, which then ranks first for its fewer
   columns — the fold is the unit of robustness.
 
 A fold's CAGR rises with its final equity, and the path's CAGR compounds the three final equities,
 so a child better on every fold is better on the path: the objective needs no condition of its own,
 and a better fold is a smaller loss or a larger gain whatever its drawdown did — the drawdown stays
 in the report and in the ranking. No margin is asked of a move, so small true gains can add up move
-by move; the noise of the whole search is asked once, of the proposal. The barrier and hpo loops
-call every move `forward`. Inside a study, `module_ml` refuses a point whose chosen threshold does
-not beat the parent's CAGR on every fold, so a study offers only a child the gate keeps.
+by move; the noise of the whole search is asked once, of the proposal. The barrier and hpo search
+axes call every move `forward`. Inside a study, `module_ml` refuses a point whose chosen threshold
+does not beat the parent's CAGR on every fold, so a study offers only a child the gate keeps.
 
-The one proposal (`proposals_block`) is the champion, as proposal 1, when it is not the start state
-and its path CAGR beats the start's by more than k(N)·σ, σ the asset's noise sigma drafted into the
-profile. Its threshold constraint and its folds need no test there: every member of the beam cleared
-the gate against its parent, so every one of them stands at or above the start on every fold
-(`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`). N is the sum of `trial_count_by_loop`
-(`write_round_state()`): the ledger's lines after the start in the loops that enumerate their moves,
-and every point the studies drew — a study's candidate, itself a drawn point, counted once, as its
-line (`SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`). A calibration run — the profile's
-`path_cagr_noise_standard_deviation` null — keeps moves as any run does and proposes nothing
+The one proposal (`proposals_block`) is the champion, as proposal 1, when it is not the start search
+state and its path CAGR beats the start's by more than k(N)·σ, σ the asset's noise sigma drafted into
+the profile. Its threshold constraint and its folds need no test there: every member of the beam
+cleared the gate against its parent, so every one of them stands at or above the start on every fold
+(`SERPENTINE-SEARCH-THE-BEAM-KEEPS-ITS-PARENTS`). A calibration search — the profile's
+`path_cagr_noise_standard_deviation` null — keeps moves as any search does and proposes nothing
 (`SERPENTINE-SEARCH-ONLY-A-CHAMPION-ABOVE-THE-NOISE-IS-PROPOSED`).
+
+N is `selection_hypothesis_count`: the selection hypotheses the search tested, counted by `turn()` at
+every round boundary and copied by every reader (`RESEARCH-SEMANTICS-N-COUNTS-SELECTION-HYPOTHESES`,
+`SERPENTINE-SEARCH-A-DRAWN-POINT-IS-COUNTED-ONCE`). Its one equation, lines(a) the ledger's lines of
+search axis a and hpo_trial_count the points one study of the search drew, completed and pruned alike:
+
+    N = lines(barrier) + lines(feature_set) + Σ_studies hpo_trial_count
+      = (state_evaluation_count − 1) − lines(hpo) + Σ_studies hpo_trial_count
+
+The start's line is left out: it is the reference every hypothesis is measured against. A search
+state reached twice — by two parents, or again in a later round — is one line and counts once, and a
+cache hit adds nothing. A study's candidate that became a line is the drawn point it came from and
+counts once, as that point; a candidate whose search state the ledger already held adds no line and
+counts as the point it was drawn as. The terms by search axis are
+`selection_hypothesis_count_by_search_axis`, beside the sum, in `<TICKER>_serpentine_search.json`.
+On BTC's ledger at `618d115` — 31 lines: the start, 8 of the barrier axis, 22 of the feature-set
+axis, none of the hpo axis — and its one study of 8 points, N = 8 + 22 + 8 = (31 − 1) − 0 + 8 = 38.
 
 These thresholds are this method's assumptions — the baseline it holds itself to — and not
 conditions of correctness for every optimiser: another search could keep other moves and still be a
@@ -392,42 +407,43 @@ correct search.
 ### 5. The margin k(N)·σ is a heuristic
 
     rate(k, N) = P( max_i S_i − S_start > k·σ ) = 1 − E_Z[ Φ(k + Z)^N ],   Z ~ N(0, 1)
-    S = true value + σ·ε,  ε ~ N(0, 1) independent for the start and each of the N states,
+    S = true value + σ·ε,  ε ~ N(0, 1) independent for the start and each of the N hypotheses,
         every true value equal to the start's
 
-`false_exceedance_rate` is that chance: the best of N states beating the start by k·σ when none of
+`false_exceedance_rate` is that chance: the best of N hypotheses beating the start by k·σ when none of
 them is truly better than it, the expectation a Gauss–Hermite quadrature on a fixed node count.
 `proposal_threshold_multiple` finds the k(N) at which the chance is 5%
 (`PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`) by bisection on a fixed bracket in a fixed number of
 halvings, so one N gives one k on every machine; k grows with N.
 
-σ is `path_cagr_noise_standard_deviation`, read off the ledgers of calibration runs — the last turn
-of one prints the estimate of its own ledger (`turn()`), and a hand drafts the number into the
+σ is `path_cagr_noise_standard_deviation`, read off the ledgers of calibration searches — the last
+turn of one prints the estimate of its own ledger (`turn()`), and a hand drafts the number into the
 profile (`SERPENTINE-SEARCH-THE-NOISE-SIGMA-IS-DRAFTED`). A child and the parent its
-`parent_trial_index` names form one pair when both met the threshold constraint and the child was
-fitted on its own — a move of the trade's exit alone shares its parent's fits and is left out — each
-pair of states once; σ is the median absolute deviation of the pairs' path-CAGR differences
-× 1.4826 / √2, the factor that makes a normal sample's median absolute deviation its standard
-deviation, over the √2 of a difference of two scores. The pairs are pairs of different states, so σ
-holds the effect of each change as well as the variability of an evaluation; a state scored twice
-scores the same, every fit being seeded.
+`parent_state_evaluation_index` names form one pair when both met the threshold constraint and the
+child was fitted on its own — a move of the trade's exit alone shares its parent's fits and is left
+out — each pair of search states once; σ is the median absolute deviation of the pairs' path-CAGR
+differences × 1.4826 / √2, the factor that makes a normal sample's median absolute deviation its
+standard deviation, over the √2 of a difference of two scores. The pairs are pairs of different
+search states, so σ holds the effect of each change as well as the variability of an evaluation; a
+search state scored twice scores the same, every fit being seeded.
 
 k(N)·σ is therefore a margin that grows with the size of the search — a heuristic, not a test. Its
-model assumes independent normal noise of one size; the states of a search are correlated, each one
-move from its parent, and the search is adaptive, every parent having been selected itself. It gives
-no 95% guarantee against a false proposal under this search, and a sentence that claims one is
-false. N counts the states of the search in hand alone: the searches before it on the same F2–F4 —
-a calibration run, a reset, an earlier profile — spent the same folds and are not in it, so for an
-asset searched more than once the margin understates the selection behind a proposal.
+model assumes independent normal noise of one size; the search states of a search are correlated,
+each one move from its parent, and the search is adaptive, every parent having been selected itself.
+It gives no 95% guarantee against a false proposal under this search, and a sentence that claims one
+is false. N counts the selection hypotheses of the search in hand alone: the searches before it on
+the same F2–F4 — a calibration search, a reset, an earlier profile — spent the same folds and are not
+in it, so for an asset searched more than once the margin understates the selection behind a
+proposal.
 
 ### What success is
 
-The search succeeds when it computes, compares and decides correctly: every state scored under the
-conditions of § 2, every gate, ranking and proposal applied as written, and the state file and its
-ledger recording what happened. A positive trading result is not a condition of success: a move from
-a path CAGR of −12% to −8% improves the objective and is kept when it clears the gate, and a champion
-that still loses money is a correct result of a correct search. A search that accepts no candidate —
-its champion the start state, its proposals none — is a correct result too.
+The search succeeds when it computes, compares and decides correctly: every search state scored under
+the conditions of § 2, every gate, ranking and proposal applied as written, and the search's progress
+and its ledger recording what happened. A positive trading result is not a condition of success: a
+move from a path CAGR of −12% to −8% improves the objective and is kept when it clears the gate, and
+a champion that still loses money is a correct result of a correct search. A search that accepts no
+candidate — its champion the start search state, its proposals none — is a correct result too.
 
 ### One search, one experiment
 
@@ -435,8 +451,8 @@ The conditions of § 2 hold inside one experiment, and a serpentine search is on
 ledger was scored on the same data, folds, costs and seed, which is what makes two lines comparable
 and a line already in the ledger a cache hit. The search records part of what it is conditioned on
 in its `inputs` (`build_search_inputs`) and compares them by equality at every turn; what the scores
-depend on beyond them — the canonical data inside the window, the catalogue's values, the records of
-`module_ml/config.py` — it does not see, and what it does record it reads off the chain's files and
-cannot recompute. A change therefore reaches a search through the chain or not at all, and a line
-scored before it is no state of the experiment after it: the order a hand follows is
+depend on beyond them — the canonical data inside the research window, the catalogue's values, the
+records of `module_ml/config.py` — it does not see, and what it does record it reads off the chain's
+files and cannot recompute. A change therefore reaches a search through the chain or not at all, and
+a line scored before it is no state evaluation of the experiment after it: the order a hand follows is
 `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

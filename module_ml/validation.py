@@ -1,5 +1,6 @@
-"""Fold contract WARMUP | TRAIN | PURGE | OOS | final holdout, and the metrics. Pure numpy; a population and its
-average-uniqueness weights are returned together, so a population is never used with somebody else's weights."""
+"""The fold contract — the geometry of time `module_ml/skills/methodology_ml.md` draws — and the metrics. Pure numpy;
+a population and its average-uniqueness weights are returned together, so a population is never used with somebody
+else's weights."""
 
 import numpy as np
 
@@ -7,15 +8,15 @@ from . import config
 
 
 def fold_bounds(fold_id: int) -> tuple[int, int]:
-    """OOS bounds of fold Fk, from the 1-based fold table."""
+    """The bounds of fold Fk, from the 1-based fold table — its OOS block is the whole fold."""
     return config.FOLD_BOUNDS_MS[fold_id - 1], config.FOLD_BOUNDS_MS[fold_id]
 
 
 def fold_minutes(fold_id: int) -> int:
     """How long fold Fk lasts, in minutes — 2024 is a leap year, so F4 is longer than F2 and F3 and no
     fold is idealised to a round year."""
-    start_ms, end_ms = fold_bounds(fold_id)
-    return (end_ms - start_ms) // config.MILLISECONDS_PER_MINUTE
+    fold_start_ms, fold_end_ms = fold_bounds(fold_id)
+    return (fold_end_ms - fold_start_ms) // config.MILLISECONDS_PER_MINUTE
 
 
 def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) -> np.ndarray:
@@ -36,29 +37,29 @@ def average_uniqueness_weight(entry_ts: np.ndarray, event_end_ts: np.ndarray) ->
 
 
 def training_set(entry_ts: np.ndarray, event_end_ts: np.ndarray,
-                 sample_valid: np.ndarray, oos_start_ms: int) -> tuple[np.ndarray, np.ndarray]:
-    """Purged training rows — event_end_ts <= oos_start is exactly no overlap, the end being exclusive — and their
-    weights, measured after the purge."""
-    keep = sample_valid & (event_end_ts <= oos_start_ms)
+                 sample_valid: np.ndarray, fold_start_ms: int) -> tuple[np.ndarray, np.ndarray]:
+    """Purged training rows — event_end_ts <= fold_start_ms is exactly no overlap, the end being exclusive — and
+    their weights, measured after the purge."""
+    keep = sample_valid & (event_end_ts <= fold_start_ms)
     idx = np.flatnonzero(keep)
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 
 
 def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
-                sample_valid: np.ndarray, start_ms: int, end_ms: int,
-                horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
-    """Supervised OOS rows whose maximum horizon fits the block — decidable at t_0 — and their weights, with
-    concurrency counted among the scored events alone. The horizon is the asset's, so a state of the serpentine
-    search that moves it scores the population that horizon admits."""
-    keep = (sample_valid & (decision_ts >= start_ms)
-            & (entry_ts + horizon_minutes * config.MILLISECONDS_PER_MINUTE <= end_ms))
+                sample_valid: np.ndarray, fold_start_ms: int, fold_end_ms: int,
+                label_horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
+    """Supervised rows of the OOS block whose label horizon fits it — decidable at t_0 — and their weights, with
+    concurrency counted among the scored events alone. The label horizon is the search state's, so a search state
+    that moves it scores the population that label horizon admits."""
+    keep = (sample_valid & (decision_ts >= fold_start_ms)
+            & (entry_ts + label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
     idx = np.flatnonzero(keep)
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 
 
-def prediction_window(decision_ts: np.ndarray, start_ms: int, end_ms: int) -> np.ndarray:
-    """Every decision row of a window: label validity never decides which rows receive predictions."""
-    return np.flatnonzero((decision_ts >= start_ms) & (decision_ts < end_ms))
+def oos_block_rows(decision_ts: np.ndarray, fold_start_ms: int, fold_end_ms: int) -> np.ndarray:
+    """Every decision row of the OOS block: label validity never decides which rows receive predictions."""
+    return np.flatnonzero((decision_ts >= fold_start_ms) & (decision_ts < fold_end_ms))
 
 
 # ---- metrics (weighted where it matters) ----------------------------------
@@ -79,11 +80,11 @@ def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> f
     return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
 
 
-def sharpe_annualised(bar_returns: np.ndarray, periods_per_year: float) -> float:
+def sharpe_annualised(bar_returns: np.ndarray, decision_bars_per_year: float) -> float:
     sd = bar_returns.std(ddof=1)
     if sd == 0.0:
         return 0.0
-    return float(bar_returns.mean() / sd * np.sqrt(periods_per_year))
+    return float(bar_returns.mean() / sd * np.sqrt(decision_bars_per_year))
 
 
 def cagr(final_equity: float, minute_count: int) -> float:

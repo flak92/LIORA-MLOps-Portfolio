@@ -21,9 +21,9 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Expected: `dataset.load_catalogue()` reading the contract once per stage and every helper of `module_ml/config.py` taking it as `cat`; no timeframe of the register among the literals of `module_ml` — the duration tokens of `HORIZON_TOKEN_MINUTES` measure a horizon and name no timeframe.
   - Exception: `LABEL_BARRIER_TRUE_RANGE_TIMEFRAME`, the timeframe whose last closed bar sets the barrier's width: an entry of the hierarchy the contract lists, its duration read there.
 - `METHODOLOGY-ML-THE-HORIZON-BECOMES-A-NUMBER-ONCE`
-  - Description: A barrier geometry's horizon travels as a duration token and becomes minutes in one place, so a move of the coordinate moves one number and every reader is handed it.
+  - Description: A barrier geometry's label horizon travels as a duration token and becomes minutes in one place, so a move of the coordinate moves one number and every reader is handed it.
   - Scope: `module_ml/dataset.py`, `module_ml/labels.py`, `module_ml/validation.py`, `module_ml/strategy.py`, `module_ml/train.py`
-  - Expected: `HORIZON_TOKEN_MINUTES` read by `dataset.barriers_from()` alone, for the promoted file and for a state of the serpentine search; `labels.label_events()`, `labels.triple_barrier()`, `validation.scoring_set()` and `strategy.signals_for_fold()` handed `horizon_minutes`; the purge reading `event_end_ts`, which already carries it.
+  - Expected: `HORIZON_TOKEN_MINUTES` read by `dataset.barriers_from()` alone, for the promoted file and for a search state; `labels.label_events()`, `labels.triple_barrier()`, `validation.scoring_set()` and `strategy.signals_for_fold()` handed `label_horizon_minutes`; the purge reading `event_end_ts`, which already carries it.
   - Exception: none
 - `METHODOLOGY-ML-THE-CANONICAL-GRID-IS-ASSERTED-WHERE-READ`
   - Description: The canonical series is gated where this layer reads it: the full minute grid of the research window is asserted before a label is walked or a trade replayed.
@@ -33,7 +33,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-ONE-THRESHOLD-SELECTION`
   - Description: The entry edge threshold is chosen by one function, which the stage and `ml-score` both call, so the chain and the serpentine search never choose a different threshold for the same predictions.
   - Scope: `module_ml/strategy.py`, `module_ml/score.py`
-  - Expected: `strategy.entry_edge_threshold_selection()` called by `strategy.main()` and by `score.trial_result()`; a threshold, a trial and a state ranked by one growth rate, `strategy.validation_path_cagr()`; when no point clears the trade floor, the grid's first point reported with `entry_edge_threshold_constraint_met = false`.
+  - Expected: `strategy.entry_edge_threshold_selection()` called by `strategy.main()` and by `score.state_evaluation()`; a threshold, an HPO trial and a search state ranked by one growth rate, `strategy.validation_path_cagr()`; when no point clears the trade floor, the grid's first point reported with `entry_edge_threshold_constraint_met = false`.
   - Exception: none
 - `METHODOLOGY-ML-NO-BOOSTER-IS-PERSISTED`
   - Description: No booster outlives the process that fitted it: nothing in this layer performs inference, so the numbers are the product.
@@ -59,7 +59,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-THE-FINAL-FOLD-IS-REPORT-ONLY`
   - Description: The final out-of-sample fold is reported and never selected on, so its numbers stay evidence rather than a choice.
   - Scope: `module_ml/**/*.py`
-  - Expected: Every selection — a study, the entry edge threshold, a scored state — made on `VALIDATION_FOLD_IDS` alone; `FINAL_HOLDOUT_FOLD_ID` fitted, predicted and backtested after the choice, under the frozen parameters and threshold, and attributed nothing.
+  - Expected: Every selection — a study, the entry edge threshold, a state evaluation — made on `VALIDATION_FOLD_IDS` alone; `FINAL_HOLDOUT_FOLD_ID` fitted, predicted and backtested after the choice, under the frozen parameters and threshold, and attributed nothing.
   - Exception: none
 - `METHODOLOGY-ML-ONE-ASSET-PER-PROCESS`
   - Description: The layer runs one asset per process, independently, so two assets never share a fit or a search.
@@ -74,12 +74,12 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-PURGE-IS-THE-OVERLAP-TEST`
   - Description: Purge is the overlap test itself and adds no artificial gap.
   - Scope: `module_ml/**/*.py`
-  - Expected: A training row kept exactly where `event_end_ts <= oos_start`, `event_end_ts` being the exclusive end of the event, in `validation.training_set()`.
+  - Expected: A training row kept exactly where `event_end_ts <= fold_start_ms`, `event_end_ts` being the exclusive end of the event, in `validation.training_set()`.
   - Exception: none
 - `METHODOLOGY-ML-LEDGER-IS-APPEND-ONLY`
-  - Description: Each trials family is appended by `module_ml/hpo.py` alone — `hpo_trials` for the chain's studies, `score_trials` for the serpentine search's — never rewritten or pruned, cleared only by a hand; `search_index` is counted off the writer's own partition before a study's lines are appended, and the family's `schema.json` is written from the one constant the row is built from.
+  - Description: Each trials family is appended by `module_ml/hpo.py` alone — `hpo_trials` for the chain's studies, `score_trials` for the serpentine search's — never rewritten or pruned, cleared only by a hand; `study_index` is counted off the writer's own partition before a study's lines are appended, and the family's `schema.json` is written from the one constant the row is built from.
   - Scope: `module_ml/hpo.py`
-  - Expected: An append-only open through `dataset.append_jsonl()`, no rewrite and no pruning in code; a partition cleared by a hand's deletion or, for an asset's `score_trials`, by `make features-serpentine-search-reset`; `search_index` one more than the studies already in the partition; `TRIAL_COLUMNS` the one constant of the row and of both families' `schema.json`.
+  - Expected: An append-only open through `dataset.append_jsonl()`, no rewrite and no pruning in code; a partition cleared by a hand's deletion or, for an asset's `score_trials`, by `make features-serpentine-search-reset`; `study_index` one more than the studies already in the partition; `TRIAL_COLUMNS` the one constant of the row and of both families' `schema.json`.
   - Exception: none
 
 ## FileLayout
@@ -110,7 +110,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-A-TRIALS-LINE-CARRIES-NO-RUN-IDENTITY`
   - Description: A line of a trials family carries no run id, no timestamp and no host name, so two studies over an emptied partition leave the same bytes.
   - Scope: `module_ml/hpo.py`
-  - Expected: `hpo.trial_row()` writing the columns of `TRIAL_COLUMNS` and no other, `origin`, `round` and `search_index` its only marks of where it was drawn.
+  - Expected: `hpo.trial_row()` writing the columns of `TRIAL_COLUMNS` and no other, `origin`, `round` and `study_index` its only marks of where it was drawn.
   - Exception: none
 - `METHODOLOGY-ML-AN-ARTIFACT-CARRIES-ONLY-WHAT-IT-COMPUTED`
   - Description: Every JSON this layer writes is canonical and carries only what it computed — no timestamp, run id, provenance envelope or hash — so an unchanged experiment reproduces its artifacts byte for byte.
@@ -120,10 +120,10 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 
 ## Methodology
 
-- `METHODOLOGY-ML-A-LABEL-STARTS-AFTER-THE-WARM-UP-AND-ENDS-IN-THE-WINDOW`
-  - Description: A decision is labelled only from the contract's `warmup_end_ms` on and only where its whole horizon ends by the research window's end, so no population holds a row before the warm-up or past the window.
+- `METHODOLOGY-ML-A-LABEL-STARTS-AFTER-THE-WARM-UP-AND-ENDS-IN-THE-RESEARCH-WINDOW`
+  - Description: A decision is labelled only from the contract's `warmup_end_ms` on and only where its whole label horizon ends by the research window's end, so no population holds a row before the warm-up or past the research window.
   - Scope: `module_ml/labels.py`, `module_ml/dataset.py`
-  - Expected: `labels.label_events()` keeping a decision where `decision_ts >= warmup_end_ms` and `entry_ts + horizon <= RESEARCH_END_MS`; X narrowed to Y's decision grid by `dataset.build_xy()`.
+  - Expected: `labels.label_events()` keeping a decision where `decision_ts >= warmup_end_ms` and `entry_ts + label_horizon <= RESEARCH_END_MS`; X narrowed to Y's decision grid by `dataset.build_xy()`.
   - Exception: none
 - `METHODOLOGY-ML-AMBIGUITY-IS-NOT-A-CLASS`
   - Description: A minute touching both barriers is a missing observation and not a third outcome, so it is marked invalid rather than relabelled.
@@ -146,9 +146,9 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Expected: `model.fit()` handed the training population's uniqueness weight and no class weight; `class_counts` over `sample_valid` in `<TICKER>_model_evaluation.json`.
   - Exception: none
 - `METHODOLOGY-ML-A-POPULATION-IS-ADMITTED-AT-ENTRY`
-  - Description: A fold scores, and the strategy admits, only the rows whose maximum horizon fits inside the fold, decided at `t_0` and never by where the event actually ended; predictions cover every decision of the fold.
+  - Description: A fold scores, and the strategy admits, only the rows whose label horizon fits inside the fold, decided at `t_0` and never by where the event actually ended; predictions cover every decision of the fold's OOS block.
   - Scope: `module_ml/validation.py`, `module_ml/strategy.py`
-  - Expected: `entry_ts + horizon <= fold end` in `validation.scoring_set()` and in `strategy.signals_for_fold()`; `validation.prediction_window()` every decision row of the window, label validity deciding none.
+  - Expected: `entry_ts + label_horizon <= fold_end_ms` in `validation.scoring_set()` and in `strategy.signals_for_fold()`; `validation.oos_block_rows()` every decision row of the OOS block, label validity deciding none.
   - Exception: none
 - `METHODOLOGY-ML-SKILL-AND-IMPORTANCE-SELECT-NOTHING`
   - Description: The model's skill and its two importances are reported and select nothing: a study and the threshold selection rank by the validation path's growth rate, and the final holdout is attributed nothing.
@@ -158,17 +158,17 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-THE-SEARCH-SPACE-HOLDS-ONLY-HYPER-PARAMETERS`
   - Description: `HYPERPARAMETER_SEARCH_SPACE` holds the booster's hyper-parameters alone, in xgboost's own spelling; the barrier geometry, the cost and the entry-edge-threshold grid are never in it, and a fit has no early stopping.
   - Scope: `module_ml/config.py`, `module_ml/model.py`
-  - Expected: Each entry of the space a kind of draw and its bounds, `num_boost_round` one of them; `XGBOOST_FIXED_PARAMETERS` the fixed rest; the geometry a coordinate of the serpentine search, promoted and never tuned.
+  - Expected: Each entry of the space a kind of draw and its bounds, `num_boost_round` one of them; `XGBOOST_FIXED_PARAMETERS` the fixed rest; the geometry the barrier axis of the serpentine search, promoted and never tuned.
   - Exception: none
 - `METHODOLOGY-ML-ONE-GATE-PRUNES-A-TRIAL`
-  - Description: A trial is stopped early by one gate alone — after each validation fold, the thresholds at which every fold so far clears the trade floor and, where a champion stands, beats it — gone empty; Optuna's median pruner decides nothing.
+  - Description: A trial is stopped early by one gate alone — after each validation fold, the thresholds at which every fold so far clears the trade floor and, where a parent stands, beats it — gone empty; Optuna's median pruner decides nothing.
   - Scope: `module_ml/hpo.py`
   - Expected: `hpo.admissible_thresholds()` read in the fold loop of `hpo.build_objective()` and `optuna.TrialPruned` raised on an empty set; no intermediate value reported to Optuna; both counts written per fold on the trial's line.
   - Exception: none
-- `METHODOLOGY-ML-A-PRUNED-TRIAL-IS-KNOWN-BY-ITS-STATE`
-  - Description: A pruned trial and a completed one do not share a meaning: a trial's state is read from Optuna's own state, never inferred from its value, and a pruned trial's line carries no value.
+- `METHODOLOGY-ML-A-PRUNED-TRIAL-IS-KNOWN-BY-ITS-OUTCOME`
+  - Description: A pruned trial and a completed one do not share a meaning: a trial's outcome is read from Optuna's own trial state, never inferred from its value, and a pruned trial's line carries no value.
   - Scope: `module_ml/hpo.py`
-  - Expected: `hpo.trial_row()` setting `state` from `trial.state`, `cagr_validation_path` and `admissible` `null` and `pruned_at_fold` set on a pruned line; every key of `TRIAL_COLUMNS` on every line.
+  - Expected: `hpo.trial_row()` setting `hpo_trial_outcome` from `trial.state`, `cagr_validation_path` and `admissible` `null` and `pruned_at_fold` set on a pruned line; every key of `TRIAL_COLUMNS` on every line.
   - Exception: none
 - `METHODOLOGY-ML-A-STUDY-OFFERS-ITS-BEST-ADMISSIBLE-POINT`
   - Description: A beam parent's study offers its best admissible point, not its best point: the completed trials read by value, descending, and the first whose chosen threshold is admissible and whose path beats the parent's own offered — or nothing, which is an answer.
@@ -193,5 +193,5 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-THE-SELECTION-SCORE-IS-REPORTED-UNCORRECTED`
   - Description: What the chosen threshold was chosen out of rides beside it, with no correction applied and none implied: the correction is its reader's.
   - Scope: `module_ml/strategy.py`, `module_ml/score.py`
-  - Expected: `cleared_point_count`, `median_cagr_over_cleared` and `max_cagr_over_cleared` beside `selection_score_cagr_validation_path` in `<TICKER>_strategy_evaluation.json` and in every scored state's row, all three `null` when nothing cleared the trade floor; no deflation of the score in code.
+  - Expected: `cleared_point_count`, `median_cagr_over_cleared` and `max_cagr_over_cleared` beside `selection_score_cagr_validation_path` in `<TICKER>_strategy_evaluation.json` and in every state evaluation, all three `null` when nothing cleared the trade floor; no deflation of the score in code.
   - Exception: none

@@ -10,7 +10,7 @@ the feature catalogue and labels → purged walk-forward XGBoost → research st
 simulation → monitoring.
 
 The repository demonstrates a mathematically correct evaluation process and the serpentine
-search, which looks for a better state of an asset — its feature set, its barrier geometry and its
+search, which looks for a better search state of an asset — its feature set, its barrier geometry and its
 hyper-parameters — under an explicit objective. Success is the correctness of the calculations, the
 comparisons and the search's decisions; a positive trading result is not a condition of acceptance, and
 a search that accepts no candidate can be a correct result.
@@ -71,12 +71,12 @@ make features-serpentine-search-reset ASSET=BTC  # the search's own files go; it
 make features-serpentine-search ASSET=BTC        # a new search
 ```
 
-A search proposes one state at most, its champion, or nothing, which is a correct result. A hand promotes a
-proposal, one asset at a time, and the ML chain tunes the promoted state again, its study starting from the
+A search proposes one search state at most, its champion, or nothing, which is a correct result. A hand promotes a
+proposal, one asset at a time, and the ML chain tunes the promoted search state again, its study starting from the
 proposal's point (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`):
 
 ```bash
-make features-serpentine-search-promote ASSET=BTC   # the proposal's state into BTC_feature_set.json, BTC_barriers.json and BTC_hyperparameter_point.json, then ml-all for BTC
+make features-serpentine-search-promote ASSET=BTC   # the proposal's search state into BTC_feature_set.json, BTC_barriers.json and BTC_hyperparameter_point.json, then ml-all for BTC
 ```
 
 The canon, outside the chain, on the host — every rule a row of one workbook, `module_skills/skills_sheet.xlsx`,
@@ -103,7 +103,7 @@ MARKET DATA ─────┤                     ├──► NORMALISED RAW 1
                                                       │
                                     ┌─────────────────┼─────────────────┐
                                     ▼                 ▼                 ▼
-                               decision tf        middle tf          top tf
+                           decision timeframe middle timeframe    top timeframe
                                     └─────────────────┬─────────────────┘
                                                       ▼
                                                   FEATURES X
@@ -143,7 +143,7 @@ stores, their variables and what each family and file holds are the register's, 
 | a stage of a module | the stage in its module and one `<module>-<stage>` target — a `fanout` or a `basket` line — and its name in `RECORDED_STAGES` if a run should record it | `module_<domain>/`, then the `Makefile` |
 | a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py` — another experiment: the chain runs again, and a recorded search after its reset | `module_features/` |
 | a feature | one record of `FEATURE_CATALOGUE` (`module_features/README_module_features.md` § Extending) | `module_features/` |
-| a coordinate of the serpentine search | its family in `ROUND_SCHEDULE`, its moves in `coordinate_barrier.py` or `coordinate_feature_set.py`, its grid in the profile | `module_features/sub_module_serpentine_search/` |
+| a search axis of the serpentine search | its search families in `ROUND_SCHEDULE`, its moves in an `axis_<search_axis>.py` like `axis_barrier.py` and `axis_feature_set.py`, its grid in the profile | `module_features/sub_module_serpentine_search/` |
 | a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | `module_data/` |
 | a module | a package `module_<domain>/` with a runner service on the one image | `module_<domain>/` beside the others |
 
@@ -169,8 +169,8 @@ repository.
 
 One uniform market — USDT-margined perpetual futures. The active basket is a single asset, `BTC`, which carries
 the whole path end to end; the basket grows by extending `TICKERS` in the `Makefile`, and no module changes. The
-window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC midnight; every asset is listed on
-Binance USDS-M before the window start, and where a Bybit listing falls inside the window the pre-listing minutes
+data window starts at **2021-01-01 00:00 UTC** and ends at the most recent UTC midnight; every asset is listed on
+Binance USDS-M before the data window's start, and where a Bybit listing falls inside it the pre-listing minutes
 are Binance-only in the canonical series, which covers the same full minute grid
 (`module_data/skills/skill_candle_canonicalisation.md`).
 
@@ -194,11 +194,11 @@ mapping, and the skills its seats imply are `AGENTS.md` § Skills absent here, d
 - **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and zero-volume bars per provider,
   then canonical construction: source shares, switches, the largest 1m move at a switch, cross-source divergence;
 - **Features** — the serpentine search of every asset as the feature layer last wrote it, read against the ML
-  snapshot's numbers for the asset's own state, then each asset's PROPOSALS and the feature module's
+  snapshot's numbers for the asset's own search state, then each asset's PROPOSALS and the feature module's
   CONFIGURABLES;
 - **ML Research** — the cross-section of every asset's result, the feature catalogue — every definition the
   repository computes, its terms, the history each covers on each timeframe, the warm-up it needs and the nesting
-  of the levels — and the ML module's CONFIGURABLES;
+  of the timeframes — and the ML module's CONFIGURABLES;
 - **ML Assets** — the cross-section by view — labels and data, classification, strategy, HPO, feature set — then
   one asset at a time in four frames: LABEL, MODEL, STRATEGY, FEATURE SET;
 - **Scalability** — every controlled file of the crawler's files matrix, with its state, its vendor, when it

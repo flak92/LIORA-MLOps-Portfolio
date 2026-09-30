@@ -11,7 +11,8 @@
     "proposals": [],
     "round_count": 1,
     "search_converged": true,
-    "trial_count": 31
+    "selection_hypothesis_count": 38,
+    "state_evaluation_count": 31
    },
    "ticker": "BTC"
   }
@@ -1135,12 +1136,12 @@
   {
    "class": "DEFAULT",
    "experiment_identity": true,
-   "meaning": "the branches a family keeps; 1 is one champion moved one move at a time",
+   "meaning": "the branches a search family keeps; 1 is one champion moved one move at a time",
    "name": "SERPENTINE_SEARCH_BEAM_WIDTH",
    "requires_rerun": "features-serpentine-search",
    "risk": "another experiment: the recorded serpentine search starts again",
    "tui": false,
-   "unit": "states",
+   "unit": "search states",
    "value": 3
   },
   {

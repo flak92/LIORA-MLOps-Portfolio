@@ -73,10 +73,10 @@ def rolling_range_position(close: np.ndarray, high: np.ndarray, low: np.ndarray,
     """(close - rolling min of low) / (rolling max of high - rolling min of low);
     flat range -> 0.5."""
     lo, hi = rolling_min(low, lookback_bars), rolling_max(high, lookback_bars)
-    span = hi - lo
+    value_range = hi - lo
     with np.errstate(divide="ignore", invalid="ignore"):
-        out = (close - lo) / span
-    return np.where(span == 0.0, 0.5, out)
+        out = (close - lo) / value_range
+    return np.where(value_range == 0.0, 0.5, out)
 
 
 def rolling_standard_score(x: np.ndarray, lookback_bars: int) -> np.ndarray:
@@ -164,10 +164,10 @@ def rolling_volume_weighted_close_location(high: np.ndarray, low: np.ndarray, cl
                                            volume: np.ndarray, lookback_bars: int) -> np.ndarray:
     """Where the close sits in its bar, from -1 at the low to 1 at the high, weighted by the volume of the window;
     a bar of no range sits at 0, and a window of no volume gives 0."""
-    span = high - low
+    value_range = high - low
     with np.errstate(divide="ignore", invalid="ignore"):
-        location = ((close - low) - (high - close)) / span
-    flow = np.where(span == 0.0, 0.0, location) * volume
+        location = ((close - low) - (high - close)) / value_range
+    flow = np.where(value_range == 0.0, 0.0, location) * volume
     out = np.full_like(close, np.nan)
     traded = sliding_window_view(volume, lookback_bars).sum(axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -195,12 +195,12 @@ def rolling_money_flow_gain_share(high: np.ndarray, low: np.ndarray, close: np.n
 
 
 # twice by extraction
-def asof_index(decision_ts: np.ndarray, timeframe_open_ts: np.ndarray,
+def asof_index(decision_ts: np.ndarray, timeframe_open_ms: np.ndarray,
                timeframe_duration_ms: int) -> np.ndarray:
     """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says
     such a bar exists."""
-    close_ts = timeframe_open_ts + timeframe_duration_ms
-    idx = np.searchsorted(close_ts, decision_ts, side="right") - 1
+    timeframe_close_ms = timeframe_open_ms + timeframe_duration_ms
+    idx = np.searchsorted(timeframe_close_ms, decision_ts, side="right") - 1
     assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
     return idx
 

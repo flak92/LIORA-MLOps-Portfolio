@@ -62,7 +62,7 @@
      "num_boost_round": 150,
      "subsample": 0.9849549260809971
     },
-    "trial_count": 8
+    "hpo_trial_count": 8
    },
    "sample": {
     "ambiguous_event_count": 1,
@@ -451,7 +451,7 @@
    "requires_rerun": "ml-all, features-serpentine-search",
    "risk": "another label and another trade for every asset without a promotion",
    "tui": true,
-   "unit": "the label's multiplier of the true range, the horizon token, the stop's and the take-profit's multipliers",
+   "unit": "the label's multiplier of the true range, the label horizon token, the stop's and the take-profit's multipliers",
    "value": {
     "label_barrier_true_range_multiplier": 2.0,
     "label_horizon": "4h",
@@ -657,8 +657,8 @@
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",
-  "seed": 42,
   "start_utc": "2021-01-01"
  },
+ "seed": 42,
  "trend_gate_feature": "exponential_smoothing20_minus_exponential_smoothing50_over_true_range_recursive_mean14_1d"
 }

@@ -2,9 +2,10 @@
 place this sub-module builds a path.
 
 It reads the feature layer's own configuration for what the layer already knows: where an asset's artifacts are,
-how a ticker reaches a stage, and the window the experiment froze. What it does not read is the other module: the
-values a state is made of and the files the evaluation contract names are registered copies, because the state
-this sub-module moves is the state that module scores, and a copy that drifts makes every cache lookup miss.
+how a ticker reaches a stage, and the research window the experiment froze. What it does not read is the other
+module: the values a search state is made of and the files the evaluation contract names are registered copies,
+because the search state this sub-module moves is the search state that module scores, and a copy that drifts makes
+every cache lookup miss.
 """
 
 from .. import config as features_config
@@ -14,8 +15,8 @@ from .. import config as features_config
 # publishes the records. DEFAULT is a starting point of the experiment, SPECTRUM the legal values of one knob, WIRING a
 # technical contract
 CONFIGURABLES = (
-    {"name": "SERPENTINE_SEARCH_BEAM_WIDTH", "value": 3, "class": "DEFAULT", "unit": "states",
-     "meaning": "the branches a family keeps; 1 is one champion moved one move at a time", "tui": False,
+    {"name": "SERPENTINE_SEARCH_BEAM_WIDTH", "value": 3, "class": "DEFAULT", "unit": "search states",
+     "meaning": "the branches a search family keeps; 1 is one champion moved one move at a time", "tui": False,
      "experiment_identity": True, "requires_rerun": "features-serpentine-search",
      "risk": "another experiment: the recorded serpentine search starts again"},
     # twice by extraction
@@ -40,27 +41,28 @@ VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURA
 SERPENTINE_SEARCH_BEAM_WIDTH = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_BEAM_WIDTH"]
 
 # ---- what the search is made of ---------------------------------------------------------------------------
-SERPENTINE_SEARCH_MOVE_FORWARD = "forward"     # a move that grows the state
-SERPENTINE_SEARCH_MOVE_BACKWARD = "backward"   # a move that shrinks it — kept when no worse on a calibration run only
-SERPENTINE_SEARCH_LOOP_BARRIER = "barrier"
-SERPENTINE_SEARCH_LOOP_FEATURE_SET = "feature_set"
-SERPENTINE_SEARCH_LOOP_HPO = "hpo"
-# one round, family by family, in the order it runs them. The hyper-parameter family is last, so the turn that
+SERPENTINE_SEARCH_MOVE_FORWARD = "forward"     # a move that grows the search state
+SERPENTINE_SEARCH_MOVE_BACKWARD = "backward"   # a move that shrinks it — kept when no worse on every fold
+# the search axes: the part of a search state each moves — its barrier geometry, its feature set, its HPO point
+SERPENTINE_SEARCH_AXIS_BARRIER = "barrier"
+SERPENTINE_SEARCH_AXIS_FEATURE_SET = "feature_set"
+SERPENTINE_SEARCH_AXIS_HPO = "hpo"
+# one round, search family by search family, in the order it runs them. The study family is last, so the turn that
 # reads its answer ends the round and no later turn has to recover a study; moving it is a new decision.
 # twice by extraction
-ROUND_SCHEDULE = ((SERPENTINE_SEARCH_LOOP_BARRIER, "trade"),
-                  (SERPENTINE_SEARCH_LOOP_BARRIER, "label"),
-                  (SERPENTINE_SEARCH_LOOP_FEATURE_SET, SERPENTINE_SEARCH_MOVE_FORWARD),
-                  (SERPENTINE_SEARCH_LOOP_FEATURE_SET, SERPENTINE_SEARCH_MOVE_BACKWARD),
-                  (SERPENTINE_SEARCH_LOOP_HPO, "study"))
+ROUND_SCHEDULE = ((SERPENTINE_SEARCH_AXIS_BARRIER, "trade"),
+                  (SERPENTINE_SEARCH_AXIS_BARRIER, "label"),
+                  (SERPENTINE_SEARCH_AXIS_FEATURE_SET, SERPENTINE_SEARCH_MOVE_FORWARD),
+                  (SERPENTINE_SEARCH_AXIS_FEATURE_SET, SERPENTINE_SEARCH_MOVE_BACKWARD),
+                  (SERPENTINE_SEARCH_AXIS_HPO, "study"))
 
 # twice by extraction
 SELECTION_FOLD_MEASURE = "cagr"   # the measure the fold gate reads; the study's own gate reads the copy in ML
 
 # ---- the noise a proposal has to clear: the asset's noise sigma — the standard deviation of one evaluation's path
-# CAGR, a number of the profile — times k(N), the multiple at which the best of N states, each scored with noise of its
-# own, beats a start that carries its own by chance at the rate below; k(N) by Gauss-Hermite quadrature and bisection,
-# a fixed node count, bracket and number of halvings, so one N gives one k on every machine
+# CAGR, a number of the profile — times k(N), the multiple at which the best of N selection hypotheses, each scored
+# with noise of its own, beats a start that carries its own by chance at the rate below; k(N) by Gauss-Hermite
+# quadrature and bisection, a fixed node count, bracket and number of halvings, so one N gives one k on every machine
 PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE = 0.05
 PROPOSAL_THRESHOLD_QUADRATURE_NODE_COUNT = 160
 PROPOSAL_THRESHOLD_BISECTION_BRACKET_MULTIPLES = (0.0, 12.0)
@@ -68,7 +70,7 @@ PROPOSAL_THRESHOLD_BISECTION_ITERATION_COUNT = 64
 # the median absolute deviation of a normal sample times this is its standard deviation
 NOISE_MEDIAN_ABSOLUTE_DEVIATION_SCALE = 1.4826
 
-# ---- the values a state is made of, which the module that scores it owns ------------------------------------
+# ---- the values a search state is made of, which the module that scores it owns ------------------------------------
 # twice by extraction
 SEED = 42
 # twice by extraction
@@ -98,23 +100,25 @@ def timeframes(cat: dict) -> tuple[str, ...]:
 # ---- the search's own files ---------------------------------------------------------------------------------
 # twice by extraction
 def serpentine_search_json(ticker):
-    """Where the search stands: what it was conditioned on, its beam, its champion, the path it took and the
-    states it proposes. Written before the request beside it, so a stop never leaves an answer without a state."""
+    """The search's progress — where it stands: what it was conditioned on, its beam, its champion, the path it took
+    and the search state it proposes. Written before the request beside it, so a stop never leaves an answer without
+    its progress."""
     return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search.json"
 
 
 # twice by extraction
-def serpentine_search_trials_jsonl(ticker):
-    """Every scored state, one JSON object a line, appended and never rewritten. A line's number, counted from
-    one, is the trial's index — what the champion, the beam, a parent and a proposal carry — so a reader joins a
-    trial's columns, geometry and numbers here and the state file holds none of them."""
-    return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search_trials.jsonl"
+def serpentine_search_state_evaluations_jsonl(ticker):
+    """Every state evaluation, one JSON object a line, appended and never rewritten. A line's number, counted from
+    one, is the state evaluation's index — what the champion, the beam, a parent and a proposal carry — so a reader
+    joins a state evaluation's columns, geometry and numbers here and the search's progress holds none of them."""
+    return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search_state_evaluations.jsonl"
 
 
 # twice by extraction
 def serpentine_search_profile_json(ticker):
-    """What a hand asks the search to look at: the columns admitted, the state to start from, the grid of each
-    coordinate, the loops of a round and the asset's noise sigma its proposal clears. Drafted, never derived."""
+    """What a hand asks the search to look at: the columns admitted, the search state to start from, the grid of
+    each coordinate, the search axes of a round and the asset's noise sigma its proposal clears. Drafted, never
+    derived."""
     return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
 
 

@@ -52,7 +52,7 @@ def fetch_klines(params: dict) -> list[list]:
 
 def fetch_oldest_candle_ms(symbol: str) -> int:
     """Epoch ms of the oldest 1m candle Binance serves for this symbol."""
-    batch = fetch_klines({"symbol": symbol, "interval": config.SOURCE_CANDLE_INTERVAL,
+    batch = fetch_klines({"symbol": symbol, "interval": config.SOURCE_CANDLE_TIMEFRAME,
                   "startTime": 0, "limit": 1})
     return int(batch[0][0])
 
@@ -62,7 +62,7 @@ def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
     batch = fetch_klines(
         {
             "symbol": symbol,
-            "interval": config.SOURCE_CANDLE_INTERVAL,
+            "interval": config.SOURCE_CANDLE_TIMEFRAME,
             "startTime": day_ms,
             "endTime": day_ms + MILLISECONDS_PER_DAY - 1,
             "limit": config.BINANCE_KLINE_REQUEST_LIMIT,
@@ -79,12 +79,13 @@ def main() -> int:
     end_ms = int(now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp() * config.MILLISECONDS_PER_SECOND)
     start_ms = config.DATA_WINDOW_START_MS
 
-    print(f"window [{to_utc_day(start_ms)} .. {to_utc_day(end_ms)}) — probing listings:", flush=True)
+    print(f"data window [{to_utc_day(start_ms)} .. {to_utc_day(end_ms)}) — probing listings:", flush=True)
     for ticker in tickers:
         oldest = fetch_oldest_candle_ms(config.symbol(ticker))
-        listing_covers_window = oldest <= start_ms
-        print(f"  {config.symbol(ticker):9} oldest candle {to_utc_day(oldest)}  {'ok' if listing_covers_window else 'AFTER WINDOW START'}", flush=True)
-        if not listing_covers_window:
+        listing_covers_data_window = oldest <= start_ms
+        print(f"  {config.symbol(ticker):9} oldest candle {to_utc_day(oldest)}  "
+              f"{'ok' if listing_covers_data_window else 'AFTER DATA WINDOW START'}", flush=True)
+        if not listing_covers_data_window:
             raise SystemExit(f"{config.symbol(ticker)}: history starts after {to_utc_day(start_ms)} — basket rule broken")
 
     total_days = (end_ms - start_ms) // MILLISECONDS_PER_DAY

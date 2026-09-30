@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 import duckdb
 
 from . import config, dataset
-from .sub_module_serpentine_search import config as serpentine_search_config, coordinate_feature_set, serpentine_search
+from .sub_module_serpentine_search import axis_feature_set, config as serpentine_search_config, serpentine_search
 
 
 def term_block(term: tuple) -> dict:
@@ -77,54 +77,56 @@ def has_catalogue(ticker: str) -> bool:
     return all(config.catalogue_parquet(ticker, timeframe).exists() for timeframe in config.HIERARCHY_TIMEFRAMES)
 
 
-def proposal_block(proposal: dict, trial: dict, active_columns_by_timeframe: dict, timeframes: tuple[str, ...]) -> dict:
-    """One proposal as the page reads it: its rank and trial from the state file, and everything else from that
-    trial's line of the ledger — the columns it moves against the state the serpentine search was run on, the
-    model's skill, then what the strategy would do: each fold's growth and trades, the path's growth, Calmar ratio
-    and profit factor, and the threshold it stood at."""
-    columns_by_timeframe = trial["columns_by_timeframe"]
+def proposal_block(proposal: dict, state_evaluation: dict, active_columns_by_timeframe: dict,
+                   timeframes: tuple[str, ...]) -> dict:
+    """One proposal as the page reads it: its rank and state evaluation from the search's progress, and everything
+    else from that state evaluation's line of the ledger — the columns it moves against the search state the
+    serpentine search was run on, the model's skill, then what the strategy would do: each fold's growth and trades,
+    the path's growth, Calmar ratio and profit factor, and the threshold it stood at."""
+    columns_by_timeframe = state_evaluation["columns_by_timeframe"]
     return {
         "proposal": proposal["proposal"],
-        "trial_index": proposal["trial_index"],
-        "added_columns_by_timeframe": coordinate_feature_set.columns_added(columns_by_timeframe, active_columns_by_timeframe, timeframes),
-        "removed_columns_by_timeframe": coordinate_feature_set.columns_removed(columns_by_timeframe, active_columns_by_timeframe, timeframes),
-        "mean_relative_logloss_skill": round(trial["mean_relative_logloss_skill"], 6),
+        "state_evaluation_index": proposal["state_evaluation_index"],
+        "added_columns_by_timeframe": axis_feature_set.columns_added(columns_by_timeframe, active_columns_by_timeframe, timeframes),
+        "removed_columns_by_timeframe": axis_feature_set.columns_removed(columns_by_timeframe, active_columns_by_timeframe, timeframes),
+        "mean_relative_logloss_skill": round(state_evaluation["mean_relative_logloss_skill"], 6),
         "validation": {fold: {"cagr": round(block["cagr"], 6), "trade_count": block["trade_count"]}
-                       for fold, block in sorted(trial["validation"].items())},
-        "validation_path": {key: config.rounded(trial["validation_path"][key], 6)
+                       for fold, block in sorted(state_evaluation["validation"].items())},
+        "validation_path": {key: config.rounded(state_evaluation["validation_path"][key], 6)
                             for key in ("cagr", "calmar", "profit_factor")},
-        "entry_edge_threshold": trial["entry_edge_threshold"],
+        "entry_edge_threshold": state_evaluation["entry_edge_threshold"],
     }
 
 
 def serpentine_search_block(ticker: str) -> dict | None:
     """The serpentine search as it last wrote itself, and whether its inputs are still the asset's — a promotion, a
     retuning, a catalogue change, an edited profile or a changed beam width makes a recorded serpentine search describe
-    a state that has gone; None while the asset has no state file, and false rather than an error while it has no
-    profile. The parameters and the contract are read the way a turn reads them, and a state file is written only by a
-    turn that read both."""
+    a search state that has gone; None while the asset has no progress file, and false rather than an error while it
+    has no profile. The parameters and the contract are read the way a turn reads them, and a progress file is written
+    only by a turn that read both."""
     path = serpentine_search_config.serpentine_search_json(ticker)
     if not path.exists():
         return None
     search = dataset.load_json(path)
     cat = dataset.load_json(config.catalogue_json(ticker))
     profile_path = serpentine_search_config.serpentine_search_profile_json(ticker)
-    ledger = serpentine_search_config.serpentine_search_trials_jsonl(ticker)
-    # the trials are the ledger's lines, and a proposal is read off the line its index names
-    trials = dataset.load_jsonl(ledger) if ledger.exists() else []
+    ledger = serpentine_search_config.serpentine_search_state_evaluations_jsonl(ticker)
+    # the state evaluations are the ledger's lines, and a proposal is read off the line its index names
+    state_evaluations = dataset.load_jsonl(ledger) if ledger.exists() else []
     inputs_current = profile_path.exists() and search["inputs"] == dataset.to_json_safe(
         serpentine_search.build_search_inputs(serpentine_search.load_best_params(ticker),
                                               serpentine_search.load_feature_columns(ticker, cat),
                                               serpentine_search.load_barrier_coordinates(ticker), cat,
                                               dataset.load_json(profile_path)))
     return {
-        "trial_count": len(trials),
+        "state_evaluation_count": len(state_evaluations),
+        "selection_hypothesis_count": search["selection_hypothesis_count"],
         "round_count": search["round_count"],
         "search_converged": search["search_converged"],
         "inputs_current": inputs_current,
         # a serpentine search whose inputs have gone describes another experiment, and its proposals are numbers of
         # that one: the page shows none of them, and the snapshot publishes none either
-        "proposals": [proposal_block(proposal, trials[proposal["trial_index"] - 1],
+        "proposals": [proposal_block(proposal, state_evaluations[proposal["state_evaluation_index"] - 1],
                                      search["inputs"]["active_columns_by_timeframe"],
                                      serpentine_search_config.timeframes(cat))
                       for proposal in search["proposals"]] if inputs_current else [],

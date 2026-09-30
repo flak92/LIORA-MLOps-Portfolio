@@ -19,7 +19,7 @@ A normative rule of this project is a **row of a table**, not a paragraph. The r
   - Description: An identifier outlives the wording of its description and the choice of its type.
   - Scope: `module_skills/skills_sheet.xlsx`, `AGENTS.md`
   - Expected: The same `rule_id` before and after an edit that leaves the rule's meaning alone.
-  - Exception: A rule whose meaning genuinely changes is a different rule and takes a different identifier.
+  - Exception: A rule whose meaning genuinely changes is a different rule and takes a different identifier; so does a rule whose identifier carries a word the register retires.
 
 ## Conformities
 

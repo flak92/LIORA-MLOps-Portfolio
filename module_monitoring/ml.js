@@ -21,7 +21,7 @@ function buildShareCell(part, whole) {
 
 function renderResearch(mlStatus) {
   renderTable("ml-assets",
-    ["asset", "decisions", "classes &minus;/0/+", "depth/eta/rounds", "prior LL", "model LL",
+    ["asset", "decisions", "classes &minus;/0/+", "depth/eta/boosting rounds", "prior LL", "model LL",
      "skill", "&tau; (entry edge threshold)", "Sharpe", "maxDD", "trades", "hit", "exposure"],
     mlStatus.assets.map((asset) => {
       const finalHoldoutStrategy = asset.strategy.final_holdout;
@@ -51,7 +51,7 @@ function formatTerm(term) {
     + (term.output_range === null ? "" : ", output " + term.output_range[0] + "–" + term.output_range[1]) + ")";
 }
 
-/* an effective history as a bar on one time scale across every timeframe, so a level's reach is compared by eye */
+/* an effective history as a bar on one time scale across every timeframe, so a timeframe's reach is compared by eye */
 function buildHistoryCell(hours, longestHours) {
   if (hours === undefined) return "-";
   const wrap = document.createElement("span");
@@ -67,7 +67,7 @@ function renderCatalogue(featuresStatus) {
     catalogue.timeframes.map((entry) =>
       entry.timeframe.padEnd(5) + (entry.duration_ms / MILLISECONDS_PER_SECOND / SECONDS_PER_MINUTE) + " min · "
       + entry.bars_per_day + " bars per day · "
-      + (entry.timeframe === catalogue.decision_timeframe ? "the decision timeframe" : entry.ratio_to_lower + "× the level below")
+      + (entry.timeframe === catalogue.decision_timeframe ? "the decision timeframe" : entry.ratio_to_lower + "× the next finer timeframe")
       + " · " + entry.slot).join("\n")
     + "\nwarm-up: " + catalogue.warmup.top_timeframe_bars + " bars of " + timeframes[timeframes.length - 1]
     + " · first decision " + catalogue.warmup.end_utc + " UTC"
@@ -88,7 +88,7 @@ function renderCatalogue(featuresStatus) {
       formatCount(definition.warmup_bars),
       definition.definition_in_default_set ? "yes" : "-",
     ]));
-  document.getElementById("catalogue-nesting").textContent = "nesting — one level, one domain of time: "
+  document.getElementById("catalogue-nesting").textContent = "nesting — one timeframe, one domain of time: "
     + catalogue.nesting.map((pair) => "longest on " + pair.lower + " " + pair.lower_longest_effective_history_hours
       + " h < shortest on " + pair.upper + " " + pair.upper_shortest_effective_history_hours + " h").join(" · ");
 }
@@ -175,13 +175,13 @@ function renderStrategy(mlStatus) {
 
 function renderSearch(mlStatus) {
   renderTable("cs-search",
-    ["asset", "trials", "best path CAGR", "depth", "eta",
-     "min child", "subsample", "colsample", "lambda", "alpha", "rounds"],
+    ["asset", "HPO trials", "best path CAGR", "depth", "eta",
+     "min child", "subsample", "colsample", "lambda", "alpha", "boosting rounds"],
     mlStatus.assets.map((asset) => {
       const bestParameters = asset.hyperparameter_search_result.best_params;
       return [
         buildTickerLink(asset.ticker, selectAsset),
-        asset.hyperparameter_search_result.trial_count,
+        asset.hyperparameter_search_result.hpo_trial_count,
         formatPercent(asset.hyperparameter_search_result.best_cagr_validation_path, 2),
         bestParameters.max_depth,
         bestParameters.eta.toFixed(4),
@@ -229,7 +229,7 @@ Promise.all([fetchSnapshot("ml_status.json"), fetchSnapshot("features_status.jso
   .then(([mlStatus, featuresStatus]) => {
     const envelope =
       "research window: [" + mlStatus.research_window.start_utc + " .. " + mlStatus.research_window.end_utc + ") UTC\n" +
-      "seed:            " + mlStatus.research_window.seed + "\n" +
+      "seed:            " + mlStatus.seed + "\n" +
       "generated:       " + mlStatus.generated_at_utc + " UTC";
     document.getElementById("ml-meta").textContent = envelope;
     document.getElementById("asset-meta").textContent = envelope;

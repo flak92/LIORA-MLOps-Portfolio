@@ -307,7 +307,7 @@ WARMUP_END_MS = RESEARCH_START_MS + WARMUP_TOP_TIMEFRAME_BARS * TIMEFRAME_DURATI
 
 def definition_effective_history_hours(definition: dict, timeframe: str) -> float:
     """The longest parameter of the definition read on that timeframe: a window's history is the window, a
-    recursion's the bars carrying most of its weight — the number the nesting of the levels compares."""
+    recursion's the bars carrying most of its weight — the number the nesting of the timeframes compares."""
     longest_parameter_bars = max((term[-1] for term in definition["terms"] if len(term) > 1), default=0)
     return longest_parameter_bars * TIMEFRAME_DURATION_MS[timeframe] / MILLISECONDS_PER_HOUR
 

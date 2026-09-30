@@ -24,6 +24,7 @@ is named below by the path it holds in the tree.
 | [skill_files_and_folders.md](skill_files_and_folders.md) | the kinds of file and folder the tree holds, what each is for, and which are generated |
 | [skill_glossary.md](skill_glossary.md) | the name register: one concept, one name, in code, artifacts and interface — and the register of the copies no module may import across |
 | [skill_pre_aws_solution.md](skill_pre_aws_solution.md) | the rules that keep every local boundary the one a move onto standard cloud primitives would keep, with nothing built for it; the mapping itself is § The Pre-AWS mapping below |
+| [skill_research_semantics.md](skill_research_semantics.md) | what a research name means — a point in time, a window, a timeframe, a horizon, a lookback, a fold, a scope, an experiment and a run, a search state and its evaluation, a study and its trials, N — and how the meanings relate |
 | [skill_rule_tables.md](skill_rule_tables.md) | a rule as a row of the sheet: its columns, its identifier, and how it is cited |
 | [skill_self_explaining_naming.md](skill_self_explaining_naming.md) | names derived from a closed grammar, the naming review, and how a new convention is minted |
 | [skill_sorting_files_naming_standard.md](skill_sorting_files_naming_standard.md) | taxonomic ordering, zero-padding and the timeframe slot standard |
@@ -51,7 +52,7 @@ Orientation: `module_features/README_module_features.md`
 | skill | what it governs |
 |---|---|
 | `module_features/skills/skill_feature_taxonomy.md` | the timeframe register, the registers of series, indicators, operators and normalisers, the terms and feature definitions and the ids derived from them, the default set, the warm-up and the effective histories, and the two families and the contract the layer writes |
-| `module_features/sub_module_serpentine_search/skill_serpentine_search.md` | the serpentine search: the question and the answer, resume and reset, the tracked record, the key of a state, the gate, the beam, the convergence, the proposal with its noise margin, and the promotion a hand makes |
+| `module_features/sub_module_serpentine_search/skill_serpentine_search.md` | the serpentine search: the question and the answer, resume and reset, the tracked record, the key of a search state, the gate, the beam, the convergence, the proposal with its noise margin, and the promotion a hand makes |
 
 Its method, for a human: `module_features/skills/methodology_features.md`.
 
@@ -339,7 +340,7 @@ Six things, each a seat above:
 - the stores, explicit and outside compute, mounted at `/store/<content>` beside the one tree mount;
 - the orchestration outside the modules, in one Makefile and one compose file;
 - the contracts between modules as files, never imports: `<TICKER>_catalogue.json`, the serpentine search's question
-  and answer, the promoted state, the snapshots, the run record, and the copies registered in
+  and answer, the promoted search state, the snapshots, the run record, and the copies registered in
   `module_skills/skill_glossary.md` § Twice by extraction;
 - the asset as a parameter of the launcher alone;
 - a recorder that reads off the stores what a stage wrote.

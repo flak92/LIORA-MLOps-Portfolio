@@ -80,8 +80,8 @@ def build_catalogue(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.nda
     catalogue = {timeframe: timeframe_catalogue(timeframes[timeframe], timeframe)
                  for timeframe in config.HIERARCHY_TIMEFRAMES}
 
-    decision_grid_ts = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
-    decision_ts = decision_grid_ts[decision_grid_ts >= config.WARMUP_END_MS]
+    grid_decision_ts = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
+    decision_ts = grid_decision_ts[grid_decision_ts >= config.WARMUP_END_MS]
 
     cols: dict[str, np.ndarray] = {}
     for timeframe in config.HIERARCHY_TIMEFRAMES:

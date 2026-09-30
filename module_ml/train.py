@@ -46,10 +46,10 @@ def fold_metrics(y_cls, proba, weight, prior_train) -> dict:
 
 def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
     """The two importances of one validation fold's booster, the SHAP values measured on the fold's scoring rows."""
-    oos_start, oos_end = validation.fold_bounds(fold_id)
+    fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
     scoring_rows, _ = validation.scoring_set(
-        xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start, oos_end,
-        xy["barriers"]["horizon_minutes"])
+        xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], fold_start_ms, fold_end_ms,
+        xy["barriers"]["label_horizon_minutes"])
     return {
         "gain_importance": model.gain_importance(booster, xy["feature_columns"]),
         "mean_abs_shap_importance": model.mean_abs_shap_importance(booster, xy["x"][scoring_rows], xy["feature_columns"]),
@@ -57,29 +57,29 @@ def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
 
 
 def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], object]:
-    """Fit before the fold's window, predict the FULL window, score the supervised
-    subset only. Returns (metrics, segment, prediction_records, booster)."""
-    oos_start, oos_end = validation.fold_bounds(fold_id)
+    """Fit before the fold, predict its whole OOS block, score the supervised subset only. Returns (metrics,
+    segment, prediction_records, booster)."""
+    fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
     training_rows, train_weight = validation.training_set(
-        xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], oos_start)
-    window_rows = validation.prediction_window(xy["decision_ts"], oos_start, oos_end)
+        xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], fold_start_ms)
+    oos_block_rows = validation.oos_block_rows(xy["decision_ts"], fold_start_ms, fold_end_ms)
     scoring_rows, scoring_weight = validation.scoring_set(
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
-        xy["sample_valid"], oos_start, oos_end, xy["barriers"]["horizon_minutes"])
+        xy["sample_valid"], fold_start_ms, fold_end_ms, xy["barriers"]["label_horizon_minutes"])
     prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
     booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
-    window_proba = model.predict_proba(booster, xy["x"][window_rows], xy["feature_columns"])
-    pos = np.searchsorted(window_rows, scoring_rows)   # scoring_rows ⊂ window_rows
-    metrics = fold_metrics(y_cls[scoring_rows], window_proba[pos], scoring_weight, prior_train)
+    oos_block_proba = model.predict_proba(booster, xy["x"][oos_block_rows], xy["feature_columns"])
+    pos = np.searchsorted(oos_block_rows, scoring_rows)   # scoring_rows ⊂ oos_block_rows
+    metrics = fold_metrics(y_cls[scoring_rows], oos_block_proba[pos], scoring_weight, prior_train)
     prediction_records = [
-        (xy["decision_ts"][i], fold_id, window_proba[k, 0], window_proba[k, 1], window_proba[k, 2])
-        for k, i in enumerate(window_rows)
+        (xy["decision_ts"][i], fold_id, oos_block_proba[k, 0], oos_block_proba[k, 1], oos_block_proba[k, 2])
+        for k, i in enumerate(oos_block_rows)
     ]
-    eligible = int((xy["sample_valid"] & (xy["decision_ts"] < oos_start)).sum())
+    eligible = int((xy["sample_valid"] & (xy["decision_ts"] < fold_start_ms)).sum())
     segment = {
         "training_row_count": int(training_rows.size),
         "purged_event_count": eligible - int(training_rows.size),
-        "window_row_count": int(window_rows.size),
+        "oos_block_row_count": int(oos_block_rows.size),
         "scored_row_count": int(scoring_rows.size),
     }
     return metrics, segment, prediction_records, booster

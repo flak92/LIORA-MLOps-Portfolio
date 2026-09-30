@@ -2,7 +2,7 @@
  "beam": [
   1
  ],
- "champion_trial_index": 1,
+ "champion_state_evaluation_index": 1,
  "inputs": {
   "active_barriers": {
    "label_barrier_true_range_multiplier": 2.0,
@@ -167,30 +167,31 @@
      2.5
     ]
    },
-   "loops": [
+   "path_cagr_noise_standard_deviation": 0.016462179017285163,
+   "search_axes": [
     "barrier",
     "feature_set",
     "hpo"
    ],
-   "path_cagr_noise_standard_deviation": 0.016462179017285163,
    "start_columns_by_timeframe": null
   },
   "research_window": {
    "end_utc": "2026-08-26",
-   "seed": 42,
-   "start_utc": "2021-01-01",
-   "warmup_top_timeframe_bars": 220
+   "start_utc": "2021-01-01"
   },
+  "seed": 42,
   "selection": {
    "beam_width": 3,
    "fold_measure": "cagr"
-  }
+  },
+  "warmup_top_timeframe_bars": 220
  },
  "path": [],
  "proposals": [],
  "round_count": 1,
  "search_converged": true,
- "trial_count_by_loop": {
+ "selection_hypothesis_count": 38,
+ "selection_hypothesis_count_by_search_axis": {
   "barrier": 8,
   "feature_set": 22,
   "hpo": 8

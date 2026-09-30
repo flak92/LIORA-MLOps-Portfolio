@@ -34,7 +34,7 @@ this file holds the values and the shape the rows serve. If a change conflicts w
   beside it; the aligned decision grids `dataset.build_xy` joins by position, asserted twice — the catalogue's
   partitions with each other, X with Y; a finite catalogue after the warm-up (`catalogue.build_catalogue`); and the
   download that aborts on a short post-listing day, with the listing probe that aborts when a symbol's history starts
-  after the window (`CANDLE-CANONICALISATION-A-SHORT-DAY-ABORTS-THE-DOWNLOAD`). Beside them, and no guard: a status
+  after the data window's start (`CANDLE-CANONICALISATION-A-SHORT-DAY-ABORTS-THE-DOWNLOAD`). Beside them, and no guard: a status
   stage's one line when it has nothing to report, naming the stage to run first; a venue's own error code as it came;
   and a stage's one-line refusal of an input it cannot use — a study whose every trial was pruned, a scoring request of
   an unknown kind, a promotion with no proposal. No debt marker in a tracked file and no code inside a comment: a marker is a postponed
@@ -72,8 +72,8 @@ nothing above it belongs to one module alone. The canon's orientation is its ind
 
 **No module imports another** (D02); `module_skills` takes part in no runtime import and no dataflow of the chain.
 What would cross a boundary as an import crosses it as a file in a store — the families, the per-asset contract
-`<TICKER>_catalogue.json`, the four snapshots, the run record, the serpentine search's question, answer and the state
-a promotion writes — or as a copy registered in `module_skills/skill_glossary.md` § Twice by extraction (D14). The
+`<TICKER>_catalogue.json`, the four snapshots, the run record, the serpentine search's question, answer and the search
+state a promotion writes — or as a copy registered in `module_skills/skill_glossary.md` § Twice by extraction (D14). The
 basket is the launcher's, `TICKERS` in the `Makefile`, and every stage is told its assets by `--tickers`
 (`PRE-AWS-SOLUTION-THE-ASSET-IS-A-NAMESPACE`). A new `module_<domain>` needs a responsibility of its own
 (`AGENT-FIRST-DEVELOPMENT-NEW-MODULE-THRESHOLD`); until then the owning module is extended, and what two modules share
@@ -135,10 +135,11 @@ concept. A glossary confirms meaning; it must not be required to decode an obscu
 
 One concept, one name — in the code, the artifacts, the interface, the Makefile, docker compose and the documents;
 the register is `module_skills/skill_glossary.md`, and a new name enters it in the commit that introduces it
-(`AGENT-FIRST-DEVELOPMENT-NAME-ENTERS-THE-REGISTER`). The word "test" never names a fold. And one name, one concept:
-a name that could denote two things in the same scope — make targets, compose services, container environment
-variables, tracked paths, Python symbols within a module — is renamed until it denotes one; a name shared across
-different scopes is no collision.
+(`AGENT-FIRST-DEVELOPMENT-NAME-ENTERS-THE-REGISTER`); what a research name means — a point in time, a window, a
+timeframe, a horizon, a fold, a search state, an HPO trial — is `module_skills/skill_research_semantics.md`. The
+word "test" never names a fold. And one name, one concept: a name that could denote two things in the same scope —
+make targets, compose services, container environment variables, tracked paths, Python symbols within a module — is
+renamed until it denotes one; a name shared across different scopes is no collision.
 
 **Derived, never drafted.** A derived artifact is generated from source and configuration and never hand-edited:
 `<TICKER>_parameters.json`, `<TICKER>_serpentine_search.json` and its ledger, `<TICKER>_README.md`,
@@ -171,7 +172,7 @@ Every layer has a closed grammar, the way CSS has BEM, and a name is derived fro
 | composite constructors | `build_<object>` | `build_x` | `make_stuff` |
 | functions that *are* a quantity | no verb — the name is what it returns | `true_range`, `triple_barrier` | `calculate_true_range` |
 | pure descriptors | a noun phrase naming the returned object, no I/O | `symbol`, `artifact_dir`, `fold_bounds` | `get_fold_bounds` |
-| populations of rows | `<population>_set` / `_window` | `training_set`, `scoring_set` | `get_train_indices` |
+| populations of rows | `<population>_set` / `<population>_rows` | `training_set`, `scoring_set`, `oos_block_rows` | `get_train_indices`; `_window`, which names an interval |
 | report fragments | `<section>_block` | `sample_block`, `strategy_block` | `make_sample_dict` |
 | statement constants (SQL text) | `<OBJECT>_<KIND>`, the kind `DDL`, `INSERT`, `COPY`, `SCAN`, `PREDICATE` or `COLUMNS` | `VENUE_DDL`, `CANONICAL_COPY`, `Y_COLUMNS` | `QUERY_1` |
 | conversion factors | `<UNIT>_PER_<UNIT>` | `MILLISECONDS_PER_MINUTE` | `MS_MIN`, `60_000` inline |
@@ -199,7 +200,7 @@ Every layer has a closed grammar, the way CSS has BEM, and a name is derived fro
 A numeric constant carries its unit — `_BARS`, `_MINUTES`, `_MS`, `_SECONDS`, `_DAYS`, `_ROWS`, `_FOLD_ID`, `_RATE`,
 `_COUNT` — unless its name already says what is counted; a setting handed to a tool as text carries its unit in the
 value (`DUCKDB_MEMORY_LIMIT`). No name is invented just to satisfy the schema. The parameter word follows the mechanics — `SPAN` for an exponential smoothing,
-`SMOOTHING_PERIOD` for a recursive mean, `LOOKBACK` for a rolling window, `HORIZON` for the future of a label,
+`SMOOTHING_PERIOD` for a recursive mean, `LOOKBACK` for a lookback window, `HORIZON` for the future of a label,
 `INTERVAL` for a sampling step — and a parameter of a catalogue term lives in its term
 (`FEATURE-TAXONOMY-A-PARAMETER-LIVES-IN-ITS-TERM`). A compact timeframe token inside an identifier (`equity_1m`) is the
 vocabulary of code and schema; the slot standard governs the file names of the asset's folder only. Domain
@@ -270,7 +271,7 @@ nested in the canon because it reads files against the canon; a terminal per mod
 — the canon's among them — which computes nothing, starts every stage through `make`, runs on the host's `python3`
 and gum, and shares one `tui.py` and one skill, `module_skills/skill_tui_designer.md` (D19); and the serpentine
 search, `module_features/sub_module_serpentine_search/`, a hand's research outside the chain whose question
-`module_ml/score.py` answers, because a state is scored by the code that scores the chain, and whose promotion writes
+`module_ml/score.py` answers, because a search state is scored by the code that scores the chain, and whose promotion writes
 the three files the chain reads.
 
 ## The shape — what holds the project together
@@ -289,7 +290,7 @@ The conditions below hold at every commit; a change that breaks one is wrong.
 | D08 | no sub-module is a module: each has its own `config.py` and `main()` and none is in the chain's dataflow; the serpentine search's promotion writes the three files the ML chain reads, by a hand's choice (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`) |
 | D09 | artifact names and keys move only with the register: every key of every payload, file and family has a row of it, and a key added, dropped or renamed moves that row in the same commit (`AGENT-FIRST-DEVELOPMENT-NAME-ENTERS-THE-REGISTER`) |
 | D10 | determinism is unchanged: the caps, the seeds, the pinned orders (`module_skills/skill_determinism.md`) |
-| D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest (`README.md` § Parity). A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` alone. The files a hand drafts stand outside the proof, and so do the serpentine search's own — its state, its ledger and the asset's partition of `score_trials` — whose proof is that a search reset and run again over the same inputs gives the same bytes, and that a search stopped and run again ends on the same state and ledger; the one exception, `score_trials` holding a study twice after a stop between its lines and the answer (`score.hpo_results()`). The state and the ledger are tracked all the same, because `features_status.json` reads them and is inside the proof. A change that reshapes one of the chain's files re-bases its line and no other, compared field by field, every kept field byte-identical |
+| D11 | parity: the chain on a frozen copy of the raw store reproduces every file of `store/assets_artifacts/` and `store/trials/` and the three computational snapshots, normalised, byte for byte against the reference manifest (`README.md` § Parity). A day the download adds past the frozen copy changes the raw tree, the two venue families, the canonical family and `data_status.json` alone. The files a hand drafts stand outside the proof, and so do the serpentine search's own — its progress, its ledger and the asset's partition of `score_trials` — whose proof is that a search reset and run again over the same inputs gives the same bytes, and that a search stopped and run again ends on the same state and ledger; the one exception, `score_trials` holding a study twice after a stop between its lines and the answer (`score.hpo_results()`). The state and the ledger are tracked all the same, because `features_status.json` reads them and is inside the proof. A change that reshapes one of the chain's files re-bases its line and no other, compared field by field, every kept field byte-identical |
 | D12 | zero cloud mechanisms: nothing in the tree calls a service off this host but the venues' public endpoints the two downloaders read and the crawler's one active vendor command line, outside the chain; the trial ledgers are partitions of `STORE_TRIALS_DIR` (`METHODOLOGY-ML-LEDGER-IS-APPEND-ONLY`), never a network location; the four pins of `requirements.txt` are the project's, and a fifth moves this line in the commit that adds it |
 | D13 | `features_status.json` is written by `module_features.status` |
 | D14 | every object of `module_skills/skill_glossary.md` § Twice by extraction is marked `# twice by extraction` directly above its own definition — `/* twice by extraction */` in JavaScript, a whole file in its docstring, one marker per object — identical to the byte on every side unless its row says equal by value, and changed on every side at once |

@@ -53,11 +53,11 @@
    2.5
   ]
  },
- "loops": [
+ "path_cagr_noise_standard_deviation": 0.016462179017285163,
+ "search_axes": [
   "barrier",
   "feature_set",
   "hpo"
  ],
- "path_cagr_noise_standard_deviation": 0.016462179017285163,
  "start_columns_by_timeframe": null
 }

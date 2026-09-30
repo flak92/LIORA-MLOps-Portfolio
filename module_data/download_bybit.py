@@ -2,7 +2,7 @@
 
 Keyless public v5 API, stdlib only; the Binance downloader's twin: one UTC day = one ZIP, existing ZIPs skipped; a
 pre-listing day is empty (written once, skipped forever), the listing day may be partial, every later day must be
-complete. The v5 limit is 1000 candles, so a day is two 720-minute windows; the list comes newest-first and is
+complete. The v5 limit is 1000 candles, so a day is two 720-minute request windows; the list comes newest-first and is
 sorted; rate limiting is retCode 10006.
 
 Output tree (Lean-exact, the same format as the Binance tree):
@@ -55,14 +55,14 @@ def fetch_klines(params: dict) -> list[list]:
 def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
     """All 1m candles of one UTC day as ascending (offset_ms, o, h, l, c, base_volume)."""
     rows = []
-    for window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
+    for request_window_start_ms in (day_ms, day_ms + KLINE_REQUEST_WINDOW_MS):
         batch = fetch_klines(
             {
                 "category": config.BYBIT_CATEGORY,
                 "symbol": symbol,
                 "interval": "1",
-                "start": window_start_ms,
-                "end": window_start_ms + KLINE_REQUEST_WINDOW_MS - 1,
+                "start": request_window_start_ms,
+                "end": request_window_start_ms + KLINE_REQUEST_WINDOW_MS - 1,
                 "limit": config.BYBIT_KLINE_REQUEST_LIMIT,
             }
         )

@@ -39,7 +39,7 @@ def load_bars_1m(ticker: str) -> dict[str, np.ndarray]:
 
 
 def load_oos_predictions(ticker: str, cat: dict) -> dict[str, np.ndarray]:
-    """The out-of-sample windows as train.py wrote them, fold-major and by decision."""
+    """The out-of-sample predictions as train.py wrote them, fold-major and by decision."""
     parquet_con = duckdb.connect()
     parquet_con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     parquet_con.execute("SET threads=1")   # float summation must not be reordered
@@ -85,7 +85,7 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     """Signal arrays for one fold on the label-event grid, and the trade's own event re-walked on the 1m
     path for every entry the gate admits.
 
-    The walked set — the gate open, the entry minute traded, the horizon inside the fold — depends on
+    The walked set — the gate open, the entry minute traded, the label horizon inside the fold — depends on
     neither the threshold nor what the position was doing, so one walk serves the whole threshold grid:
     every trade any threshold realises is in it, and the threshold enters in backtest() alone."""
     xy = simulation_inputs["xy"]
@@ -107,13 +107,13 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
         & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     barriers = xy["barriers"]
-    horizon_minutes = barriers["horizon_minutes"]
+    label_horizon_minutes = barriers["label_horizon_minutes"]
     entry_ts, entry_price = xy["entry_ts"][pos], xy["entry_price"][pos]
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
-    # eligibility must be decidable at t_0, so the maximum horizon is tested, not the event that follows
+    # eligibility must be decidable at t_0, so the label horizon is tested, not the event that follows
     entry_eligible = (gate_open & xy["entry_observable"][pos]
                       & (entry_ts >= fold_start_ms)
-                      & (entry_ts + horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
+                      & (entry_ts + label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
     eligible_rows = np.flatnonzero(entry_eligible)
 
     upper_barrier, lower_barrier = trade_barriers(
@@ -123,7 +123,7 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
         barriers["stop_loss_true_range_multiplier"])
     _, t_res, event_resolution, exit_reference_price = labels.triple_barrier(
         simulation_inputs["bars_1m"], entry_ts[eligible_rows], upper_barrier, lower_barrier,
-        horizon_minutes)
+        label_horizon_minutes)
 
     # the trade's event scattered back onto the fold's decision grid: a row no threshold can take
     # carries none, and backtest() reads a row only after entry_eligible admitted it
@@ -131,7 +131,7 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
              "event_resolution": np.zeros(pos.size, dtype=np.int8),
              "exit_reference_price": np.zeros(pos.size),
              "upper_barrier": np.zeros(pos.size), "lower_barrier": np.zeros(pos.size)}
-    trade["event_end_ts"][eligible_rows] = labels.event_end_ts(entry_ts[eligible_rows], t_res, horizon_minutes)
+    trade["event_end_ts"][eligible_rows] = labels.event_end_ts(entry_ts[eligible_rows], t_res, label_horizon_minutes)
     trade["event_resolution"][eligible_rows] = event_resolution
     trade["exit_reference_price"][eligible_rows] = exit_reference_price
     trade["upper_barrier"][eligible_rows] = upper_barrier
@@ -206,11 +206,11 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     # without E0 the first decision bar of the fold produces no return at all
     decision_bar_equity = np.concatenate(([1.0], equity_1m[bar_close_offset_minutes::decision_bar_minutes]))
     decision_bar_returns = np.diff(decision_bar_equity) / decision_bar_equity[:-1]
-    periods_per_year = config.MINUTES_PER_YEAR / decision_bar_minutes
+    decision_bars_per_year = config.MINUTES_PER_YEAR / decision_bar_minutes
     return {
         "equity_1m": equity_1m,
         "trade_returns": trade_returns,
-        "sharpe": validation.sharpe_annualised(decision_bar_returns, periods_per_year),
+        "sharpe": validation.sharpe_annualised(decision_bar_returns, decision_bars_per_year),
         "cagr": cagr,
         "max_drawdown": max_drawdown,
         "calmar": validation.calmar(cagr, max_drawdown),
@@ -235,7 +235,7 @@ def pnl_block(result: dict) -> dict:
 
 def validation_path_cagr(final_equity_by_fold: dict[int, float]) -> float:
     """The chained validation path's growth rate, from what each fold settled at alone — the one quantity of
-    the path that needs no array, so a threshold, a trial and a state are all ranked without replaying one.
+    the path that needs no array, so a threshold, an HPO trial and a search state are all ranked without replaying one.
     The scale runs left to right in the fold table's order and the product is never written out."""
     scale, minute_count = 1.0, 0
     for fold_id in config.VALIDATION_FOLD_IDS:
@@ -303,8 +303,7 @@ def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
     """The entry edge threshold chosen on the validation folds — the grid point maximising the chained
     path's growth rate among those clearing the trade floor, ties to the smaller threshold, the grid floor when none
     clears it — with the fold results at that point, the path they chain into, and how many points it was
-    chosen out of. The one selection the stage and `score.py` both run, the latter for every state of the serpentine
-    search."""
+    chosen out of. The one selection the stage and `score.py` both run, the latter for every search state."""
     validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
                        for fold_id in config.VALIDATION_FOLD_IDS}
     validation_bounds = {fold_id: validation.fold_bounds(fold_id)
@@ -360,9 +359,9 @@ def main() -> int:
         selection = entry_edge_threshold_selection(simulation_inputs)
         entry_edge_threshold = selection["entry_edge_threshold"]
 
-        holdout_start, holdout_end = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
+        fold_start_ms, fold_end_ms = validation.fold_bounds(config.FINAL_HOLDOUT_FOLD_ID)
         final_holdout = backtest(simulation_inputs, signals_for_fold(simulation_inputs, config.FINAL_HOLDOUT_FOLD_ID),
-                                 entry_edge_threshold, holdout_start, holdout_end)
+                                 entry_edge_threshold, fold_start_ms, fold_end_ms)
 
         payload = {
             "entry_edge_threshold": entry_edge_threshold,

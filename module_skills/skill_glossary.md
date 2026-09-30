@@ -27,7 +27,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the segment boundaries
   - Code: `FOLD_BOUNDS_UTC` (a CONFIGURABLES record), `FOLD_BOUNDS_MS`, `fold_bounds()`
   - Never: split_bounds
-- the validation folds — the folds used for the data-driven selection of model hyper-parameters, the entry edge threshold and, once a state is promoted, the feature set and the barrier geometry; every state the serpentine search compares is scored on them
+- the validation folds — the folds used for the data-driven selection of model hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry; every search state the serpentine search compares is scored on them
   - Code: `VALIDATION_FOLD_IDS`
   - Artifact key: `validation`
   - Ui label: `F2`–`F4`
@@ -38,14 +38,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: `F5 — final holdout (out-of-sample)`
   - Never: test, test set, locked test, final OOS
   - External vocabulary: machine learning (holdout)
-- the evaluated block of a fold, and which one a prediction belongs to
-  - Code: the prefix `oos_` — `oos_fold_id`, `oos_start`, `oos_end`
+- the OOS block — the evaluated part of a fold, here the whole fold: its decision rows are predicted and its supervised rows scored; and which fold a prediction belongs to
+  - Code: `oos_block_rows()` in `module_ml/validation.py`; `oos_fold_id`; its bounds the fold's own, `fold_start_ms` and `fold_end_ms` of `fold_bounds()`
   - Artifact key: `oos_fold_id` (a column of the family `oos_predictions`)
-  - Ui label: out-of-sample
-  - Never: test block, test period
+  - Ui label: out-of-sample; OOS block rows (the asset README's fold geometry)
+  - Never: test block, test period; `oos_start`, `oos_end`, `holdout_start`, `start_ms` for a fold's bounds; a prediction window
   - External vocabulary: machine learning (out-of-sample)
 - the purge — dropping training events that overlap the evaluated block
-  - Code: `training_set()` — `event_end_ts <= oos_start_ms`, the event's end being exclusive
+  - Code: `training_set()` — `event_end_ts <= fold_start_ms`, the event's end being exclusive
   - Ui label: purged (the asset README's fold geometry)
   - Never: gap, buffer
   - External vocabulary: López de Prado (purged cross-validation)
@@ -80,7 +80,21 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `HIERARCHY_TIMEFRAMES`, `module_features/config.py`
   - Artifact key: `catalogue.timeframes` — `timeframe`, `duration_ms`, `bars_per_day`, `ratio_to_lower`, `slot`; the contract's `timeframes`
   - Ui label: each token, finest first, in the register box of the catalogue frame
-  - Never: levels, LEVELS, a hierarchy derived from a dict, a second list of timeframes anywhere
+  - Never: levels, LEVELS, a level for one of its timeframes, `tf`; a hierarchy derived from a dict, a second list of timeframes anywhere
+- a timeframe — the length one bar aggregates, a token `<integer><unit>` of the hierarchy; never a horizon, a window or a lookback, and named by its role where it plays one
+  - Code: `timeframe`, `timeframe_duration_ms()`, `timeframe_slot()`; `partition_dir(family, ticker, timeframe)`
+  - Artifact key: `timeframe` of the contract's `timeframes`; the partition `timeframe=<timeframe>/`
+  - Ui label: timeframe
+  - Never: `tf`, a level, a period; an interval, the venue's word, past the venue's call; a horizon or a window named as a timeframe
+- the top timeframe — the coarsest of the hierarchy: the trend gate's, and the one the warm-up counts its bars in
+  - Code: `trend_gate_timeframe()` in `module_ml/config.py`; `WARMUP_TOP_TIMEFRAME_BARS` in `module_features/config.py`
+  - Artifact key: `warmup_top_timeframe_bars` of the contract; `warmup.top_timeframe_bars` of the catalogue block
+  - Ui label: the top timeframe (the catalogue frame)
+  - Never: the top level; a top timeframe written as a token
+- the source candle's timeframe — the one granularity every venue is asked for, `1m`
+  - Code: `SOURCE_CANDLE_TIMEFRAME` in `module_data/config.py`
+  - Never: `SOURCE_CANDLE_INTERVAL`; `interval` past the venue's call
+  - External vocabulary: Binance REST (`interval`), Bybit v5 (`interval`)
 - the decision timeframe — the grid the decisions, the labels and the strategy stand on, a CONFIGURABLES record beside the hierarchy
   - Code: `DECISION_TIMEFRAME`
   - Artifact key: `catalogue.decision_timeframe`; the contract's `decision_timeframe`
@@ -144,11 +158,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: lower_barrier (the asset README's exits); lower (the Strategy view's exits)
   - Never: `lower` as the barrier's identifier, floor, band
   - External vocabulary: López de Prado (triple-barrier method)
-- the vertical barrier — the label's horizon, a duration token of the timeframe grammar, turned into minutes in one place
-  - Code: `label_horizon` of `START_BY_COORDINATE_DEFAULT` (the frozen default), `HORIZON_TOKEN_MINUTES`; `barriers_from()`, `load_barriers()` in `module_ml/dataset.py`, which carry it as `horizon_minutes`
-  - Artifact key: `label_horizon` — a key of `<TICKER>_barriers.json`, of a trial and of the profile's `grid_by_coordinate`
-  - Ui label: — (no page shows it; the asset README says `<minutes>-minute horizon`)
-  - Never: HORIZON_BARS, W, H; a horizon in minutes where the token belongs; a second place that resolves a token; `LABEL_HORIZON`, `LABEL_HORIZON_MINUTES`
+- the vertical barrier — the label horizon, a duration token of the timeframe grammar that names no timeframe, turned into minutes in one place
+  - Code: `label_horizon` of `START_BY_COORDINATE_DEFAULT` (the frozen default), `HORIZON_TOKEN_MINUTES`; `barriers_from()`, `load_barriers()` in `module_ml/dataset.py`, which carry it as `label_horizon_minutes`
+  - Artifact key: `label_horizon` — a key of `<TICKER>_barriers.json`, of a state evaluation and of the profile's `grid_by_coordinate`
+  - Ui label: — (no page shows it; the asset README says `<minutes>-minute label horizon`)
+  - Never: HORIZON_BARS, W, H, `h`; `horizon_minutes` without the label's name; a period or a window for it; a horizon in minutes where the token belongs; a second place that resolves a token; `LABEL_HORIZON`, `LABEL_HORIZON_MINUTES`
   - External vocabulary: López de Prado (triple-barrier method)
 - the exclusive end of the event
   - Code: `event_end_ts`
@@ -191,10 +205,10 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `average_uniqueness_weight()`, `train_weight` / `scoring_weight`
   - Never: `weight` as a Y column, class weight
   - External vocabulary: López de Prado (sample weights)
-- the epoch-millisecond suffix — `_ts` on the three event columns, a contract with the partitions on disk; `_ms` on every other epoch-millisecond name
-  - Code: `decision_ts`, `entry_ts`, `event_end_ts`; `timestamp_ms`, `WARMUP_END_MS`, `FOLD_BOUNDS_MS`
+- the point-in-time suffixes — `_ts` on the three event columns, a contract with the partitions on disk, and on a name that qualifies one of them; `_ms` on every other epoch-millisecond name; `_utc` on a UTC text
+  - Code: `decision_ts`, `entry_ts`, `event_end_ts`, `y_decision_ts`; `timestamp_ms`, `WARMUP_END_MS`, `FOLD_BOUNDS_MS`, `fold_start_ms`, `timeframe_open_ms`; `start_utc`
   - Artifact key: `decision_ts`, `entry_ts`, `event_end_ts` — columns of the family `labels`, `decision_ts` also of `catalogue` and `oos_predictions`; `timestamp_ms` of the `ohlcv_1m_*` families and of `bars`; `warmup_end_ms` of the contract
-  - Never: `_ts` on a new epoch-millisecond key or on a UTC string
+  - Never: `_ts` on any other epoch-millisecond name or on a UTC string; a point's name on a duration
 
 ## Signal and strategy
 
@@ -215,7 +229,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `entry_edge_threshold_constraint_met`
   - Ui label: `constraint met` (yes / fallback); `!` beside a fallback threshold
   - Never: `tau_ok`, a name that says a constraint without saying which
-- the trade floor — the least trades a validation fold must hold for a number measured on it to count: the threshold is chosen among the grid points clearing it in every fold, a study's gate reads it fold by fold, and the serpentine search's gate refuses a state whose threshold fell back below it
+- the trade floor — the least trades a validation fold must hold for a number measured on it to count: the threshold is chosen among the grid points clearing it in every fold, a study's gate reads it fold by fold, and the serpentine search's gate refuses a search state whose threshold fell back below it
   - Code: `MINIMUM_TRADES_PER_VALIDATION_FOLD` (a CONFIGURABLES record)
   - Never: MIN_TRADES; a floor read twice, in two places, with two values
 - the trend agreement — how many timeframes must agree with the side
@@ -241,7 +255,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 
 ## Counts
 
-- the decision count — decisions on the decision grid after the warm-up whose horizon still fits the research window: the labelled population, short of the catalogue's grid by the dropped tail
+- the decision count — decisions on the decision grid after the warm-up whose label horizon still fits the research window: the labelled population, short of the catalogue's grid by the dropped tail
   - Code: `decision_count`
   - Artifact key: `decision_count`
   - Ui label: decisions
@@ -256,32 +270,42 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `training_row_count`, `purged_event_count` — per fold, in `segments` of `<TICKER>_model_evaluation.json`
   - Ui label: trained on / purged (the asset README's fold geometry)
   - Never: n_train, n_purged
-- the window row count — rows in a prediction window
-  - Code: `window_row_count`
-  - Artifact key: `window_row_count` — per fold, in `segments` of `<TICKER>_model_evaluation.json`
-  - Ui label: window (the asset README's fold geometry)
-  - Never: n_window
+- the OOS block row count — the decision rows of one OOS block, every one of them predicted
+  - Code: `oos_block_row_count`, `oos_block_rows`
+  - Artifact key: `oos_block_row_count` — per fold, in `segments` of `<TICKER>_model_evaluation.json`
+  - Ui label: OOS block rows (the asset README's fold geometry)
+  - Never: n_window, `window_row_count`, a window of rows, full windows
 - the trade count — trades a fold produced
   - Code: `trade_count`
   - Artifact key: `trade_count`
   - Ui label: trades
   - Never: n_trades
-- the trial count — the points one study draws, the states a serpentine search's ledger holds, and per loop the fits that search spent: its ledger lines and its studies' draws, counted once at a round boundary and copied by every reader
-  - Code: `HYPERPARAMETER_SEARCH_TRIAL_COUNT`, `HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT` (CONFIGURABLES records), `trial_count`, `trial_count_by_loop`
-  - Artifact key: `trial_count`, `trial_count_by_loop`
-  - Ui label: trials; trials by loop (the features terminal)
-  - Never: `n_trials` beyond Optuna's own call
+- the HPO trial count — the points one study draws, completed and pruned alike
+  - Code: `HYPERPARAMETER_SEARCH_TRIAL_COUNT`, `HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT` (CONFIGURABLES records), `hpo_trial_count`
+  - Artifact key: `hpo_trial_count` — in `hyperparameter_search_result` of `<TICKER>_parameters.json` and `ml_status.json`, and per study in `<TICKER>_score_response.json`
+  - Ui label: Optuna trials; HPO trials (the ML Research tab)
+  - Never: `trial_count`, a bare trial count; `n_trials` beyond Optuna's own call; a trial count of search states
   - External vocabulary: Optuna (a trial of a study)
-- a round of the serpentine search — `ROUND_SCHEDULE` read in order, one line per expansion it makes; a profile searches the loops it names and the round skips the rest
-  - Code: `ROUND_SCHEDULE`, `round_count`; `round` of a trial
+- the state evaluation count — the lines of a serpentine search's ledger, the start's among them: one per distinct search state the search scored
+  - Code: `len(state_evaluations)` in `module_features/status.py`
+  - Artifact key: `state_evaluation_count` — in the `serpentine_search` block of `features_status.json`
+  - Ui label: state evaluations
+  - Never: trials, `trial_count`, N
+- the selection hypothesis count — N, the hypotheses a serpentine search tested: every line of its ledger after the start and every point its studies drew, a study's candidate counted once, as its line; counted once at a round boundary and copied by every reader, its one equation in `module_features/skills/methodology_features.md` § The serpentine search
+  - Code: `selection_hypothesis_count`, `selection_hypothesis_count_by_search_axis`
+  - Artifact key: `selection_hypothesis_count` and `selection_hypothesis_count_by_search_axis` in `<TICKER>_serpentine_search.json`; `selection_hypothesis_count` in the `serpentine_search` block of `features_status.json`
+  - Ui label: selection hypotheses; selection hypotheses by search axis (the features terminal)
+  - Never: a trial count, `trial_count_by_loop`, the ledger's length as N
+- a round of the serpentine search — one pass through the frozen `ROUND_SCHEDULE`, one line per expansion it makes; a profile searches the search axes it names and the round skips the rest
+  - Code: `ROUND_SCHEDULE`, `round_count`; `round` of a state evaluation and of an HPO ledger line
   - Artifact key: `round_count`, `round`
   - Ui label: rounds
-  - Never: iterations; a round of boosting, which `num_boost_round` already names
+  - Never: iterations, a loop; a round of boosting, which `num_boost_round` already names and a page shows as boosting rounds
 
 ## Data quality (data_status.json)
 
 - a scan alias — the name a column of a data-quality scan carries: the key it becomes when the report publishes it, else what the scan measured
-  - Code: `VENUE_SCAN`, `CANONICAL_SCAN`, `SOURCE_SWITCH_SCAN`, `CANONICAL_RUN_SCAN` in `module_data/status.py`, the writer of data_status.json; `distinct_timestamp_count`, `first_timestamp_ms`, `<venue>_source_count` stay inside a scan
+  - Code: `VENUE_SCAN`, `CANONICAL_SCAN`, `SOURCE_SWITCH_SCAN`, `CANONICAL_STREAK_SCAN` in `module_data/status.py`, the writer of data_status.json; `distinct_timestamp_count`, `first_timestamp_ms`, `<venue>_source_count` stay inside a scan
   - Artifact key: the published key itself
   - Never: an alias renamed on its way into the payload; an alias named for the share or the text it becomes
 - the two kinds a measured number can be, and the rule for reading them — an invariant has one correct value, zero; an observation has no threshold anyone can name and is read against its previous reading, on the data views the previous provider's: after a change of provider the invariants must still be zero and the observations are expected to move
@@ -292,7 +316,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `row_count`
   - Ui label: rows (`canonical rows` on the Pipeline tab)
   - Never: n
-- the gap count — grid minutes a venue did not print, over the whole window or since its first observation
+- the gap count — grid minutes a venue did not print, over the whole data window or since its first observation
   - Artifact key: `gap_count`, `gap_count_after_first_observation`
   - Ui label: gaps; gaps (since first obs.)
 - the duplicate count — rows a venue printed beyond one per minute, the surplus and not the minutes it fell on
@@ -324,10 +348,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `first_observation_utc`, `last_observation_utc`
   - Ui label: first / last
   - Never: `first_ts` (a `_ts` is epoch ms)
-- the data window
-  - Artifact key: `window_start_utc`
-  - Ui label: window
-  - Never: `window_start`; a window end, which the newest `last_observation_utc` already is
+- the data window — the interval the raw store covers: from `DATA_WINDOW_START_UTC` to the most recent full UTC day, its end moving with every top-up
+  - Code: `DATA_WINDOW_START_UTC`, `DATA_WINDOW_START_MS` in `module_data/config.py`
+  - Artifact key: `data_window_start_utc`
+  - Ui label: data window
+  - Never: `window_start`, `window_start_utc`, a bare window; a data window end, which the newest `last_observation_utc` already is
 - the bars of a kind — bars of one kind inside a bar or a series, a unit and not a bare count
   - Artifact key: `ffill_bars`, `zero_volume_bars`, `flat_bars`
   - Ui label: ffill (`ffill bars` on the Pipeline tab) / zero-vol / flat
@@ -357,7 +382,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `model_logloss`
   - Ui label: model log-loss (`model LL` in a cross-section header)
   - Never: loss
-- the relative log-loss skill — information beyond the prior, `1 − model / prior`, the model's own measure per fold: reported beside every state the serpentine search scores, and selected on by nothing
+- the relative log-loss skill — information beyond the prior, `1 − model / prior`, the model's own measure per fold: reported beside every search state the serpentine search scores, and selected on by nothing
   - Code: `relative_logloss_skill`
   - Artifact key: `relative_logloss_skill`
   - Ui label: skill (`rel. skill`, `val skill F<n>`, `mean val skill`, `holdout skill` in the tables)
@@ -367,107 +392,132 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `hyperparameter_search_result`
   - Never: tuning, optimisation, autoML; a derived artifact that reads its own last value; `HPO` spelled out mid-document after its first use; `search` alone for the serpentine search
   - External vocabulary: Optuna (the TPE sampler)
-- the serpentine search — a beam over the coordinates of a state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, the proposal must clear the noise of every state scored, and the trial count stands on the page beside it
-  - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `coordinate_barrier.py`, `coordinate_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question, the Makefile's `serpentine_turn` and `serpentine_score`, the one command of each step — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session, behind `COMPOSE_PROJECT_NAME` where it is set
+- a study — one HPO over one defined space: `HYPERPARAMETER_SEARCH_TRIAL_COUNT` trials drawn by one seeded TPE sampler, the chain's with `SEED` and a serpentine search's with `SEED` plus its round
+  - Code: `search_hyperparameters()` in `module_ml/hpo.py`, the `optuna.Study` it returns
+  - Artifact key: `study_index` of a line of `hpo_trials` and `score_trials`
+  - Never: a serpentine search; a study over several spaces
+  - External vocabulary: Optuna (a study)
+- a trial — exclusively one point of parameters a study drew, completed or pruned
+  - Code: `trial_row()`, `TRIAL_COLUMNS` in `module_ml/hpo.py`
+  - Artifact key: `hpo_trial_index`, `hpo_trial_outcome` (`complete` / `pruned`) of a ledger line
+  - Ui label: Optuna trials
+  - Never: a search state, a state evaluation, a line of the serpentine search's ledger
+  - External vocabulary: Optuna (a trial)
+- the serpentine search — a beam over the search axes of a search state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, the proposal must clear the noise of every selection hypothesis, and the selection hypothesis count stands on the page beside it
+  - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `axis_barrier.py`, `axis_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question, the Makefile's `serpentine_turn` and `serpentine_score`, the one command of each step — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session, behind `COMPOSE_PROJECT_NAME` where it is set
   - Artifact key: `serpentine_search` (a block of each asset of features_status.json), `<TICKER>_serpentine_search.json`
   - Ui label: serpentine search
-  - Never: the coordinate search, its name while `module_ml` held it; feature-set search (one of its loops, not the serpentine search); feature selection (as a name), optimisation, the search (HPO's word); "no overfitting"
-- a turn — one call of the serpentine search: it reads where the serpentine search stands, carries it as far as the answers on disk allow, and leaves the next question or a converged state
+  - Never: the coordinate search, its name while `module_ml` held it; feature-set search (one of its search axes, not the serpentine search); feature selection (as a name), optimisation, the search (HPO's word); "no overfitting"
+- a turn — one call of the serpentine search: it reads where the serpentine search stands, carries it as far as the answers on disk allow, and leaves the next question or an ended search
   - Code: `turn()` in `module_features/sub_module_serpentine_search/serpentine_search.py`; `make features-serpentine-turn`
   - Ui label: `features-serpentine-turn` in the features terminal's menu
-  - Never: a step, an iteration, a tick; a turn that asks two questions; a cursor, a journal or a lock recording where a turn stopped — the ledger and the state file are the record
-- a coordinate — one axis the serpentine search moves along, with its own generator of moves; the state is the ordered dict of them and a trial carries the whole of it
-  - Code: `candidates_of()`, `ROUND_SCHEDULE`, `state_key()`, `theta()`; `BARRIER_COORDINATE_NAMES`; the generators `moves()` of `coordinate_barrier.py` and `coordinate_feature_set.py`; `SERPENTINE_SEARCH_LOOP_BARRIER`, `SERPENTINE_SEARCH_LOOP_FEATURE_SET`, `SERPENTINE_SEARCH_LOOP_HPO`
-  - Artifact key: `loop` = `barrier` / `feature_set` / `hpo`, and the coordinate's own keys in a trial
+  - Never: a step, an iteration, a tick; a turn that asks two questions; a cursor, a journal or a lock recording where a turn stopped — the ledger and the search's progress are the record
+- a search axis — the part of a search state the serpentine search moves: its barrier geometry, its feature set or its hyper-parameter point, each with its own generator of moves; the search state is the whole of them, and a state evaluation carries all of it
+  - Code: `SERPENTINE_SEARCH_AXIS_BARRIER`, `SERPENTINE_SEARCH_AXIS_FEATURE_SET`, `SERPENTINE_SEARCH_AXIS_HPO`; `SERPENTINE_SEARCH_AXES` of the features terminal; the generators `moves()` of `axis_barrier.py` and `axis_feature_set.py`, and the study of `score.hpo_results()`; `candidates_of()`, `ROUND_SCHEDULE`, `search_state_key()`, `theta()`
+  - Artifact key: `search_axis` = `barrier` / `feature_set` / `hpo`, of a state evaluation and of a path entry; `search_axes` of a profile
+  - Ui label: search axes (the features terminal's draft); search axis (its path table)
+  - Never: a loop, a dimension, a knob; a coordinate; an axis named inside `serpentine_search.py`
+- a coordinate — one named component of a search state's barrier geometry, moved one grid point at a time by the barrier axis
+  - Code: `BARRIER_COORDINATE_NAMES`, `BARRIER_COORDINATE_CASTS`; `COORDINATES_BY_SEARCH_FAMILY` in `axis_barrier.py`
+  - Artifact key: the four of `BARRIER_COORDINATE_NAMES` in a state evaluation, in `<TICKER>_barriers.json` and in the profile's `grid_by_coordinate`
   - Ui label: coordinate (the features terminal's draft)
-  - Never: a dimension, an axis, a knob; a coordinate named inside `serpentine_search.py`
-- a family — one expansion of the beam, and one line of `ROUND_SCHEDULE`: the loop it belongs to and its own name, read in the table's order, each seeded by the beam the line before it left
+  - Never: a search axis, a dimension, a knob; the hyper-parameters of a study, which are the chosen point's
+- a search family — one generator of one kind of neighbour along a search axis, and one line of `ROUND_SCHEDULE`: the search axis it belongs to and its own name, read in the table's order, each seeded by the beam the line before it left
   - Code: `ROUND_SCHEDULE`
-  - Artifact key: `family` = `trade` / `label` / `forward` / `backward` / `study`
-  - Ui label: family (the features terminal's path table)
-  - Never: a stage, a step, a phase; a family whose order a profile chooses; a table family — a different meaning
-- a family pass — the states one family offers, scored in one call of the evaluator; the unit the boundary between the serpentine search and the evaluator carries
+  - Artifact key: `search_family` = `trade` / `label` / `forward` / `backward` / `study`
+  - Ui label: search family (the features terminal's path table)
+  - Never: a stage, a step, a phase, a round; a family whose order a profile chooses; a table family — a different meaning
+- a search family's pass — the search states one search family offers, scored in one call of the evaluator; the unit the boundary between the serpentine search and the evaluator carries
   - Code: `score_results()`, `hpo_results()` in `module_ml/score.py`
-  - Artifact key: `states` of a request, `results` of a response
-  - Never: a trial as the unit of a call, which would be one process per state; a pass spanning two families
-- the beam — the states a family leaves: the best distinct of its gate-cleared children and of the parents they came from, `top_beam(children + beam)` after each family, at most `SERPENTINE_SEARCH_BEAM_WIDTH`; width 1 is one champion moved one move at a time
+  - Artifact key: `search_states` of a request, `results` of a response
+  - Never: a state evaluation as the unit of a call, which would be one process per search state; a pass spanning two search families
+- the beam — the search states a search family leaves: the best distinct of its gate-cleared children and of the parents they came from, `top_beam(children + beam)` after each search family, at most `SERPENTINE_SEARCH_BEAM_WIDTH`; width 1 is one champion moved one move at a time
   - Code: `SERPENTINE_SEARCH_BEAM_WIDTH` (a CONFIGURABLES record), `top_beam()`
-  - Artifact key: `beam` (trial indices)
-  - Never: a population, a frontier; a beam holding one state twice
+  - Artifact key: `beam` (state evaluation indices)
+  - Never: a population, a frontier; a beam holding one search state twice
   - External vocabulary: beam search
-- the research path — the expansions the serpentine search accepted, in order, each naming its trial by index
+- the research path — the expansions the serpentine search accepted, in order, each naming its state evaluation by index
   - Code: `path_entry()`
-  - Artifact key: `path`, each `round`, `loop`, `family`, `trial_index`, `beam`, `move`
+  - Artifact key: `path`, each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`
   - Ui label: the path table of the features terminal
-  - Never: a history, a log, a trace; a path holding a move that was scored and rejected; a trial's skill or path copied into the state
-- the state a move is measured against — its parent in the beam, not the champion of the loop
-  - Code: `parent_trial_index`
-  - Artifact key: `parent_trial_index`
+  - Never: a history, a log, a trace; a path holding a move that was scored and rejected; a state evaluation's skill or path copied into the search's progress
+- the parent — the search state a move is measured against: its parent in the beam, not the champion
+  - Code: `parent_state_evaluation_index`; `parent_validation_by_fold` inside a study
+  - Artifact key: `parent_state_evaluation_index`
   - Never: the champion, where the parent is meant
 - the selection rule — the one rule every choice reads: a child clears the gate by every fold's growth rate, and so by the validation path's; the path's growth rate ranks the beam, clears the proposal's noise margin and is the objective of the threshold's choice and of a study
-  - Code: `SELECTION_FOLD_MEASURE`, `fold_objective()`, `state_objective()`, `is_gate_cleared()`, `ranking_key()`, `strategy.selection_score()`, `strategy.SELECTION_SCORE_KEY`
+  - Code: `SELECTION_FOLD_MEASURE`, `fold_objective()`, `search_state_objective()`, `is_gate_cleared()`, `ranking_key()`, `strategy.selection_score()`, `strategy.SELECTION_SCORE_KEY`
   - Artifact key: `selection` (`beam_width`, `fold_measure`), inside `inputs`
   - Never: a selection rule keyed anywhere else; a threshold rule that disagrees with the serpentine search's; an objective read from the profile; a constant choosing between objectives where only one is ever run
-- one scored state of the serpentine search — the whole of Θ, its objective per fold and over the state, what the strategy would do with it, and where the serpentine search was when it scored it
-  - Code: a line of `<TICKER>_serpentine_search_trials.jsonl`, `trial_result()` in `module_ml/score.py`
-  - Artifact key: each line `columns_by_timeframe`, the four of `BARRIER_COORDINATE_NAMES`, `best_params`, `validation` (per fold `relative_logloss_skill`, `sharpe`, `cagr`, `max_drawdown`, `calmar`, `profit_factor`, `trade_count`), `mean_relative_logloss_skill`, `validation_path`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `cleared_point_count`, `median_cagr_over_cleared`, `max_cagr_over_cleared`, `selection_score_cagr_validation_path`, `loop`, `family`, `move`, `round`, `parent_trial_index`
-  - Ui label: trial
-  - Never: candidate (as a key), step; a trial carrying only the coordinate that moved; the serpentine search's state rewritten per trial
-- the mean validation skill — the mean over the validation folds of a trial's relative log-loss skill
+- a state evaluation — the one scored computation of one search state: the whole of Θ, its objective per fold and over the search state, what the strategy would do with it, and where the serpentine search was when it scored it
+  - Code: a line of `<TICKER>_serpentine_search_state_evaluations.jsonl`, `state_evaluation()` in `module_ml/score.py`
+  - Artifact key: each line `columns_by_timeframe`, the four of `BARRIER_COORDINATE_NAMES`, `best_params`, `validation` (per fold `relative_logloss_skill`, `sharpe`, `cagr`, `max_drawdown`, `calmar`, `profit_factor`, `trade_count`), `mean_relative_logloss_skill`, `validation_path`, `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `cleared_point_count`, `median_cagr_over_cleared`, `max_cagr_over_cleared`, `selection_score_cagr_validation_path`, `search_axis`, `search_family`, `move`, `round`, `parent_state_evaluation_index`
+  - Ui label: state evaluation
+  - Never: a trial, candidate (as a key), step; a state evaluation carrying only the coordinate that moved; the search's progress rewritten per state evaluation
+- a search state — one complete point of the serpentine search's space, Θ: the columns per timeframe, the four barrier coordinates and the hyper-parameter point, with one identity, its canonical text
+  - Code: `search_state`, `theta()`, `search_state_key()`, `start_search_state()`, `search_state_objective()`; `search_state_material()`, `xy_for_search_state()` in `module_ml/score.py`
+  - Artifact key: `search_states` of a request; `search_state_key` of an `hpo` result
+  - Ui label: search state; start search state (the features terminal's draft)
+  - Never: a bare state; a trial; the search's progress, which holds where the search stands and is not a search state
+- the search's progress — where a serpentine search stands, written at every round boundary: its inputs, its beam, its champion, its counts, its path and its proposals, naming state evaluations by index
+  - Code: `search_progress`, `write_search_progress()`, `serpentine_search_json()`
+  - Artifact key: `<TICKER>_serpentine_search.json` (§ Artifacts)
+  - Never: the state file, the search's state
+- the mean validation skill — the mean over the validation folds of a state evaluation's relative log-loss skill
   - Code: `mean_relative_logloss_skill`
   - Artifact key: `mean_relative_logloss_skill`
   - Ui label: mean skill (`mean val skill` in the feature-set table); `Δ vs active` for a proposal's mean skill minus the active set's (`proposal Δ skill` in the Features tab's table), page arithmetic printed in percentage points (`pp`)
   - Never: score (the strategy's word for its own selection)
-- the state the serpentine search stands on — the leader of the beam, moved once at the end of a round, and the one state a proposal may name
-  - Code: `champion_trial_index`
-  - Artifact key: `champion_trial_index`
-  - Ui label: champion trial (the features terminal)
-  - Never: incumbent, current best; a champion moved inside a family
-- the move direction — `forward` for a move that grows the state, `backward` for one that shrinks it; a `forward` move must be strictly better on every fold, a `backward` move no worse
+- the champion — the search state the serpentine search stands on: the leader of the beam, moved once at the end of a round, and the one search state a proposal may name
+  - Code: `champion_state_evaluation_index`
+  - Artifact key: `champion_state_evaluation_index`
+  - Ui label: champion (the features terminal)
+  - Never: incumbent, current best; a champion moved inside a search family
+- the move direction — `forward` for a move that grows the search state, `backward` for one that shrinks it; a `forward` move must be strictly better on every fold, a `backward` move no worse
   - Code: `SERPENTINE_SEARCH_MOVE_FORWARD`, `SERPENTINE_SEARCH_MOVE_BACKWARD`
   - Artifact key: `move` = `forward` / `backward`
   - Ui label: — (a turn's progress line prints them; no page shows a move)
   - Never: add / drop, greedy, step; a ceiling or a floor on the count of columns
   - External vocabulary: stepwise feature selection (forward / backward)
-- the convergence — a round in which no family of the executed schedule changed the beam, after which the serpentine search is over: the end of its own schedule and gate, not an optimum
+- the convergence — a round in which no search family of the executed schedule changed the beam, after which the serpentine search is over: the end of its own schedule and gate, not an optimum
   - Code: `search_converged`
   - Artifact key: `search_converged`
   - Ui label: converged
   - Never: done, finished, stopped; optimal, without saying in what
-- the promotion — a hand's copy of one proposal's whole state — its columns, its barrier geometry and its hyper-parameter point — into the asset's own, followed by its ML chain, whose study starts from that point, so the point it keeps is worth at least the proposal's path CAGR; the same proposal twice changes nothing
+- the promotion — a hand's copy of one proposal's whole search state — its columns, its barrier geometry and its hyper-parameter point — into the asset's own, followed by its ML chain, whose study starts from that point, so the point it keeps is worth at least the proposal's path CAGR; the same proposal twice changes nothing
   - Code: `module_features/sub_module_serpentine_search/promote.py`, `make features-serpentine-search-promote ASSET=<TICKER>`
   - Artifact key: `<TICKER>_feature_set.json` with `columns_by_timeframe`, `<TICKER>_barriers.json` with the four of `BARRIER_COORDINATE_NAMES` and `<TICKER>_hyperparameter_point.json` with `best_params`, and nothing else
   - Ui label: promote (the features terminal's action); the page shows a promotion only as the set's `source`
-  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history; a rank on the make line or the command line, a search holding one proposal at most; a part of the state left behind
+  - Never: apply, activate, deploy; a promotion of the whole basket; a counter or a rank in the file — git holds the history; a rank on the make line or the command line, a search holding one proposal at most; a part of the search state left behind
 - the feature set source — the promoted file when it exists, else the default set of the catalogue
   - Code: `feature_set_block()`
   - Artifact key: `feature_set` with `source` = `default` / `promoted`, `columns_by_timeframe`
   - Ui label: source; `columns <timeframe>` in the cross-section
   - Never: origin, provenance, `final_holdout_evaluation_count` (a counter git already records)
-- the proposals — the one state a hand may promote: the champion, when it beats the start by more than the noise of the whole search
+- the proposals — the one search state a hand may promote: the champion, when it beats the start by more than the noise of the whole search
   - Code: `proposals_block()`; `proposal_block()` in `module_features/status.py`
-  - Artifact key: `proposals` in `<TICKER>_serpentine_search.json`, each `proposal`, `trial_index`; `proposals` in the `serpentine_search` block of features_status.json, each `proposal`, `trial_index`, `added_columns_by_timeframe`, `removed_columns_by_timeframe` (against the asset's own set the serpentine search recorded in `inputs`), `mean_relative_logloss_skill`, `validation` (per fold `cagr`, `trade_count`), `validation_path` (`cagr`, `calmar`, `profit_factor`), `entry_edge_threshold`
+  - Artifact key: `proposals` in `<TICKER>_serpentine_search.json`, each `proposal`, `state_evaluation_index`; `proposals` in the `serpentine_search` block of features_status.json, each `proposal`, `state_evaluation_index`, `added_columns_by_timeframe`, `removed_columns_by_timeframe` (against the asset's own set the serpentine search recorded in `inputs`), `mean_relative_logloss_skill`, `validation` (per fold `cagr`, `trade_count`), `validation_path` (`cagr`, `calmar`, `profit_factor`), `entry_edge_threshold`
   - Ui label: PROPOSALS, one frame per asset on the Features tab — `#` for the rank, `columns added / removed` for the two differences
-  - Never: recommendations, top sets, best features; a set worse on any validation fold; the highest mean without the fold test; a trial's numbers copied into the state file; a proposal 2 or 3; a proposal of a calibration run
-- the asset's noise sigma — the standard deviation of one evaluation's path CAGR, measured once off the ledgers of the asset's calibration searches and drafted into its profile by a decision; absent on the calibration run that measures it
+  - Never: recommendations, top sets, best features; a set worse on any validation fold; the highest mean without the fold test; a state evaluation's numbers copied into the search's progress; a proposal 2 or 3; a proposal of a calibration search
+- the asset's noise sigma — the standard deviation of one evaluation's path CAGR, measured once off the ledgers of the asset's calibration searches and drafted into its profile by a decision; absent on the calibration search that measures it
   - Code: `path_cagr_noise_standard_deviation()`, `NOISE_MEDIAN_ABSOLUTE_DEVIATION_SCALE`
-  - Artifact key: `path_cagr_noise_standard_deviation` in `<TICKER>_serpentine_search_profile.json`, `null` on a calibration run
-  - Ui label: — (a calibration run's last turn prints the estimate of its ledger; no page shows it)
+  - Artifact key: `path_cagr_noise_standard_deviation` in `<TICKER>_serpentine_search_profile.json`, `null` on a calibration search
+  - Ui label: — (a calibration search's last turn prints the estimate of its ledger; no page shows it)
   - Never: noise level, volatility; a sigma per ticker in code; a sigma a serpentine search recomputes; one ledger's estimate where a decision pooled several
   - External vocabulary: statistics (median absolute deviation)
-- the proposal's noise margin — k(N) times the asset's noise sigma, the path-CAGR gain the champion must exceed over the start: k(N) the multiple at which the best of N states, each scored with noise of its own, beats a start that carries its own by chance at the rate `PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`; N every state a serpentine search scored
+- the proposal's noise margin — k(N) times the asset's noise sigma, the path-CAGR gain the champion must exceed over the start: k(N) the multiple at which the best of N selection hypotheses, each scored with noise of its own, beats a start that carries its own by chance at the rate `PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`; N the selection hypothesis count of the search
   - Code: `proposal_threshold_multiple()`, `false_exceedance_rate()`, `PROPOSAL_THRESHOLD_FALSE_EXCEEDANCE_RATE`, `PROPOSAL_THRESHOLD_QUADRATURE_NODE_COUNT`, `PROPOSAL_THRESHOLD_BISECTION_BRACKET_MULTIPLES`, `PROPOSAL_THRESHOLD_BISECTION_ITERATION_COUNT`
   - Artifact key: — (computed where it is read; no artifact carries it)
   - Ui label: — (no page shows it)
   - Never: k95; a table of k by N; a margin per move, per family or per ticker
-- the inputs of the serpentine search — what it was run under, recorded in its state and compared by equality on the next turn: equal, it resumes; different, it starts again
+- the inputs of the serpentine search — what it was run under, recorded in its progress and compared by equality on the next turn: equal, it resumes; different, it starts again
   - Code: `build_search_inputs()`, `inputs`
-  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`, `seed`, `warmup_top_timeframe_bars`), `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
-  - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's trials under another's rules
+  - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`), `seed`, `warmup_top_timeframe_bars`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
+  - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's state evaluations under another's rules
 - current inputs — a recorded serpentine search's inputs that are still the asset's own
   - Code: `serpentine_search_block()` in `module_features/status.py`
   - Artifact key: `inputs_current`
-  - Ui label: the note *the serpentine search predates the asset's state, its profile or its parameters*, in place of PROPOSALS and in the Features tab's table
+  - Ui label: the note *the serpentine search predates the asset's search state, its profile or its parameters*, in place of PROPOSALS and in the Features tab's table
   - Never: stale, dirty, outdated; a guard that refuses the promotion
 - the trial objective — the CAGR of the validation path at the threshold the selection rule picks; none for a pruned trial
   - Code: `sweep_selection()`, the return of `objective()` inside `build_objective()` in `module_ml/hpo.py`, logged per trial by `log_trials()` under `TRIAL_METRIC_KEY`
@@ -480,11 +530,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `best_cagr_validation_path`
   - Ui label: best F2–F4 path CAGR (`best path CAGR` in the HPO table)
   - Never: best_value, score; one key that holds two different quantities
-- the trial gate — one gate, read fold by fold: the thresholds at which every fold evaluated so far clears the trade floor and beats the champion's CAGR; the set only shrinks as folds are added, so nothing admissible is discarded
-  - Code: `admissible_thresholds()`, `optuna.TrialPruned`
+- the trial gate — one gate, read fold by fold: the thresholds at which every fold evaluated so far clears the trade floor and beats the parent's CAGR; the set only shrinks as folds are added, so nothing admissible is discarded
+  - Code: `admissible_thresholds()` against `parent_validation_by_fold`, `optuna.TrialPruned`
   - Never: a pruner that compares folds as if they were epochs; a gate on a fold's realised value rather than on what it could still reach
   - External vocabulary: Optuna (`TrialPruned`)
-- the search result — the point the search chose, its objective value and the trial count
+- the HPO result — the point the HPO chose, its objective value and the HPO trial count
   - Code: `hyperparameter_search_result`
   - Artifact key: `hyperparameter_search_result` (a section of the parameters file, a block of ml_status.json)
   - Ui label: HPO
@@ -492,7 +542,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the chosen point — the closed set of hyper-parameters a study draws, in xgboost's own spelling
   - Code: the keys of `HYPERPARAMETER_SEARCH_SPACE` (a CONFIGURABLES record), `module_ml/config.py` — the one definition the study and the parameters file derive from
   - Artifact key: `best_params`: `alpha`, `colsample_bytree`, `eta`, `lambda`, `max_depth`, `min_child_weight`, `num_boost_round`, `subsample`
-  - Ui label: depth, eta, min child, subsample, colsample, lambda, alpha, rounds — the HPO table's columns
+  - Ui label: depth, eta, min child, subsample, colsample, lambda, alpha, boosting rounds — the HPO table's columns
   - Never: a project synonym for an xgboost parameter; a second name for any of them; registering them one by one
   - External vocabulary: xgboost
 - the frozen constants — what the experiment fixes before any search starts and no search moves
@@ -593,11 +643,19 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the generation time — when a snapshot was written
   - Artifact key: `generated_at_utc`
   - Holds: the one timestamp of a payload; the crawler's snapshot carries `finished_at_utc` per file instead
-- the frozen experiment, once, globally
-  - Artifact key: `research_window` with `start_utc`, `end_utc`, `seed`
-  - Holds: the window and the seed, published once in `ml_status.json` — no per-asset copy in a snapshot; the serpentine search's `inputs` records its own
+- the research window — the frozen interval `[start, end)` every fold of the experiment divides, with the seed beside it, once, globally
+  - Code: `RESEARCH_START_UTC`, `RESEARCH_END_UTC` — the first and the last bound of `FOLD_BOUNDS_UTC`
+  - Artifact key: `research_window` with `start_utc` and `end_utc` alone; `seed` beside it
+  - Ui label: research window; seed (the ML Research tab)
+  - Never: a research window holding the seed or the warm-up; a bare window for it
+  - Holds: the research window and the seed, published once in `ml_status.json` — no per-asset copy in a snapshot; the serpentine search's `inputs` records its own
+- an experiment — the frozen context a comparison is made in: the chain's CONFIGURABLES records at a commit and, for a serpentine search, its `inputs`; two numbers compare only inside one experiment
+  - Code: `experiment_identity` of a CONFIGURABLES record; `build_search_inputs()`
+  - Artifact key: `experiment_identity` of a record in a snapshot's `configurables`; `inputs` of `<TICKER>_serpentine_search.json`
+  - Ui label: experiment identity (the CONFIGURABLES tables)
+  - Never: a run, a session; a calibration run for a calibration search, which is an experiment of its own
 - the per-asset reports of ml_status.json
-  - Artifact key: `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, the objective's own key, `trial_count`), `validation`, `final_holdout`, `feature_columns`, `feature_set` (`source`, `columns_by_timeframe`), `validation_importance`, `strategy`
+  - Artifact key: `assets` (a list) with `ticker`, `sample`, `hyperparameter_search_result` (`best_params`, the objective's own key, `hpo_trial_count`), `validation`, `final_holdout`, `feature_columns`, `feature_set` (`source`, `columns_by_timeframe`), `validation_importance`, `strategy`
   - Holds: the experiment flow, sample → search → validation → holdout → attribution → strategy
 - the classes of the supervised population
   - Artifact key: `class_counts` with `short`, `neutral`, `long`
@@ -606,13 +664,13 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `final_holdout_fold_id`, `minimum_agreeing_trend_timeframes`, `trend_gate_feature`
   - Holds: which fold is the final holdout; how many timeframes the gate needs; the feature id the gate reads
 - the feature layer's snapshot
-  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `trial_count`, `round_count`, `search_converged`, `inputs_current`, `proposals`)
+  - Artifact key: `features_status.json`: `generated_at_utc`, `catalogue`, `configurables` (the module's records and the serpentine search's, *a CONFIGURABLES record*), `assets` (per asset `ticker`, `row_count_by_timeframe`, `serpentine_search` — `null` while no serpentine search has run; else `state_evaluation_count`, `selection_hypothesis_count`, `round_count`, `search_converged`, `inputs_current`, `proposals`)
   - Holds: the catalogue as the register presents it, the one run-state fact the feature layer has per asset — the rows of its catalogue partitions, the last line of the register box — and the serpentine search as it last wrote itself; written by `module_features/status.py`
 - the catalogue block — of `features_status.json`
   - Artifact key: `catalogue` with `decision_timeframe`, `timeframes`, `warmup` (`top_timeframe_bars`, `end_utc`), `definitions` (per definition: `feature_definition`, `terms` — `inputs`, `indicator`, `parameter_word`, `parameter_bars`, `output_range`, `historical_aliases` —, `operators`, `normaliser`, `range`, `tier`, `historical_aliases`, `timeframes`, `effective_history_hours_by_timeframe`, `warmup_bars`, `definition_in_default_set`), `nesting` (per adjacent pair: `lower`, `upper`, `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours`)
   - Holds: the catalogue as the register presents it — what the catalogue frame of the ML Research tab draws, beside each asset's `row_count_by_timeframe`; the other tabs read its `timeframes` and `definitions`
 - the walk-forward path of the validation folds
-  - Holds: what F2, F3 and F4 earned as one equity — in `<TICKER>_strategy_evaluation.json`, in every trial of the serpentine search's ledger, in `ml_status.json` inside each asset's `strategy`, and in `features_status.json` a proposal's, joined from its trial
+  - Holds: what F2, F3 and F4 earned as one equity — in `<TICKER>_strategy_evaluation.json`, in every state evaluation of the serpentine search's ledger, in `ml_status.json` inside each asset's `strategy`, and in `features_status.json` a proposal's, joined from its state evaluation
 - the exit counts — how the trades of a fold ended
   - Artifact key: `exit_counts` with `upper_barrier`, `lower_barrier`, `vertical`, `ambiguous`
   - Holds: counts, named by `event_resolution`
@@ -634,9 +692,12 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the unit of download work, and the cadence a measurement's age is judged against
   - Artifact key: `download_cadence_minutes`
   - Holds: one UTC day; the Pipeline tab marks an age above it — `observation lag` = now − `last_observation_utc` and `measurement age` = now − `generated_at_utc`, the page's arithmetic, never a key
-- the longest run of each state a canonical minute can be in
-  - Artifact key: `longest_flat_run_minutes`, `longest_ffill_run_minutes`
-  - Holds: durations, in minutes — `flat run (min)` and `ffill run (min)` on the page; a minute is forward-filled, flat or traded, decided in that order, so fabrication is never reported as a quiet market
+- the longest streak of each state a canonical minute can be in — the most consecutive minutes it stayed forward-filled, or flat
+  - Code: `CANONICAL_STREAK_SCAN` in `module_data/status.py`
+  - Artifact key: `longest_flat_streak_minutes`, `longest_ffill_streak_minutes`
+  - Ui label: flat streak (min); ffill streak (min)
+  - Never: a run of minutes, `longest_flat_run_minutes`, `longest_ffill_run_minutes`
+  - Holds: durations, in minutes — a minute is forward-filled, flat or traded, decided in that order, so fabrication is never reported as a quiet market
 
 ## Stores
 
@@ -650,16 +711,16 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: the page's footer names the four snapshots
   - Never: a snapshot written into `module_monitoring/` or any other module's directory; a report tracked; `skills_status.json` committed in any state but its neutral one
 - the trials store: two ledger families, one writer each — `hpo_trials` by `ml-hpo`, `score_trials` by `ml-score` — every point a hyper-parameter study drew, one partition per asset, appended and never rewritten; a hand clears `hpo_trials`, `features-serpentine-search-reset` an asset's partition of `score_trials`
-  - Code: `store/trials/`, `STORE_TRIALS_DIR`, mounted into the `ml` runner alone; `hpo_trials_jsonl()`, `score_trials_jsonl()` in `module_ml/config.py` — `<family>/ticker=<TICKER>/<family>.jsonl`, the family's `schema.json` beside its partitions; `log_trials()` in `module_ml/hpo.py` the one appender, `search_index` counted off the writer's own partition
+  - Code: `store/trials/`, `STORE_TRIALS_DIR`, mounted into the `ml` runner alone; `hpo_trials_jsonl()`, `score_trials_jsonl()` in `module_ml/config.py` — `<family>/ticker=<TICKER>/<family>.jsonl`, the family's `schema.json` beside its partitions; `log_trials()` in `module_ml/hpo.py` the one appender, `study_index` counted off the writer's own partition
   - Never: a database where a file of lines does; a tracking server, a model registry, a published port or a UI service in place of the ledger; a stage reading another family's ledger back; two stages appending to one family; a ledger tracked
-- a ledger line: what a trial leaves in its ledger — its objective and admissibility when completed, the fold it stopped at when pruned, and two counts per fold reached, the second `null` where the study had no champion
+- a ledger line: what a trial leaves in its ledger — its objective and admissibility when completed, the fold it stopped at when pruned, and two counts per fold reached, the second `null` where the study had no parent
   - Code: `trial_row()`, `admissible_thresholds()`, `TRIAL_COLUMNS` in `module_ml/hpo.py`
   - Artifact key: `cagr_validation_path`, `admissible`, `pruned_at_fold`, `floor_clearing_threshold_count_by_fold`, `admissible_threshold_count_by_fold`
-  - Never: one key holding both counts; a pruned trial absent from the ledger; a trial's state inferred from its value
+  - Never: one key holding both counts; a pruned trial absent from the ledger; a trial's outcome inferred from its value
 - a ledger line's origin: the stage and round that ran its study, the study's place in the ledger and the trial's place in the study
   - Code: `log_trials()`, `trial_row()` in `module_ml/hpo.py`; `origin` `hpo` from `ml-hpo`, `serpentine_search` from `ml-score`
-  - Artifact key: `origin`, `round`, `search_index`, `trial_index`, `state`, `params`
-  - Never: a run id, a timestamp or a host name in the ledger — the file is byte-deterministic and each of the three would end that; a minted run name; Optuna's own trial number, which counts from zero and does not leave `hpo.py`; a ticker in a key, the partition being the ticker's
+  - Artifact key: `origin`, `round`, `study_index`, `hpo_trial_index`, `hpo_trial_outcome`, `params`
+  - Never: a run id, a timestamp or a host name in the ledger — the file is byte-deterministic and each of the three would end that; a minted run name; Optuna's own trial number, which counts from zero and leaves `hpo.py` only as `hpo_trial_index`, one more; `search_index`, `trial_index` or `state` for these; Optuna's trial state past the call that reads it; a ticker in a key, the partition being the ticker's
 - a table family: a table of the chain — Parquet, or JSON lines for a ledger — partitioned by asset and, where the timeframe register decides its values, by timeframe; one stage writes it and its `schema.json` beside its partitions, and a partition may omit a column, never rename one or change its type
   - Code: `ohlcv_1m_binance`, `ohlcv_1m_bybit`, `ohlcv_1m_canonical`, `bars`, `catalogue`, `labels`, `oos_predictions` under `STORE_ASSETS_ARTIFACTS_DIR`; `hpo_trials`, `score_trials` under `STORE_TRIALS_DIR`; `<family>/ticker=<TICKER>/[timeframe=<timeframe>/]<family>.parquet` or `.jsonl`; `partition_dir()` in every `config.py` that writes or reads one; DuckDB the engine, in memory
   - Never: table file, database, a `.duckdb` file; a Parquet file outside a family; a family with two writers; the serpentine search's family (§ Metrics), a different meaning
@@ -758,7 +819,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: the three snapshots round the same way, and no module imports another
 - `RESEARCH_START_UTC`, `RESEARCH_END_UTC`, `RESEARCH_START_MS`, `RESEARCH_END_MS` — equal by value
   - Code: `module_features/config.py`, the two dates its CONFIGURABLES records hold; `module_ml/config.py`, the first and the last of `FOLD_BOUNDS_UTC`
-  - Why twice: the frozen window is the experiment's: the feature layer bounds the bars and the catalogue by it, the ML layer the labels and the folds, each owning its literal, and neither imports the other
+  - Why twice: the frozen research window is the experiment's: the feature layer bounds the bars and the catalogue by it, the ML layer the labels and the folds, each owning its literal, and neither imports the other
 - `catalogue_json()` — identical
   - Code: `module_features/config.py`, `module_ml/config.py`, `module_features/sub_module_terminal/config.py`
   - Why twice: the writer names the contract it writes, the reader the contract it reads, and the features terminal the contract it shows a hand — without its module's `config.py`, which imports numpy
@@ -779,7 +840,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: the readers of the same JSON files — a stage, and the terminals that read what a stage wrote; a terminal cannot import a `dataset.py`, which imports duckdb and numpy, nor another module's code
 - `load_jsonl()` — identical
   - Code: `module_features/dataset.py`, `module_ml/dataset.py`, `module_features/sub_module_terminal/config.py`
-  - Why twice: a ledger is read back as it was written: HPO's to place a study among the ones before it, the serpentine search's to resume and to answer its own questions, the features terminal's to show the trials the state names
+  - Why twice: a ledger is read back as it was written: HPO's to place a study among the ones before it, the serpentine search's to resume and to answer its own questions, the features terminal's to show the state evaluations the search's progress names
 - `recursive_mean()`, `true_range()`, `asof_index()` — identical
   - Code: `module_features/indicators.py`, `module_ml/labels.py`
   - Never: `wilder_smoothing()`, `atr()` — an abbreviation or a popular name where the catalogue names an operation by its word
@@ -792,13 +853,13 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: the turn's fold gate reads every fold in the order the selection fixes and the evaluator scores the same ones; which folds select is the method, never the order of the keys a payload happens to carry
 - `BARRIER_COORDINATE_CASTS`, `BARRIER_COORDINATE_NAMES` — identical
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`
-  - Why twice: the casts are what make an integer and the same number as a float one state, and the order is the order a state is keyed in; a copy differing by one cast turns every cache hit into a miss and the serpentine search pays again for states it already holds
+  - Why twice: the casts are what make an integer and the same number as a float one search state, and the order is the order a search state is keyed in; a copy differing by one cast turns every cache hit into a miss and the serpentine search pays again for search states it already holds
 - `START_BY_COORDINATE_DEFAULT` — equal by value
   - Code: a CONFIGURABLES record and the constant read from it in `module_ml/config.py`; constants in `module_features/sub_module_serpentine_search/config.py` and `module_features/sub_module_terminal/config.py`
   - Why twice: the geometry the chain stands at without a promotion — where the serpentine search starts, and where the features terminal's draft pins a coordinate it does not search; neither side may import the ML module, and the terminal not even its own module's `config.py`
 - `TRADE_EXIT_COORDINATE_NAMES` — identical
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`
-  - Why twice: the serpentine search moves the two as one family and the evaluator leaves them out of a fit identity; a copy that drifts merges states whose fits differ, with wrong numbers and no error
+  - Why twice: the serpentine search moves the two as one search family and the evaluator leaves them out of a fit identity; a copy that drifts merges search states whose fits differ, with wrong numbers and no error
 - `SELECTION_FOLD_MEASURE` — identical
   - Code: `module_features/sub_module_serpentine_search/config.py`, `module_ml/config.py`
   - Why twice: the turn's gate on a move and the gate inside a study ask one question of one set of numbers, so they read one measure
@@ -817,18 +878,18 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `feature_set_json()`, `barriers_json()`, `hyperparameter_point_json()` — equal by value
   - Code: `module_ml/config.py`, `module_features/sub_module_serpentine_search/config.py`, `module_features/sub_module_terminal/config.py`, each over its own `artifact_dir()` or its module's
   - Why twice: the promotion writes the three, the ML chain reads them and the serpentine search the first two, and the features terminal names them on its promotion screen; the writer and the reader of a boundary must name one artifact, and the terminal cannot import the sub-module's `config.py`, which imports numpy through the module's
-- `theta()`, `state_key()` — identical
+- `theta()`, `search_state_key()` — identical
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py`, `module_ml/score.py`
-  - Why twice: the serpentine search keys a state to know whether it has scored it, and the module that scores names the parent of a study by the same key: one differing separator and every answer would look like the answer to another question
+  - Why twice: the serpentine search keys a search state to know whether it has scored it, and the module that scores names the parent of a study by the same key: one differing separator and every answer would look like the answer to another question
 - `KIND_SCORE`, `KIND_HYPERPARAMETER` — identical
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py`, `module_ml/score.py`
   - Why twice: the two kinds of question: one side writes the word into a request and the other branches on it, so one word apart and every question would be answered as the other kind or refused
-- `serpentine_search_json()`, `serpentine_search_trials_jsonl()`, `serpentine_search_profile_json()` — equal by value
+- `serpentine_search_json()`, `serpentine_search_state_evaluations_jsonl()`, `serpentine_search_profile_json()` — equal by value
   - Code: `module_features/sub_module_serpentine_search/config.py`, over its module's `artifact_dir()`; `module_features/sub_module_terminal/config.py`, over its own
-  - Why twice: the features terminal reads the state and the ledger and writes the profile on the host's `python3`, and the sub-module's `config.py` imports the module's, which imports numpy
-- `SERPENTINE_SEARCH_ROUND_LOOPS` — equal by value to the loops of `ROUND_SCHEDULE`
-  - Code: `module_features/sub_module_terminal/config.py`, written out; `ROUND_SCHEDULE` in `module_features/sub_module_serpentine_search/config.py`, its loops in their order
-  - Why twice: the loops a round runs, in its order: the features terminal offers them to a draft, and it cannot import the sub-module's `config.py`, which imports numpy through the module's
+  - Why twice: the features terminal reads the progress and the ledger and writes the profile on the host's `python3`, and the sub-module's `config.py` imports the module's, which imports numpy
+- `SERPENTINE_SEARCH_AXES` — equal by value to the search axes of `ROUND_SCHEDULE`
+  - Code: `module_features/sub_module_terminal/config.py`, written out; `ROUND_SCHEDULE` in `module_features/sub_module_serpentine_search/config.py`, its search axes in their order
+  - Why twice: the search axes a round runs, in its order: the features terminal offers them to a draft, and it cannot import the sub-module's `config.py`, which imports numpy through the module's
 - `GRID_BY_COORDINATE_DEFAULT`, `PROMOTE_TARGET` — equal by value
   - Code: CONFIGURABLES records of `module_features/sub_module_serpentine_search/config.py`; constants of `module_features/sub_module_terminal/config.py`
   - Why twice: the features terminal offers the grid to a draft and opens its own screen for the promotion's target on the host's `python3`, and cannot import the sub-module's `config.py`, which imports numpy through the module's
@@ -893,14 +954,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `write_json()`, `serpentine_search_profile_json()` in `module_features/sub_module_terminal/config.py` — the features terminal's draft
   - Artifact key: `<TICKER>_serpentine_search_profile.json`
   - Never: a second file; a file in the sub-module's own folder
-- the target the features terminal opens its own screen for — the promotion, whose plan shows the one state it promotes
+- the target the features terminal opens its own screen for — the promotion, whose plan shows the one search state it promotes
   - Code: `PROMOTE_TARGET` in `module_features/sub_module_terminal/config.py`
   - Ui label: the menu's `features-serpentine-search-promote`
   - Never: a second named target; the module's stages listed beside it; a name for a target that runs bare
 - the profile state: where the asset's profile stands against the serpentine search recorded under it — the one comparison the features terminal makes, on parsed objects and not on bytes
   - Code: `_profile_state()`
   - Ui label: `not drafted` / `no search` / `matches the search` / `differs from the search`
-  - Never: `inputs_current`, which folds the parameters, the catalogue and the asset's own state and stays the page's
+  - Never: `inputs_current`, which folds the parameters, the catalogue and the asset's own search state and stays the page's
 - the coordinate grid: what each coordinate is searched over, one preset, so a grid is a decision of the file and not of a form
   - Code: `GRID_BY_COORDINATE_DEFAULT`
   - Artifact key: `grid_by_coordinate`
@@ -930,7 +991,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume` — the venue's rows, ordered by every column, so a duplicate minute keeps one order; untracked
 - the family `ohlcv_1m_canonical`: the canonical 1m series, one partition per asset
   - Code: `module_data/ingest.py` writes `ohlcv_1m_canonical/ticker=<TICKER>/ohlcv_1m_canonical.parquet` and the family's `schema.json`; `ohlcv_1m_canonical_parquet()`
-  - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume`, `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence` — the full grid of the window, ordered by `timestamp_ms`; untracked
+  - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume`, `source`, `zero_volume`, `binance_valid`, `bybit_valid`, `rel_divergence` — the full grid of the data window, ordered by `timestamp_ms`; untracked
 - the family `bars`: the bars of every timeframe of the timeframe register, one partition per asset and timeframe
   - Code: `module_features/bars.py` writes `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet` and the family's `schema.json`; `bars_parquet()`
   - Holds: `timestamp_ms`, `open`, `high`, `low`, `close`, `volume`, `ffill_bars`, `zero_volume_bars` inside the research window, ordered by `timestamp_ms`; untracked
@@ -942,7 +1003,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `decision_ts`, `entry_ts`, `y`, `event_end_ts`, `entry_observable`, `label_valid`, `entry_price`, `upper_barrier`, `lower_barrier`; an ambiguous event carries `y = 0` with `label_valid = false`, so `y` is never read without `label_valid`; untracked
 - the family `oos_predictions`: the out-of-sample class probabilities, one partition per asset and timeframe
   - Code: `module_ml/train.py` writes `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet` and the family's `schema.json`; `oos_predictions_parquet()`
-  - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the full window of every validation fold and of the final holdout; metrics score only the supervised subset; untracked
+  - Holds: `decision_ts`, `oos_fold_id`, `p_short`, `p_neutral`, `p_long` — the whole OOS block of every validation fold and of the final holdout; metrics score only the supervised subset; untracked
 - `<TICKER>_README.md`
   - Code: `module_ml/status.py` writes it, `asset_readme_md()`; its file list `file_manifest()`, the three files of `HAND_STAGE_FILE_DESCRIPTORS` listed with no size
   - Holds: what the folder holds and what came out of it; no timestamp; tracked
@@ -963,26 +1024,26 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `validation` — a `fold_<id>` per fold of `VALIDATION_FOLD_IDS` — and `final_holdout`, each `prior_logloss`, `model_logloss`, `relative_logloss_skill`, `scored_row_count`; `validation_importance`, a `fold_<id>` per validation fold, each `gain_importance` and `mean_abs_shap_importance` per column; `feature_columns`; `class_counts`, `labels`, `segments`; untracked
 - `<TICKER>_parameters.json`
   - Code: `module_ml/hpo.py` writes it; `parameters_json()`
-  - Holds: `hyperparameter_search_result` (`best_params`, `best_cagr_validation_path`, `trial_count`); tracked
+  - Holds: `hyperparameter_search_result` (`best_params`, `best_cagr_validation_path`, `hpo_trial_count`); tracked
 - `<TICKER>_score_request.json`: the serpentine search's question
   - Code: `score_request_json()` in `module_ml/config.py` and `module_features/sub_module_serpentine_search/config.py`; written by a turn, `features-serpentine-turn`, read by `module_ml.score`, `ml-score`; the one file the loop of `features-serpentine-search` tests, running `ml-score` and a turn again while it exists
-  - Artifact key: `kind` (`score` or `hpo`), `round`, `states`
+  - Artifact key: `kind` (`score` or `hpo`), `round`, `search_states`
   - Never: a key beside these three; a request the evaluator writes; a second file the loop tests
-  - Holds: what one family pass asks to be scored: the kind of scoring, the round it runs in, and the states — a state of its own for `score`, a beam parent's scored row for `hpo`; untracked
+  - Holds: what one search family's pass asks to be scored: the kind of scoring, the round it runs in, and the search states — a search state of its own for `score`, a beam parent's state evaluation for `hpo`; untracked
 - `<TICKER>_score_response.json`: the serpentine search's answer
   - Code: `score_response_json()` in `module_ml/config.py` and `module_features/sub_module_serpentine_search/config.py`; written by `module_ml.score` alone
-  - Artifact key: `kind`, `round`, `results`; a `score` result the row of one scored state of the serpentine search, an `hpo` result `state_key`, `trial_count_drawn` and `candidate`
-  - Never: a key beside these three; a result out of the order the request named; a response written before every state has one
-  - Holds: what the states of one request are worth, in the order the request named them; `candidate` a scored row or `null`, and `null` is an answer; untracked
+  - Artifact key: `kind`, `round`, `results`; a `score` result the state evaluation of one search state, an `hpo` result `search_state_key`, `hpo_trial_count` and `candidate`
+  - Never: a key beside these three; a result out of the order the request named; a response written before every search state has one
+  - Holds: what the search states of one request are worth, in the order the request named them; `candidate` a state evaluation or `null`, and `null` is an answer; untracked
 - `<TICKER>_serpentine_search.json`
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_json()`
-  - Holds: `inputs`, `beam`, `champion_trial_index`, `round_count`, `search_converged`, `path` (each `round`, `loop`, `family`, `trial_index`, `beam`, `move`), `proposals` (each `proposal`, `trial_index`), `trial_count_by_loop` — where the search stands at a round boundary, naming trials by index and carrying none of their columns; tracked once a search has run
+  - Holds: `inputs`, `beam`, `champion_state_evaluation_index`, `round_count`, `search_converged`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
 - `<TICKER>_serpentine_search_profile.json`
   - Code: a hand, in the file or through the features terminal's draft; `serpentine_search_profile_json()`
-  - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `loops` (a subset of `SERPENTINE_SEARCH_ROUND_LOOPS`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration run) — what a hand asks the serpentine search to look at; drafted, never derived, and tracked
-- `<TICKER>_serpentine_search_trials.jsonl`
-  - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_trials_jsonl()`
-  - Holds: one scored state of the serpentine search a line, appended and never rewritten; `trial_index` = the line number, counted from one; tracked once a search has run
+  - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `search_axes` (a subset of `SERPENTINE_SEARCH_AXES`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration search) — what a hand asks the serpentine search to look at; drafted, never derived, and tracked
+- `<TICKER>_serpentine_search_state_evaluations.jsonl`
+  - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_state_evaluations_jsonl()`
+  - Holds: one state evaluation of the serpentine search a line, appended and never rewritten; `state_evaluation_index` = the line number, counted from one; tracked once a search has run
 - `<TICKER>_strategy_evaluation.json`
   - Code: `module_ml/strategy.py` writes it; `strategy_evaluation_json()`
   - Holds: `entry_edge_threshold`, `entry_edge_threshold_constraint_met`, `cleared_point_count`, `median_cagr_over_cleared`, `max_cagr_over_cleared`, `selection_score_cagr_validation_path`, `execution_cost_rate_per_trade_side`; per fold `sharpe`, `cagr`, `max_drawdown`, `calmar`, `profit_factor`, `trade_count`, `hit_rate`, `average_trade_return`, `exposure`, `exit_counts`, `final_equity`; `validation_path` over the validation folds; the final holdout's `equity_curve`; untracked
@@ -1030,6 +1091,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `effective_history_hours_by_timeframe`; `lower_longest_effective_history_hours`, `upper_shortest_effective_history_hours` of `nesting`
   - Ui label: effective history
   - Never: history (bare — a recursion has no window), span (the parameter word of an exponential smoothing), lookback hours
+- a lookback — the history a computation reads backward from the bar it stands on, counted in bars of its timeframe
+  - Code: `lookback_bars` of a kernel in `module_features/indicators.py`
+  - Artifact key: `parameter_word` `LOOKBACK` of an indicator
+  - Ui label: LOOKBACK n bars of <inputs> (the catalogue frame)
+  - Never: a warm-up, a horizon; lookback hours
 - the Bollinger %b reading — the trade's %b(20, 2σ), `rolling_standard_score20` / 4 + 0.5, an affine map a tree model is invariant to, so no %b column exists
   - Ui label: — (no page shows it; Bollinger %b in the definitions table of `methodology_features.md`)
   - Never: `bb20`, `%b` as a column, `z / 2 + 0.5`; `zscore20`
@@ -1086,6 +1152,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `run_id`
   - Ui label: run
   - Never: build, job, a content hash; a generated run id bound to no project name; a run id inside an artifact or a ledger
+- a run — one execution of an experiment, resumable from what its files say: a recorded run of the chain, one make invocation, the turns of one serpentine search
+  - Code: `RUN_ID` of the `Makefile`; a turn's resume from the ledger and the search's progress
+  - Artifact key: `run_id`
+  - Ui label: run
+  - Never: an experiment; a streak of minutes; the methodology
 - a stage of a run: one make target of `RECORDED_STAGES`, wrapped by `record.py` from outside every container; one seam, `data-download`, runs the two download commands in one target
   - Code: the target name; `RECORDED_STAGES` in the `Makefile` — `DATA_STAGES`, `FEATURES_STAGES`, `ML_STAGES` in order; `make all-record`
   - Artifact key: `stage` — the file name `<stage>.json`

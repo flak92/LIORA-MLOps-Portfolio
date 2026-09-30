@@ -25,7 +25,7 @@ def sample_block(metrics: dict) -> dict:
 
 def hyperparameter_search_result_block(hyperparameter_search_result: dict) -> dict:
     return {
-        "trial_count": hyperparameter_search_result["trial_count"],
+        "hpo_trial_count": hyperparameter_search_result["hpo_trial_count"],
         hpo.OBJECTIVE_KEY: round(hyperparameter_search_result[hpo.OBJECTIVE_KEY], 6),
         "best_params": dict(sorted(hyperparameter_search_result["best_params"].items())),
     }
@@ -139,14 +139,14 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
         *((config.catalogue_parquet(cat, timeframe), f"the catalogue on {timeframe} — every definition offered on it, on the decision grid")
           for timeframe in config.timeframes(cat)),
         (config.labels_parquet(ticker, cat["decision_timeframe"]), "Y — triple-barrier outcome and the event prices"),
-        (config.oos_predictions_parquet(ticker, cat["decision_timeframe"]), "out-of-sample class probabilities, full windows"),
+        (config.oos_predictions_parquet(ticker, cat["decision_timeframe"]), "out-of-sample class probabilities, whole OOS blocks"),
         (config.asset_readme_md(ticker), "this file"),
-        (config.barriers_json(ticker), "the promoted barrier geometry: the two multipliers of a trade, the label's own and the horizon token — a hand's choice; absent, the frozen constants are the asset's"),
+        (config.barriers_json(ticker), "the promoted barrier geometry: the two multipliers of a trade, the label's own and the label horizon token — a hand's choice; absent, the frozen constants are the asset's"),
         (config.catalogue_json(ticker), "the feature layer's contract: the timeframes and their durations, the warm-up, the columns offered per timeframe and the default set — read once per stage"),
         (config.feature_set_json(ticker), "the promoted feature set: its columns per timeframe, a hand's choice — absent, the default set is the asset's"),
-        (config.hyperparameter_point_json(ticker), "the promoted hyper-parameter point: the first trial of the search, a hand's choice — absent, the search draws every point"),
+        (config.hyperparameter_point_json(ticker), "the promoted hyper-parameter point: the first trial of the HPO study, a hand's choice — absent, the study draws every point"),
         (config.model_evaluation_json(ticker), "classification metrics per fold"),
-        (config.parameters_json(ticker), "the one parameters file: what the search chose"),
+        (config.parameters_json(ticker), "the one parameters file: what the HPO chose"),
         (config.strategy_evaluation_json(ticker), "threshold, PnL and the equity curve"),
     ]
 
@@ -166,7 +166,7 @@ def markdown_table(headers, rows):
 
 def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, metrics: dict, strategy: dict) -> str:
     """What this folder holds and what came out of it — no timestamp, by design."""
-    barriers = dataset.load_barriers(ticker)   # the asset's own horizon, as the labels were written with
+    barriers = dataset.load_barriers(ticker)   # the asset's own label horizon, as the labels were written with
     labels, counts = metrics["labels"], metrics["class_counts"]
     supervised = counts["short"] + counts["neutral"] + counts["long"]
     folds = [f"fold_{i}" for i in config.VALIDATION_FOLD_IDS]
@@ -193,7 +193,7 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
 
     segments = metrics["segments"]
     geo_rows = [[f"F{k.split('_')[1]}", f"{segments[k]['training_row_count']:,}",
-                 f"{segments[k]['purged_event_count']:,}", f"{segments[k]['window_row_count']:,}",
+                 f"{segments[k]['purged_event_count']:,}", f"{segments[k]['oos_block_row_count']:,}",
                  f"{segments[k]['scored_row_count']:,}"]
                 for k in folds + [holdout]]
 
@@ -212,7 +212,7 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
     promoted = [f"`{descriptor(ticker).name}`" for descriptor in HAND_STAGE_FILE_DESCRIPTORS if descriptor(ticker).exists()]
     promoted_reproduce_note = ("" if not promoted else
                                f"{', '.join(promoted)} must lie beside this file as well — the chain reads the promoted "
-                               f"state from them, and without them the folder it rebuilds is another one.\n\n")
+                               f"search state from them, and without them the folder it rebuilds is another one.\n\n")
 
     pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
     final_holdout_strategy = strategy["final_holdout"]
@@ -230,13 +230,13 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
 
     return f"""# {ticker} — research artifacts
 
-Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One folder per asset, `ticker={ticker}/`, one file per distinct artifact responsibility, and beside the folder the asset's partition of every family the chain writes; `{config.parameters_json(ticker).name}` next to this file is the one parameters file: its `hyperparameter_search_result` section is what the search chose, written when the search runs — the a-priori configuration is `module_ml/config.py` at the commit that ran it, not a copy in the folder.
+Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed {config.SEED}. One folder per asset, `ticker={ticker}/`, one file per distinct artifact responsibility, and beside the folder the asset's partition of every family the chain writes; `{config.parameters_json(ticker).name}` next to this file is the one parameters file: its `hyperparameter_search_result` section is what the HPO chose, written when the HPO runs — the a-priori configuration is `module_ml/config.py` at the commit that ran it, not a copy in the folder.
 
 ## Files
 
 {markdown_table(["file", "holds", "size"], files)}
 
-Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers['horizon_minutes'] * config.MILLISECONDS_PER_MINUTE // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.labels_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}`: the tail decisions whose full {barriers['horizon_minutes']}-minute horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} out-of-sample prediction windows end to end; the metrics score only the supervised, horizon-fitting subset of each.
+Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers['label_horizon_minutes'] * config.MILLISECONDS_PER_MINUTE // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.labels_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}`: the tail decisions whose full {barriers['label_horizon_minutes']}-minute label horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} OOS blocks end to end; the metrics score only the supervised, label-horizon-fitting subset of each.
 
 ## Feature set
 
@@ -250,13 +250,13 @@ Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers
 
 ## Model
 
-Search: {hyperparameter_search_result['trial_count']} Optuna trials, best {hpo.OBJECTIVE_KEY} {hyperparameter_search_result[hpo.OBJECTIVE_KEY]:.6f}. Winner: depth {best_params['max_depth']}, eta {best_params['eta']:.4f}, {best_params['num_boost_round']} rounds, subsample {best_params['subsample']:.3f}, colsample {best_params['colsample_bytree']:.3f}, min_child_weight {best_params['min_child_weight']}, lambda {best_params['lambda']:.4f}, alpha {best_params['alpha']:.4f}.
+HPO: {hyperparameter_search_result['hpo_trial_count']} Optuna trials, best {hpo.OBJECTIVE_KEY} {hyperparameter_search_result[hpo.OBJECTIVE_KEY]:.6f}. Winner: depth {best_params['max_depth']}, eta {best_params['eta']:.4f}, {best_params['num_boost_round']} boosting rounds, subsample {best_params['subsample']:.3f}, colsample {best_params['colsample_bytree']:.3f}, min_child_weight {best_params['min_child_weight']}, lambda {best_params['lambda']:.4f}, alpha {best_params['alpha']:.4f}.
 
 {markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
 
 ## Fold geometry
 
-{markdown_table(["fold", "trained on", "purged", "window", "scored"], geo_rows)}
+{markdown_table(["fold", "trained on", "purged", "OOS block rows", "scored"], geo_rows)}
 
 `purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
@@ -274,7 +274,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV is the asset's partition of the family `ohlcv_1m_canonical` — the market object the whole chain reads, outside the manifest above because its size moves with every top-up and this file is promised byte-reproducible.
 
-{promoted_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
+{promoted_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
 """
 
 
@@ -301,8 +301,8 @@ def main() -> int:
     payload = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
         "research_window": {"start_utc": config.RESEARCH_START_UTC,
-                            "end_utc": config.RESEARCH_END_UTC,
-                            "seed": config.SEED},
+                            "end_utc": config.RESEARCH_END_UTC},
+        "seed": config.SEED,
         # the one structural number the page needs to label the final fold
         "final_holdout_fold_id": config.FINAL_HOLDOUT_FOLD_ID,
         "minimum_agreeing_trend_timeframes": config.MINIMUM_AGREEING_TREND_TIMEFRAMES,

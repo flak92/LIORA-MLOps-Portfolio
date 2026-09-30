@@ -44,14 +44,16 @@ def catalogue_json(ticker: str):
 
 # twice by extraction
 def serpentine_search_json(ticker: str) -> Path:
-    """Where the serpentine search stands: its inputs, its beam, its champion, the path it took and its proposals."""
+    """The serpentine search's progress — where it stands: its inputs, its beam, its champion, the path it took and
+    its proposals."""
     return artifact_dir(ticker) / f"{ticker}_serpentine_search.json"
 
 
 # twice by extraction
-def serpentine_search_trials_jsonl(ticker: str) -> Path:
-    """Every scored state of the serpentine search, one JSON object a line; a line's number is the trial's index."""
-    return artifact_dir(ticker) / f"{ticker}_serpentine_search_trials.jsonl"
+def serpentine_search_state_evaluations_jsonl(ticker: str) -> Path:
+    """Every state evaluation of the serpentine search, one JSON object a line; a line's number is the state
+    evaluation's index."""
+    return artifact_dir(ticker) / f"{ticker}_serpentine_search_state_evaluations.jsonl"
 
 
 # twice by extraction
@@ -84,10 +86,10 @@ def hyperparameter_point_json(ticker: str) -> Path:
     return artifact_dir(ticker) / f"{ticker}_hyperparameter_point.json"
 
 
-# the loops of a round in the order a round runs them, and the geometry a coordinate stands at without a promotion —
-# where a draft pins an unsearched coordinate when no promoted file says otherwise
+# the search axes of a round in the order a round runs them, and the geometry a coordinate stands at without a
+# promotion — where a draft pins an unsearched coordinate when no promoted file says otherwise
 # twice by extraction
-SERPENTINE_SEARCH_ROUND_LOOPS = ("barrier", "feature_set", "hpo")
+SERPENTINE_SEARCH_AXES = ("barrier", "feature_set", "hpo")
 # twice by extraction
 START_BY_COORDINATE_DEFAULT = {
     "label_barrier_true_range_multiplier": 2.0,

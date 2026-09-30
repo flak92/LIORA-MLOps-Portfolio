@@ -18,14 +18,14 @@ high, low, close, volume, closeTime, quoteVolume, ...]`; **columns 0–5** are
 kept — the bar-open timestamp, four prices and the **base-asset volume**.
 Before any download the oldest candle of every symbol is probed
 (`startTime=0&limit=1`); the run aborts if any listing is younger than the
-window start, which guarantees full Binance coverage of the window. An empty
+data window's start, which guarantees full Binance coverage of the data window. An empty
 response for a post-listing day aborts the run instead of persisting a
 skip-forever empty ZIP.
 
 **Bybit linear perpetuals** — `GET https://api.bybit.com/v5/market/kline` with
 `category=linear` (trade klines — **not** mark-price or index-price klines),
 `symbol=<SYM>USDT`, `interval=1`, `start`/`end`, `limit=1000`; one UTC day =
-two 720-minute windows. A row is `[start, open, high, low, close, volume,
+two 720-minute request windows. A row is `[start, open, high, low, close, volume,
 turnover]`; **columns 0–5** are kept. `volume` for linear contracts is the
 base-asset quantity (contract multiplier 1), the same unit as Binance's. The list is
 returned newest-first and is sorted ascending before writing. A day with no
@@ -68,9 +68,9 @@ the exchanges printed them — no rounding at any layer.
   indistinguishable from a truncated response, so the download stage aborts on
   it with no override (`download_binance.py`, `download_bybit.py`).
 - **Only Binance is probed for its listing date.** The probe that guarantees
-  full coverage of the window runs against Binance alone; Bybit's first traded
+  full coverage of the data window runs against Binance alone; Bybit's first traded
   day is discovered from the ZIPs already on disk and from the first day a run
-  finds printed, so a Bybit listing inside the window is normal and its
+  finds printed, so a Bybit listing inside the data window is normal and its
   pre-listing days are stored as empty files.
 - **Idempotence is by file presence.** A day whose ZIP exists is never
   re-fetched. Correcting a day means deleting its ZIP, which is deliberate:
@@ -97,7 +97,7 @@ A Lean backtest reads these per-venue trees.
 After the downloaders both venues carry this one candle schema. A difference of
 transport, paging or ordering — Binance's one request per day, used in the order
 it returns and checked minute by minute by `is_full_utc_day()`; Bybit's two
-windows, returned newest-first and sorted — is resolved inside the downloader
+request windows, returned newest-first and sorted — is resolved inside the downloader
 that speaks the venue, and `ingest.py` reads every tree through the one
 `parse_zip()` (`CANDLE-CANONICALISATION-ONE-CANDLE-SCHEMA-AFTER-THE-DOWNLOADERS`).
 
@@ -169,7 +169,7 @@ C = average(Binance.C, Bybit.C)
 
 An average prints quotes that existed nowhere. A per-minute index weighted by the
 two venues moves its printed price whenever the weights shift, by up to the
-relative divergence of the two closes (§ 9) — whose largest value on the window
+relative divergence of the two closes (§ 9) — whose largest value on the data window
 the snapshot publishes as `relative_divergence_max` — a move no venue made. A
 canonical candle is therefore one candle a single venue actually printed, or an
 explicitly flagged forward fill.
@@ -214,7 +214,7 @@ its provenance, so no reader mistakes it for a printed candle; it carries the
 previous close only — never the previous high or low, which would invent a range
 no venue quoted. Before the first valid candle on either venue there is no
 previous close, and such a minute carries NULL prices with `source = ffill`. The
-listing probe and the full-day check of § 1 give every minute of the window a
+listing probe and the full-day check of § 1 give every minute of the data window a
 Binance row; for the current basket the snapshot's `ffill_bars` of zero shows no
 such minute.
 
@@ -339,14 +339,14 @@ and no value of it is by itself a failure:
 | observation | what a non-zero value means |
 |---|---|
 | `gap_count` | minutes a venue never printed; the canonical grid closes them |
-| `gap_count_after_first_observation` | a venue's gaps counted from its first printed minute, so a listing inside the window is not a gap |
+| `gap_count_after_first_observation` | a venue's gaps counted from its first printed minute, so a listing inside the data window is not a gap |
 | `coverage_pct` | the share of the grid a venue printed; the real-data and forward-fill shares are the page's arithmetic over `row_count` and `ffill_bars`, not keys |
 | `zero_volume_bars` | candles that traded nothing — on a venue the raw `volume = 0`; on the canonical series the stored `zero_volume`, set only when the winning candle traded nothing. One name, two objects, and on the canonical series false on every forward-filled minute |
 | `flat_bars` | a venue's minutes that traded nothing and quoted one price — `volume = 0` and `open = high = low = close` on the raw table, no validity test consulted; a subset of that venue's `zero_volume_bars` |
 | `last_close` | a venue's last printed close; every other number here is dimensionless, so nothing else in the snapshot would notice a delivery under the wrong symbol |
 | `ffill_bars` | minutes with no valid candle on either venue |
-| `longest_ffill_run_minutes` | the longest unbroken run of forward fill. `ffill_bars` alone cannot tell a provider dark for three days from one dropping scattered minutes over years; the first is a fabricated regime, the second noise |
-| `longest_flat_run_minutes` | the longest unbroken run of flat minutes on the canonical series. A forward-filled minute satisfies the flat geometry too and is not one of them: a canonical minute is forward-filled, flat or traded, decided in that order, or fabrication would be reported as a quiet market |
+| `longest_ffill_streak_minutes` | the longest unbroken streak of forward fill. `ffill_bars` alone cannot tell a provider dark for three days from one dropping scattered minutes over years; the first is a fabricated regime, the second noise |
+| `longest_flat_streak_minutes` | the longest unbroken streak of flat minutes on the canonical series. A forward-filled minute satisfies the flat geometry too and is not one of them: a canonical minute is forward-filled, flat or traded, decided in that order, or fabrication would be reported as a quiet market |
 | `repeated_candle_count` | canonical minutes repeating the previous candle verbatim while volume was printed — a feed frozen on its last bar, which no flatness count can see: the timestamps differ, the geometry is intact and the volume is not zero |
 | `source_share_pct_by_venue` | the share of minutes each venue won, keyed by venue in the tier order of `source_venues`; a share below the primary's is evidence the failover works, not a fault |
 | `source_switch_count` | the places the cross-venue basis can enter a return |

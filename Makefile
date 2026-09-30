@@ -122,9 +122,9 @@ ml-terminal:
 # once, $(1) its ticker, for its own target and for the loop
 serpentine_turn  = $(call stage,features,module_features.sub_module_serpentine_search.serpentine_search,$(1))
 serpentine_score = $(call stage,ml,module_ml.score,$(1))
-features-serpentine-turn: ## one turn of the serpentine search per asset: carry it as far as the answers on disk allow, then leave the next question or a finished search
+features-serpentine-turn: ## one turn of the serpentine search per asset: carry it as far as the answers on disk allow, then leave the next question or an ended search
 	$(call each,$(JOBS),$(call serpentine_turn,{}))
-ml-score:        ## score the states of <TICKER>_score_request.json -> <TICKER>_score_response.json, one process per asset
+ml-score:        ## score the search states of <TICKER>_score_request.json -> <TICKER>_score_response.json, one process per asset
 	$(call each,$(JOBS),$(call serpentine_score,{}))
 # the loop over them, per asset: a turn, then — while the turn has left a question — ml-score and a turn again, each step
 # a one-off container of its module's runner; the question is the one file the loop tests. Never inside all or all-record
@@ -137,19 +137,19 @@ features-serpentine-search: ## the serpentine search per asset: a turn, then ml-
 tmux-features-serpentine-search: ## the serpentine search of one asset detached in tmux session features-serpentine-search-<ticker>, <project>-features-serpentine-search-<ticker> under COMPOSE_PROJECT_NAME=<project>, alive after the terminal closes and gone with the search; tmux attach -t <session> to watch, Ctrl-C stops, a rerun resumes; ASSET= is required
 	$(one_asset)
 	@tmux has-session -t $(SERPENTINE_SEARCH_SESSION) 2>/dev/null && echo '$(SERPENTINE_SEARCH_SESSION) is already running — tmux attach -t $(SERPENTINE_SEARCH_SESSION)' || tmux new-session -d -s $(SERPENTINE_SEARCH_SESSION) -c $(CURDIR) '$(if $(COMPOSE_PROJECT_NAME),COMPOSE_PROJECT_NAME=$(COMPOSE_PROJECT_NAME) )make features-serpentine-search ASSET=$(ASSET)'
-# a hand's decision for one asset, never fanned out: the proposal's whole state becomes the asset's own, and its ML chain
-# runs again, its study starting from the promoted point. A search proposes one state at most, so there is none to
-# choose, and a search that proposes none is refused in one line. ASSET= is required
+# a hand's decision for one asset, never fanned out: the proposal's whole search state becomes the asset's own, and its
+# ML chain runs again, its study starting from the promoted point. A search proposes one search state at most, so there
+# is none to choose, and a search that proposes none is refused in one line. ASSET= is required
 features-serpentine-search-promote: ## copy the proposal of one asset's serpentine search into <TICKER>_feature_set.json, <TICKER>_barriers.json and <TICKER>_hyperparameter_point.json, then rerun its ML chain, whose study starts from that point — a search that proposes none refused in one line; ASSET= is required
 	$(one_asset)
 	$(call stage,features,module_features.sub_module_serpentine_search.promote,$(ASSET))
 	$(MAKE) ml-all ASSET=$(ASSET)
 # a new experiment for one asset: every file the turn or ml-score writes for it is removed, on the host, over the stores'
-# host paths — the state, the loop's ledger, the question, the answer and the asset's partition of score_trials; its
-# inputs, the chain's files, the promoted state, hpo_trials and the profile stay. It runs no stage. ASSET= is required
-features-serpentine-search-reset: ## remove one asset's serpentine search — its state, ledger, question, answer and score_trials partition — keeping its inputs and its profile; ASSET= is required
+# host paths — the search's progress, its ledger, the question, the answer and the asset's partition of score_trials;
+# its inputs, the chain's files, the promoted search state, hpo_trials and the profile stay. It runs no stage. ASSET= is required
+features-serpentine-search-reset: ## remove one asset's serpentine search — its progress, ledger, question, answer and score_trials partition — keeping its inputs and its profile; ASSET= is required
 	$(one_asset)
-	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_trials.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
+	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_state_evaluations.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
 	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)
 
 # the canon, on the host: python3 and the standard library alone, no runner and no dependency — the sheet rendered into

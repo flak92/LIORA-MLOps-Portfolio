@@ -32,9 +32,9 @@ What a canonical minute is, which venue's candle becomes it and what is stored b
 ## Workflow
 
 - `CANDLE-CANONICALISATION-A-SHORT-DAY-ABORTS-THE-DOWNLOAD`
-  - Description: The download aborts on a short post-listing day, and the listing probe aborts when a symbol's history starts after the window.
+  - Description: The download aborts on a short post-listing day, and the listing probe aborts when a symbol's history starts after the data window's start.
   - Scope: `module_data/download_binance.py`, `module_data/download_bybit.py`
-  - Expected: A day after listing whose response is not the full UTC day — `is_full_utc_day()` false — ends the download with its reason and writes no ZIP; a symbol whose oldest Binance candle is after the window's start ends the probe with its reason, before any day is fetched.
+  - Expected: A day after listing whose response is not the full UTC day — `is_full_utc_day()` false — ends the download with its reason and writes no ZIP; a symbol whose oldest Binance candle is after the data window's start ends the probe with its reason, before any day is fetched.
   - Exception: none
 - `CANDLE-CANONICALISATION-RAW-DAY-IS-NEVER-OVERWRITTEN`
   - Description: A raw day on disk is never overwritten by any stage: a day is present or absent, and only a hand's deletion makes a present day absent again.

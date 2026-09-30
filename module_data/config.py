@@ -1,5 +1,5 @@
-"""Static configuration: the time window, endpoints and paths — the plain values every stage reads, so a fresh clone
-reconstructs the dataset for the window from the public market APIs; beside them the `--tickers` parser every stage
+"""Static configuration: the data window, endpoints and paths — the plain values every stage reads, so a fresh clone
+reconstructs the dataset for the data window from the public market APIs; beside them the `--tickers` parser every stage
 shares, and the null-tolerant rounding of its snapshot. The basket is not here: the launcher names it
 (`TICKERS` in the Makefile, `ASSET` on the make line) and every stage is told its assets."""
 
@@ -10,10 +10,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 # USDT-margined perpetuals; Binance USDS-M primary, Bybit Linear failover; every asset has Binance 1m history
-# before the window start (probed before every download), Bybit joins whenever its listing starts
+# before the data window's start (probed before every download), Bybit joins whenever its listing starts
 QUOTE_ASSET = "USDT"
 LEAN_SECURITY_TYPE_FOLDER = "cryptofuture"   # QuantConnect Lean security-type folder name (USDS-M perpetuals)
-SOURCE_CANDLE_INTERVAL = "1m"   # the venue candle's interval, in Binance's REST spelling
+SOURCE_CANDLE_TIMEFRAME = "1m"   # the venue candle's timeframe — Binance's REST calls it `interval`
 # twice by extraction
 MILLISECONDS_PER_SECOND = 1000
 # twice by extraction
@@ -29,7 +29,7 @@ def to_utc_ms(day: str) -> int:
     return int(datetime.fromisoformat(day).replace(tzinfo=UTC).timestamp() * MILLISECONDS_PER_SECOND)
 
 
-# Window start (inclusive, UTC midnight). The window end is always the most
+# The data window's start (inclusive, UTC midnight). Its end is always the most
 # recent UTC midnight (exclusive): the pipeline only handles full UTC days.
 DATA_WINDOW_START_UTC = "2021-01-01"
 DATA_WINDOW_START_MS = to_utc_ms(DATA_WINDOW_START_UTC)
@@ -40,7 +40,7 @@ BINANCE_KLINE_REQUEST_LIMIT = 1500
 BINANCE_REQUEST_DELAY_SECONDS = 0.2
 BYBIT_KLINE_URL = "https://api.bybit.com/v5/market/kline"
 BYBIT_CATEGORY = "linear"
-BYBIT_KLINE_REQUEST_LIMIT = 1000          # < 1440 -> one day = 2 windows of 720 minutes
+BYBIT_KLINE_REQUEST_LIMIT = 1000          # < 1440 -> one day = 2 request windows of 720 minutes
 BYBIT_REQUEST_DELAY_SECONDS = 0.1
 USER_AGENT = "liora-module-data/1.0"
 REQUEST_ATTEMPT_COUNT = 6                 # the tries of one venue request, the wait doubling after each failure

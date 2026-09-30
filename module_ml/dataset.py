@@ -112,20 +112,20 @@ def load_feature_columns(ticker: str, cat: dict) -> dict[str, tuple[str, ...]]:
 
 
 def barriers_from(coordinates: dict) -> dict:
-    """The barrier geometry a state carries, with its horizon token turned into minutes — the one place a
-    token becomes a number, whether it came from the promoted file or from a state of the serpentine search.
+    """The barrier geometry a search state carries, with its label horizon token turned into minutes — the one place a
+    token becomes a number, whether it came from the promoted file or from a search state.
 
     Every coordinate is cast here too, by the register's own casts: a promoted file is JSON a hand may edit,
-    and `2` is an int where `2.0` is a float, which a state key compares as a different state."""
+    and `2` is an int where `2.0` is a float, which a search state key compares as a different search state."""
     return {**coordinates,
             **{name: config.BARRIER_COORDINATE_CASTS[name](coordinates[name])
                for name in config.BARRIER_COORDINATE_NAMES},
-            "horizon_minutes": config.HORIZON_TOKEN_MINUTES[coordinates["label_horizon"]]}
+            "label_horizon_minutes": config.HORIZON_TOKEN_MINUTES[coordinates["label_horizon"]]}
 
 
 def load_barriers(ticker: str) -> dict:
     """The asset's barrier geometry: the promoted file's when it exists, else the frozen constants of
-    the experiment. The horizon travels as a duration token and is turned into minutes here and
+    the experiment. The label horizon travels as a duration token and is turned into minutes here and
     nowhere else, so the grid, the purge, the scored population and the trade's eligibility read one
     number."""
     path = config.barriers_json(ticker)
@@ -146,8 +146,8 @@ def build_x(catalogue_values: dict[str, np.ndarray], columns_by_timeframe: dict[
 
 def load_feature_material(ticker: str, cat: dict, timeframes: tuple[str, ...]) -> tuple[dict, list]:
     """The catalogue's partitions as build_xy takes them: every catalogue column's values, keyed by feature id,
-    and the decision grid each timeframe was read on. `score.py`, which relabels an asset for a state of the
-    serpentine search, reads these once and joins them to each new Y."""
+    and the decision grid each timeframe was read on. `score.py`, which relabels an asset for a search state, reads
+    these once and joins them to each new Y."""
     con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
@@ -194,20 +194,21 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
     position, every catalogue column narrowed to Y's rows and the set's columns stacked. It reads no
     file, so `score.py`, relabelling an asset in process, builds X and Y the way the stage does."""
     # the files are joined by position, so they must share one decision grid
-    x_ts = decision_grids[0]
-    assert all(np.array_equal(x_ts, grid) for grid in decision_grids[1:]), "the catalogue's partitions disagree on the decision grid"
-    y_ts = label_events["decision_ts"].astype(np.int64)
-    pos = np.searchsorted(x_ts, y_ts)
-    assert np.array_equal(x_ts[pos], y_ts), "X/Y decision grids do not align"
+    x_decision_ts = decision_grids[0]
+    assert all(np.array_equal(x_decision_ts, grid) for grid in decision_grids[1:]), \
+        "the catalogue's partitions disagree on the decision grid"
+    y_decision_ts = label_events["decision_ts"].astype(np.int64)
+    pos = np.searchsorted(x_decision_ts, y_decision_ts)
+    assert np.array_equal(x_decision_ts[pos], y_decision_ts), "X/Y decision grids do not align"
     catalogue_values = {c: catalogue_values[c][pos] for c in config.catalogue_feature_ids(cat)}
     x, feature_columns = build_x(catalogue_values, columns_by_timeframe, timeframes)
     return {
         "catalogue": cat,
-        # the geometry that produced Y, carried beside it: the horizon every population and every
+        # the geometry that produced Y, carried beside it: the label horizon every population and every
         # eligibility mask measures against, and the multipliers the trade's own exit is scaled by
         "barriers": barriers,
         "timeframes": timeframes,
-        "decision_ts": y_ts,
+        "decision_ts": y_decision_ts,
         "entry_ts": label_events["entry_ts"].astype(np.int64),
         "x": x,
         "feature_columns": feature_columns,

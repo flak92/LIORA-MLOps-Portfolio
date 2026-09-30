@@ -11,9 +11,9 @@ function buildSparkline(values, baseline, caption) {
   const H = 120;
   const lo = Math.min(baseline, ...values);
   const hi = Math.max(baseline, ...values);
-  const span = hi - lo || 1;
+  const valueRange = hi - lo || 1;
   const x = (i) => (W * i) / Math.max(1, values.length - 1);
-  const y = (v) => H - ((v - lo) / span) * H;
+  const y = (v) => H - ((v - lo) / valueRange) * H;
 
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 " + W + " " + H);
@@ -64,8 +64,8 @@ function buildModelFrame(asset, mlStatus) {
   const bestParameters = asset.hyperparameter_search_result.best_params;
   frame.body.appendChild(buildKeyValueBox([
     ["parameters", "depth " + bestParameters.max_depth + " · eta " + bestParameters.eta.toFixed(4)
-      + " · rounds " + bestParameters.num_boost_round + " · subsample " + bestParameters.subsample.toFixed(2)],
-    ["HPO", asset.hyperparameter_search_result.trial_count + " Optuna trials · best F2–F4 path CAGR "
+      + " · boosting rounds " + bestParameters.num_boost_round + " · subsample " + bestParameters.subsample.toFixed(2)],
+    ["HPO", asset.hyperparameter_search_result.hpo_trial_count + " Optuna trials · best F2–F4 path CAGR "
       + formatPercent(asset.hyperparameter_search_result.best_cagr_validation_path, 2)],
   ]));
   const rows = validationFolds(asset).map((foldKey) => ["F" + foldKey.split("_")[1], asset.validation[foldKey]]);

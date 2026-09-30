@@ -47,7 +47,7 @@ FROM read_parquet('{canonical_parquet}')
 
 # one ordered pass over the canonical close: a basis jump can enter only on a minute whose source differs from
 # the previous one, the largest 1m move is the same lag, and a candle repeated verbatim while volume was
-# printed is a feed frozen on its last bar — the flat and ffill runs below cannot see that one
+# printed is a feed frozen on its last bar — the flat and ffill streaks below cannot see that one
 SOURCE_SWITCH_SCAN = """
 SELECT count(*) FILTER (source_changed)      AS source_switch_count,
        max(CASE WHEN source_changed THEN abs(close / previous_close - 1) END) AS max_abs_return_at_switch,
@@ -66,11 +66,11 @@ FROM (SELECT close,
       WINDOW minute_order AS (ORDER BY timestamp_ms))
 """
 
-# a minute of the canonical grid is in exactly one state — forward-filled, flat, or traded — and the longest run
+# a minute of the canonical grid is in exactly one state — forward-filled, flat, or traded — and the longest streak
 # of each of the first two is one pass and one grouping. A forward-filled row repeats the previous close with no
 # volume, so it satisfies the flat geometry as well; the state is decided in order, so fabrication is never
 # reported as a quiet market (`CANDLE-CANONICALISATION-PROVENANCE-TRAVELS-WITH-THE-CANDLE`, `CANDLE-CANONICALISATION-THE-GRID-IS-COMPLETE`)
-CANONICAL_RUN_SCAN = """
+CANONICAL_STREAK_SCAN = """
 WITH marked AS (SELECT timestamp_ms,
                        CASE WHEN source = 'ffill'                     THEN 'ffill'
                             WHEN volume = 0 AND open = high AND high = low
@@ -81,13 +81,13 @@ state_changes AS (SELECT timestamp_ms, minute_state,
                          CASE WHEN minute_state = lag(minute_state) OVER (ORDER BY timestamp_ms)
                               THEN 0 ELSE 1 END AS state_changed
                   FROM marked),
-runs AS (SELECT minute_state, count(*) AS run_minutes
-         FROM (SELECT minute_state, sum(state_changed) OVER (ORDER BY timestamp_ms) AS run_id
-               FROM state_changes)
-         GROUP BY minute_state, run_id)
-SELECT coalesce(max(run_minutes) FILTER (minute_state = 'flat'),  0) AS longest_flat_run_minutes,
-       coalesce(max(run_minutes) FILTER (minute_state = 'ffill'), 0) AS longest_ffill_run_minutes
-FROM runs
+streaks AS (SELECT minute_state, count(*) AS streak_minutes
+            FROM (SELECT minute_state, sum(state_changed) OVER (ORDER BY timestamp_ms) AS streak_id
+                  FROM state_changes)
+            GROUP BY minute_state, streak_id)
+SELECT coalesce(max(streak_minutes) FILTER (minute_state = 'flat'),  0) AS longest_flat_streak_minutes,
+       coalesce(max(streak_minutes) FILTER (minute_state = 'ffill'), 0) AS longest_ffill_streak_minutes
+FROM streaks
 """
 
 
@@ -120,8 +120,8 @@ def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows
     for ticker in tickers:
         # every asset is judged against its OWN canonical end, so a young asset is never charged
         # an older one's history and a stale feed is the only thing a gap can mean
-        asset_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
-        expected = (asset_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
+        asset_data_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
+        expected = (asset_data_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
         # a scalar scan of an empty venue table returns one row of zero and NULLs, never no row
         venue_row = venue_rows[venue][ticker]
         venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
@@ -132,9 +132,9 @@ def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows
                 "row_count": venue_row_count,
                 "coverage_pct": share_pct(distinct, expected),
                 "gap_count": expected - distinct,
-                # measured from the first observation to the end of the window, so a stale feed reports its gap
+                # measured from the first observation to the end of the data window, so a stale feed reports its gap
                 "gap_count_after_first_observation": (
-                    (asset_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
+                    (asset_data_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
                 ) if venue_row["first_timestamp_ms"] is not None else 0,
                 "duplicate_count": venue_row_count - distinct,
                 "invalid_row_count": int(venue_row["invalid_row_count"]),
@@ -161,9 +161,9 @@ def canonical_source_block(ticker: str, canonical_row: dict) -> dict:
             for venue in config.SOURCE_VENUES
         },
         "ffill_bars": int(canonical_row["ffill_bars"]),
-        "longest_ffill_run_minutes": int(canonical_row["longest_ffill_run_minutes"]),
+        "longest_ffill_streak_minutes": int(canonical_row["longest_ffill_streak_minutes"]),
         "zero_volume_bars": int(canonical_row["zero_volume_bars"]),
-        "longest_flat_run_minutes": int(canonical_row["longest_flat_run_minutes"]),
+        "longest_flat_streak_minutes": int(canonical_row["longest_flat_streak_minutes"]),
         "repeated_candle_count": int(canonical_row["repeated_candle_count"]),
         "source_switch_count": int(canonical_row["source_switch_count"]),
         "max_abs_return_at_switch": config.rounded(canonical_row["max_abs_return_at_switch"], 6),
@@ -188,15 +188,15 @@ def print_venue_table(venue: str, venue_table: list[dict]) -> None:
 def print_canonical_table(canonical: list[dict]) -> None:
     shares = " ".join(f"{venue:>9}" for venue in config.SOURCE_VENUES)
     print("[canonical source]")
-    print(f"{'symbol':9} {'rows':>9} {shares} {'ffill':>6} {'ffill run':>9} {'zero-vol':>8} {'flat run':>8} "
+    print(f"{'symbol':9} {'rows':>9} {shares} {'ffill':>6} {'ffill streak':>12} {'zero-vol':>8} {'flat streak':>11} "
           f"{'repeated':>8} {'switches':>8} {'max |ret| at switch':>19} {'max |ret| 1m':>12} "
           f"{'rel. divergence p99':>19} {'rel. divergence max':>19} {'ohlc bad':>8}")
     for canonical_row in canonical:
         share_columns = " ".join(f"{canonical_row['source_share_pct_by_venue'][venue]:>9.3f}"
                                  for venue in config.SOURCE_VENUES)
         print(f"{canonical_row['symbol']:9} {canonical_row['row_count']:>9} {share_columns} "
-              f"{canonical_row['ffill_bars']:>6} {canonical_row['longest_ffill_run_minutes']:>9} "
-              f"{canonical_row['zero_volume_bars']:>8} {canonical_row['longest_flat_run_minutes']:>8} "
+              f"{canonical_row['ffill_bars']:>6} {canonical_row['longest_ffill_streak_minutes']:>12} "
+              f"{canonical_row['zero_volume_bars']:>8} {canonical_row['longest_flat_streak_minutes']:>11} "
               f"{canonical_row['repeated_candle_count']:>8} {canonical_row['source_switch_count']:>8} "
               f"{canonical_row['max_abs_return_at_switch'] if canonical_row['max_abs_return_at_switch'] is not None else '-':>19} "
               f"{canonical_row['max_abs_return_1m'] if canonical_row['max_abs_return_1m'] is not None else '-':>12} "
@@ -223,7 +223,7 @@ def main() -> int:
         canonical_rows[ticker] = {
             **load_row(con, CANONICAL_SCAN.format(venue_source_counts=venue_source_count_aliases(), canonical_parquet=canonical_parquet)),
             **load_row(con, SOURCE_SWITCH_SCAN.format(canonical_parquet=canonical_parquet)),
-            **load_row(con, CANONICAL_RUN_SCAN.format(canonical_parquet=canonical_parquet)),
+            **load_row(con, CANONICAL_STREAK_SCAN.format(canonical_parquet=canonical_parquet)),
         }
         con.close()
     if not canonical_rows:
@@ -235,7 +235,7 @@ def main() -> int:
 
     status = {
         "generated_at_utc": datetime.now(tz=UTC).strftime("%Y-%m-%d %H:%M:%S"),
-        "window_start_utc": f"{config.DATA_WINDOW_START_UTC} 00:00",
+        "data_window_start_utc": f"{config.DATA_WINDOW_START_UTC} 00:00",
         "download_cadence_minutes": MINUTES_PER_DAY,
         # the venue set in its tier order, so a reader takes the order from the payload and never from a key order
         "source_venues": list(config.SOURCE_VENUES),
@@ -246,7 +246,7 @@ def main() -> int:
     status_path.parent.mkdir(parents=True, exist_ok=True)
     status_path.write_text(json.dumps(status, sort_keys=True, indent=1) + "\n", encoding="utf-8")
 
-    print(f"window from {status['window_start_utc']}  venues {' '.join(config.SOURCE_VENUES)}")
+    print(f"data window from {status['data_window_start_utc']}  venues {' '.join(config.SOURCE_VENUES)}")
     for venue in config.SOURCE_VENUES:
         print_venue_table(venue, venues[venue])
     print_canonical_table(canonical)

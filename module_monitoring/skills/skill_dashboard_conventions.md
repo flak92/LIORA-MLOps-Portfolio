@@ -18,7 +18,7 @@ The rules of the status page `module_monitoring` serves: one static page of plai
 - `DASHBOARD-CONVENTIONS-PRESENTATION-ARITHMETIC-ONLY`
   - Description: The page computes no domain or model result: it renders what a snapshot or a run record holds, with presentation arithmetic over those values alone.
   - Scope: `module_monitoring/**/*.js`
-  - Expected: A share of two published counts (`realDataPct`, `buildShareCell`), a mean over the validation folds (`mean` over `validationFolds`), a difference of two reported metrics (the holdout degradation, the delta against the active state), a sum over a record's entries (`bytesWritten`), an age against the browser's clock (`ageCell`); no label, fit, model metric or strategy number computed in a script.
+  - Expected: A share of two published counts (`realDataPct`, `buildShareCell`), a mean over the validation folds (`mean` over `validationFolds`), a difference of two reported metrics (the holdout degradation, the delta against the active search state), a sum over a record's entries (`bytesWritten`), an age against the browser's clock (`ageCell`); no label, fit, model metric or strategy number computed in a script.
   - Exception: none
 - `DASHBOARD-CONVENTIONS-TWO-STATE-GLOBALS`
   - Description: The page keeps two state globals — `ML_STATUS` and `FEATURES_STATUS` in `ml.js` — the snapshots it holds after their fetch because more than one tab renders from them; the data snapshot, the crawl snapshot and the run records are rendered as they arrive and held nowhere.

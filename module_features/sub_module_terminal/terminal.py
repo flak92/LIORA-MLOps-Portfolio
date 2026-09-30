@@ -9,7 +9,7 @@ writes the one file `<TICKER>_serpentine_search_profile.json`, and every stage i
 ASSET=<TICKER>`, the promotion among them — the Makefile is where the module's stages are named.
 
 keys:
-  Enter takes the option under the cursor; x toggles a column, a coordinate or a loop; Esc cancels and writes
+  Enter takes the option under the cursor; x toggles a column, a coordinate or a search axis; Esc cancels and writes
   nothing (exit 0); Ctrl-C ends the TUI (exit 130), and a stage already started stays.
 
 output is plain — state words in brackets, no colour, no symbol, no border — when NO_COLOR is set and not empty,
@@ -34,13 +34,14 @@ import sys
 
 from . import config, tui
 
-DRAFT_STEPS = ["action", "columns to admit", "start state", "coordinates to search", "loops", "plan"]
-STATE_COLUMNS = ("asset", "bars", "catalogue", "contract", "profile", "trials")
-STATE_COLUMNS_DROP_ORDER = ("trials", "profile", "catalogue", "contract")
-PROPOSAL_COLUMNS = ("#", "trial", "coordinates moved", "path CAGR", "path Calmar", "path maxDD", "trades")
+DRAFT_STEPS = ["action", "columns to admit", "start search state", "coordinates to search", "search axes", "plan"]
+STATE_COLUMNS = ("asset", "bars", "catalogue", "contract", "profile", "state evaluations")
+STATE_COLUMNS_DROP_ORDER = ("state evaluations", "profile", "catalogue", "contract")
+PROPOSAL_COLUMNS = ("#", "state evaluation", "coordinates moved", "path CAGR", "path Calmar", "path maxDD", "trades")
 PROPOSAL_COLUMNS_DROP_ORDER = ("path maxDD", "trades", "path Calmar", "coordinates moved")
-PATH_COLUMNS = ("#", "round", "loop", "family", "trial", "path CAGR", "path Calmar", "path maxDD", "trades")
-PATH_COLUMNS_DROP_ORDER = ("trades", "path maxDD", "path Calmar", "family")
+PATH_COLUMNS = ("#", "round", "search axis", "search family", "state evaluation", "path CAGR", "path Calmar",
+                "path maxDD", "trades")
+PATH_COLUMNS_DROP_ORDER = ("trades", "path maxDD", "path Calmar", "search family")
 # a line of `make help`, which the shared recipe prints as `<target> — <purpose>`; the first ` — ` ends the name, a
 # purpose holding more of them, and the lower case refuses a variable that carries a `##` by accident
 # twice by extraction
@@ -123,7 +124,7 @@ def _profile_state(profile: dict | None, search: dict | None) -> str:
 
 def _asset_files(ticker: str) -> tuple[dict | None, dict | None, dict | None]:
     """The three files of one asset the serpentine search's actions read as objects — the contract, the profile and
-    the state file — each None where the file is not there."""
+    the search's progress — each None where the file is not there."""
     catalogue_path = config.catalogue_json(ticker)
     profile_path, search_path = config.serpentine_search_profile_json(ticker), config.serpentine_search_json(ticker)
     return (config.load_json(catalogue_path) if catalogue_path.exists() else None,
@@ -131,48 +132,53 @@ def _asset_files(ticker: str) -> tuple[dict | None, dict | None, dict | None]:
             config.load_json(search_path) if search_path.exists() else None)
 
 
-def _trial_rows(ticker: str) -> list[dict]:
-    """The serpentine search's ledger, line by line — the trials, where the state file holds where it stands."""
-    ledger = config.serpentine_search_trials_jsonl(ticker)
+def _state_evaluation_rows(ticker: str) -> list[dict]:
+    """The serpentine search's ledger, line by line — the state evaluations, where the search's progress holds where
+    it stands."""
+    ledger = config.serpentine_search_state_evaluations_jsonl(ticker)
     return config.load_jsonl(ledger) if ledger.exists() else []
 
 
 def _asset_rows(tickers: list[str]) -> list[dict]:
     """One row per asset — how many timeframes its bars and its catalogue hold a partition for, whether its contract
-    stands, where its serpentine search profile stands and how many trials its ledger holds; every cell a value as it
-    stands, the count 0 where a family holds no partition of the asset and `—` where no ledger names a trial."""
+    stands, where its serpentine search profile stands and how many state evaluations its ledger holds; every cell a
+    value as it stands, the count 0 where a family holds no partition of the asset and `—` where no ledger holds a
+    state evaluation."""
     rows = []
     for ticker in tickers:
         catalogue, profile, search = _asset_files(ticker)
-        trials = _trial_rows(ticker)
+        state_evaluations = _state_evaluation_rows(ticker)
         rows.append({"asset": ticker,
                      "bars": len(list(config.partition_dir("bars", ticker).glob("timeframe=*/bars.parquet"))),
                      "catalogue": len(list(config.partition_dir("catalogue", ticker).glob("timeframe=*/catalogue.parquet"))),
                      "contract": "no" if catalogue is None else "yes",
                      "profile": _profile_state(profile, search),
-                     "trials": len(trials) if trials else "—"})
+                     "state evaluations": len(state_evaluations) if state_evaluations else "—"})
     return rows
 
 
 def _state_rows(ticker: str, profile: dict | None, search: dict | None,
-                trials: list[dict]) -> list[dict]:
+                state_evaluations: list[dict]) -> list[dict]:
     """What the asset holds, one fact a row — every cell the file's own value, never an age or a share."""
     rows = [{"parameter": "asset", "value": ticker},
             {"parameter": "profile", "value": _profile_state(profile, search)}]
     if profile is not None:
         rows.append({"parameter": "coordinates searched",
                      "value": f"{sum(len(grid) > 1 for grid in profile['grid_by_coordinate'].values())} of {len(config.GRID_BY_COORDINATE_DEFAULT)}"})
-        rows.append({"parameter": "loops", "value": " ".join(profile["loops"]) or "—"})
+        rows.append({"parameter": "search axes", "value": " ".join(profile["search_axes"]) or "—"})
     if search is None:
-        rows.append({"parameter": "search", "value": "none"})
+        rows.append({"parameter": "serpentine search", "value": "none"})
         return rows
-    # the serpentine search counted this at a round boundary; the terminal shows it and adds nothing to it
-    by_loop = search["trial_count_by_loop"]
-    rows += [{"parameter": "search", "value": f"{len(trials)} trials in {search['round_count']} rounds"},
-             {"parameter": "trials by loop",
-              "value": " ".join(f"{loop} {count}" for loop, count in sorted(by_loop.items())) or "—"},
+    # the serpentine search counted these at a round boundary; the terminal shows them and adds nothing to them
+    by_search_axis = search["selection_hypothesis_count_by_search_axis"]
+    rows += [{"parameter": "serpentine search",
+              "value": f"{len(state_evaluations)} state evaluations in {search['round_count']} rounds"},
+             {"parameter": "selection hypotheses", "value": search["selection_hypothesis_count"]},
+             {"parameter": "selection hypotheses by search axis",
+              "value": " ".join(f"{search_axis} {count}"
+                                for search_axis, count in sorted(by_search_axis.items())) or "—"},
              {"parameter": "converged", "value": "yes" if search["search_converged"] else "no"},
-             {"parameter": "champion trial", "value": search["champion_trial_index"] or "—"},
+             {"parameter": "champion", "value": search["champion_state_evaluation_index"] or "—"},
              {"parameter": "proposals", "value": len(search["proposals"])}]
     return rows
 
@@ -186,35 +192,37 @@ def _path_block_cells(block: dict) -> dict:
             "path maxDD": _number(block["max_drawdown"], 4), "trades": block["trade_count"]}
 
 
-def _proposal_rows(search: dict, trials: list[dict]) -> list[dict]:
-    """The proposals, each read off the ledger line its trial index names — the state file holds the rank and
-    the index, and no number of the trial."""
-    return [{"#": proposal["proposal"], "trial": proposal["trial_index"],
-             "coordinates moved": _moved(trials[proposal["trial_index"] - 1], search),
-             **_path_block_cells(trials[proposal["trial_index"] - 1]["validation_path"])}
+def _proposal_rows(search: dict, state_evaluations: list[dict]) -> list[dict]:
+    """The proposals, each read off the ledger line its state evaluation index names — the search's progress holds
+    the rank and the index, and no number of the state evaluation."""
+    return [{"#": proposal["proposal"], "state evaluation": proposal["state_evaluation_index"],
+             "coordinates moved": _moved(state_evaluations[proposal["state_evaluation_index"] - 1], search),
+             **_path_block_cells(state_evaluations[proposal["state_evaluation_index"] - 1]["validation_path"])}
             for proposal in search["proposals"]]
 
 
-def _path_rows(search: dict, trials: list[dict]) -> list[dict]:
-    return [{"#": number, "round": entry["round"], "loop": entry["loop"], "family": entry["family"],
-             "trial": entry["trial_index"], **_path_block_cells(trials[entry["trial_index"] - 1]["validation_path"])}
+def _path_rows(search: dict, state_evaluations: list[dict]) -> list[dict]:
+    return [{"#": number, "round": entry["round"], "search axis": entry["search_axis"],
+             "search family": entry["search_family"], "state evaluation": entry["state_evaluation_index"],
+             **_path_block_cells(state_evaluations[entry["state_evaluation_index"] - 1]["validation_path"])}
             for number, entry in enumerate(search["path"], start=1)]
 
 
-def _moved(trial: dict, search: dict) -> str:
-    """What one trial changes against the asset's own state the serpentine search was run on, as its inputs record
-    it — the columns it holds that the state does not and the ones it drops, each barrier coordinate whose value is not
-    the state's, and the hyper-parameter point when it is not. Membership and equality on the two files' own values: no
-    number is computed."""
+def _moved(state_evaluation: dict, search: dict) -> str:
+    """What one state evaluation changes against the asset's own search state the serpentine search was run on, as
+    its inputs record it — the columns it holds that the search state does not and the ones it drops, each barrier
+    coordinate whose value is not the search state's, and the hyper-parameter point when it is not. Membership and
+    equality on the two files' own values: no number is computed."""
     active_columns, active_barriers = (search["inputs"]["active_columns_by_timeframe"],
                                        search["inputs"]["active_barriers"])
-    columns = [f"+{name}_{timeframe}" for timeframe, names in sorted(trial["columns_by_timeframe"].items())
+    columns = [f"+{name}_{timeframe}"
+               for timeframe, names in sorted(state_evaluation["columns_by_timeframe"].items())
                for name in names if name not in active_columns[timeframe]]
     columns += [f"-{name}_{timeframe}" for timeframe, names in sorted(active_columns.items())
-                for name in names if name not in trial["columns_by_timeframe"][timeframe]]
-    barriers = [f"{name} {trial[name]}" for name in sorted(config.GRID_BY_COORDINATE_DEFAULT)
-                if trial[name] != active_barriers[name]]
-    point = ["best_params"] if trial["best_params"] != search["inputs"]["best_params"] else []
+                for name in names if name not in state_evaluation["columns_by_timeframe"][timeframe]]
+    barriers = [f"{name} {state_evaluation[name]}" for name in sorted(config.GRID_BY_COORDINATE_DEFAULT)
+                if state_evaluation[name] != active_barriers[name]]
+    point = ["best_params"] if state_evaluation["best_params"] != search["inputs"]["best_params"] else []
     return " ".join(columns + barriers + point) or "—"
 
 
@@ -271,9 +279,9 @@ def _active_barrier(ticker: str, name: str):
 
 
 def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | None, search: dict | None) -> int:
-    """Draft the asset's serpentine search profile: which columns it may admit, which state it starts from, which
-    coordinates it moves and which loops a round runs. The grids are the one preset — another grid is a hand's
-    edit of the file, which is what a drafted artifact permits, and so is the asset's noise sigma."""
+    """Draft the asset's serpentine search profile: which columns it may admit, which search state it starts from,
+    which coordinates it moves and which search axes a round runs. The grids are the one preset — another grid is a
+    hand's edit of the file, which is what a drafted artifact permits, and so is the asset's noise sigma."""
     if catalogue is None:
         return _failure_exit_code(f"{ticker} has no feature contract", config.catalogue_json(ticker).name, None,
                                   f"make features-catalogue ASSET={ticker} first")
@@ -291,15 +299,17 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
         admitted = answer.splitlines()
         chosen["columns to admit"] = f"{len(admitted)} of {len(column_rows)}"
 
-        start_rows = [{"start state": "the asset's own", "value": "null"}]
-        if search is not None and search["champion_trial_index"]:
-            start_rows.append({"start state": "the recorded search's champion", "value": "champion"})
+        start_rows = [{"start search state": "the asset's own", "value": "null"}]
+        if search is not None and search["champion_state_evaluation_index"]:
+            start_rows.append({"start search state": "the recorded search's champion", "value": "champion"})
         answer = _step_answer(DRAFT_STEPS, chosen, start_rows, "value")
         if answer in (None, ""):
             return _cancelled_exit_code()
         start_columns = (None if answer == "null" else
-                         _trial_rows(ticker)[search["champion_trial_index"] - 1]["columns_by_timeframe"])
-        chosen["start state"] = next(row["start state"] for row in start_rows if row["value"] == answer)
+                         _state_evaluation_rows(ticker)[search["champion_state_evaluation_index"] - 1]
+                         ["columns_by_timeframe"])
+        chosen["start search state"] = next(row["start search state"] for row in start_rows
+                                            if row["value"] == answer)
 
         coordinate_rows = [{"coordinate": name, "grid": ", ".join(str(point) for point in grid),
                             "points": len(grid)}
@@ -313,13 +323,14 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
         searched = answer.splitlines() if answer else []
         chosen["coordinates to search"] = f"{len(searched)} of {len(coordinate_rows)}"
 
-        loop_rows = [{"loop": loop} for loop in config.SERPENTINE_SEARCH_ROUND_LOOPS]
-        loops = profile["loops"] if profile else list(config.SERPENTINE_SEARCH_ROUND_LOOPS)
-        answer = _step_answer(DRAFT_STEPS, chosen, loop_rows, "loop", selected=loops)
+        search_axis_rows = [{"search axis": search_axis} for search_axis in config.SERPENTINE_SEARCH_AXES]
+        search_axes = profile["search_axes"] if profile else list(config.SERPENTINE_SEARCH_AXES)
+        answer = _step_answer(DRAFT_STEPS, chosen, search_axis_rows, "search axis", selected=search_axes)
         if answer is None:
             return _cancelled_exit_code()
-        loops = [loop for loop in config.SERPENTINE_SEARCH_ROUND_LOOPS if loop in answer.splitlines()]
-        chosen["loops"] = " ".join(loops) or "—"
+        search_axes = [search_axis for search_axis in config.SERPENTINE_SEARCH_AXES
+                       if search_axis in answer.splitlines()]
+        chosen["search axes"] = " ".join(search_axes) or "—"
 
         drafted = {
             "columns_admitted_by_timeframe": {
@@ -332,10 +343,10 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
             # because a one-point grid has no neighbour and a family with no neighbour makes no move
             "grid_by_coordinate": {name: (list(grid) if name in searched else [_active_barrier(ticker, name)])
                                    for name, grid in sorted(config.GRID_BY_COORDINATE_DEFAULT.items())},
-            "loops": loops,
+            "search_axes": search_axes,
             # the asset's noise sigma is a decision recorded elsewhere and a hand's edit of the file, never a step of
             # this form: a draft carries the profile's own over unchanged, and a first profile has none — its search
-            # is the calibration run that measures it
+            # is the calibration search that measures it
             "path_cagr_noise_standard_deviation": profile["path_cagr_noise_standard_deviation"] if profile else None,
             "start_columns_by_timeframe": start_columns,
         }
@@ -352,7 +363,7 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
         print()
         if search is not None and drafted != search["inputs"]["profile"]:
             print(f"{tui.state_label('WARN')}  the recorded search was run under another profile — the next turn "
-                  f"starts a new state and overwrites {config.serpentine_search_json(ticker).name}")
+                  f"starts a new search and overwrites {config.serpentine_search_json(ticker).name}")
             print()
         answer = tui.gum_choose(f"draft {path.name}?",
                                 _option_rows(*(("draft",) if changes else ()), "back", "cancel"), "option")
@@ -363,52 +374,53 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
         config.write_json(path, drafted)
         print()
         tui.gum_style([f"{tui.state_label('DONE')}  drafted {path.name} · {len(admitted)} columns admitted · "
-                       f"{len(searched)} coordinates · {' '.join(loops) or 'no'} loops"], "DONE")
+                       f"{len(searched)} coordinates · {' '.join(search_axes) or 'no'} search axes"], "DONE")
         return 0
 
 
 def _recorded_search_tables(ticker: str, profile: dict | None, search: dict | None) -> int:
-    """Read the recorded serpentine search: where it stands, the path it took and the states it proposes. Writes
+    """Read the recorded serpentine search: where it stands, the path it took and the search state it proposes. Writes
     nothing.
 
-    Two files: the state file says where the search stands and names the trials it took and proposes, the ledger
-    holds those trials and every number the tables show."""
+    Two files: the search's progress says where the search stands and names the state evaluations it took and
+    proposes, the ledger holds those state evaluations and every number the tables show."""
     if search is None:
         return _failure_exit_code(f"{ticker} has no serpentine search",
                                   config.serpentine_search_json(ticker).name,
                                   "no turn has run for this asset", "draft a profile, then run "
                                   "make features-serpentine-search")
-    trials = _trial_rows(ticker)
-    tui.gum_table(("parameter", "value"), _state_rows(ticker, profile, search, trials))
+    state_evaluations = _state_evaluation_rows(ticker)
+    tui.gum_table(("parameter", "value"), _state_rows(ticker, profile, search, state_evaluations))
     print()
     if search["path"]:
-        tui.gum_table(PATH_COLUMNS, _path_rows(search, trials), PATH_COLUMNS_DROP_ORDER)
+        tui.gum_table(PATH_COLUMNS, _path_rows(search, state_evaluations), PATH_COLUMNS_DROP_ORDER)
     else:
         print("no accepted move")
     print()
     if search["proposals"]:
-        tui.gum_table(PROPOSAL_COLUMNS, _proposal_rows(search, trials), PROPOSAL_COLUMNS_DROP_ORDER)
+        tui.gum_table(PROPOSAL_COLUMNS, _proposal_rows(search, state_evaluations), PROPOSAL_COLUMNS_DROP_ORDER)
     else:
         print("no proposal")
     return 0
 
 
 def _write_promoted_proposal(ticker: str, search: dict | None) -> int:
-    """Promote the proposal into the asset's own state, through the Makefile — the target copies the proposal and then
-    reruns the asset's ML chain. A search proposes one state at most, so the plan shows it and the gate asks whether,
-    with nothing to choose before it."""
+    """Promote the proposal into the asset's own search state, through the Makefile — the target copies the proposal
+    and then reruns the asset's ML chain. A search proposes one search state at most, so the plan shows it and the
+    gate asks whether, with nothing to choose before it."""
     if search is None or not search["proposals"]:
         return _failure_exit_code(f"{ticker} has no proposal to promote",
                                   config.serpentine_search_json(ticker).name,
                                   "no turn has run for this asset" if search is None else "the search proposes none",
                                   "run make features-serpentine-search, then read its tables")
-    trial_index = search["proposals"][0]["trial_index"]
-    trials = _trial_rows(ticker)
+    state_evaluation_index = search["proposals"][0]["state_evaluation_index"]
+    state_evaluations = _state_evaluation_rows(ticker)
     command = ("make", config.PROMOTE_TARGET, f"ASSET={ticker}")
     tui.gum_table(("parameter", "value"),
                   [{"parameter": "asset", "value": ticker},
-                   {"parameter": "trial", "value": trial_index},
-                   {"parameter": "coordinates moved", "value": _moved(trials[trial_index - 1], search)},
+                   {"parameter": "state evaluation", "value": state_evaluation_index},
+                   {"parameter": "coordinates moved",
+                    "value": _moved(state_evaluations[state_evaluation_index - 1], search)},
                    {"parameter": "writes",
                     "value": f"{config.feature_set_json(ticker).name}, {config.barriers_json(ticker).name}, "
                              f"{config.hyperparameter_point_json(ticker).name}"}])
@@ -476,8 +488,8 @@ def main() -> int:
         if ticker in (None, ""):
             return _cancelled_exit_code()
         catalogue, profile, search = _asset_files(ticker)
-        # the target whose plan shows the state it promotes keeps its own screen; everything else is the Makefile's
-        # own target, run through the one plan and gate
+        # the target whose plan shows the search state it promotes keeps its own screen; everything else is the
+        # Makefile's own target, run through the one plan and gate
         if action == config.PROMOTE_TARGET:
             return _write_promoted_proposal(ticker, search)
         if action == "draft":
