@@ -395,7 +395,7 @@
   {
    "class": "DEFAULT",
    "experiment_identity": true,
-   "meaning": "the one seed of every study and every fit",
+   "meaning": "the seed of every fit and of the chain's study; a study of the serpentine search takes it plus its round",
    "name": "SEED",
    "requires_rerun": "ml-all, features-serpentine-search",
    "risk": "another experiment: every study, fit and trade changes",
@@ -462,7 +462,7 @@
   {
    "class": "DEFAULT",
    "experiment_identity": true,
-   "meaning": "the trials TPE draws at random before it models, completed and pruned alike",
+   "meaning": "the trials a study runs before TPE models, completed and pruned alike \u2014 each drawn at random but the promoted point the chain's study starts from",
    "name": "HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT",
    "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
    "risk": "at or above the trial count the study is a random search wearing TPE's name",
@@ -473,7 +473,7 @@
   {
    "class": "DEFAULT",
    "experiment_identity": true,
-   "meaning": "the trials one study draws \u2014 the stage's and each beam parent's in the serpentine search",
+   "meaning": "the trials one study runs \u2014 the stage's and each beam parent's in the serpentine search",
    "name": "HYPERPARAMETER_SEARCH_TRIAL_COUNT",
    "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
    "risk": "a budget below the method's own: the chosen point is noise",
@@ -653,7 +653,7 @@
   }
  ],
  "final_holdout_fold_id": 5,
- "generated_at_utc": "2026-09-29 17:00:51",
+ "generated_at_utc": "2026-09-30 00:20:18",
  "minimum_agreeing_trend_timeframes": 2,
  "research_window": {
   "end_utc": "2026-08-26",

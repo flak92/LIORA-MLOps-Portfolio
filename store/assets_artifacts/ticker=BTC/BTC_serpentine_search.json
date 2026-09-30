@@ -172,7 +172,7 @@
     "feature_set",
     "hpo"
    ],
-   "path_cagr_noise_standard_deviation": 0.02396115512851181,
+   "path_cagr_noise_standard_deviation": 0.016462179017285163,
    "start_columns_by_timeframe": null
   },
   "research_window": {
@@ -182,7 +182,8 @@
    "warmup_top_timeframe_bars": 220
   },
   "selection": {
-   "beam_width": 3
+   "beam_width": 3,
+   "fold_measure": "cagr"
   }
  },
  "path": [],
