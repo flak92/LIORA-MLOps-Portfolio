@@ -411,7 +411,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: Optuna trials
   - Never: a search state, a state evaluation, a line of the serpentine search's ledger
   - External vocabulary: Optuna (a trial)
-- the serpentine search — a beam over the search axes of a search state, scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, the proposal must clear the noise of every selection hypothesis, and the selection hypothesis count stands on the page beside it
+- the serpentine search — a joint strategy search: a beam over the search axes of a search state — its feature set, its label's geometry, its trade's exits and its hyper-parameter point, moved under one objective, the validation path's CAGR after execution cost — scored on the validation folds under the profile a hand drafted; a hand's research outside the chain, one turn per call, its selection overfitting bounded and exposed, never absent: every fold must agree, the proposal must clear the noise of every selection hypothesis, and the selection hypothesis count stands on the page beside it
   - Code: `module_features/sub_module_serpentine_search/`: `serpentine_search.py`, `axis_barrier.py`, `axis_feature_set.py`, `promote.py`; `make features-serpentine-search` — per asset a turn, then `ml-score` and a turn again while the turn leaves a question, the Makefile's `serpentine_turn` and `serpentine_score`, the one command of each step — and its detached twin `tmux-features-serpentine-search` in the tmux session `SERPENTINE_SEARCH_SESSION`, one asset per session, behind `COMPOSE_PROJECT_NAME` where it is set
   - Artifact key: `serpentine_search` (a block of each asset of features_status.json), `<TICKER>_serpentine_search.json`
   - Ui label: serpentine search
@@ -591,11 +591,11 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `selection_score_cagr_validation_path`
   - Ui label: selection score; `degradation` for the final holdout's CAGR minus the validation path's — presentation arithmetic
   - Never: one key that holds two different quantities; a score whose name does not say what it measures
-- CAGR — the compound annual growth rate of an equity path that started at E₀ = 1, over its own length in minutes, on a calendar year, 24/7; the quantity the gate compares fold by fold, the fold being the unit of robustness
+- CAGR — the compound annual growth rate of an equity path that started at E₀ = 1, over its own length in minutes, on a calendar year, 24/7, after execution cost — the path having paid `EXECUTION_COST_RATE_PER_TRADE_SIDE` on both sides of every trade and nothing else; the quantity the gate compares fold by fold, the fold being the unit of robustness
   - Code: `validation.cagr()`, `MINUTES_PER_YEAR`
   - Artifact key: `cagr`
   - Ui label: CAGR
-  - Never: annualised return, APY, growth; a year of trading days
+  - Never: annualised return, APY, growth; a year of trading days; net CAGR or a net return unqualified, which leaves unsaid what it is net of
   - External vocabulary: finance (compound annual growth rate)
 - the Calmar ratio — growth per unit of maximum drawdown, reported for every fold and for the path and never selected on; null where the path never drew down
   - Code: `validation.calmar()`

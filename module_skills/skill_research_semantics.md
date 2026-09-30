@@ -101,3 +101,8 @@ Every research name says what kind of object it denotes — a point in time, an 
   - Scope: `module_features/sub_module_serpentine_search/**/*.py`, `module_features/status.py`, `module_features/sub_module_terminal/*.py`, `module_monitoring/features.js`
   - Expected: `beam_changed` for what a round did to the beam; `search_outcome` `converged` for a proven fixed point, `stopped_by_budget` for a spent budget without one, `null` for neither; a search family whose neighbourhood depends on the round — a study seeded anew each round — proving no fixed point, so a search that runs one ends by its budget; the proof tested before the budget.
   - Exception: none
+- `RESEARCH-SEMANTICS-PROVENANCE-IS-AN-EXACT-COMMIT-AND-THE-PARITY-RECIPE`
+  - Description: An artifact is provenance-complete only when the parity recipe reproduces it from one exact commit and the frozen raw input: the commit is its code and its settings, the frozen raw store its data, and nothing written beside the artifact adds to that; an artifact written by a working tree no commit holds is not provenance-complete, whatever its numbers.
+  - Scope: `store/assets_artifacts/**/*`, `store/status/*.json`, `README.md`
+  - Expected: The tracked files of `store/assets_artifacts/` and `store/status/` committed with the code that wrote them; `README.md` § Parity — a fresh clone at that commit, the frozen copy of the raw store, `make all-record` — reproducing the chain's files, and an asset's serpentine search reset and run again at the same commit reproducing its progress and its ledger; no manifest, checksum or hash written beside an artifact to stand in for the reproduction.
+  - Exception: none

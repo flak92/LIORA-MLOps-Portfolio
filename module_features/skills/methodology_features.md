@@ -278,8 +278,10 @@ The serpentine search is a hand's research over one asset's search state Θ, out
 (`module_features/sub_module_serpentine_search/`; how it runs is its
 `module_features/sub_module_serpentine_search/README_sub_module_serpentine_search.md`, its
 rules `module_features/sub_module_serpentine_search/skill_serpentine_search.md`, each cited below by
-its `rule_id`; the meaning of every name is `module_skills/skill_research_semantics.md`'s). A search
-state is the columns of a feature set per timeframe, the four barrier coordinates — the multiplier
+its `rule_id`; the meaning of every name is `module_skills/skill_research_semantics.md`'s). It is a
+joint strategy search: the feature set, the label's geometry, the trade's exits and the
+hyper-parameter point move under one objective, the validation path's CAGR after execution cost. A
+search state is the columns of a feature set per timeframe, the four barrier coordinates — the multiplier
 the label's barriers stand at, the label horizon they stand for, the take-profit and the stop a trade
 leaves at — and the hyper-parameter point `best_params` (`theta()`); its key is its own canonical JSON
 text, so two search states are equal exactly or not at all (`search_state_key()`,
@@ -306,7 +308,9 @@ it left, and a search state already in the ledger is looked up, never scored aga
 
 ### 1. The objective
 
-A search state's objective is `search_state_objective`, the CAGR of the chained validation path.
+A search state's objective is `search_state_objective`, the CAGR of the chained validation path
+after execution cost — the path having paid `EXECUTION_COST_RATE_PER_TRADE_SIDE` on both sides of
+every trade and nothing else.
 The path chains F2, F3 and F4 — each fold's 1m equity scaled by what the folds before it settled at —
 and its CAGR is the product of the three folds' final equities annualised over their minutes
 (`strategy.validation_path_cagr()`; `strategy.validation_path_block()`). A state evaluation stands at

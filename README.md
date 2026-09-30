@@ -163,7 +163,11 @@ Every number here is reproducible. The proof, repeatable on any host (`AGENTS.md
 
 Both sides run in containers from the same pins; the seeds, the thread caps at one, sequential Optuna and DuckDB's
 pinned orders make the bytes equal (`module_skills/skill_determinism.md`). The reference manifest lives outside this
-repository.
+repository. The serpentine search stands outside that proof and has its own, at the same commit:
+`make features-serpentine-search-reset ASSET=<TICKER>` and then `make features-serpentine-search ASSET=<TICKER>`, over
+the same inputs, end on the same progress and ledger. An artifact is provenance-complete only when this recipe
+reproduces it from one exact commit and the frozen raw input; one written by a working tree no commit holds is not
+(`RESEARCH-SEMANTICS-PROVENANCE-IS-AN-EXACT-COMMIT-AND-THE-PARITY-RECIPE`).
 
 ## The basket
 

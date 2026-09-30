@@ -652,7 +652,9 @@ its numbers stand at a threshold nothing qualified for.
 **A fold's own numbers, and the path they chain into.** From the same 1-minute
 equity a fold reports its CAGR — `final_equity ** (MINUTES_PER_YEAR / minutes) − 1`,
 a 24/7 year of 365 days, so a fold that holds a 29 February has an exponent
-slightly under one rather than being idealised away — its maximum drawdown, their
+slightly under one rather than being idealised away, and a CAGR after execution
+cost, the equity having paid the cost below on both sides of every trade and
+nothing else — its maximum drawdown, their
 ratio as the Calmar ratio, its profit factor over the trades it took, and its
 trade count; a ratio without a denominator — the Calmar ratio of a path that never
 drew down, the profit factor of one that never lost — is null, never a number
@@ -694,7 +696,10 @@ because the parameters are tuned for the search state they were searched under, 
 canonical and carries only what it computed, no timestamp among it, so an unchanged experiment reproduces it byte
 for byte (`METHODOLOGY-ML-AN-ARTIFACT-CARRIES-ONLY-WHAT-IT-COMPUTED`); the settings a run used are
 `module_ml/config.py` at the commit that ran it (`METHODOLOGY-ML-AN-EXPERIMENT-CONSTANT-LIVES-IN-CONFIG`), and
-`ml_status.json` publishes its `CONFIGURABLES` records beside the assets. No booster is persisted: nothing in this
+`ml_status.json` publishes its `CONFIGURABLES` records beside the assets. An artifact is provenance-complete only
+when the parity recipe of `README.md` § Parity reproduces it from that exact commit and the frozen raw input; one
+written by a working tree no commit holds is not, whatever its numbers
+(`RESEARCH-SEMANTICS-PROVENANCE-IS-AN-EXACT-COMMIT-AND-THE-PARITY-RECIPE`). No booster is persisted: nothing in this
 repository performs inference, so the numbers are the product (`METHODOLOGY-ML-NO-BOOSTER-IS-PERSISTED`). The
 module's files and what each holds are `module_ml/README_module_ml.md` § Design rationale.
 
