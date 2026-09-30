@@ -116,7 +116,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Description: Every JSON this layer writes is canonical and carries only what it computed — no timestamp, run id, provenance envelope or hash — so an unchanged experiment reproduces its artifacts byte for byte.
   - Scope: `module_ml/**/*.py`
   - Expected: `dataset.write_json()` with sorted keys, numpy scalars converted and a non-finite float written `null`; the settings a run used being `module_ml/config.py` at its commit, published as `configurables` in `ml_status.json`.
-  - Exception: `generated_at_utc` of `ml_status.json`, the time the snapshot was measured.
+  - Exception: `generated_at_utc` of `ml_status.json`, the time the snapshot was measured; `evaluation_contract` of the transient `<TICKER>_score_response.json`, the records an answer was scored under, which the serpentine search compares.
 
 ## Methodology
 

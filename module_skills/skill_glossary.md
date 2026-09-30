@@ -514,6 +514,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `build_search_inputs()`, `inputs`
   - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`), `seed`, `warmup_top_timeframe_bars`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
   - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's state evaluations under another's rules
+- the evaluation contract — the records of `module_ml` that name the experiment's identity, by name, as every answer of `ml-score` carries them: the serpentine search records the first answer's and starts afresh when an answer carries another
+  - Code: `evaluation_contract()` in `module_ml/score.py`; `experiment_identity` of a CONFIGURABLES record
+  - Artifact key: `evaluation_contract` of `<TICKER>_score_response.json` and of `<TICKER>_serpentine_search.json`
+  - Never: a hash, a fingerprint, a version; a contract copied into an artifact of the chain
+- the probe — a question naming no search state, asked once per invocation by an ended serpentine search that read no answer at its start, and answered with the evaluation contract alone
+  - Code: `leave_question(…, [])` in `turn()`; `score.main()` building no material for it
+  - Artifact key: `search_states` = `[]` of `<TICKER>_score_request.json`; `results` = `[]` of its answer
+  - Never: a health check, a ping; a probe of a search still in progress, whose every answer already carries the contract
 - current inputs — a recorded serpentine search's inputs that are still the asset's own
   - Code: `serpentine_search_block()` in `module_features/status.py`
   - Artifact key: `inputs_current`
@@ -1027,17 +1035,17 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `hyperparameter_search_result` (`best_params`, `best_cagr_validation_path`, `hpo_trial_count`); tracked
 - `<TICKER>_score_request.json`: the serpentine search's question
   - Code: `score_request_json()` in `module_ml/config.py` and `module_features/sub_module_serpentine_search/config.py`; written by a turn, `features-serpentine-turn`, read by `module_ml.score`, `ml-score`; the one file the loop of `features-serpentine-search` tests, running `ml-score` and a turn again while it exists
-  - Artifact key: `kind` (`score` or `hpo`), `round`, `search_states`
+  - Artifact key: `kind` (`score` or `hpo`), `round`, `search_states` — empty on the probe
   - Never: a key beside these three; a request the evaluator writes; a second file the loop tests
   - Holds: what one search family's pass asks to be scored: the kind of scoring, the round it runs in, and the search states — a search state of its own for `score`, a beam parent's state evaluation for `hpo`; untracked
 - `<TICKER>_score_response.json`: the serpentine search's answer
   - Code: `score_response_json()` in `module_ml/config.py` and `module_features/sub_module_serpentine_search/config.py`; written by `module_ml.score` alone
-  - Artifact key: `kind`, `round`, `results`; a `score` result the state evaluation of one search state, an `hpo` result `search_state_key`, `hpo_trial_count` and `candidate`
-  - Never: a key beside these three; a result out of the order the request named; a response written before every search state has one
+  - Artifact key: `kind`, `round`, `results`, `evaluation_contract`; a `score` result the state evaluation of one search state, an `hpo` result `search_state_key`, `hpo_trial_count` and `candidate`
+  - Never: a key beside these four; a result out of the order the request named; a response written before every search state has one
   - Holds: what the search states of one request are worth, in the order the request named them; `candidate` a state evaluation or `null`, and `null` is an answer; untracked
 - `<TICKER>_serpentine_search.json`
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_json()`
-  - Holds: `inputs`, `beam`, `champion_state_evaluation_index`, `round_count`, `search_converged`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
+  - Holds: `inputs`, `evaluation_contract`, `beam`, `champion_state_evaluation_index`, `round_count`, `search_converged`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
 - `<TICKER>_serpentine_search_profile.json`
   - Code: a hand, in the file or through the features terminal's draft; `serpentine_search_profile_json()`
   - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `search_axes` (a subset of `SERPENTINE_SEARCH_AXES`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration search) — what a hand asks the serpentine search to look at; drafted, never derived, and tracked

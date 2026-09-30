@@ -107,6 +107,12 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
     return results
 
 
+def evaluation_contract() -> dict:
+    """What every answer is scored under: the records of this module that name the experiment's identity, by name —
+    so a search can tell whether its ledger was scored under the records the next answer is."""
+    return {record["name"]: record["value"] for record in config.CONFIGURABLES if record["experiment_identity"]}
+
+
 def main() -> int:
     args = config.build_ticker_parser(
         "score the search states one request names: a state evaluation per search state, or a study and its "
@@ -118,15 +124,16 @@ def main() -> int:
         # a request says what to score and nothing about what to do with the answer: a key it does not carry
         # is an error, and the response is written only once every search state of the request has one
         kind, round_number, search_states = request["kind"], request["round"], request["search_states"]
-        asset = build_asset(ticker)
         if kind == KIND_SCORE:
-            results = score_results(asset, search_states)
+            # a question naming no search state asks for the evaluation contract alone, and builds no material
+            results = score_results(build_asset(ticker), search_states) if search_states else []
         elif kind == KIND_HYPERPARAMETER:
-            results = hpo_results(ticker, asset, search_states, round_number)
+            results = hpo_results(ticker, build_asset(ticker), search_states, round_number)
         else:
             raise SystemExit(f"{ticker}: {kind!r} is no kind of scoring this stage answers")
         dataset.write_json(config.score_response_json(ticker),
-                           {"kind": kind, "round": round_number, "results": results})
+                           {"kind": kind, "round": round_number, "results": results,
+                            "evaluation_contract": evaluation_contract()})
         print(f"{ticker} {kind} round {round_number}: {len(results)} scored", flush=True)
     return 0
 

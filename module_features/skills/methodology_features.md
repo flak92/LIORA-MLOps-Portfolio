@@ -450,9 +450,12 @@ candidate — its champion the start search state, its proposals none — is a c
 The conditions of § 2 hold inside one experiment, and a serpentine search is one: every line of its
 ledger was scored on the same data, folds, costs and seed, which is what makes two lines comparable
 and a line already in the ledger a cache hit. The search records part of what it is conditioned on
-in its `inputs` (`build_search_inputs`) and compares them by equality at every turn; what the scores
-depend on beyond them — the canonical data inside the research window, the catalogue's values, the
-records of `module_ml/config.py` — it does not see, and what it does record it reads off the chain's
-files and cannot recompute. A change therefore reaches a search through the chain or not at all, and
-a line scored before it is no state evaluation of the experiment after it: the order a hand follows is
+in its `inputs` (`build_search_inputs`) and compares them by equality at every turn. The records of
+`module_ml/config.py` that name the experiment's identity reach it in every answer, as the evaluation
+contract its first answer recorded: an answer under another contract starts the search afresh, and
+an ended search that read no answer asks for the contract once — the probe — at every invocation, so
+a ledger scored under one contract is never read as current under another. What the scores depend on
+beyond both — the canonical data inside the research window, the catalogue's values, the code — it
+does not see. A change of those therefore reaches a search through the chain or not at all, and a
+line scored before it is no state evaluation of the experiment after it: the order a hand follows is
 `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

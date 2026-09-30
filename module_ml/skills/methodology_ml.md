@@ -141,7 +141,9 @@ its ledger and its promotion are `module_features/skills/methodology_features.md
 `ml-score`, `module_ml/score.py`. A turn of the search leaves its question as
 `<TICKER>_score_request.json` — the kind of scoring, the round and the search states —
 and `ml-score` answers in `<TICKER>_score_response.json`, in the order the
-request named the search states, written only once every one of them has an answer;
+request named the search states, written only once every one of them has an answer
+and carrying the evaluation contract — this module's records that name the
+experiment's identity (`score.evaluation_contract()`);
 `make features-serpentine-search` alternates a turn and `ml-score`, a one-off
 container each, while the turn leaves a question. A search state Θ is the whole of what
 is evaluated (`score.theta()`): the set's columns by timeframe, the barrier

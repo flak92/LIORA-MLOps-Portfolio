@@ -379,16 +379,26 @@ def turn(ticker: str) -> None:
     search_progress_path = config.serpentine_search_json(ticker)
     ledger = config.serpentine_search_state_evaluations_jsonl(ticker)
     request, response_path = config.score_request_json(ticker), config.score_response_json(ticker)
-    # the recorded search when its inputs are the inputs of this one, else a fresh progress and a fresh ledger — a
-    # state evaluation of another experiment is not a cache hit for this one, and neither is an answer to its question
+    # the recorded search when its inputs are the inputs of this one and the answer on disk was scored under the
+    # evaluation contract it recorded, else a fresh progress and a fresh ledger — a state evaluation of another
+    # experiment is not a cache hit for this one, and neither is an answer to its question
     search_progress = dataset.load_json(search_progress_path) if search_progress_path.exists() else None
-    if search_progress is None or search_progress["inputs"] != inputs:
-        search_progress = {"inputs": inputs, "beam": [], "champion_state_evaluation_index": None, "round_count": 0,
-                           "search_converged": False, "path": [], "selection_hypothesis_count_by_search_axis": {},
+    response = dataset.load_json(response_path) if response_path.exists() else None
+    if (search_progress is None or search_progress["inputs"] != inputs
+            or response is not None
+            and search_progress["evaluation_contract"] not in (None, response["evaluation_contract"])):
+        search_progress = {"inputs": inputs, "evaluation_contract": None, "beam": [],
+                           "champion_state_evaluation_index": None, "round_count": 0, "search_converged": False,
+                           "path": [], "selection_hypothesis_count_by_search_axis": {},
                            "selection_hypothesis_count": 0}
         ledger.unlink(missing_ok=True)
         request.unlink(missing_ok=True)
         response_path.unlink(missing_ok=True)
+        response = None
+    # the first answer records the contract every later one is held to; an answer read at the start confirms it
+    contract_confirmed = response is not None
+    if contract_confirmed and search_progress["evaluation_contract"] is None:
+        search_progress["evaluation_contract"] = response["evaluation_contract"]
     state_evaluations = dataset.load_jsonl(ledger) if ledger.exists() else []
     index_by_search_state_key = {search_state_key(theta(row)): index
                                  for index, row in enumerate(state_evaluations, start=1)}
@@ -400,11 +410,15 @@ def turn(ticker: str) -> None:
         - collections.Counter(row["search_axis"] for row in state_evaluations
                               if row["search_axis"] and row["round"] <= search_progress["round_count"]))
     start = start_search_state(profile, columns, barriers, best, timeframes)
-    response = dataset.load_json(response_path) if response_path.exists() else None
 
     while True:
         write_search_progress(ticker, search_progress, state_evaluations)
         if search_progress["search_converged"]:
+            # an ended search stays ended only under the contract it was scored under: a turn that read no answer
+            # asks one question naming no search state — the probe — and the answer's contract decides
+            if not contract_confirmed:
+                leave_question(ticker, KIND_SCORE, search_progress["round_count"], [])
+                return
             break
         round_number = search_progress["round_count"] + 1
         # the search state the search starts from is scored like any other, and its line is the round it predates

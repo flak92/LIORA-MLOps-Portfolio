@@ -41,7 +41,7 @@ process per asset, `JOBS` of them side by side; `status` runs once over the asse
 | training | `make ml-train` | `<TICKER>_model_evaluation.json`, and the `oos_predictions` partition, `oos_predictions/ticker=<TICKER>/timeframe=<timeframe>/oos_predictions.parquet`, with `oos_predictions/schema.json` |
 | strategy | `make ml-strategy` | `<TICKER>_strategy_evaluation.json` |
 | status | `make ml-status` | `store/status/ml_status.json`, the module's `CONFIGURABLES` records beside the assets, and `<TICKER>_README.md` |
-| score — outside the chain, the serpentine search's question | `make ml-score`, one process per asset, and between two turns of `make features-serpentine-search` | `<TICKER>_score_response.json`: a state evaluation per search state, or a study and its candidate per beam parent; a study's points into `score_trials/ticker=<TICKER>/score_trials.jsonl` of the trials store, with `score_trials/schema.json` |
+| score — outside the chain, the serpentine search's question | `make ml-score`, one process per asset, and between two turns of `make features-serpentine-search` | `<TICKER>_score_response.json`: a state evaluation per search state, or a study and its candidate per beam parent, and always the evaluation contract; a study's points into `score_trials/ticker=<TICKER>/score_trials.jsonl` of the trials store, with `score_trials/schema.json` |
 
 A promotion (`make features-serpentine-search-promote ASSET=<TICKER>`, the feature module's target) copies a
 proposal's whole search state and reruns `ml-all` for the asset, whose study starts from the promoted point

@@ -12,7 +12,9 @@ method, its thresholds and their limits are `module_features/skills/methodology_
   far as the answers allow: it appends what an answer adds to the ledger
   `<TICKER>_serpentine_search_state_evaluations.jsonl`, writes the progress `<TICKER>_serpentine_search.json` at the
   top of every round, and leaves either the next question, `<TICKER>_score_request.json` — written over the one it
-  answers before the spent answer is removed — or an ended search, the question and the answer removed. It computes
+  answers before the spent answer is removed — or an ended search, the question and the answer removed. An ended
+  search that read no answer asks the probe, a question naming no search state, and every answer carries the
+  evaluation contract the search recorded from its first: another contract starts the search afresh. It computes
   no metric of a search state.
 - **The answer** is `module_ml`'s: `make ml-score` (`module_ml.score`, one one-off container of the `ml` runner per
   asset) scores the search states the question names — a state evaluation per search state, or a study and its
