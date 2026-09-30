@@ -242,8 +242,8 @@ to one concept; this list gathers the words bound to neither.
   coloured row; `mobile`, `tablet`, `phone`, `responsive`, `breakpoint`
 - **tool and process words:** `-f` or `COMPOSE_FILE` on the compose line, a second compose file, a second Makefile;
   `8900` as the page's address in a document, a command or a comment — the host port is measured
-  (`ASSET-CONTAINERS-THE-HOST-PORT-IS-MEASURED`), while `CONTAINER_PORT`, the port a server listens on in its own
-  namespace, may be written as itself; `TODO`, `FIXME`, `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow,
+  (`ASSET-CONTAINERS-THE-HOST-PORT-IS-MEASURED`), while `CONTAINER_PORT` — the port a server listens on in its own
+  namespace, and the left-hand side of a reader's own forward — may be written as itself; `TODO`, `FIXME`, `XXX`, `HACK`; test suite, linter, coverage gate, CI, workflow,
   hook, code generator, framework; `authority`, `single source of truth`; `one-shot` for a one-off; `cloud-ready`,
   `AWS-ready`, `cloud-native`; `s3://` in a path constant, an adapter for a cloud that is not there; a hand-edited
   derived artifact
