@@ -45,9 +45,10 @@ def build_asset(ticker: str) -> dict:
     cat = dataset.load_catalogue(ticker)
     timeframes = config.timeframes(cat)
     catalogue_values, decision_grids = dataset.load_feature_material(ticker, cat, timeframes)
+    barriers = dataset.load_barriers(ticker)
     xy = dataset.build_xy(cat, timeframes, catalogue_values, decision_grids,
-                          dataset.load_label_events(ticker, cat),
-                          dataset.load_feature_columns(ticker, cat), dataset.load_barriers(ticker))
+                          dataset.load_label_events(ticker, cat), dataset.load_feature_columns(ticker, cat),
+                          barriers, dataset.load_maximum_label_horizon_minutes(ticker, barriers))
     return {"xy": xy, "catalogue": cat, "timeframes": timeframes,
             "catalogue_values": catalogue_values, "decision_grids": decision_grids,
             "label_inputs": labels.load_label_inputs(ticker, cat),
@@ -107,10 +108,13 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
     return results
 
 
-def evaluation_contract() -> dict:
-    """What every answer is scored under: the records of this module that name the experiment's identity, by name —
-    so a search can tell whether its ledger was scored under the records the next answer is."""
-    return {record["name"]: record["value"] for record in config.CONFIGURABLES if record["experiment_identity"]}
+def evaluation_contract(ticker: str) -> dict:
+    """What every answer is scored under: the records of this module that name the experiment's identity, by name,
+    and the maximum label horizon every fold admits — so a search can tell whether its ledger was scored under what
+    the next answer is."""
+    return {**{record["name"]: record["value"] for record in config.CONFIGURABLES if record["experiment_identity"]},
+            "maximum_label_horizon_minutes":
+                dataset.load_maximum_label_horizon_minutes(ticker, dataset.load_barriers(ticker))}
 
 
 def main() -> int:
@@ -133,7 +137,7 @@ def main() -> int:
             raise SystemExit(f"{ticker}: {kind!r} is no kind of scoring this stage answers")
         dataset.write_json(config.score_response_json(ticker),
                            {"kind": kind, "round": round_number, "results": results,
-                            "evaluation_contract": evaluation_contract()})
+                            "evaluation_contract": evaluation_contract(ticker)})
         print(f"{ticker} {kind} round {round_number}: {len(results)} scored", flush=True)
     return 0
 
@@ -150,7 +154,8 @@ def xy_for_search_state(asset: dict, search_state: dict) -> dict:
         return {**asset["xy"], "x": x, "feature_columns": feature_columns, "barriers": barriers}
     label_events = labels.label_events(asset["label_inputs"], asset["catalogue"], barriers)
     return dataset.build_xy(asset["catalogue"], asset["timeframes"], asset["catalogue_values"],
-                            asset["decision_grids"], label_events, search_state["columns_by_timeframe"], barriers)
+                            asset["decision_grids"], label_events, search_state["columns_by_timeframe"], barriers,
+                            asset["xy"]["maximum_label_horizon_minutes"])
 
 
 def search_state_material(asset: dict, search_state: dict, inherited: dict | None) -> dict:

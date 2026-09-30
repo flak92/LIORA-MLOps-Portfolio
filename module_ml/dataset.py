@@ -135,6 +135,19 @@ def load_barriers(ticker: str) -> dict:
     })
 
 
+def load_maximum_label_horizon_minutes(ticker: str, barriers: dict) -> int:
+    """The maximum label horizon of the asset's experiment, in minutes — the longest of the label horizons it admits:
+    every token of the label_horizon grid its serpentine search profile froze, and the asset's own, which a searchable
+    grid holds anyway and which is the whole grid of an asset with no profile. Every search state of the experiment and
+    the chain are scored on the decisions it leaves room for, so a promoted search state scores in the chain what it
+    scored in the search (`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`). Each token becomes
+    minutes through `barriers_from()`, the one place a token becomes a number."""
+    path = config.serpentine_search_profile_json(ticker)
+    grid = load_json(path)["grid_by_coordinate"]["label_horizon"] if path.exists() else []
+    return max(barriers_from({**barriers, "label_horizon": token})["label_horizon_minutes"]
+               for token in [barriers["label_horizon"], *grid])
+
+
 def build_x(catalogue_values: dict[str, np.ndarray], columns_by_timeframe: dict[str, tuple[str, ...]],
             timeframes: tuple[str, ...]) -> tuple[np.ndarray, tuple[str, ...]]:
     """The model's matrix from the catalogue's values: the set's features, timeframe-major and catalogue-order
@@ -183,13 +196,15 @@ def load_xy(ticker: str) -> dict:
     cat = load_catalogue(ticker)
     timeframes = config.timeframes(cat)
     catalogue_values, decision_grids = load_feature_material(ticker, cat, timeframes)
+    barriers = load_barriers(ticker)
     return build_xy(cat, timeframes, catalogue_values, decision_grids, load_label_events(ticker, cat),
-                    load_feature_columns(ticker, cat), load_barriers(ticker))
+                    load_feature_columns(ticker, cat), barriers, load_maximum_label_horizon_minutes(ticker, barriers))
 
 
 def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str, np.ndarray],
              decision_grids: list[np.ndarray], label_events: dict[str, np.ndarray],
-             columns_by_timeframe: dict[str, tuple[str, ...]], barriers: dict) -> dict:
+             columns_by_timeframe: dict[str, tuple[str, ...]], barriers: dict,
+             maximum_label_horizon_minutes: int) -> dict:
     """X and Y on Y's decision grid from arrays already in memory — the feature grids joined to Y by
     position, every catalogue column narrowed to Y's rows and the set's columns stacked. It reads no
     file, so `score.py`, relabelling an asset in process, builds X and Y the way the stage does."""
@@ -204,9 +219,11 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
     x, feature_columns = build_x(catalogue_values, columns_by_timeframe, timeframes)
     return {
         "catalogue": cat,
-        # the geometry that produced Y, carried beside it: the label horizon every population and every
-        # eligibility mask measures against, and the multipliers the trade's own exit is scaled by
+        # the geometry that produced Y, carried beside it: the label horizon its labels and a trade's exit walk, and
+        # the multipliers the trade's own exit is scaled by
         "barriers": barriers,
+        # the experiment's, not the search state's: the one evaluation population every fold admits and scores
+        "maximum_label_horizon_minutes": maximum_label_horizon_minutes,
         "timeframes": timeframes,
         "decision_ts": y_decision_ts,
         "entry_ts": label_events["entry_ts"].astype(np.int64),

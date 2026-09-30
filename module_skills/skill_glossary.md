@@ -44,6 +44,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: out-of-sample; OOS block rows (the asset README's fold geometry)
   - Never: test block, test period; `oos_start`, `oos_end`, `holdout_start`, `start_ms` for a fold's bounds; a prediction window
   - External vocabulary: machine learning (out-of-sample)
+- the maximum label horizon — the longest label horizon an experiment admits: every token of the label_horizon grid its serpentine search profile froze and the asset's own; the horizon of the one evaluation population, not of any search state
+  - Code: `load_maximum_label_horizon_minutes()` in `module_ml/dataset.py`, `maximum_label_horizon_minutes` of X and Y
+  - Artifact key: `maximum_label_horizon_minutes` of an answer's `evaluation_contract`
+  - Ui label: the experiment's maximum label horizon (the asset README)
+  - Never: `maximum_search_horizon`, a search horizon; the search state's own label horizon, where the maximum is meant; a configurable number of its own
+- the evaluation population — the decisions every search state of one experiment and the chain are scored on: an observable entry inside the fold that leaves room for the maximum label horizon before the fold's end — the strategy's eligible entries whatever the search state, and, where the search state's label is valid, the rows the model's metrics score
+  - Code: `validation.scoring_set()`, `entry_eligible` of `strategy.signals_for_fold()`
+  - Never: a population that follows a search state's own label horizon; one fold's population chosen by where an event ended
 - the purge — dropping training events that overlap the evaluated block
   - Code: `training_set()` — `event_end_ts <= fold_start_ms`, the event's end being exclusive
   - Ui label: purged (the asset README's fold geometry)
@@ -514,7 +522,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `build_search_inputs()`, `inputs`
   - Artifact key: `inputs` with `research_window` (`start_utc`, `end_utc`), `seed`, `warmup_top_timeframe_bars`, `best_params`, `catalogue_columns_by_timeframe`, `active_columns_by_timeframe`, `active_barriers`, `profile`, `selection` (`beam_width`, `fold_measure`)
   - Never: fingerprint, hash, checksum; a selection left out of it, which would resume one experiment's state evaluations under another's rules
-- the evaluation contract — the records of `module_ml` that name the experiment's identity, by name, as every answer of `ml-score` carries them: the serpentine search records the first answer's and starts afresh when an answer carries another
+- the evaluation contract — the records of `module_ml` that name the experiment's identity, by name, and the experiment's maximum label horizon, as every answer of `ml-score` carries them: the serpentine search records the first answer's and starts afresh when an answer carries another
   - Code: `evaluation_contract()` in `module_ml/score.py`; `experiment_identity` of a CONFIGURABLES record
   - Artifact key: `evaluation_contract` of `<TICKER>_score_response.json` and of `<TICKER>_serpentine_search.json`
   - Never: a hash, a fingerprint, a version; a contract copied into an artifact of the chain
@@ -892,9 +900,12 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - `KIND_SCORE`, `KIND_HYPERPARAMETER` — identical
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py`, `module_ml/score.py`
   - Why twice: the two kinds of question: one side writes the word into a request and the other branches on it, so one word apart and every question would be answered as the other kind or refused
-- `serpentine_search_json()`, `serpentine_search_state_evaluations_jsonl()`, `serpentine_search_profile_json()` — equal by value
+- `serpentine_search_json()`, `serpentine_search_state_evaluations_jsonl()` — equal by value
   - Code: `module_features/sub_module_serpentine_search/config.py`, over its module's `artifact_dir()`; `module_features/sub_module_terminal/config.py`, over its own
-  - Why twice: the features terminal reads the progress and the ledger and writes the profile on the host's `python3`, and the sub-module's `config.py` imports the module's, which imports numpy
+  - Why twice: the features terminal reads the progress and the ledger on the host's `python3`, and the sub-module's `config.py` imports the module's, which imports numpy
+- `serpentine_search_profile_json()` — equal by value
+  - Code: `module_features/sub_module_serpentine_search/config.py`, over its module's `artifact_dir()`; `module_features/sub_module_terminal/config.py` and `module_ml/config.py`, each over its own
+  - Why twice: a hand drafts the profile through the features terminal on the host's `python3`, the serpentine search reads it, and the ML chain reads its label_horizon grid for the experiment's maximum label horizon; the terminal cannot import the sub-module's `config.py`, which imports numpy through the module's, and no module imports another
 - `SERPENTINE_SEARCH_AXES` — equal by value to the search axes of `ROUND_SCHEDULE`
   - Code: `module_features/sub_module_terminal/config.py`, written out; `ROUND_SCHEDULE` in `module_features/sub_module_serpentine_search/config.py`, its search axes in their order
   - Why twice: the search axes a round runs, in its order: the features terminal offers them to a draft, and it cannot import the sub-module's `config.py`, which imports numpy through the module's
@@ -1048,7 +1059,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Holds: `inputs`, `evaluation_contract`, `beam`, `champion_state_evaluation_index`, `round_count`, `search_converged`, `path` (each `round`, `search_axis`, `search_family`, `state_evaluation_index`, `beam`, `move`), `proposals` (each `proposal`, `state_evaluation_index`), `selection_hypothesis_count_by_search_axis`, `selection_hypothesis_count` — the search's progress: where it stands at a round boundary, naming state evaluations by index and carrying none of their columns; tracked once a search has run
 - `<TICKER>_serpentine_search_profile.json`
   - Code: a hand, in the file or through the features terminal's draft; `serpentine_search_profile_json()`
-  - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `search_axes` (a subset of `SERPENTINE_SEARCH_AXES`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration search) — what a hand asks the serpentine search to look at; drafted, never derived, and tracked
+  - Holds: `columns_admitted_by_timeframe`, `start_columns_by_timeframe` (`null` = the asset's own set), `grid_by_coordinate` (one list per coordinate, in the order it is searched), `search_axes` (a subset of `SERPENTINE_SEARCH_AXES`), `path_cagr_noise_standard_deviation` (the asset's noise sigma, `null` on the calibration search) — what a hand asks the serpentine search to look at, its label_horizon grid read by the chain too for the maximum label horizon; drafted, never derived, and tracked
 - `<TICKER>_serpentine_search_state_evaluations.jsonl`
   - Code: `module_features/sub_module_serpentine_search/serpentine_search.py` writes it; `serpentine_search_state_evaluations_jsonl()`
   - Holds: one state evaluation of the serpentine search a line, appended and never rewritten; `state_evaluation_index` = the line number, counted from one; tracked once a search has run

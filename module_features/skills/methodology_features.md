@@ -326,17 +326,21 @@ the canonical 1m series inside the frozen research window, read only there
 (`labels.label_events()`). The same folds: F1 to F5 of `FOLD_BOUNDS_UTC` (`module_ml/config.py`,
 `module_ml/validation.py`; the geometry of time is `module_ml/skills/methodology_ml.md` § 6), each
 validation fold trained on the folds before it with its training rows purged at the fold's start and
-scored on the rows of its OOS block whose label horizon fits it; F5 enters no state evaluation. The
-same cost, `EXECUTION_COST_RATE_PER_TRADE_SIDE`, on the entry and the exit of every trade
+scored on the rows of its OOS block that leave room for the experiment's maximum label horizon
+before its end; F5 enters no state evaluation. The same cost, `EXECUTION_COST_RATE_PER_TRADE_SIDE`,
+on the entry and the exit of every trade
 (`strategy.backtest()`), and the seeds — `SEED` for every fit, `SEED` plus the round for a study of
 the search. The same annualisation: a CAGR over the path's own minutes in a 365-day year
 (`validation.cagr()`), the Sharpe ratio reported beside it by the decision bars per year
 (`strategy.backtest()`). The same causality: every feature value read from the last closed bar
-of its timeframe (`indicators.asof_index`). A move of the label horizon changes the supervised
-population itself — a longer label horizon drops more of each fold's tail — so parent and child are
-scored on row sets that differ at the edges, on the same calendar and the same capital: a property
-of the coordinate. These conditions hold inside one experiment and nowhere else (§ One search, one
-experiment).
+of its timeframe (`indicators.asof_index`). The same population: a move of the label horizon moves
+the labels and the trade's exit and never the decisions scored, because every search state of the
+experiment is scored on those that leave room for the experiment's maximum label horizon — the
+longest token of the profile's label_horizon grid — before the fold's end
+(`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`); parent and child are
+admitted on one set of entries — the model's metrics narrowed only by the labels each finds
+ambiguous — on the same calendar and the same capital. These conditions hold inside one
+experiment and nowhere else (§ One search, one experiment).
 
 ### 3. Progress and stopping
 
@@ -451,11 +455,11 @@ The conditions of § 2 hold inside one experiment, and a serpentine search is on
 ledger was scored on the same data, folds, costs and seed, which is what makes two lines comparable
 and a line already in the ledger a cache hit. The search records part of what it is conditioned on
 in its `inputs` (`build_search_inputs`) and compares them by equality at every turn. The records of
-`module_ml/config.py` that name the experiment's identity reach it in every answer, as the evaluation
-contract its first answer recorded: an answer under another contract starts the search afresh, and
-an ended search that read no answer asks for the contract once — the probe — at every invocation, so
-a ledger scored under one contract is never read as current under another. What the scores depend on
-beyond both — the canonical data inside the research window, the catalogue's values, the code — it
-does not see. A change of those therefore reaches a search through the chain or not at all, and a
-line scored before it is no state evaluation of the experiment after it: the order a hand follows is
-`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.
+`module_ml/config.py` that name the experiment's identity, and the experiment's maximum label
+horizon, reach it in every answer, as the evaluation contract its first answer recorded: an answer
+under another contract starts the search afresh, and an ended search that read no answer asks for
+the contract once — the probe — at every invocation, so a ledger scored under one contract is never
+read as current under another. What the scores depend on beyond both — the canonical data inside the
+research window, the catalogue's values, the code — it does not see. A change of those therefore
+reaches a search through the chain or not at all, and a line scored before it is no state evaluation
+of the experiment after it: the order a hand follows is `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

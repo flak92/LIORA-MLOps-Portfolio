@@ -23,7 +23,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-THE-HORIZON-BECOMES-A-NUMBER-ONCE`
   - Description: A barrier geometry's label horizon travels as a duration token and becomes minutes in one place, so a move of the coordinate moves one number and every reader is handed it.
   - Scope: `module_ml/dataset.py`, `module_ml/labels.py`, `module_ml/validation.py`, `module_ml/strategy.py`, `module_ml/train.py`
-  - Expected: `HORIZON_TOKEN_MINUTES` read by `dataset.barriers_from()` alone, for the promoted file and for a search state; `labels.label_events()`, `labels.triple_barrier()`, `validation.scoring_set()` and `strategy.signals_for_fold()` handed `label_horizon_minutes`; the purge reading `event_end_ts`, which already carries it.
+  - Expected: `HORIZON_TOKEN_MINUTES` read by `dataset.barriers_from()` alone, for the promoted file, for a search state and for each token of the profile's label_horizon grid `dataset.load_maximum_label_horizon_minutes()` reads; `labels.label_events()`, `labels.triple_barrier()` and the trade's walk in `strategy.signals_for_fold()` handed `label_horizon_minutes`, `validation.scoring_set()` and the eligibility of `strategy.signals_for_fold()` `maximum_label_horizon_minutes`; the purge reading `event_end_ts`, which already carries it.
   - Exception: none
 - `METHODOLOGY-ML-THE-CANONICAL-GRID-IS-ASSERTED-WHERE-READ`
   - Description: The canonical series is gated where this layer reads it: the full minute grid of the research window is asserted before a label is walked or a trade replayed.
@@ -145,10 +145,10 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Scope: `module_ml/model.py`, `module_ml/train.py`
   - Expected: `model.fit()` handed the training population's uniqueness weight and no class weight; `class_counts` over `sample_valid` in `<TICKER>_model_evaluation.json`.
   - Exception: none
-- `METHODOLOGY-ML-A-POPULATION-IS-ADMITTED-AT-ENTRY`
-  - Description: A fold scores, and the strategy admits, only the rows whose label horizon fits inside the fold, decided at `t_0` and never by where the event actually ended; predictions cover every decision of the fold's OOS block.
-  - Scope: `module_ml/validation.py`, `module_ml/strategy.py`
-  - Expected: `entry_ts + label_horizon <= fold_end_ms` in `validation.scoring_set()` and in `strategy.signals_for_fold()`; `validation.oos_block_rows()` every decision row of the OOS block, label validity deciding none.
+- `METHODOLOGY-ML-ONE-EVALUATION-POPULATION-FOR-EVERY-SEARCH-STATE`
+  - Description: A fold scores, and the strategy admits, only the rows that leave room for the experiment's maximum label horizon before the fold's end, decided at `t_0` and never by where the event actually ended, so every search state of one experiment and the chain are scored on one population (`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`); predictions cover every decision of the fold's OOS block.
+  - Scope: `module_ml/validation.py`, `module_ml/strategy.py`, `module_ml/dataset.py`, `module_ml/score.py`
+  - Expected: `entry_ts + maximum_label_horizon_minutes <= fold_end_ms` in `validation.scoring_set()` and in `strategy.signals_for_fold()`, `maximum_label_horizon_minutes` from `dataset.load_maximum_label_horizon_minutes()` — the longest of the tokens of the profile's `grid_by_coordinate["label_horizon"]` and of the asset's own label horizon — carried in X and Y and in every answer's `evaluation_contract`; the label and a trade's exit walked with the search state's own `label_horizon_minutes`; `validation.oos_block_rows()` every decision row of the OOS block, label validity deciding none.
   - Exception: none
 - `METHODOLOGY-ML-SKILL-AND-IMPORTANCE-SELECT-NOTHING`
   - Description: The model's skill and its two importances are reported and select nothing: a study and the threshold selection rank by the validation path's growth rate, and the final holdout is attributed nothing.

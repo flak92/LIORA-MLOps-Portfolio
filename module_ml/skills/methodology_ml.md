@@ -143,7 +143,8 @@ its ledger and its promotion are `module_features/skills/methodology_features.md
 and `ml-score` answers in `<TICKER>_score_response.json`, in the order the
 request named the search states, written only once every one of them has an answer
 and carrying the evaluation contract — this module's records that name the
-experiment's identity (`score.evaluation_contract()`);
+experiment's identity and the experiment's maximum label horizon
+(`score.evaluation_contract()`);
 `make features-serpentine-search` alternates a turn and `ml-score`, a one-off
 container each, while the turn leaves a question. A search state Θ is the whole of what
 is evaluated (`score.theta()`): the set's columns by timeframe, the barrier
@@ -237,20 +238,24 @@ lower_hit = (volume > 0) & (low  <= lower_barrier)
 `HORIZON_TOKEN_MINUTES` maps the tokens of the timeframe grammar to minutes, and
 `dataset.barriers_from()` resolves a geometry's token there and nowhere else —
 the promoted file's through `dataset.load_barriers()`, a search state's in
-`score.py` — so a search that moves the coordinate moves one number, `label_horizon_minutes`. Four places
-compute with that number, and each is handed it:
+`score.py` — so a search that moves the coordinate moves one number, `label_horizon_minutes`. The same
+resolution turns every token of the label_horizon grid the asset's serpentine search profile froze into
+minutes, and the longest of them and of the asset's own is the experiment's **maximum label horizon**,
+`maximum_label_horizon_minutes` (`dataset.load_maximum_label_horizon_minutes()`), carried beside X and Y.
+Four places compute with one of the two, and each is handed the one it needs:
 
-| reader | what it decides with the label horizon |
-|---|---|
-| `labels.label_events()` | which decisions are labelled at all — the grid keeps only those whose whole label horizon fits inside the research window |
-| `labels.triple_barrier()` | how far down the 1m path a walk goes, and where a vertical exit is marked |
-| `validation.scoring_set()` | which supervised rows a fold scores — those whose label horizon fits its OOS block, decided at t₀ |
-| `strategy.signals_for_fold()` | which entries are eligible in a fold — the same test, on the trade's side |
+| reader | the horizon | what it decides with it |
+|---|---|---|
+| `labels.label_events()` | the search state's | which decisions are labelled at all — the grid keeps only those whose whole label horizon fits inside the research window |
+| `labels.triple_barrier()` | the search state's | how far down the 1m path a walk goes — the label's, and the trade's in `strategy.signals_for_fold()` — and where a vertical exit is marked |
+| `validation.scoring_set()` | the experiment's maximum | which supervised rows a fold scores — those that leave room for it before the fold's end, decided at t₀ |
+| `strategy.signals_for_fold()` | the experiment's maximum | which entries are eligible in a fold — the same test, on the trade's side |
 
 `validation.training_set()` is **not** among them: the purge is
 `event_end_ts <= fold_start_ms`, and `event_end_ts` is a column of Y that already
 carries the label horizon the labels were written with. A fifth reader is prose —
-`status.py` states the label horizon and the tail it costs in `<TICKER>_README.md`.
+`status.py` states the label horizon, the tail it costs and the maximum label horizon in
+`<TICKER>_README.md`.
 
 If the vertical-barrier minute contains no trade, its canonical close is a
 **last-observed-price mark** used by the research simulation, not an observed
@@ -352,10 +357,25 @@ without removing leakage. A classical embargo after the evaluated block
 after the OOS block.
 
 **Scoring** mirrors the purge at the other boundary: a fold scores only the
-supervised rows whose label horizon fits inside its OOS block
-(`entry_ts + label_horizon <= fold_end_ms`), decided at t₀ — the real
-`event_end_ts` is path-dependent, so admitting by it would let the future
-choose the scored population.
+supervised rows that leave room for the experiment's maximum label horizon before
+its end (`entry_ts + maximum_label_horizon <= fold_end_ms`), decided at t₀ — the
+real `event_end_ts` is path-dependent, so admitting by it would let the future
+choose the scored population. The horizon is the experiment's and not the search
+state's (`METHODOLOGY-ML-ONE-EVALUATION-POPULATION-FOR-EVERY-SEARCH-STATE`): rows
+admitted by a search state's own label horizon would score it on another
+population than its parent, and a move of the label horizon would be judged in
+part on which decisions it scores
+(`RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`). The
+maximum is the longest label horizon the experiment's frozen grid admits — every
+token of the profile's label_horizon grid and the asset's own, which is the whole
+grid of an asset with no profile — so the chain and every search state of the
+experiment score one population, and a promoted search state scores in the chain
+what it scored in the search. The strategy's eligible entries are that population
+itself, whatever the search state; the model's metrics score its supervised subset,
+which each search state's own ambiguous labels narrow (§ 5) and on which nothing is
+selected. Its price is each fold's tail that the longest
+horizon leaves no room in: a decision there is labelled and predicted, and no
+search state scores it.
 
 **F5 is the historical final holdout fold.** The contract is a sentence, not a
 guard, and it is about selection rather than counting: *F5 never participates
@@ -529,9 +549,9 @@ prior_logloss · model_logloss · relative_logloss_skill = 1 − model/prior
 how often each class occurs? — and is reported beside every search state and selects nothing: the
 hyper-parameter search maximises the validation path's CAGR (§ 7), and the serpentine search
 gates a move on each fold's CAGR and ranks it by the path's CAGR (§ 4). Metrics score the
-supervised subset of a fold
-whose label horizon fits inside its OOS block — the same t₀-decidable rule that governs
-strategy eligibility (§ 9); predictions cover the whole OOS block.
+supervised subset of a fold that leaves room for the experiment's maximum label horizon before
+the fold's end — the same t₀-decidable rule that governs strategy eligibility (§ 9); predictions
+cover the whole OOS block.
 
 **Two importances per validation fold**, each of that fold's own booster, none
 of the final holdout's: `gain_importance`, XGBoost's total gain per column;
@@ -560,9 +580,10 @@ range — read by its feature id on every timeframe from the catalogue, in the
 feature set or not; the top timeframe is the coarsest of the hierarchy the
 contract lists. The **model decides the side; the top timeframe gates it**. One
 unit position at a time, new signals ignored while in a position, and a signal is
-eligible only where its whole label horizon fits inside the fold
-(`entry_ts + label_horizon <= fold_end_ms`) — decided at t₀, never by where the
-trade actually ended.
+eligible only where it leaves room for the experiment's maximum label horizon before
+the fold's end (`entry_ts + maximum_label_horizon <= fold_end_ms`) — decided at t₀,
+never by where the trade actually ended, and one test for every search state of the
+experiment (§ 6); the trade then walks its own label horizon.
 
 **PnL — one formula.** The simulation applies USDT-perpetual PnL algebra to the
 canonical price path: a position held at a fixed
@@ -696,6 +717,7 @@ stages, and most edits do not touch them:
 | the research window — `RESEARCH_START_UTC` and `RESEARCH_END_UTC` of `module_features/config.py` and the first and last of `FOLD_BOUNDS_UTC` here, which must agree | everything, from `features-bars` |
 | the validation fold ids | `ml-hpo ml-train ml-strategy ml-status` |
 | a strategy rule | `ml-hpo ml-train ml-strategy ml-status` — the study's objective is the strategy's path CAGR |
+| a serpentine search profile whose label_horizon grid moves the maximum label horizon | `ml-hpo ml-train ml-strategy ml-status` — the population every fold scores and admits |
 | a serpentine search (`make features-serpentine-search`) | `features-status` — its proposals reach the page |
 | a promotion (`make features-serpentine-search-promote`) | `ml-all` for the asset — run by the promotion itself — then `features-status`, whose search block then reads the recorded search as no longer current |
 | the monitoring payload | `ml-status` |

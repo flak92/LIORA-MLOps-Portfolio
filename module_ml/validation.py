@@ -47,12 +47,13 @@ def training_set(entry_ts: np.ndarray, event_end_ts: np.ndarray,
 
 def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
                 sample_valid: np.ndarray, fold_start_ms: int, fold_end_ms: int,
-                label_horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
-    """Supervised rows of the OOS block whose label horizon fits it — decidable at t_0 — and their weights, with
-    concurrency counted among the scored events alone. The label horizon is the search state's, so a search state
-    that moves it scores the population that label horizon admits."""
+                maximum_label_horizon_minutes: int) -> tuple[np.ndarray, np.ndarray]:
+    """Supervised rows of the OOS block that leave room for the maximum label horizon before its end — decidable at
+    t_0 — and their weights, with concurrency counted among the scored events alone. The horizon is the
+    experiment's, not the search state's, so two search states of one experiment score one population whatever label
+    horizon each holds."""
     keep = (sample_valid & (decision_ts >= fold_start_ms)
-            & (entry_ts + label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
+            & (entry_ts + maximum_label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
     idx = np.flatnonzero(keep)
     return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
 

@@ -377,6 +377,13 @@ def feature_set_json(ticker):
 
 
 # twice by extraction
+def serpentine_search_profile_json(ticker):
+    """What a hand asks the serpentine search to look at — here, the label_horizon grid its experiment froze, whose
+    longest token is the maximum label horizon the chain and the search are both scored under."""
+    return artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
+
+
+# twice by extraction
 def barriers_json(ticker):
     """The asset's promoted barrier geometry — absent, the frozen constants above are the asset's."""
     return artifact_dir(ticker) / f"{ticker}_barriers.json"

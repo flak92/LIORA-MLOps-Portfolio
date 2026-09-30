@@ -49,7 +49,7 @@ def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
     scoring_rows, _ = validation.scoring_set(
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"], xy["sample_valid"], fold_start_ms, fold_end_ms,
-        xy["barriers"]["label_horizon_minutes"])
+        xy["maximum_label_horizon_minutes"])
     return {
         "gain_importance": model.gain_importance(booster, xy["feature_columns"]),
         "mean_abs_shap_importance": model.mean_abs_shap_importance(booster, xy["x"][scoring_rows], xy["feature_columns"]),
@@ -65,7 +65,7 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
     oos_block_rows = validation.oos_block_rows(xy["decision_ts"], fold_start_ms, fold_end_ms)
     scoring_rows, scoring_weight = validation.scoring_set(
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
-        xy["sample_valid"], fold_start_ms, fold_end_ms, xy["barriers"]["label_horizon_minutes"])
+        xy["sample_valid"], fold_start_ms, fold_end_ms, xy["maximum_label_horizon_minutes"])
     prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
     booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
     oos_block_proba = model.predict_proba(booster, xy["x"][oos_block_rows], xy["feature_columns"])

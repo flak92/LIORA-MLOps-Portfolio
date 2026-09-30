@@ -88,3 +88,11 @@ Every research name says what kind of object it denotes — a point in time, an 
   - Scope: `**/*`
   - Expected: A rule of meaning here, a row of `module_skills/skill_glossary.md`, a value in `methodology_features.md` or `methodology_ml.md` citing the rule, a name in code; no second definition in a README, a docstring or a comment.
   - Exception: none
+
+## Methodology
+
+- `RESEARCH-SEMANTICS-COMPARABLE-STATES-SHARE-ONE-EVALUATION-POPULATION`
+  - Description: Search states compete only on one evaluation population: where a label horizon is a coordinate of an experiment, every search state is scored on the decisions whose entry leaves room for the experiment's maximum label horizon before the fold's end; a population that follows each search state's own horizon makes that horizon part of the experiment, never a coordinate of it.
+  - Scope: `module_ml/*.py`, `module_features/sub_module_serpentine_search/**/*.py`
+  - Expected: `entry_ts + maximum_label_horizon <= fold_end` for every search state of the experiment and for the chain that certifies one, `maximum_label_horizon` the longest label horizon the experiment's frozen grid admits; the label and the trade's exit still walked with the search state's own `label_horizon`.
+  - Exception: none

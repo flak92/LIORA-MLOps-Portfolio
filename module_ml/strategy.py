@@ -85,9 +85,9 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     """Signal arrays for one fold on the label-event grid, and the trade's own event re-walked on the 1m
     path for every entry the gate admits.
 
-    The walked set — the gate open, the entry minute traded, the label horizon inside the fold — depends on
-    neither the threshold nor what the position was doing, so one walk serves the whole threshold grid:
-    every trade any threshold realises is in it, and the threshold enters in backtest() alone."""
+    The walked set — the gate open, the entry minute traded, room for the maximum label horizon before the fold's
+    end — depends on neither the threshold nor what the position was doing, so one walk serves the whole threshold
+    grid: every trade any threshold realises is in it, and the threshold enters in backtest() alone."""
     xy = simulation_inputs["xy"]
     oos_predictions = simulation_inputs["oos_predictions"]
     in_fold = oos_predictions["oos_fold_id"] == fold_id
@@ -110,10 +110,12 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     label_horizon_minutes = barriers["label_horizon_minutes"]
     entry_ts, entry_price = xy["entry_ts"][pos], xy["entry_price"][pos]
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
-    # eligibility must be decidable at t_0, so the label horizon is tested, not the event that follows
+    # eligibility must be decidable at t_0 and the same for every search state of the experiment, so the maximum label
+    # horizon is tested — neither the search state's own, nor the event that follows; the trade then walks its own
     entry_eligible = (gate_open & xy["entry_observable"][pos]
                       & (entry_ts >= fold_start_ms)
-                      & (entry_ts + label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
+                      & (entry_ts + xy["maximum_label_horizon_minutes"] * config.MILLISECONDS_PER_MINUTE
+                         <= fold_end_ms))
     eligible_rows = np.flatnonzero(entry_eligible)
 
     upper_barrier, lower_barrier = trade_barriers(
