@@ -1,8 +1,8 @@
 # Methodology — the research layer on the 1-minute series
 
 Per asset, independently, and all of it on one market object — the canonical
-research series: the feature catalogue of `module_features` as X — the fifteen
-columns of the default set until a promotion — a triple-barrier label resolved
+research series: the asset's feature set of the `module_features` catalogue as X —
+the default set until a promotion — a triple-barrier label resolved
 on the canonical 1-minute path, a purged walk-forward protocol
 with Optuna hyper-parameter search, a historical final out-of-sample fold, and a
 top-down gated strategy evaluation. The experiment is described by its research
@@ -10,24 +10,28 @@ window and seed. What an operator may set is a record of `CONFIGURABLES` in
 `module_ml/config.py`; this document names a record and never restates its
 value, which stands in that file and in `ml_status.json`'s `configurables`. The
 guards in the code are the mathematics' own — the ones `AGENTS.md` § Values
-names; *The repository shows the destination, not the road*.
+names.
 
 ## 1. The nine rules the code implements
 
-1. `X` is a function of **closed** historical OHLCV only.
+1. `X` is a function of **closed** historical OHLCV only
+   (`METHODOLOGY-ML-FEATURES-READ-CLOSED-BARS-ONLY`).
 2. The decision is taken at a bar close of the decision timeframe; **execution
-   happens one minute later**.
-3. `Y` comes from the **canonical research series** only — the same object as `X`.
-4. `Y` is a first-touch triple barrier on the 1m path; **ambiguity is not a class**.
+   happens one minute later** (`METHODOLOGY-ML-ENTRY-IS-ONE-MINUTE-AFTER-THE-DECISION`).
+3. `Y` comes from the **canonical research series** only — the same object as `X`
+   (`METHODOLOGY-ML-ONE-CANONICAL-SERIES`).
+4. `Y` is a first-touch triple barrier on the 1m path; **ambiguity is not a class**
+   (`METHODOLOGY-ML-ONE-WALK-FINDS-EVERY-BARRIER-TOUCH`, `METHODOLOGY-ML-AMBIGUITY-IS-NOT-A-CLASS`).
 5. Overlapping labels carry **average-uniqueness** weights, measured on the
-   population that uses them.
-6. A training event may **not cross the start of its OOS block**.
+   population that uses them (`METHODOLOGY-ML-WEIGHT-BELONGS-TO-A-POPULATION`).
+6. A training event may **not cross the start of its OOS block**
+   (`METHODOLOGY-ML-PURGE-IS-THE-OVERLAP-TEST`).
 7. HPO, the entry edge threshold `τ` and, once a promotion writes them, the
-   feature set and the barrier geometry see **F2–F4 only**.
+   feature set and the barrier geometry see **F2–F4 only**, and
 8. **F5 changes no decision** — not a feature, not a hyper-parameter, not the
-   entry edge threshold, not a rule.
+   entry edge threshold, not a rule (`METHODOLOGY-ML-THE-FINAL-FOLD-IS-REPORT-ONLY`).
 9. PnL is **linear fixed-quantity research PnL on canonical prices**, with an
-   explicit cost and without funding.
+   explicit cost and without funding (`METHODOLOGY-ML-PNL-IS-LINEAR-AND-COSTED`).
 
 Everything below is these nine rules written out.
 
@@ -120,8 +124,8 @@ feature by the id `feature_id()` composes from a definition name and a timeframe
 the contract lists — no alias and no naming of its own.
 
 What the model sees is the asset's **feature set**: the definitions marked as
-the default set on every timeframe they are offered on — the fifteen columns of
-the frozen experiment, in the order it stacks them — until a promotion writes
+the default set on every timeframe they are offered on, in the order the frozen
+experiment stacks them, until a promotion writes
 `<TICKER>_feature_set.json` (`dataset.load_feature_columns()`); `build_x()`
 stacks the set timeframe-major and catalogue-order within, because the model
 samples its columns by position. The set is chosen per asset, on F2–F4 only, by
@@ -163,8 +167,7 @@ its own X and Y, its gate reading that parent's folds; the study's best
 admissible point that beats the parent's path, scored as a state, is the
 candidate it offers, or `null` — which is an answer (`score.hpo_results()`).
 Every point of every study goes to the asset's partition of `score_trials` once
-the last study has ended, and the response after them. No booster is kept:
-nothing here performs inference, so the numbers are the product.
+the last study has ended, and the response after them.
 
 **One row, one schema.** A trial's row carries the whole of Θ and every quantity
 measured on it — each fold's skill, Sharpe ratio, CAGR, drawdown, Calmar ratio,
@@ -363,21 +366,20 @@ serpentine search selects on: the CAGR of the validation path at the threshold �
 9's rule would pick, maximised (`hpo.sweep_selection()`).
 
 **The first `HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT` trials are the sampler's
-random start.** TPE fits its two densities only once it holds `n_startup_trials`
-trials — completed and pruned alike, in this Optuna — and draws at random until
-then, so a study whose trial count is at or below the startup count is a random
+random start** — the promoted point among them where the chain's study starts from
+one. TPE fits its two densities only once it holds `n_startup_trials` trials —
+completed and pruned alike, in this Optuna — and draws at random until then, so a study whose trial count is at or below the startup count is a random
 search under the sampler's name and reports as a TPE one. The startup count is a
 record of `CONFIGURABLES` rather than a default inherited from the library: a
 number that decides how the experiment searches is the experiment's, and a
 default that moves with a version bump is not a frozen method. The modelled
 trials are the ones past the startup count, by construction and not by luck.
 
-**The two counts are activation values, not calibration.** They are the smallest
-counts at which every part of the method runs on every study: the sampler models,
-the gate is evaluated fold by fold and its counts are written, and a study's
-offer of its best admissible point has more than one point to choose among. They
-say nothing about how many trials the research needs, and they are held until the
-method is calibrated; a count that would be is a new experiment.
+**The two counts are the smallest that run the method whole** on every study:
+the sampler models, the gate is evaluated fold by fold and its counts are written,
+and a study's offer of its best admissible point has more than one point to choose
+among. They say nothing about how many trials the research needs, and another count
+is another experiment.
 
 **The sampler's remaining internals are Optuna's, and are pinned as such.** The
 quantile that splits good from bad, the number of candidates the acquisition
@@ -646,85 +648,25 @@ fell back to the grid floor, which is itself the loudest thing the three can say
 
 ## 10. Artifacts and modules
 
-Per asset, each name registered in `module_skills/skill_glossary.md` § Artifacts, and
-the research artifacts listed with their sizes in the Files table of
-`<TICKER>_README.md`: in the artifacts store, the asset's partitions of `labels` and `oos_predictions` on the decision
-timeframe — `store/assets_artifacts/<family>/ticker=<TICKER>/timeframe=<timeframe>/<family>.parquet`,
-each family's `schema.json` at its root — and in the asset's folder
-`store/assets_artifacts/ticker=<TICKER>/` the three result files
-`<TICKER>_parameters.json`, `<TICKER>_model_evaluation.json` and
-`<TICKER>_strategy_evaluation.json`, the README, and `<TICKER>_score_response.json`,
-the answer to the search's question until the next turn spends it; in the trials
-store, the asset's partitions of
-`hpo_trials` and `score_trials`. Beside them the layer reads the feature layer's
-contract `<TICKER>_catalogue.json` and the catalogue partitions it names, the
-`bars` partitions, the asset's partition of `ohlcv_1m_canonical` — the market
-object every stage reads — and, once a hand has promoted them,
-`<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and
-`<TICKER>_hyperparameter_point.json`. The data files are
-regenerable; `<TICKER>_parameters.json` and `<TICKER>_README.md` are tracked,
-beside the serpentine search's profile, state and ledger and the promoted state
-that `module_features` writes, because they are what makes the rest readable —
-and reproducible: the parameters are tuned for the state they were searched
-under, so they travel together — and none carries a timestamp, so an unchanged
-experiment reproduces them byte for byte. Every JSON is canonical (sorted keys,
-numpy scalars converted) and carries **only what it computed** — no provenance
-envelope, no hashes. The settings a run used are `module_ml/config.py` at the
-commit that ran it — the commit is the record, `ml_status.json` publishes its
-`CONFIGURABLES` records beside the assets, and the parameters file carries only
-what the search chose. The experiment is identified once, globally, in
-`store/status/ml_status.json`: research window and seed.
-Library versions are pinned once, in `requirements.txt`. Runs are reproducible
-by construction — fixed seed, `nthread = 1`, pinned versions — and that claim
-is not backed by a hash gate, because a gate proves the metadata, not the
-mathematics. No booster is persisted: nothing in this repo performs inference,
-so the numbers are the product.
-
-Module layout — four runtime modules, in the order the data moves, and
-`module_skills`, the canon, whose one sub-module measures the tree and joins no
-dataflow of the chain: `module_data` (sources → normalised raw 1m → the venue
-families and the canonical family, one partition per asset) · `module_features`
-(the bars of the register, the feature catalogue and the serpentine search —
-`module_features/skills/`) · `module_ml` (this document) · `module_monitoring`
-(presentation of what each module measured about itself and of the dates of the
-crawler's reports, and the server). Inside `module_ml`: `module_ml/config.py`
-(the frozen constants of the research layer and its `CONFIGURABLES` records — the
-window and the folds its own, the register and the grid read per asset from the
-feature layer's contract, `<TICKER>_catalogue.json`) · `module_ml/validation.py`,
-`module_ml/model.py` (pure numpy / xgboost kernels) · `module_ml/dataset.py`
-(artifact IO: X/Y loading, canonical JSON, its own parquet writer — twice by
-extraction, identical in `module_features/dataset.py`) · `module_ml/labels.py`,
-`module_ml/hpo.py`, `module_ml/train.py`, `module_ml/strategy.py`,
-`module_ml/status.py` (the stages of the chain,
-`python -m module_ml.<stage> --tickers <TICKERS>`) · `module_ml/score.py` (the
-stage outside the chain that answers the serpentine search's requests,
-`python -m module_ml.score --tickers <TICKERS>`).
-Constant convention: **experiment-semantic constants live in
-`module_features/config.py` and `module_ml/config.py` — what an operator may set
-as a record of `CONFIGURABLES`, a constant of the method below the block;
-implementation constants** (chunk sizes, the equity-curve stride — daily in the
-artifact, weekly on the page: seven daily points) **may stay local to their
-module**. The canonical series is gated where it is read:
-`labels.load_research_1m` asserts the full 1m grid inside the research window,
-per asset; `data-ingest` writes one asset's partitions at a time.
+Per asset, the research artifacts are named in `module_skills/skill_glossary.md` § Artifacts and listed with their
+sizes in the Files table of `<TICKER>_README.md`. The data files are regenerable; `<TICKER>_parameters.json` and
+`<TICKER>_README.md` are tracked beside the serpentine search's profile, state and ledger and the promoted state,
+because the parameters are tuned for the state they were searched under, so they travel together. Every JSON is
+canonical and carries only what it computed, no timestamp among it, so an unchanged experiment reproduces it byte
+for byte (`METHODOLOGY-ML-AN-ARTIFACT-CARRIES-ONLY-WHAT-IT-COMPUTED`); the settings a run used are
+`module_ml/config.py` at the commit that ran it (`METHODOLOGY-ML-AN-EXPERIMENT-CONSTANT-LIVES-IN-CONFIG`), and
+`ml_status.json` publishes its `CONFIGURABLES` records beside the assets. No booster is persisted: nothing in this
+repository performs inference, so the numbers are the product (`METHODOLOGY-ML-NO-BOOSTER-IS-PERSISTED`). The
+module's files and what each holds are `module_ml/README_module_ml.md` § Design rationale.
 
 ## 11. Running the layer: one asset per process
 
 Every stage takes `--tickers`, so the chain parallelises the only way an
-experiment with frozen thread caps may — **externally**, one asset per
-process. The fan-out's width is `JOBS` in the root Makefile, how many assets one
-stage runs at once, one one-off container each: 1 by default, set by hand on the
-make line with `JOBS=n` — `make ml-hpo JOBS=2`. No width is measured and none is
-written for a machine: the hand that widens a run answers for the memory of `JOBS`
-containers side by side. `features-bars`, `features-catalogue`, `ml-labels`,
-`ml-hpo`, `ml-train`, `ml-strategy`, `features-serpentine-turn`, `ml-score` and the
-loop of `features-serpentine-search` fan out by it; `data-ingest` stays at one asset
-at a time, and the three status stages run once over the basket.
-
-Thread caps stay at one — `nthread = 1`, `OMP_NUM_THREADS = 1` — for the
-reason `DETERMINISM-THREAD-CAPS-FROZEN-AT-ONE` (`module_skills/skill_determinism.md`) states. The hyper-parameter search is
-CPU-bound and one asset's study is sequential by construction, so the wall-clock
-floor of `ml-hpo` is the slowest single asset.
+experiment with frozen thread caps may — **externally**, one asset per process,
+`JOBS` of them side by side (`DETERMINISM-WIDTH-IS-ONE-UNLESS-A-HAND-WIDENS-A-RUN`,
+`ASSET-CONTAINERS-FANOUT-PER-ASSET-BASKET-ONCE`), each capped at one thread
+(`DETERMINISM-THREAD-CAPS-FROZEN-AT-ONE`). One asset's study is sequential by
+construction, so the wall-clock floor of `ml-hpo` is the slowest single asset.
 
 Rerun only what a change actually invalidates — the searches are the expensive
 stages, and most edits do not touch them:
@@ -749,9 +691,7 @@ through the chain, the asset's search is reset and run again, in the order
 another experiment is read as a cache hit.
 
 This table is the layer's rebuild condition, held in a document a reader applies
-rather than in a stage: what decides that an asset's artifacts are stale stays
-separate from the stages that rebuild them — the rebuild condition
-`module_skills/skill_pre_aws_solution.md` keeps separable.
+rather than in a stage (`PRE-AWS-SOLUTION-THE-REBUILD-CONDITION-STAYS-SEPARABLE`).
 
 ## 12. What this is, and what it is not
 
@@ -775,39 +715,9 @@ chosen by the serpentine search (§ 4) rather than learnt, no CUSUM event sampli
 no meta-labelling, no fractional differentiation, fixed costs, unit position
 sizing. The class distribution is dominated by `y = 0` — at the geometry of
 `START_BY_COORDINATE_DEFAULT` most events reach the vertical barrier before either
-horizontal one — reported per asset, not resampled.
-
-**A move has to clear the noise of its own pass, on every fold at once, and in the
-recorded BTC search none does.** Under the calibrated gate of § 4 — a profile that
-carries σ — BTC's start state stands at fold Calmar ratios of **−0.67, −0.73 and
-−0.11**, and the search accepted **no** move: 31 scored states in one round, its
-one study offering no candidate, no child of the five families clearing the gate,
-and so no proposal
-(`store/assets_artifacts/ticker=BTC/BTC_serpentine_search.json` and its ledger).
-That is a correct result of the calculator, not a failure of it. The σ BTC's
-profile carries was measured off the ledgers of earlier calibration runs, which
-this tree does not carry. A search that clears the margin can still
-stop short: every move is one coordinate, so an improvement that needs several
-coordinates changed at once is out of its reach. That is a property of this
-geometry, written down and not solved here. Whether the answer is a different
-fold measure, a tolerance, or a champion that is not the beam leader is a
-question for the research phase — deciding it now would be choosing a selection
-rule by the result it gives on one asset, which is the thing this layer exists to
-avoid.
-
-**The phase this layer is in.** What is being built here is the correctness of
-the machine, not a result from it: every stage has to answer like a calculator —
-the same input to the same bytes, no number arrived at by a path nobody can name,
-no constant inherited from a library default. Numbers this layer produces now are
-evidence that the machine is right, not findings about the market, and nothing in
-them is to be read as one. The palette of features and the compute the search is
-given are the next thing to grow, on a larger machine; the artifacts worth keeping
-are made there, once the machine is right. That is why § 7's counts are
-activation values and say so: they are large enough that the sampler models and
-every gate is evaluated on every study — the method runs whole, which is what
-this phase has to show — and they are not a choice of how much searching the
-research needs. That choice is calibration, made on the larger machine as a new
-experiment, where a run's length is not the constraint either.
+horizontal one — reported per asset, not resampled. Every move of the serpentine
+search is one coordinate, so an improvement that needs several coordinates changed at
+once is out of its reach: a property of the search's geometry, not solved here.
 
 ## 13. References (DOIs resolve)
 

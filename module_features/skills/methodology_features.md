@@ -10,8 +10,8 @@ equation, with how a feature id is read off its computation and why the rules ar
 The serpentine search that chooses an asset's feature set and barrier geometry from them is this
 module's own: its rules are `module_features/sub_module_serpentine_search/skill_serpentine_search.md`,
 its mathematics § The serpentine search. This page is a reference for a human and holds no rule of
-its own. *The repository shows the destination, not the road*: the two guards are the finiteness
-assert of `catalogue.build_catalogue` and the causality assert of `indicators.asof_index`.
+its own. The two guards this layer holds are the finiteness assert of `catalogue.build_catalogue`
+and the causality assert of `indicators.asof_index`.
 
 ## The register
 
@@ -112,8 +112,7 @@ normaliser is written on (`FEATURE-TAXONOMY-A-NORMALISER-NEEDS-A-BOUNDED-TERM`).
 
 ## The catalogue
 
-The twenty-one feature definitions as of this commit. A definition is one record of
-`FEATURE_CATALOGUE` (`config.py`): its terms, the operators that compose them, an optional
+A definition is one record of `FEATURE_CATALOGUE` (`config.py`): its terms, the operators that compose them, an optional
 normaliser, its range, the timeframes it is offered on, its tier, the popular names it answers to
 (`historical_aliases`, provenance, never a key or a column), and whether it belongs to the default
 set. Its name, its effective history and its warm-up are read off that record —
@@ -170,7 +169,7 @@ times its parameter and a recursion of a recursion after eight; a window over ch
 before it, its record's `warmup_offset_bars`. The multiples are a convention of
 the register: the one guard, the finiteness assert, checks that a value exists, not how much weight
 a recursion's seed still carries. The experiment's `WARMUP_TOP_TIMEFRAME_BARS` is the widest of
-them all, read off the catalogue and counted in bars of the top timeframe — today the 220 bars of
+them all, read off the catalogue and counted in bars of the top timeframe — at the frozen catalogue
 `exponential_smoothing55`'s four spans — so a definition with a longer memory raises it by itself
 and no second number is written to follow it. Decision rows before `WARMUP_END_MS`, the research
 start plus that many bars of the top timeframe, are excluded everywhere
@@ -270,10 +269,8 @@ nothing.
   `logarithmic_volume_rolling_standard_score50_1h`: the series is neither close nor fixed by the
   indicator, so it prefixes the term.
 
-A definition across timeframes is reserved and not written: it would carry a timeframe on every term
-and no suffix, and be composed on the decision grid after each term is aligned. Until one exists, a
-relation across timeframes stays a rule of the strategy (`module_ml/skills/methodology_ml.md` § 9;
-`FEATURE-TAXONOMY-A-DEFINITION-STAYS-ON-ONE-TIMEFRAME`).
+A relation across timeframes is a rule of the strategy, never a definition
+(`module_ml/skills/methodology_ml.md` § 9; `FEATURE-TAXONOMY-A-DEFINITION-STAYS-ON-ONE-TIMEFRAME`).
 
 ## The serpentine search
 

@@ -1,14 +1,13 @@
 # Methodology — from raw 1m venue candles to the canonical series
 
 How each venue's one-minute observations are fetched and made durable (§ 1–§ 4),
-and how the two venues' candles become one canonical series (§ 5–§ 14): the raw
+and how the two venues' candles become one canonical series (§ 5–§ 13): the raw
 tree, validity, the decision table, forward fill, provenance, storage, what the
 status stage measures and the limitations of each step. This is reference for a
 human; the rules it explains are the rows of
 [skill_candle_canonicalisation.md](skill_candle_canonicalisation.md), rendered from
 the sheet and cited here by their `rule_id`. The guards in the code are the
-mathematics' own — the seven named in `AGENTS.md`; *The repository shows the
-destination, not the road*.
+mathematics' own — the seven named in `AGENTS.md`.
 
 ## 1. Sources & endpoints
 
@@ -102,18 +101,9 @@ windows, returned newest-first and sorted — is resolved inside the downloader
 that speaks the venue, and `ingest.py` reads every tree through the one
 `parse_zip()` (`CANDLE-CANONICALISATION-ONE-CANDLE-SCHEMA-AFTER-THE-DOWNLOADERS`).
 
-Two units, deliberately distinct:
-
-| unit | what it is | value now |
-|---|---|---|
-| ingestion unit | the quantum of download work, written once and never restated | one UTC day = one ZIP |
-| archive unit | the quantum a future compaction may choose | the same, until a compaction is written |
-
-A compaction, if one is ever written, folds whole periods of one venue's leaf —
-a Binance archive and a Bybit archive, never one archive of an asset over both
-venues (`CANDLE-CANONICALISATION-RAW-VENUES-STAY-APART`). Raw data is the proof
-of what a specific venue observed; a raw file combining two venues would destroy
-the one thing it is kept for.
+Each venue's leaf stays its own, one ZIP per UTC day: raw data is the proof of
+what one venue observed, and a raw file combining two venues would destroy the one
+thing it is kept for (`CANDLE-CANONICALISATION-RAW-VENUES-STAY-APART`).
 
 ## 6. Candle validity
 
@@ -388,37 +378,7 @@ limitations of acquisition are § 4.
   candle on either venue carry NULL prices with `source = ffill` (§ 8); for the
   current basket there are none.
 
-## 13. Reference observation
-
-**Example only — an observed run, not an invariant.** The snapshot tracked in
-`store/status/data_status.json`: BTC over the window to its last observed
-minute, 2026-09-25 23:59 UTC. Nothing in the system may be coded against these
-numbers.
-
-```
-Binance     coverage 100 %      zero-volume candles 181
-Bybit       coverage 100 %      zero-volume candles  92
-
-Canonical   binance source  99.994 %
-            bybit source     0.006 %   (181 minutes)
-            ffill                 0    longest run 0
-            zero-volume           0    longest flat run 0
-            source switches      18
-            repeated candles      1
-            invalid rows          0 on either venue
-```
-
-The 181 Bybit minutes are exactly Binance's 181 zero-volume minutes. Binance
-printed every minute of the window with no invalid row, and no canonical minute
-has a winner that traded nothing, so every one of Binance's no-trade minutes was
-case C — only the secondary traded — and no other minute can go to Bybit. That
-correspondence is a property of this run, not a rule: a run in which Bybit also
-printed no trade on one of those minutes would move it to case D. The one
-repeated candle is an observation of the same kind — one minute in three million
-says nothing about a venue, and the count exists so that a frozen feed cannot
-pass as a market.
-
-## 14. Naming
+## 13. Naming
 
 This method uses one vocabulary:
 
