@@ -1164,7 +1164,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the contract: what every change answers to, read in full before a session's first edit
   - Code: `AGENTS.md` at the root
   - Never: a second contract; a per-module `AGENTS.md`
-- the door a session opens before the contract: it loads the contract with `@AGENTS.md` and names the working path; it points and holds no rule
+- the door a session opens before the contract: it loads the contract with `@AGENTS.md`, points and holds no rule
   - Code: `CLAUDE.md` at the root
   - Never: a rule written in it; a per-module `CLAUDE.md`; `CLAUDE.local.md` or `.claude/` inside the tree
 - the project's front door: what the project is, how to run it and where its Skills are

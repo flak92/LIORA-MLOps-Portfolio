@@ -24,7 +24,7 @@ The rules that keep this local, academic tree's boundaries the ones a move onto 
   - Description: Every artifact's path is built once, by a descriptor in its module's `config.py`, and reached through that descriptor everywhere, so a store read at another place is a rename and no edit.
   - Scope: `module_*/**/*.py`
   - Expected: `partition_dir()`, `schema_json()`, `artifact_dir()` and the descriptors over them — `ohlcv_1m_canonical_parquet()`, `bars_parquet()`, `parameters_json()` and the rest — called at the point of use, and no store path assembled there; a descriptor another module needs carried as a copy registered in `module_skills/skill_glossary.md` § Twice by extraction.
-  - Exception: `module_data/lean.py`, which builds the QuantConnect Lean tree's own file names inside the folder `raw_symbol_dir()` builds.
+  - Exception: `module_data/lean.py`, which builds the QuantConnect Lean tree's own file names inside the folder `raw_symbol_dir()` builds; `record.py`, which lists the three pipeline stores by their variables; the Makefile's serpentine search targets, which name the files they test and remove — the loop `<TICKER>_score_request.json`, the reset what the turn and `ml-score` write for one asset; and the page, which has no `config.py` and reads by relative path (`DASHBOARD-CONVENTIONS-THE-PAGE-READS-BY-RELATIVE-PATH`).
 - `PRE-AWS-SOLUTION-OBJECTS-ARE-GROUPED-BY-WRITER-AND-LIFETIME`
   - Description: An object is classified before it is placed, and sits beside the objects that write the same state and live as long as it does — never beside what happened to be written with it, the same library, the same author or convenience.
   - Scope: `module_*/**/*.py`, `record.py`
