@@ -85,7 +85,7 @@ edited with any spreadsheet program:
 ```bash
 make skills-sync           # render every skill_*.md and module_skills/skill_glossary.md from the sheet
 make skills-configurables  # the table of every CONFIGURABLES record in the controlled config.py files, on stdout
-make skills-crawl          # after the sync, every controlled file of the sheet's files matrix read against the Skills marked for it by the active vendor — up to 30 min a file; Ctrl-C ends it, the reports already written stay
+make skills-crawl          # after the sync, every controlled file of the sheet's files matrix read against the Skills marked for it by the active vendor; Ctrl-C ends it, the reports already written stay
 ```
 
 One page behind `make on`, for one reader: the status page at `http://127.0.0.1:<port>/`, the address
@@ -165,9 +165,8 @@ Both sides run in containers from the same pins; the seeds, the thread caps at o
 pinned orders make the bytes equal (`module_skills/skill_determinism.md`). The reference manifest lives outside this
 repository. The serpentine search stands outside that proof and has its own, at the same commit:
 `make features-serpentine-search-reset ASSET=<TICKER>` and then `make features-serpentine-search ASSET=<TICKER>`, over
-the same inputs, end on the same progress and ledger. An artifact is provenance-complete only when this recipe
-reproduces it from one exact commit and the frozen raw input; one written by a working tree no commit holds is not
-(`RESEARCH-SEMANTICS-PROVENANCE-IS-AN-EXACT-COMMIT-AND-THE-PARITY-RECIPE`).
+the same inputs, end on the same progress and ledger. What makes an artifact provenance-complete is
+`RESEARCH-SEMANTICS-PROVENANCE-IS-AN-EXACT-COMMIT-AND-THE-PARITY-RECIPE`.
 
 ## The basket
 
@@ -222,8 +221,6 @@ over XGBoost, a final holdout that selects nothing, and a top-down gated strateg
 whose trades leave at their own take-profit and stop while the label they learned from stays symmetric.
 
 Beside the chain, the serpentine search moves the asset's feature set, its barrier geometry and its
-hyper-parameters one family at a time, on the three validation folds alone: a move is kept only where its CAGR
-beats its parent's on every fold, the beam is ranked by the CAGR of the folds chained into one walk-forward path,
-and the champion is proposed only when it beats the start by more than the noise of the whole search — a
-heuristic, not a guarantee. The method is `module_features/skills/methodology_features.md` § The serpentine search
-and `module_ml/skills/methodology_ml.md`.
+hyper-parameters one search family at a time, on the three validation folds alone, and proposes at most one search
+state, which only a hand promotes. The method is `module_features/skills/methodology_features.md` § The serpentine
+search and `module_ml/skills/methodology_ml.md`.
