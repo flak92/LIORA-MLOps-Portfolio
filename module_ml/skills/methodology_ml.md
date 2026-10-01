@@ -230,8 +230,8 @@ provenance question, answered in the canonical family and in
 not here:
 
 ```
-upper_hit = (volume > 0) & (high >= upper_barrier)
-lower_hit = (volume > 0) & (low  <= lower_barrier)
+upper_barrier_hit = (volume > 0) & (high >= upper_barrier)
+lower_barrier_hit = (volume > 0) & (low  <= lower_barrier)
 ```
 
 **The label horizon travels as a duration token and becomes a number once.**
@@ -431,7 +431,7 @@ method — it is never a silent drift, which is the property that was wanted.
 
 **The trials families are files of this repository, and they are
 byte-deterministic.** Every point every study drew is one JSON object on one line
-of the asset's partition of a trials family, appended by `hpo.log_trials()`
+of the asset's partition of a trials family, appended by `hpo.write_trials()`
 through `dataset.write_jsonl` and never rewritten: the studies of `ml-hpo` in
 `store/trials/hpo_trials/ticker=<TICKER>/hpo_trials.jsonl`, written by that stage
 alone, and the studies `ml-score` runs for the serpentine search in

@@ -46,8 +46,8 @@ def predict_proba(booster: xgb.Booster, x: np.ndarray, feature_columns: tuple[st
 
 def gain_importance(booster: xgb.Booster, feature_columns: tuple[str, ...]) -> dict[str, float]:
     """Total gain per feature, zero for a feature the trees never split on."""
-    score = booster.get_score(importance_type="total_gain")
-    return {column: score.get(column, 0.0) for column in feature_columns}
+    total_gain_by_column = booster.get_score(importance_type="total_gain")
+    return {column: total_gain_by_column.get(column, 0.0) for column in feature_columns}
 
 
 def mean_abs_shap_importance(booster: xgb.Booster, x: np.ndarray, feature_columns: tuple[str, ...]) -> dict[str, float]:

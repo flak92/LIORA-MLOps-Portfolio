@@ -125,7 +125,7 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
         xy["upper_barrier"][pos][eligible_rows], xy["lower_barrier"][pos][eligible_rows],
         barriers["label_barrier_true_range_multiplier"], barriers["take_profit_true_range_multiplier"],
         barriers["stop_loss_true_range_multiplier"])
-    _, t_res, event_resolution, exit_reference_price = labels.triple_barrier(
+    _, resolution_offset_minutes, event_resolution, exit_reference_price = labels.triple_barrier(
         simulation_inputs["bars_1m"], entry_ts[eligible_rows], upper_barrier, lower_barrier,
         label_horizon_minutes)
 
@@ -135,7 +135,8 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
              "event_resolution": np.zeros(pos.size, dtype=np.int8),
              "exit_reference_price": np.zeros(pos.size),
              "upper_barrier": np.zeros(pos.size), "lower_barrier": np.zeros(pos.size)}
-    trade["event_end_ts"][eligible_rows] = labels.event_end_ts(entry_ts[eligible_rows], t_res, label_horizon_minutes)
+    trade["event_end_ts"][eligible_rows] = labels.event_end_ts(entry_ts[eligible_rows], resolution_offset_minutes,
+                                                               label_horizon_minutes)
     trade["event_resolution"][eligible_rows] = event_resolution
     trade["exit_reference_price"][eligible_rows] = exit_reference_price
     trade["upper_barrier"][eligible_rows] = upper_barrier

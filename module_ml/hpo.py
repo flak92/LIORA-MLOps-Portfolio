@@ -33,7 +33,7 @@ import optuna
 from . import config, dataset, model, strategy, train, validation
 
 
-def log_trials(study: optuna.Study, origin: str, round_number: int | None, ledger: Path) -> None:
+def write_trials(study: optuna.Study, origin: str, round_number: int | None, ledger: Path) -> None:
     """Every point a study drew, one line each, appended to the ledger it is given — the writer's family's partition of
     the asset — and never rewritten, the family's `schema.json` beside its partitions.
 
@@ -74,7 +74,7 @@ TRIAL_COLUMNS = {
 }
 
 
-def admissible_thresholds(sweeps: dict[int, dict], parent_validation_by_fold: dict[int, dict] | None,
+def admissible_thresholds(sweeps_by_fold: dict[int, dict], parent_validation_by_fold: dict[int, dict] | None,
                           fold_ids: tuple[int, ...]) -> list[float]:
     """The thresholds at which every fold evaluated so far clears the trade floor and — when there is a
     parent to beat — beats it there on the measure the selection names. One list, shrinking as folds are added.
@@ -86,14 +86,14 @@ def admissible_thresholds(sweeps: dict[int, dict], parent_validation_by_fold: di
     stops a trial exactly when the trial can no longer produce a child the serpentine search would keep, at
     the first fold that settles it."""
     return [threshold for threshold in config.ENTRY_EDGE_THRESHOLD_GRID
-            if all(sweeps[fold_id][threshold]["trade_count"] >= config.MINIMUM_TRADES_PER_VALIDATION_FOLD
+            if all(sweeps_by_fold[fold_id][threshold]["trade_count"] >= config.MINIMUM_TRADES_PER_VALIDATION_FOLD
                    and (parent_validation_by_fold is None
-                        or sweeps[fold_id][threshold][config.SELECTION_FOLD_MEASURE]
+                        or sweeps_by_fold[fold_id][threshold][config.SELECTION_FOLD_MEASURE]
                         > parent_validation_by_fold[fold_id][config.SELECTION_FOLD_MEASURE])
                    for fold_id in fold_ids)]
 
 
-def sweep_selection(sweeps: dict[int, dict]) -> tuple[float, float]:
+def sweep_selection(sweeps_by_fold: dict[int, dict]) -> tuple[float, float]:
     """The threshold the one selection rule would pick over these folds, and the chained path's growth rate
     there — the trial's own value. Ties keep the smaller threshold, as the rule takes them.
 
@@ -102,10 +102,10 @@ def sweep_selection(sweeps: dict[int, dict]) -> tuple[float, float]:
     reaches here — the fold loop stops it — because the grid floor it would otherwise be scored at is a
     fallback for a *report*, a number to show when nothing qualified: handed to a sampler, it would let a trial
     that never qualified compete on the numbers of a threshold nothing qualified for."""
-    cleared = admissible_thresholds(sweeps, None, config.VALIDATION_FOLD_IDS)
+    cleared_thresholds = admissible_thresholds(sweeps_by_fold, None, config.VALIDATION_FOLD_IDS)
     value, negated = max((strategy.validation_path_cagr(
-        {fold_id: sweeps[fold_id][threshold]["final_equity"] for fold_id in config.VALIDATION_FOLD_IDS}),
-        -threshold) for threshold in cleared)
+        {fold_id: sweeps_by_fold[fold_id][threshold]["final_equity"] for fold_id in config.VALIDATION_FOLD_IDS}),
+        -threshold) for threshold in cleared_thresholds)
     return -negated, value
 
 
@@ -121,37 +121,40 @@ def build_objective(xy: dict[str, np.ndarray], bars_1m: dict[str, np.ndarray],
 
     def objective(trial: optuna.Trial) -> float:
         params = model.suggest_params(trial)
-        prediction_records, sweeps = [], {}
+        prediction_records, sweeps_by_fold = [], {}
         floor_count_by_fold, admissible_count_by_fold = [], []
         for fold_id in config.VALIDATION_FOLD_IDS:
             _, _, rows, _ = train.fold_evaluation(xy, y_cls, params, fold_id)
             prediction_records.extend(rows)
             simulation_inputs = strategy.build_simulation_inputs(
                 xy, bars_1m, train.to_oos_predictions(prediction_records))
-            sweeps[fold_id] = strategy.results_by_threshold(
+            sweeps_by_fold[fold_id] = strategy.results_by_threshold(
                 simulation_inputs, strategy.signals_for_fold(simulation_inputs, fold_id),
                 *validation.fold_bounds(fold_id))
-            evaluated = config.VALIDATION_FOLD_IDS[:len(sweeps)]
+            evaluated = config.VALIDATION_FOLD_IDS[:len(sweeps_by_fold)]
             # two counts, two questions. The floor is the trial's own admissibility — a strategy at all —
             # and is asked in both modes. Admissibility against a parent is the serpentine search's gate's question
             # and exists only where there is a parent; one key holding both would answer a different question
             # depending on who ran the study, which is the kind of key a register cannot define
-            floor = admissible_thresholds(sweeps, None, evaluated)
-            floor_count_by_fold.append(len(floor))
+            floor_clearing_thresholds = admissible_thresholds(sweeps_by_fold, None, evaluated)
+            floor_count_by_fold.append(len(floor_clearing_thresholds))
             trial.set_user_attr("floor_clearing_threshold_count_by_fold", list(floor_count_by_fold))
-            admissible = None
+            parent_admissible_thresholds = None
             if parent_validation_by_fold is not None:
-                admissible = admissible_thresholds(sweeps, parent_validation_by_fold, evaluated)
-                admissible_count_by_fold.append(len(admissible))
+                parent_admissible_thresholds = admissible_thresholds(sweeps_by_fold, parent_validation_by_fold,
+                                                                     evaluated)
+                admissible_count_by_fold.append(len(parent_admissible_thresholds))
                 trial.set_user_attr("admissible_threshold_count_by_fold", list(admissible_count_by_fold))
-            if not floor or (admissible is not None and not admissible):
+            if not floor_clearing_thresholds or (parent_admissible_thresholds is not None
+                                                 and not parent_admissible_thresholds):
                 raise optuna.TrialPruned()
-        threshold, value = sweep_selection(sweeps)
+        threshold, value = sweep_selection(sweeps_by_fold)
         # whether the threshold the rule chose for this trial is one at which every fold beats the parent —
         # the serpentine search's gate's own question about this trial's own tau, answered where the sweeps already
         # are so the loop need not refit to ask it. Not "the set is non-empty": a non-empty set the chosen threshold
         # does not belong to is a child the gate still refuses
-        trial.set_user_attr("admissible", None if admissible is None else threshold in admissible)
+        trial.set_user_attr("admissible", None if parent_admissible_thresholds is None
+                            else threshold in parent_admissible_thresholds)
         return value
 
     return objective
@@ -232,9 +235,10 @@ def main() -> int:
         bars_1m = strategy.load_bars_1m(ticker)
         # the stage has no parent to beat, and its one point to start from is the one a hand promoted — a drafted
         # file, so <TICKER>_parameters.json is never a function of its own last value
-        point = config.hyperparameter_point_json(ticker)
+        hyperparameter_point_json = config.hyperparameter_point_json(ticker)
         study = search_hyperparameters(xy, bars_1m, config.SEED,
-                                       first_point=dataset.load_json(point)["best_params"] if point.exists() else None)
+                                       first_point=dataset.load_json(hyperparameter_point_json)["best_params"]
+                                       if hyperparameter_point_json.exists() else None)
         if not study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
             raise SystemExit(f"{ticker}: no admissible strategy on every validation fold at any threshold — "
                              f"every one of the {config.HYPERPARAMETER_SEARCH_TRIAL_COUNT} trials was pruned")
@@ -245,10 +249,10 @@ def main() -> int:
                 "hpo_trial_count": config.HYPERPARAMETER_SEARCH_TRIAL_COUNT,
             },
         }
-        out = config.parameters_json(ticker)
-        dataset.write_json(out, payload)
-        log_trials(study, "hpo", None, config.hpo_trials_jsonl(ticker))
-        print(f"{ticker} {out.name}: {OBJECTIVE_KEY} {study.best_value:.6f} "
+        parameters_json = config.parameters_json(ticker)
+        dataset.write_json(parameters_json, payload)
+        write_trials(study, "hpo", None, config.hpo_trials_jsonl(ticker))
+        print(f"{ticker} {parameters_json.name}: {OBJECTIVE_KEY} {study.best_value:.6f} "
               f"(HPO trial {study.best_trial.number + 1})", flush=True)
     return 0
 

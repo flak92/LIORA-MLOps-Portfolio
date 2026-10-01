@@ -213,9 +213,9 @@ def build_xy(cat: dict, timeframes: tuple[str, ...], catalogue_values: dict[str,
     assert all(np.array_equal(x_decision_ts, grid) for grid in decision_grids[1:]), \
         "the catalogue's partitions disagree on the decision grid"
     y_decision_ts = label_events["decision_ts"].astype(np.int64)
-    pos = np.searchsorted(x_decision_ts, y_decision_ts)
-    assert np.array_equal(x_decision_ts[pos], y_decision_ts), "X/Y decision grids do not align"
-    catalogue_values = {c: catalogue_values[c][pos] for c in config.catalogue_feature_ids(cat)}
+    y_decision_rows = np.searchsorted(x_decision_ts, y_decision_ts)
+    assert np.array_equal(x_decision_ts[y_decision_rows], y_decision_ts), "X/Y decision grids do not align"
+    catalogue_values = {c: catalogue_values[c][y_decision_rows] for c in config.catalogue_feature_ids(cat)}
     x, feature_columns = build_x(catalogue_values, columns_by_timeframe, timeframes)
     return {
         "catalogue": cat,

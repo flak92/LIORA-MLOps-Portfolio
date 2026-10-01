@@ -1,1 +1,1 @@
-"""ML research layer: triple-barrier labels, purged walk-forward, XGBoost, the strategy simulation, the reports — ml_status.json and each asset's README — and the scoring of the states a request names."""
+"""ML research layer: triple-barrier labels, purged walk-forward, XGBoost, the strategy simulation, the reports — ml_status.json and each asset's README — and the scoring of the search states a request names."""

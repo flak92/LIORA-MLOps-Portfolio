@@ -4,8 +4,8 @@
     t_0 = entry_ts = t_d + 1m  the candidate entry minute after the decision
     event = [t_0, t_v),        t_v = t_0 + the label horizon
 
-Entry is the canonical 1m open at t_0; the barriers are P0 ± m·ATR14 of the last closed 1h bar, m the asset's
-multiplier; a touch requires
+Entry is the canonical 1m open at t_0; the barriers are P0 ± m times the recursive mean of the true range of the
+last closed bar of LABEL_BARRIER_TRUE_RANGE_TIMEFRAME, m the asset's multiplier; a touch requires
 volume > 0; event_end_ts is the exclusive end of the event, so the purge rule is event_end_ts <= fold_start_ms. Both
 barriers inside one minute leave the order unknowable: label_valid = false, never relabelled 0. entry_minute_traded
 (the entry minute printed a trade, the fill condition of an entry at its open) may gate an entry; label_valid never
@@ -83,55 +83,60 @@ def entry_rows(entry_ts: np.ndarray) -> np.ndarray:
 
 def label_barriers(entry_price: np.ndarray, sigma: np.ndarray,
                    label_barrier_true_range_multiplier: float) -> tuple[np.ndarray, np.ndarray]:
-    """The label's own barriers: entry_price +- the multiple of the barrier-timeframe ATR the asset's
-    geometry fixes — symmetric and side-agnostic, because the direction is what the model learns."""
+    """The label's own barriers: entry_price +- the multiple of the barrier timeframe's smoothed true range the
+    asset's geometry fixes — symmetric and side-agnostic, because the direction is what the model learns."""
     return (entry_price + label_barrier_true_range_multiplier * sigma,
             entry_price - label_barrier_true_range_multiplier * sigma)
 
 
-def event_end_ts(entry_ts: np.ndarray, t_res: np.ndarray, label_horizon_minutes: int) -> np.ndarray:
+def event_end_ts(entry_ts: np.ndarray, resolution_offset_minutes: np.ndarray, label_horizon_minutes: int) -> np.ndarray:
     """The exclusive end of an event: the minute after the one that resolved it, else the label horizon's."""
-    return entry_ts + np.minimum(t_res + 1, label_horizon_minutes) * config.MILLISECONDS_PER_MINUTE
+    return entry_ts + np.minimum(resolution_offset_minutes + 1, label_horizon_minutes) * config.MILLISECONDS_PER_MINUTE
 
 
 def triple_barrier(bars_1m: dict[str, np.ndarray], entry_ts: np.ndarray, upper_barrier: np.ndarray,
                    lower_barrier: np.ndarray, label_horizon_minutes: int):
-    """Walk the 1m path in chunks against the barriers given per row; returns (y, t_res,
+    """Walk the 1m path in chunks against the barriers given per row; returns (y, resolution_offset_minutes,
     event_resolution, exit_reference_price). The one definition of the first barrier touched: the
     label walks its own barriers here, and a trade walks its own through the same call."""
-    idx = entry_rows(entry_ts)
-    high, low, vol, opn, close = (bars_1m["high"], bars_1m["low"], bars_1m["volume"],
-                                  bars_1m["open"], bars_1m["close"])
+    entry_minute_rows = entry_rows(entry_ts)
+    high, low, volume, open, close = (bars_1m["high"], bars_1m["low"], bars_1m["volume"],
+                                      bars_1m["open"], bars_1m["close"])
 
-    event_count = idx.size
+    event_count = entry_minute_rows.size
     y = np.zeros(event_count, dtype=np.int8)
-    t_res = np.full(event_count, label_horizon_minutes, dtype=np.int32)
+    resolution_offset_minutes = np.full(event_count, label_horizon_minutes, dtype=np.int32)
     event_resolution = np.zeros(event_count, dtype=np.int8)
     offsets = np.arange(label_horizon_minutes)
     for a in range(0, event_count, LABEL_PROCESSING_CHUNK_SIZE_ROWS):
         b = min(a + LABEL_PROCESSING_CHUNK_SIZE_ROWS, event_count)
-        event_minutes = idx[a:b, None] + offsets[None, :]
-        traded = vol[event_minutes] > 0             # volume = 0 means no observed trade
-        up_hit = traded & (high[event_minutes] >= upper_barrier[a:b, None])
-        dn_hit = traded & (low[event_minutes] <= lower_barrier[a:b, None])
-        t_up = np.where(up_hit.any(axis=1), up_hit.argmax(axis=1), label_horizon_minutes)
-        t_dn = np.where(dn_hit.any(axis=1), dn_hit.argmax(axis=1), label_horizon_minutes)
-        ambiguous = (t_up == t_dn) & (t_up < label_horizon_minutes)
-        y[a:b] = np.where(t_up < t_dn, config.EVENT_RESOLUTION_UPPER_BARRIER,
-                          np.where(t_dn < t_up, config.EVENT_RESOLUTION_LOWER_BARRIER,
+        event_minutes = entry_minute_rows[a:b, None] + offsets[None, :]
+        traded = volume[event_minutes] > 0             # volume = 0 means no observed trade
+        upper_barrier_hit = traded & (high[event_minutes] >= upper_barrier[a:b, None])
+        lower_barrier_hit = traded & (low[event_minutes] <= lower_barrier[a:b, None])
+        upper_barrier_offset_minutes = np.where(upper_barrier_hit.any(axis=1), upper_barrier_hit.argmax(axis=1),
+                                                label_horizon_minutes)
+        lower_barrier_offset_minutes = np.where(lower_barrier_hit.any(axis=1), lower_barrier_hit.argmax(axis=1),
+                                                label_horizon_minutes)
+        ambiguous = ((upper_barrier_offset_minutes == lower_barrier_offset_minutes)
+                     & (upper_barrier_offset_minutes < label_horizon_minutes))
+        y[a:b] = np.where(upper_barrier_offset_minutes < lower_barrier_offset_minutes,
+                          config.EVENT_RESOLUTION_UPPER_BARRIER,
+                          np.where(lower_barrier_offset_minutes < upper_barrier_offset_minutes,
+                                   config.EVENT_RESOLUTION_LOWER_BARRIER,
                                    config.EVENT_RESOLUTION_VERTICAL)).astype(np.int8)
-        t_res[a:b] = np.minimum(t_up, t_dn)
+        resolution_offset_minutes[a:b] = np.minimum(upper_barrier_offset_minutes, lower_barrier_offset_minutes)
         event_resolution[a:b] = np.where(ambiguous, config.EVENT_RESOLUTION_AMBIGUOUS, y[a:b])
 
-    resolved = t_res < label_horizon_minutes
+    resolved = resolution_offset_minutes < label_horizon_minutes
     # horizontal or ambiguous: the open of the resolving minute (the price the
     # market was actually at); vertical: the close of the last event minute
     exit_reference_price = np.where(
         resolved,
-        opn[idx + np.minimum(t_res, label_horizon_minutes - 1)],
-        close[idx + label_horizon_minutes - 1],
+        open[entry_minute_rows + np.minimum(resolution_offset_minutes, label_horizon_minutes - 1)],
+        close[entry_minute_rows + label_horizon_minutes - 1],
     )
-    return y, t_res, event_resolution, exit_reference_price
+    return y, resolution_offset_minutes, event_resolution, exit_reference_price
 
 
 def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
@@ -151,9 +156,9 @@ def write_y(ticker: str, cat: dict, cols: dict[str, np.ndarray]) -> Path:
 
 
 def load_label_inputs(ticker: str, cat: dict) -> dict:
-    """Everything Y is built from, read once: the canonical 1m series, the grid of the decision timeframe
-    and the bars whose ATR sets the barrier width. `score.py`, relabelling an asset for a search state, holds these
-    and calls label_events() again; the stage reads them and calls it once."""
+    """Everything Y is built from, read once: the canonical 1m series, the grid of the decision timeframe and the
+    bars whose smoothed true range sets the barrier width. `score.py`, relabelling an asset for a search state, holds
+    these and calls label_events() again; the stage reads them and calls it once."""
     con = duckdb.connect()
     con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
     con.execute("SET threads=1")   # float summation must not be reordered
@@ -193,15 +198,16 @@ def label_events(label_inputs: dict, cat: dict, barriers: dict) -> dict[str, np.
 
     entry_price = bars_1m["open"][entry_rows(entry_ts)]
     upper_barrier, lower_barrier = label_barriers(entry_price, sigma, barriers["label_barrier_true_range_multiplier"])
-    y, t_res, event_resolution, _ = triple_barrier(bars_1m, entry_ts, upper_barrier, lower_barrier,
-                                                   label_horizon_minutes)
+    y, resolution_offset_minutes, event_resolution, _ = triple_barrier(bars_1m, entry_ts, upper_barrier,
+                                                                       lower_barrier, label_horizon_minutes)
     return {
         "decision_ts": decision_ts, "entry_ts": entry_ts, "y": y,
-        "event_end_ts": event_end_ts(entry_ts, t_res, label_horizon_minutes),
+        "event_end_ts": event_end_ts(entry_ts, resolution_offset_minutes, label_horizon_minutes),
         "entry_minute_traded": bars_1m["volume"][entry_rows(entry_ts)] > 0,
         "label_valid": event_resolution != config.EVENT_RESOLUTION_AMBIGUOUS, "entry_price": entry_price,
         "upper_barrier": upper_barrier, "lower_barrier": lower_barrier,
-        "t_res": t_res,                        # the walk's own, for the stage's count of vertical exits
+        # the walk's own, for the stage's count of vertical exits
+        "resolution_offset_minutes": resolution_offset_minutes,
     }
 
 
@@ -212,7 +218,7 @@ def main() -> int:
         barriers = dataset.load_barriers(ticker)
         cols = label_events(load_label_inputs(ticker, cat), cat, barriers)
 
-        y, t_res = cols["y"], cols["t_res"]
+        y, resolution_offset_minutes = cols["y"], cols["resolution_offset_minutes"]
         sample_valid = cols["entry_minute_traded"] & cols["label_valid"]
         out = write_y(ticker, cat, cols)
         print(f"{ticker} {out.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}: {cols['decision_ts'].size} rows  classes(-1/0/+1)="
@@ -220,7 +226,7 @@ def main() -> int:
               f"ambiguous={int((~cols['label_valid']).sum())}  "
               f"untraded_entry_minutes={int((~cols['entry_minute_traded']).sum())}  "
               f"trainable={int(sample_valid.sum())}  "
-              f"vertical={int((t_res == barriers['label_horizon_minutes']).sum())}", flush=True)
+              f"vertical={int((resolution_offset_minutes == barriers['label_horizon_minutes']).sum())}", flush=True)
     return 0
 
 

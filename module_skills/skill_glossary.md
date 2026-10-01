@@ -548,7 +548,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: the note *the serpentine search predates the asset's search state, its profile, its parameters or a record of the search*, in place of PROPOSALS and in the Features tab's table
   - Never: stale, dirty, outdated; a guard that refuses the promotion; `inputs_current`; an evaluation contract rebuilt in `module_features`
 - the trial objective — the CAGR of the validation path at the threshold the selection rule picks; none for a pruned trial
-  - Code: `sweep_selection()`, the return of `objective()` inside `build_objective()` in `module_ml/hpo.py`, logged per trial by `log_trials()` under `TRIAL_METRIC_KEY`
+  - Code: `sweep_selection()`, the return of `objective()` inside `build_objective()` in `module_ml/hpo.py`, logged per trial by `write_trials()` under `TRIAL_METRIC_KEY`
   - Artifact key: `cagr_validation_path` of a row of the families `hpo_trials` and `score_trials`, `null` for a pruned trial
   - Ui label: — (no page shows it)
   - Never: a second name for the chosen point's value; a trial's objective in an artifact or a snapshot; a value for a pruned trial, which is only Optuna's copy of an intermediate one
@@ -739,14 +739,14 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: the page's footer names the four snapshots
   - Never: a snapshot written into `module_monitoring/` or any other module's directory; a report tracked; `skills_status.json` committed in any state but its neutral one
 - the trials store: two ledger families, one writer each — `hpo_trials` by `ml-hpo`, `score_trials` by `ml-score` — every point a hyper-parameter study drew, one partition per asset, appended and never rewritten; a hand clears `hpo_trials`, `features-serpentine-search-reset` an asset's partition of `score_trials`
-  - Code: `store/trials/`, `STORE_TRIALS_DIR`, mounted into the `ml` runner alone; `hpo_trials_jsonl()`, `score_trials_jsonl()` in `module_ml/config.py` — `<family>/ticker=<TICKER>/<family>.jsonl`, the family's `schema.json` beside its partitions; `log_trials()` in `module_ml/hpo.py` the one appender, `study_index` counted off the writer's own partition
+  - Code: `store/trials/`, `STORE_TRIALS_DIR`, mounted into the `ml` runner alone; `hpo_trials_jsonl()`, `score_trials_jsonl()` in `module_ml/config.py` — `<family>/ticker=<TICKER>/<family>.jsonl`, the family's `schema.json` beside its partitions; `write_trials()` in `module_ml/hpo.py` the one appender, `study_index` counted off the writer's own partition
   - Never: a database where a file of lines does; a tracking server, a model registry, a published port or a UI service in place of the ledger; a stage reading another family's ledger back; two stages appending to one family; a ledger tracked
 - a ledger line: what a trial leaves in its ledger — its objective and admissibility when completed, the fold it stopped at when pruned, and two counts per fold reached, the second `null` where the study had no parent
   - Code: `trial_row()`, `admissible_thresholds()`, `TRIAL_COLUMNS` in `module_ml/hpo.py`
   - Artifact key: `cagr_validation_path`, `admissible`, `pruned_at_fold`, `floor_clearing_threshold_count_by_fold`, `admissible_threshold_count_by_fold`
   - Never: one key holding both counts; a pruned trial absent from the ledger; a trial's outcome inferred from its value
 - a ledger line's origin: the stage and round that ran its study, the study's place in the ledger and the trial's place in the study
-  - Code: `log_trials()`, `trial_row()` in `module_ml/hpo.py`; `origin` `hpo` from `ml-hpo`, `serpentine_search` from `ml-score`
+  - Code: `write_trials()`, `trial_row()` in `module_ml/hpo.py`; `origin` `hpo` from `ml-hpo`, `serpentine_search` from `ml-score`
   - Artifact key: `origin`, `round`, `study_index`, `hpo_trial_index`, `hpo_trial_outcome`, `params`
   - Never: a run id, a timestamp or a host name in the ledger — the file is byte-deterministic and each of the three would end that; a minted run name; Optuna's own trial number, which counts from zero and leaves `hpo.py` only as `hpo_trial_index`, one more; `search_index`, `trial_index` or `state` for these; Optuna's trial state past the call that reads it; a ticker in a key, the partition being the ticker's
 - a table family: a table of the chain — Parquet, or JSON lines for a ledger — partitioned by asset and, where the timeframe register decides its values, by timeframe; one stage writes it and its `schema.json` beside its partitions, and a partition may omit a column, never rename one or change its type

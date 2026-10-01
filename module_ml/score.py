@@ -104,7 +104,7 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
         results.append({"search_state_key": search_state_key(search_state), "hpo_trial_count": len(study.trials),
                         "candidate": candidate})
     for study in studies:
-        hpo.log_trials(study, "serpentine_search", round_number, config.score_trials_jsonl(ticker))
+        hpo.write_trials(study, "serpentine_search", round_number, config.score_trials_jsonl(ticker))
     return results
 
 
