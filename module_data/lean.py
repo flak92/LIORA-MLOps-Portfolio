@@ -19,7 +19,7 @@ LEAN_DAY_ZIP_GLOB = "*_trade.zip"
 LEAN_DAY_ZIP_NAME_PATTERN = re.compile(r"^(\d{8})_trade\.zip$")
 
 
-def lean_day_zip_paths(zip_dir: Path) -> list[Path]:
+def load_lean_day_zip_paths(zip_dir: Path) -> list[Path]:
     """Every day ZIP of one symbol directory, in day order — the one enumeration of a raw leaf.
 
     The grammar is the filter: a name the pattern does not match is not a day of this tree, so a
@@ -48,8 +48,9 @@ def is_full_utc_day(rows: list[tuple]) -> bool:
 
 def write_lean_zip(out_dir: Path, symbol: str, day: str, rows: list[tuple]) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
-    body = "\n".join(f"{off},{o},{h},{lo},{c},{v}" for (off, o, h, lo, c, v) in rows)
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr(lean_day_csv_name(symbol, day), body)
-    (out_dir / lean_day_zip_name(day)).write_bytes(buf.getvalue())
+    # a row is (the bar-open offset from UTC midnight in ms, open, high, low, close, volume), written as it came
+    body = "\n".join(",".join(str(value) for value in row) for row in rows)
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.writestr(lean_day_csv_name(symbol, day), body)
+    (out_dir / lean_day_zip_name(day)).write_bytes(zip_buffer.getvalue())

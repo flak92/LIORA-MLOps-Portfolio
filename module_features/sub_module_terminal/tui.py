@@ -49,7 +49,7 @@ def _fitting_columns(columns: tuple[str, ...], rows: list[dict], drop_order: tup
     terminal every column stays."""
     kept, width = list(columns), shutil.get_terminal_size((sys.maxsize, 0)).columns
     for column in drop_order:
-        if margin_columns + sum(cell + gap_columns for cell in _column_widths(kept, rows)) <= width:
+        if margin_columns + sum(column_width + gap_columns for column_width in _column_widths(kept, rows)) <= width:
             break
         kept.remove(column)
     if len(kept) < len(columns):

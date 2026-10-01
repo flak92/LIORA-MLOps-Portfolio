@@ -76,27 +76,27 @@ def timeframe_catalogue(bars: dict[str, np.ndarray], timeframe: str) -> dict[str
 def build_catalogue(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     """Return (decision_ts, every catalogued column by feature id); the stacked matrix is built only to assert
     finiteness across all of them — a term that needs more warm-up than the experiment grants stops here."""
-    timeframes = {timeframe: load_timeframe(con, ticker, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
-    catalogue = {timeframe: timeframe_catalogue(timeframes[timeframe], timeframe)
+    bars_by_timeframe = {timeframe: load_timeframe(con, ticker, timeframe) for timeframe in config.HIERARCHY_TIMEFRAMES}
+    catalogue = {timeframe: timeframe_catalogue(bars_by_timeframe[timeframe], timeframe)
                  for timeframe in config.HIERARCHY_TIMEFRAMES}
 
-    grid_decision_ts = timeframes[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
+    grid_decision_ts = bars_by_timeframe[config.DECISION_TIMEFRAME]["timestamp_ms"].astype(np.int64)
     decision_ts = grid_decision_ts[grid_decision_ts >= config.WARMUP_END_MS]
 
-    cols: dict[str, np.ndarray] = {}
+    catalogue_values: dict[str, np.ndarray] = {}
     for timeframe in config.HIERARCHY_TIMEFRAMES:
-        idx = indicators.asof_index(decision_ts,
-                                    timeframes[timeframe]["timestamp_ms"].astype(np.int64),
-                                    config.TIMEFRAME_DURATION_MS[timeframe])
+        closed_bar_rows = indicators.asof_index(decision_ts,
+                                                bars_by_timeframe[timeframe]["timestamp_ms"].astype(np.int64),
+                                                config.TIMEFRAME_DURATION_MS[timeframe])
         for name in config.catalogue_columns(timeframe):
-            cols[config.feature_id(name, timeframe)] = catalogue[timeframe][name][idx]
+            catalogue_values[config.feature_id(name, timeframe)] = catalogue[timeframe][name][closed_bar_rows]
 
-    x = np.column_stack([cols[c] for c in config.CATALOGUE_COLUMNS])
-    assert np.isfinite(x).all(), "NaN/inf in the catalogue after the research warm-up"
-    return decision_ts, cols
+    catalogue_matrix = np.column_stack([catalogue_values[c] for c in config.CATALOGUE_COLUMNS])
+    assert np.isfinite(catalogue_matrix).all(), "NaN/inf in the catalogue after the research warm-up"
+    return decision_ts, catalogue_values
 
 
-def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.ndarray]) -> list[Path]:
+def write_catalogue(ticker: str, decision_ts: np.ndarray, catalogue_values: dict[str, np.ndarray]) -> list[Path]:
     """One partition of the catalogue family per timeframe — the columns the catalogue offers on it, on the decision
     grid; the partition carries the timeframe, so the columns do not — the family's schema from the register, the same
     bytes from every asset, and the asset's copy of the contract the ML layer reads."""
@@ -106,7 +106,8 @@ def write_catalogue(ticker: str, decision_ts: np.ndarray, cols: dict[str, np.nda
         written.append(dataset.write_parquet(
             config.catalogue_parquet(ticker, timeframe),
             {"decision_ts": "BIGINT", **{name: "DOUBLE" for name in names}},
-            ([int(decision_ts[i])] + [repr(float(cols[config.feature_id(name, timeframe)][i])) for name in names]
+            ([int(decision_ts[i])] + [repr(float(catalogue_values[config.feature_id(name, timeframe)][i]))
+                                      for name in names]
              for i in range(decision_ts.size)),
             order_by="decision_ts",
         ))
@@ -123,9 +124,9 @@ def main() -> int:
         con = duckdb.connect()
         con.execute(f"SET memory_limit='{config.DUCKDB_MEMORY_LIMIT}'")
         con.execute("SET threads=1")   # float summation must not be reordered
-        decision_ts, cols = build_catalogue(con, ticker)
+        decision_ts, catalogue_values = build_catalogue(con, ticker)
         con.close()
-        *parquets, contract = write_catalogue(ticker, decision_ts, cols)
+        *parquets, contract = write_catalogue(ticker, decision_ts, catalogue_values)
         print(f"{ticker} {', '.join(w.parent.name for w in parquets)}: {decision_ts.size} rows x "
               f"{'/'.join(str(len(config.catalogue_columns(t))) for t in config.HIERARCHY_TIMEFRAMES)} columns, + {contract.name}",
               flush=True)

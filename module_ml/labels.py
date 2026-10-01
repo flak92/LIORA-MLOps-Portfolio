@@ -25,7 +25,7 @@ LABEL_PROCESSING_CHUNK_SIZE_ROWS = 16384
 
 # twice by extraction
 def recursive_mean(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
-    """Wilder's recursive average: seeded with the mean of the first period."""
+    """The recursive mean: seeded with the mean of the first period."""
     out = np.full_like(x, np.nan)
     if x.size < smoothing_period_bars:
         return out
@@ -49,9 +49,9 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ms: np.ndarray,
     """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says
     such a bar exists."""
     timeframe_close_ms = timeframe_open_ms + timeframe_duration_ms
-    idx = np.searchsorted(timeframe_close_ms, decision_ts, side="right") - 1
-    assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
-    return idx
+    last_closed_bar_rows = np.searchsorted(timeframe_close_ms, decision_ts, side="right") - 1
+    assert last_closed_bar_rows.min() >= 0, "decision before the first closed bar of the timeframe"
+    return last_closed_bar_rows
 
 
 Y_COLUMNS = {

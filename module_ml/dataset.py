@@ -80,7 +80,7 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def append_jsonl(path: Path, payload: dict) -> None:
+def write_jsonl(path: Path, payload: dict) -> None:
     """One object a line, appended: a ledger grows by what it gains and is never rewritten, so writing a
     trial costs the trial and not the trials before it."""
     path.parent.mkdir(parents=True, exist_ok=True)

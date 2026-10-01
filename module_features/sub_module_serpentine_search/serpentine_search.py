@@ -304,12 +304,12 @@ def answers_the_question(response: dict | None, kind: str, round_number: int, ke
             and [result_key(kind, result) for result in response["results"]] == keys)
 
 
-def append_state_evaluations(ticker: str, state_evaluations: list[dict], index_by_search_state_key: dict[str, int],
+def write_state_evaluations(ticker: str, state_evaluations: list[dict], index_by_search_state_key: dict[str, int],
                              rows: list[dict]) -> None:
     """The lines one answer adds, appended in one open and held as the ledger will read them back."""
     if not rows:
         return
-    dataset.append_jsonl(config.serpentine_search_state_evaluations_jsonl(ticker), rows)
+    dataset.write_jsonl(config.serpentine_search_state_evaluations_jsonl(ticker), rows)
     for row in rows:
         state_evaluations.append(dataset.to_json_safe(row))
         index_by_search_state_key[search_state_key(theta(state_evaluations[-1]))] = len(state_evaluations)
@@ -436,7 +436,7 @@ def turn(ticker: str) -> None:
             if not answers_the_question(response, KIND_SCORE, round_number, [search_state_key(start)]):
                 leave_question(ticker, KIND_SCORE, round_number, [start])
                 return
-            append_state_evaluations(ticker, state_evaluations, index_by_search_state_key,
+            write_state_evaluations(ticker, state_evaluations, index_by_search_state_key,
                                      [{**response["results"][0], "search_axis": None, "search_family": None,
                                        "move": None, "round": 0, "parent_state_evaluation_index": None}])
             response = None
@@ -472,7 +472,7 @@ def turn(ticker: str) -> None:
                     rows.append({**result["candidate"], "search_axis": search_axis, "search_family": search_family,
                                  "move": config.SERPENTINE_SEARCH_MOVE_FORWARD, "round": round_number,
                                  "parent_state_evaluation_index": parent})
-                append_state_evaluations(ticker, state_evaluations, index_by_search_state_key, rows)
+                write_state_evaluations(ticker, state_evaluations, index_by_search_state_key, rows)
                 # a candidate is one of the points its study drew, so a point that became a line is counted once, as
                 # the line: the lines this round's studies left — this turn's or a stopped turn's — come off the draws
                 round_drawn[search_axis] -= sum(row["search_axis"] == search_axis and row["round"] == round_number
@@ -492,7 +492,7 @@ def turn(ticker: str) -> None:
                                        [candidate["search_state"] for candidate in members])
                         return
                     scored = {result_key(KIND_SCORE, result): result for result in response["results"]}
-                    append_state_evaluations(
+                    write_state_evaluations(
                         ticker, state_evaluations, index_by_search_state_key,
                         [{**scored[candidate["key"]], "search_axis": search_axis, "search_family": search_family,
                           "move": candidate["move"], "round": round_number,

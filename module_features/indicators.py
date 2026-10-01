@@ -1,7 +1,7 @@
-"""Pure numpy kernels: recursive operations as explicit loops, rolling statistics via sliding windows; values inside
-a lookback warm-up are NaN. The two registers at the end name each kernel's invariants once, beside it — the series
-that are not bar columns, and the indicators that take one integer parameter. Every token is the word of its
-operation: the name of a kernel is the name of what it computes."""
+"""Pure numpy kernels: recursive operations as explicit loops, rolling statistics via sliding windows; a kernel's
+values before its lookback or its smoothing period has filled are NaN. The two registers at the end name each
+kernel's invariants once, beside it — the series that are not bar columns, and the indicators that take one integer
+parameter. Every token is the word of its operation: the name of a kernel is the name of what it computes."""
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
@@ -18,7 +18,7 @@ def exponential_smoothing(x: np.ndarray, span_bars: int) -> np.ndarray:
 
 # twice by extraction
 def recursive_mean(x: np.ndarray, smoothing_period_bars: int) -> np.ndarray:
-    """Wilder's recursive average: seeded with the mean of the first period."""
+    """The recursive mean: seeded with the mean of the first period."""
     out = np.full_like(x, np.nan)
     if x.size < smoothing_period_bars:
         return out
@@ -72,19 +72,19 @@ def rolling_range_position(close: np.ndarray, high: np.ndarray, low: np.ndarray,
                            lookback_bars: int) -> np.ndarray:
     """(close - rolling min of low) / (rolling max of high - rolling min of low);
     flat range -> 0.5."""
-    lo, hi = rolling_min(low, lookback_bars), rolling_max(high, lookback_bars)
-    value_range = hi - lo
+    rolling_low, rolling_high = rolling_min(low, lookback_bars), rolling_max(high, lookback_bars)
+    value_range = rolling_high - rolling_low
     with np.errstate(divide="ignore", invalid="ignore"):
-        out = (close - lo) / value_range
+        out = (close - rolling_low) / value_range
     return np.where(value_range == 0.0, 0.5, out)
 
 
 def rolling_standard_score(x: np.ndarray, lookback_bars: int) -> np.ndarray:
     """(x - mean) / standard deviation of the trailing lookback window (sample); zero deviation -> 0."""
     out = np.full_like(x, np.nan)
-    w = sliding_window_view(x, lookback_bars)
-    mean = w.mean(axis=1)
-    std = w.std(axis=1, ddof=1)
+    lookback_window = sliding_window_view(x, lookback_bars)
+    mean = lookback_window.mean(axis=1)
+    std = lookback_window.std(axis=1, ddof=1)
     with np.errstate(divide="ignore", invalid="ignore"):
         z = (x[lookback_bars - 1:] - mean) / std
     out[lookback_bars - 1:] = np.where(std == 0.0, 0.0, z)
@@ -200,9 +200,9 @@ def asof_index(decision_ts: np.ndarray, timeframe_open_ms: np.ndarray,
     """Index of the last closed bar of a timeframe at each decision_ts — causality by construction; the assert says
     such a bar exists."""
     timeframe_close_ms = timeframe_open_ms + timeframe_duration_ms
-    idx = np.searchsorted(timeframe_close_ms, decision_ts, side="right") - 1
-    assert idx.min() >= 0, "decision before the first closed bar of the timeframe"
-    return idx
+    last_closed_bar_rows = np.searchsorted(timeframe_close_ms, decision_ts, side="right") - 1
+    assert last_closed_bar_rows.min() >= 0, "decision before the first closed bar of the timeframe"
+    return last_closed_bar_rows
 
 
 # the series register: one record per series that is not a bar column, its kernel reading the bars it needs. A series

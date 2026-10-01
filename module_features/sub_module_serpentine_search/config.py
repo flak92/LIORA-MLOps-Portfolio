@@ -39,8 +39,7 @@ CONFIGURABLES = (
                                         "opens its own screen for", "tui": True, "experiment_identity": False,
      "requires_rerun": "none", "risk": "the terminal's option and its screen part ways"},
 )
-# every record's value by its name — what a constant below reads
-VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURABLES}
+VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURABLES}  # each record's value by name
 
 SERPENTINE_SEARCH_BEAM_WIDTH = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_BEAM_WIDTH"]
 SERPENTINE_SEARCH_ROUND_BUDGET = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_ROUND_BUDGET"]

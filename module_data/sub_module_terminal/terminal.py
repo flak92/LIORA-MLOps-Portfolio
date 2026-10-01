@@ -99,7 +99,7 @@ def _raw_days(ticker: str, venue: str) -> list[str]:
     """The UTC days one venue's leaf holds for the asset, `YYYYMMDD` each in day order — read off the day ZIPs
     `lean.py` enumerates, the one grammar of the raw tree."""
     return [lean.LEAN_DAY_ZIP_NAME_PATTERN.match(path.name).group(1)
-            for path in lean.lean_day_zip_paths(data_config.raw_symbol_dir(ticker, venue))]
+            for path in lean.load_lean_day_zip_paths(data_config.raw_symbol_dir(ticker, venue))]
 
 
 def _asset_rows(tickers: list[str]) -> list[dict]:

@@ -85,7 +85,7 @@ def load_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
 
 
-def append_jsonl(path: Path, payloads: list[dict]) -> None:
+def write_jsonl(path: Path, payloads: list[dict]) -> None:
     """A batch of objects, one a line, appended in the order given: a ledger grows by what it gains and is never
     rewritten. The batch is one open, because what a search learns from one answer it learns at once; a stop during
     the write leaves either whole lines, which read back and say which of them are there, or a last line cut short,

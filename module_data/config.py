@@ -101,9 +101,9 @@ def schema_json(family: str, store: Path = STORE_ASSETS_ARTIFACTS_DIR) -> Path:
 # twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
-    ap = argparse.ArgumentParser(description=description)
-    ap.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
-    return ap
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
+    return parser
 
 
 # twice by extraction

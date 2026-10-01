@@ -28,26 +28,26 @@ def to_utc_day(epoch_ms: int) -> str:
 
 def fetch_klines(params: dict) -> list[list]:
     url = f"{config.BINANCE_KLINE_URL}?{urllib.parse.urlencode(params)}"
-    backoff = 1.0
+    backoff_seconds = 1.0
     for attempt in range(config.REQUEST_ATTEMPT_COUNT):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                return json.loads(r.read().decode())
+            request = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                return json.loads(response.read().decode())
         except urllib.error.HTTPError as e:
             if e.code in (418, 429) and attempt < config.REQUEST_ATTEMPT_COUNT - 1:  # rate limit / ban
-                time.sleep(max(backoff, float(e.headers.get("Retry-After", 0) or 0)))
-                backoff *= 2
+                time.sleep(max(backoff_seconds, float(e.headers.get("Retry-After", 0) or 0)))
+                backoff_seconds *= 2
                 continue
             if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
-            time.sleep(backoff)
-            backoff *= 2
+            time.sleep(backoff_seconds)
+            backoff_seconds *= 2
         except (urllib.error.URLError, TimeoutError):
             if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
-            time.sleep(backoff)
-            backoff *= 2
+            time.sleep(backoff_seconds)
+            backoff_seconds *= 2
 
 
 def fetch_oldest_candle_ms(symbol: str) -> int:
@@ -81,9 +81,9 @@ def main() -> int:
 
     print(f"data window [{to_utc_day(start_ms)} .. {to_utc_day(end_ms)}) — probing listings:", flush=True)
     for ticker in tickers:
-        oldest = fetch_oldest_candle_ms(config.symbol(ticker))
-        listing_covers_data_window = oldest <= start_ms
-        print(f"  {config.symbol(ticker):9} oldest candle {to_utc_day(oldest)}  "
+        oldest_candle_ms = fetch_oldest_candle_ms(config.symbol(ticker))
+        listing_covers_data_window = oldest_candle_ms <= start_ms
+        print(f"  {config.symbol(ticker):9} oldest candle {to_utc_day(oldest_candle_ms)}  "
               f"{'ok' if listing_covers_data_window else 'AFTER DATA WINDOW START'}", flush=True)
         if not listing_covers_data_window:
             raise SystemExit(f"{config.symbol(ticker)}: history starts after {to_utc_day(start_ms)} — basket rule broken")
@@ -92,13 +92,13 @@ def main() -> int:
     for ticker in tickers:
         symbol = config.symbol(ticker)
         out_dir = config.raw_symbol_dir(ticker, "binance")
-        written = skipped = 0
+        written_day_count = skipped_day_count = 0
         day_ms = start_ms
-        t0 = time.time()
+        started_monotonic = time.monotonic()
         while day_ms < end_ms:
             day = datetime.fromtimestamp(day_ms / config.MILLISECONDS_PER_SECOND, tz=UTC).strftime("%Y%m%d")
             if (out_dir / lean_day_zip_name(day)).exists():
-                skipped += 1
+                skipped_day_count += 1
             else:
                 rows = fetch_day(symbol, day_ms)
                 # every day of the window is post-listing (probed above), so a short day is a truncated response
@@ -108,12 +108,14 @@ def main() -> int:
                         "incomplete response for a post-listing day, retry the download"
                     )
                 write_lean_zip(out_dir, symbol, day, rows)
-                written += 1
-                if written % 200 == 0:
-                    print(f"  {symbol}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
+                written_day_count += 1
+                if written_day_count % 200 == 0:
+                    print(f"  {symbol}: {written_day_count + skipped_day_count}/{total_days} days "
+                          f"({time.monotonic() - started_monotonic:.0f}s)", flush=True)
                 time.sleep(config.BINANCE_REQUEST_DELAY_SECONDS)
             day_ms += MILLISECONDS_PER_DAY
-        print(f"{symbol}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
+        print(f"{symbol}: {written_day_count} days downloaded, {skipped_day_count} already present "
+              f"({time.monotonic() - started_monotonic:.0f}s)", flush=True)
     return 0
 
 

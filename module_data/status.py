@@ -120,23 +120,25 @@ def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows
     for ticker in tickers:
         # every asset is judged against its OWN canonical end, so a young asset is never charged
         # an older one's history and a stale feed is the only thing a gap can mean
-        asset_data_window_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
-        expected = (asset_data_window_end_ms - config.DATA_WINDOW_START_MS) // config.CANONICAL_GRID_INTERVAL_MS
+        asset_canonical_end_ms = canonical_rows[ticker]["last_timestamp_ms"] + config.CANONICAL_GRID_INTERVAL_MS
+        expected_minute_count = ((asset_canonical_end_ms - config.DATA_WINDOW_START_MS)
+                                 // config.CANONICAL_GRID_INTERVAL_MS)
         # a scalar scan of an empty venue table returns one row of zero and NULLs, never no row
         venue_row = venue_rows[venue][ticker]
-        venue_row_count, distinct = venue_row["row_count"], venue_row["distinct_timestamp_count"]
+        venue_row_count, distinct_timestamp_count = venue_row["row_count"], venue_row["distinct_timestamp_count"]
         table.append(
             {
                 "ticker": ticker,
                 "symbol": config.symbol(ticker),
                 "row_count": venue_row_count,
-                "coverage_pct": share_pct(distinct, expected),
-                "gap_count": expected - distinct,
+                "coverage_pct": share_pct(distinct_timestamp_count, expected_minute_count),
+                "gap_count": expected_minute_count - distinct_timestamp_count,
                 # measured from the first observation to the end of the data window, so a stale feed reports its gap
                 "gap_count_after_first_observation": (
-                    (asset_data_window_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS - distinct
+                    (asset_canonical_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS
+                    - distinct_timestamp_count
                 ) if venue_row["first_timestamp_ms"] is not None else 0,
-                "duplicate_count": venue_row_count - distinct,
+                "duplicate_count": venue_row_count - distinct_timestamp_count,
                 "invalid_row_count": int(venue_row["invalid_row_count"]),
                 "zero_volume_bars": int(venue_row["zero_volume_bars"]),
                 "flat_bars": int(venue_row["flat_bars"]),

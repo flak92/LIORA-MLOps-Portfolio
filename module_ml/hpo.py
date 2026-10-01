@@ -22,7 +22,7 @@ of other trials at one step, and with folds as calendar years that comparison is
 Every point the search drew is left in the asset's partition of the `hpo_trials` family — `score.py` leaves a
 study's points in `score_trials`, the same row, one writer each — where the parameters file keeps only the one
 it chose. The ledger is JSON Lines appended a line at a time — the technique the serpentine search's own ledger
-uses, written by `dataset.append_jsonl` and by nothing else — and the family's `schema.json` is written from the
+uses, written by `dataset.write_jsonl` and by nothing else — and the family's `schema.json` is written from the
 one constant the row is built from."""
 
 from pathlib import Path
@@ -47,7 +47,7 @@ def log_trials(study: optuna.Study, origin: str, round_number: int | None, ledge
     and becomes a thing the search can be proved against. The ledger only grows; a hand clears it."""
     study_index = 1 + sum(row["hpo_trial_index"] == 1 for row in dataset.load_jsonl(ledger)) if ledger.exists() else 1
     for trial in study.trials:
-        dataset.append_jsonl(ledger, trial_row(trial, origin, round_number, study_index))
+        dataset.write_jsonl(ledger, trial_row(trial, origin, round_number, study_index))
     # a partition's file is named for its family, so the family's schema lands beside the partitions — the same bytes
     # from every asset and every study
     dataset.write_json(config.schema_json(ledger.stem, config.STORE_TRIALS_DIR),

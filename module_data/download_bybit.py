@@ -24,32 +24,32 @@ from pathlib import Path
 
 from . import config
 from .lean import (LEAN_DAY_ZIP_NAME_PATTERN, MILLISECONDS_PER_DAY, MINUTES_PER_DAY, is_full_utc_day,
-                   lean_day_zip_name, lean_day_zip_paths, write_lean_zip)
+                   lean_day_zip_name, load_lean_day_zip_paths, write_lean_zip)
 
 KLINE_REQUEST_WINDOW_MS = 720 * config.MILLISECONDS_PER_MINUTE  # half a day fits in one 1000-candle response
 
 
 def fetch_klines(params: dict) -> list[list]:
     url = f"{config.BYBIT_KLINE_URL}?{urllib.parse.urlencode(params)}"
-    backoff = 1.0
+    backoff_seconds = 1.0
     for attempt in range(config.REQUEST_ATTEMPT_COUNT):
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
-            with urllib.request.urlopen(req, timeout=30) as r:
-                data = json.loads(r.read().decode())
-            ret_code = data.get("retCode")
+            request = urllib.request.Request(url, headers={"User-Agent": config.USER_AGENT})
+            with urllib.request.urlopen(request, timeout=30) as response:
+                response_body = json.loads(response.read().decode())
+            ret_code = response_body.get("retCode")
             if ret_code == 0:
-                return data["result"]["list"]
+                return response_body["result"]["list"]
             if ret_code == 10006 and attempt < config.REQUEST_ATTEMPT_COUNT - 1:  # rate limit
-                time.sleep(backoff)
-                backoff *= 2
+                time.sleep(backoff_seconds)
+                backoff_seconds *= 2
                 continue
-            raise RuntimeError(f"Bybit retCode={ret_code} {data.get('retMsg')}")
+            raise RuntimeError(f"Bybit retCode={ret_code} {response_body.get('retMsg')}")
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
             if attempt == config.REQUEST_ATTEMPT_COUNT - 1:
                 raise
-            time.sleep(backoff)
-            backoff *= 2
+            time.sleep(backoff_seconds)
+            backoff_seconds *= 2
 
 
 def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
@@ -73,7 +73,7 @@ def fetch_day(symbol: str, day_ms: int) -> list[tuple]:
 def load_earliest_traded_day(out_dir: Path) -> str | None:
     """The first day whose ZIP holds a non-empty CSV: evidence that precedes a day is what tells pre-listing from a
     failed request."""
-    for zip_path in lean_day_zip_paths(out_dir):
+    for zip_path in load_lean_day_zip_paths(out_dir):
         with zipfile.ZipFile(zip_path) as day_zip:
             if day_zip.infolist()[0].file_size > 0:
                 return LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1)
@@ -92,31 +92,33 @@ def main() -> int:
     for ticker in tickers:
         symbol = config.symbol(ticker)
         out_dir = config.raw_symbol_dir(ticker, "bybit")
-        written = skipped = 0
-        earliest = load_earliest_traded_day(out_dir)
+        written_day_count = skipped_day_count = 0
+        earliest_traded_day = load_earliest_traded_day(out_dir)
         day_ms = start_ms
-        t0 = time.time()
+        started_monotonic = time.monotonic()
         while day_ms < end_ms:
             day = datetime.fromtimestamp(day_ms / config.MILLISECONDS_PER_SECOND, tz=UTC).strftime("%Y%m%d")
             if (out_dir / lean_day_zip_name(day)).exists():
-                skipped += 1
+                skipped_day_count += 1
             else:
                 rows = fetch_day(symbol, day_ms)
-                if rows and (earliest is None or day < earliest):
-                    earliest = day                       # first traded day may be partial
-                elif earliest is not None and day > earliest and not is_full_utc_day(rows):
+                if rows and (earliest_traded_day is None or day < earliest_traded_day):
+                    earliest_traded_day = day            # first traded day may be partial
+                elif earliest_traded_day is not None and day > earliest_traded_day and not is_full_utc_day(rows):
                     # after the first traded day every day is full; a short answer is a truncated response
                     raise SystemExit(
                         f"bybit {symbol} {day}: {len(rows)} of {MINUTES_PER_DAY} minutes — "
                         "incomplete response after listing, retry the download"
                     )
                 write_lean_zip(out_dir, symbol, day, rows)
-                written += 1
-                if written % 200 == 0:
-                    print(f"  bybit {symbol}: {written + skipped}/{total_days} days ({time.time() - t0:.0f}s)", flush=True)
+                written_day_count += 1
+                if written_day_count % 200 == 0:
+                    print(f"  bybit {symbol}: {written_day_count + skipped_day_count}/{total_days} days "
+                          f"({time.monotonic() - started_monotonic:.0f}s)", flush=True)
                 time.sleep(config.BYBIT_REQUEST_DELAY_SECONDS)
             day_ms += MILLISECONDS_PER_DAY
-        print(f"bybit {symbol}: {written} days downloaded, {skipped} already present ({time.time() - t0:.0f}s)", flush=True)
+        print(f"bybit {symbol}: {written_day_count} days downloaded, {skipped_day_count} already present "
+              f"({time.monotonic() - started_monotonic:.0f}s)", flush=True)
     return 0
 
 

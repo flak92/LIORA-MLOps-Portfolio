@@ -432,7 +432,7 @@ method — it is never a silent drift, which is the property that was wanted.
 **The trials families are files of this repository, and they are
 byte-deterministic.** Every point every study drew is one JSON object on one line
 of the asset's partition of a trials family, appended by `hpo.log_trials()`
-through `dataset.append_jsonl` and never rewritten: the studies of `ml-hpo` in
+through `dataset.write_jsonl` and never rewritten: the studies of `ml-hpo` in
 `store/trials/hpo_trials/ticker=<TICKER>/hpo_trials.jsonl`, written by that stage
 alone, and the studies `ml-score` runs for the serpentine search in
 `store/trials/score_trials/ticker=<TICKER>/score_trials.jsonl`, written by that

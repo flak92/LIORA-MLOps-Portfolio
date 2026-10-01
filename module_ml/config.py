@@ -91,8 +91,7 @@ CONFIGURABLES = (
      "experiment_identity": False, "requires_rerun": "none",
      "risk": "a stage stops on memory where its container holds less"},
 )
-# every record's value by its name — what a constant below reads
-VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURABLES}
+VALUE_BY_CONFIGURABLE = {record["name"]: record["value"] for record in CONFIGURABLES}  # each record's value by name
 
 # twice by extraction
 MILLISECONDS_PER_SECOND = 1000
@@ -156,9 +155,9 @@ def schema_json(family: str, store: Path = STORE_ASSETS_ARTIFACTS_DIR) -> Path:
 # twice by extraction
 def build_ticker_parser(description: str) -> argparse.ArgumentParser:
     """The one CLI every stage shares: --tickers, required — the launcher names the basket, a stage never does."""
-    ap = argparse.ArgumentParser(description=description)
-    ap.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
-    return ap
+    parser = argparse.ArgumentParser(description=description)
+    parser.add_argument("--tickers", required=True, help="comma-separated tickers, e.g. BTC or BTC,ETH")
+    return parser
 
 
 # twice by extraction

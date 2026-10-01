@@ -79,7 +79,7 @@ The rules of the research layer, `module_ml`: one canonical series read through 
 - `METHODOLOGY-ML-LEDGER-IS-APPEND-ONLY`
   - Description: Each trials family is appended by `module_ml/hpo.py` alone — `hpo_trials` for the chain's studies, `score_trials` for the serpentine search's — never rewritten or pruned, cleared only by a hand; `study_index` is counted off the writer's own partition before a study's lines are appended, and the family's `schema.json` is written from the one constant the row is built from.
   - Scope: `module_ml/hpo.py`
-  - Expected: An append-only open through `dataset.append_jsonl()`, no rewrite and no pruning in code; a partition cleared by a hand's deletion or, for an asset's `score_trials`, by `make features-serpentine-search-reset`; `study_index` one more than the studies already in the partition; `TRIAL_COLUMNS` the one constant of the row and of both families' `schema.json`.
+  - Expected: An append-only open through `dataset.write_jsonl()`, no rewrite and no pruning in code; a partition cleared by a hand's deletion or, for an asset's `score_trials`, by `make features-serpentine-search-reset`; `study_index` one more than the studies already in the partition; `TRIAL_COLUMNS` the one constant of the row and of both families' `schema.json`.
   - Exception: none
 
 ## FileLayout
