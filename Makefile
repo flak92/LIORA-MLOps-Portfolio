@@ -153,7 +153,7 @@ features-serpentine-search-reset: ## remove one asset's serpentine search — it
 	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)
 
 # the canon, on the host: python3 and the standard library alone, no runner and no dependency — the sheet rendered into
-# every Skill and the glossary, the CONFIGURABLES records tabled, and the controlled files read against their Skills; it
+# every Skill and the register, the CONFIGURABLES records tabled, and the controlled files read against their Skills; it
 # gates nothing, and no target of the chain depends on it
 skills-sync:     ## render every Skill and module_skills/skill_glossary.md from module_skills/skills_sheet.xlsx
 	python3 -B -m module_skills.sync

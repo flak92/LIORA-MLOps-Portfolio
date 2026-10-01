@@ -1,7 +1,7 @@
 """Paths, names and the closed grammar of the canon module — the only place this module builds a path.
 
 It imports nothing from any module and needs nothing installed: the standard library reads the sheet and
-writes the documents. The sheet is the one source of every Skill and of the glossary; this file says where
+writes the documents. The sheet is the one source of every Skill and of the register; this file says where
 the sheet is, where a Skill of a tab's family may lie in the tree, and how a generated file is told from a hand-written
 one. It names no module: a tab is found by its family, so a new module is rows of the sheet and nothing here. The tools
 run on the host over the tree this package sits in, its root one level up.

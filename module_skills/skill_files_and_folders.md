@@ -26,14 +26,14 @@ The kinds of file and folder this repository holds and what each is for: which a
   - Expected: Every methodology at `module_<domain>/skills/methodology_<domain>.md`, written by hand and in no row of the files matrix; a rule stated only there is no rule.
   - Exception: none
 - `FILES-AND-FOLDERS-SHEET-IS-THE-SOURCE`
-  - Description: `module_skills/skills_sheet.xlsx` is the one source of every Skill and of the glossary, and its files matrix is the crawler's whole contract: `X` chooses the context, the row names the controlled file.
+  - Description: `module_skills/skills_sheet.xlsx` is the one source of every Skill and of the register, and its files matrix is the crawler's whole contract: `X` chooses the context, the row names the controlled file.
   - Scope: `module_skills/skills_sheet.xlsx`, `module_skills/sheet.py`
-  - Expected: One workbook; every Skill and the glossary rendered from it; a row of the files matrix per controlled file or glob; no total of Skills, rules, documents or controlled files written in a tracked file.
+  - Expected: One workbook; every Skill and the register rendered from it; a row of the files matrix per controlled file or glob; no total of Skills, rules, documents or controlled files written in a tracked file.
   - Exception: none
 - `FILES-AND-FOLDERS-SKILL-IS-RENDERED`
   - Description: Every `skill_*.md` and `module_skills/skill_glossary.md` is rendered from the sheet by `make skills-sync`, carries the marker on its first line, is never edited by hand, and is the only kind of document the crawler sends as context.
   - Scope: `module_skills/sync.py`, `module_skills/skills_sheet.xlsx`
-  - Expected: `GENERATED_MARKER` of `module_skills/config.py` on line 1, the stem of `skill_path` as its heading, the summary, one list per `rule_type_id` and, in the glossary, the register after them; a change made on the sheet and synced; a generated document the sheet no longer names deleted by the sync; each Skill in `module_skills/`, in a module's `skills/` or beside the sub-module it governs.
+  - Expected: `GENERATED_MARKER` of `module_skills/config.py` on line 1, the stem of `skill_path` as its heading, the summary, one list per `rule_type_id` and, in `module_skills/skill_glossary.md`, the register after them; a change made on the sheet and synced; a generated document the sheet no longer names deleted by the sync; each Skill in `module_skills/`, in a module's `skills/` or beside the sub-module it governs.
   - Exception: none
 - `FILES-AND-FOLDERS-MISSION-IS-THE-INSTRUCTION`
   - Description: `crawlers_mission.md` is the crawler's instruction to the vendor: what it receives and how it answers; no rule lives in it.
