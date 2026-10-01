@@ -238,7 +238,8 @@ The *responsibility* column is what a module's § Design rationale cites, spelle
 (`PRE-AWS-SOLUTION-A-PLACEMENT-ANSWERS-TO-ONE-RESPONSIBILITY`). The column *the same responsibility elsewhere* is
 where cloud proper nouns are spoken (`PRE-AWS-SOLUTION-CLOUD-NOUNS-STAY-IN-THE-MAPPING`), and none of its paths is a
 proposal for a local directory. *The move* is a rename, one edit, or absent here — described. A row whose move is
-absent here — described has no local counterpart.
+absent here — described names an absent object in its third column, which nothing local answers to; its first
+column holds what stands in for it here, or `none:` and why.
 
 | this repository has | responsibility | the same responsibility elsewhere | the move |
 |---|---|---|---|
@@ -261,7 +262,7 @@ absent here — described has no local counterpart.
 | none: the downloads use public endpoints, the page asks for no credential, and the crawler's vendor runs in its user's own session | STRATEGY EXECUTION — absent; the brokerage credentials a live strategy reads at start | a secret in a secrets store (AWS Secrets Manager), read once by the container running Lean when it starts | absent here — described |
 | none: every stage writes the stores through their mounts and exits, and nothing copies | ORCHESTRATION — PublishStores, the copy after the run | a state that runs after the last stage has exited and copies each store whole to its prefix in object storage (Amazon S3), once per run: never a stage's own write, never mid-run | absent here — described |
 
-Every row with a local counterpart reads *a rename*.
+Every row that names no absent object reads *a rename*.
 
 ### The home and the copy
 
@@ -297,13 +298,18 @@ with "and" in it would mean the stage is too wide.
 | `ml-train` | TrainModel |
 | `ml-strategy` | EvaluateStrategy |
 | `data-status`, `features-status`, `ml-status` | PublishStatus |
-| `features-serpentine-turn` | AdvanceSerpentineSearch: outside the daily order, started by a hand |
-| `ml-score` | ScoreSearchStates: alternates with the turn while the question `<TICKER>_score_request.json` stands, the one condition any state asks |
-| `features-serpentine-search-promote` | PromoteSearchProposal: a hand's choice for one asset, followed by the states of `ml-all` |
 
 The stage lists are the machine's state order. `xargs -P $(JOBS)` is its Map, 1 wide for BuildCanonicalData and
 `JOBS` wide above it (one, unless a hand widens it). `RUN_ID` is the execution name. PublishStores, which is no stage,
 runs after the last one.
+
+Outside the daily order, three targets are no stage, and each would be a state of its own:
+
+| target | what it is | state |
+|---|---|---|
+| `features-serpentine-turn` | a turn | AdvanceSerpentineSearch, started by a hand |
+| `ml-score` | the scoring of a turn's question | ScoreSearchStates: alternates with the turn while the question `<TICKER>_score_request.json` stands, the one condition any state asks |
+| `features-serpentine-search-promote` | the promotion | PromoteSearchProposal: a hand's choice for one asset, followed by the states of `ml-all` |
 
 ### The ladder
 
