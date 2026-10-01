@@ -42,7 +42,7 @@ def _classification_block(metrics_block: dict) -> dict:
 
 def classification_block(metrics: dict) -> tuple[dict, dict]:
     """(validation per fold, final holdout)."""
-    validation = {k: _classification_block(v) for k, v in sorted(metrics["validation"].items())}
+    validation = {fold: _classification_block(block) for fold, block in sorted(metrics["validation"].items())}
     return validation, _classification_block(metrics["final_holdout"])
 
 
@@ -82,9 +82,9 @@ def strategy_block(strategy: dict) -> dict:
         **{name: strategy[name] for name in strategy_module.SELECTION_EXPOSURE_KEYS},
         strategy_module.SELECTION_SCORE_KEY: config.rounded(strategy[strategy_module.SELECTION_SCORE_KEY], 6),
         "execution_cost_rate_per_trade_side": strategy["execution_cost_rate_per_trade_side"],
-        "validation": {k: _pnl_block(v) for k, v in sorted(strategy["validation"].items())},
-        "validation_path": {k: config.rounded(v, 6) if isinstance(v, float) or v is None else v
-                            for k, v in sorted(strategy["validation_path"].items())},
+        "validation": {fold: _pnl_block(block) for fold, block in sorted(strategy["validation"].items())},
+        "validation_path": {key: config.rounded(value, 6) if isinstance(value, float) or value is None else value
+                            for key, value in sorted(strategy["validation_path"].items())},
         "final_holdout": _pnl_block(final_holdout),
         "equity_curve": equity_curve_block(final_holdout["equity_curve"],
                                    final_holdout["final_equity"]),
@@ -98,8 +98,7 @@ def feature_set_block(ticker: str, cat: dict) -> dict:
             "columns_by_timeframe": dataset.load_feature_columns(ticker, cat)}
 
 
-# the rounding of each importance as the page shows it: gain is a sum of gains, the SHAP value a margin
-IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6}
+IMPORTANCE_ROUNDING_DIGITS = {"gain_importance": 1, "mean_abs_shap_importance": 6}  # gain a sum, SHAP a margin
 
 
 def validation_importance_block(validation_importance: dict) -> dict:
@@ -128,7 +127,8 @@ def asset_report(ticker: str, cat: dict, hyperparameter_search_result: dict, met
 
 # the files of a hand's stage — the three a promotion writes. A file of a hand's stage is listed, not measured: its size
 # moves with the hand, not with the chain, and the README is promised byte-reproducible by the chain alone
-HAND_STAGE_FILE_DESCRIPTORS = (config.barriers_json, config.feature_set_json, config.hyperparameter_point_json)
+HAND_STAGE_FILE_DESCRIPTORS = (config.barriers_json, config.feature_set_json,
+                               config.hyperparameter_point_json)
 
 
 def file_manifest(ticker: str, cat: dict) -> list[tuple]:
@@ -152,8 +152,9 @@ def file_manifest(ticker: str, cat: dict) -> list[tuple]:
 
 
 def load_file_size_text(path):
-    n = path.stat().st_size
-    return f"{n:,} B" if n < config.BYTES_PER_KIBIBYTE else f"{n / config.BYTES_PER_KIBIBYTE:,.0f} KB"
+    size_bytes = path.stat().st_size
+    return (f"{size_bytes:,} B" if size_bytes < config.BYTES_PER_KIBIBYTE
+            else f"{size_bytes / config.BYTES_PER_KIBIBYTE:,.0f} KB")
 
 
 def markdown_table_row(cells):
@@ -168,34 +169,35 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
     """What this folder holds and what came out of it — no timestamp, by design."""
     barriers = dataset.load_barriers(ticker)   # the asset's own label horizon, as the labels were written with
     labels, counts = metrics["labels"], metrics["class_counts"]
-    supervised = counts["short"] + counts["neutral"] + counts["long"]
+    supervised_row_count = counts["short"] + counts["neutral"] + counts["long"]
     folds = [f"fold_{i}" for i in config.VALIDATION_FOLD_IDS]
     holdout = f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"
     best_params = hyperparameter_search_result["best_params"]
 
-    files = []
+    file_rows = []
     for path, note in file_manifest(ticker, cat):
         # this file's own size would be self-referential: writing it changes it; a hand's stage is listed, not measured
         unmeasured = path == config.asset_readme_md(ticker) or path in {descriptor(ticker) for descriptor in HAND_STAGE_FILE_DESCRIPTORS}
         size = "—" if unmeasured else load_file_size_text(path)
-        files.append([f"`{path.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}`", note, size])
+        file_rows.append([f"`{path.relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}`", note, size])
 
-    cls_rows = [[f"F{k.split('_')[1]}", f"{metrics['validation'][k]['prior_logloss']:.6f}",
-                 f"{metrics['validation'][k]['model_logloss']:.6f}",
-                 f"{100 * metrics['validation'][k]['relative_logloss_skill']:+.2f}%",
-                 f"{metrics['validation'][k]['scored_row_count']:,}"]
-                for k in folds]
+    classification_rows = [[f"F{fold.split('_')[1]}", f"{metrics['validation'][fold]['prior_logloss']:.6f}",
+                            f"{metrics['validation'][fold]['model_logloss']:.6f}",
+                            f"{100 * metrics['validation'][fold]['relative_logloss_skill']:+.2f}%",
+                            f"{metrics['validation'][fold]['scored_row_count']:,}"]
+                           for fold in folds]
     final_holdout_metrics = metrics["final_holdout"]
-    cls_rows.append([f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**",
-                     f"{final_holdout_metrics['prior_logloss']:.6f}", f"{final_holdout_metrics['model_logloss']:.6f}",
-                     f"{100 * final_holdout_metrics['relative_logloss_skill']:+.2f}%",
-                     f"{final_holdout_metrics['scored_row_count']:,}"])
+    classification_rows.append([f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**",
+                                f"{final_holdout_metrics['prior_logloss']:.6f}",
+                                f"{final_holdout_metrics['model_logloss']:.6f}",
+                                f"{100 * final_holdout_metrics['relative_logloss_skill']:+.2f}%",
+                                f"{final_holdout_metrics['scored_row_count']:,}"])
 
     segments = metrics["segments"]
-    geo_rows = [[f"F{k.split('_')[1]}", f"{segments[k]['training_row_count']:,}",
-                 f"{segments[k]['purged_event_count']:,}", f"{segments[k]['oos_block_row_count']:,}",
-                 f"{segments[k]['scored_row_count']:,}"]
-                for k in folds + [holdout]]
+    fold_geometry_rows = [[f"F{fold.split('_')[1]}", f"{segments[fold]['training_row_count']:,}",
+                           f"{segments[fold]['purged_event_count']:,}", f"{segments[fold]['oos_block_row_count']:,}",
+                           f"{segments[fold]['scored_row_count']:,}"]
+                          for fold in folds + [holdout]]
 
     def pnl_row(label, block):
         return [label, f"{block['sharpe']:+.3f}" if block["sharpe"] is not None else "—",
@@ -215,7 +217,7 @@ def asset_readme(ticker: str, cat: dict, hyperparameter_search_result: dict, met
                                f"{', '.join(promoted)} must lie beside this file as well — the chain reads the promoted "
                                f"search state from them, and without them the folder it rebuilds is another one.\n\n")
 
-    pnl_rows = [pnl_row(f"F{k.split('_')[1]}", strategy["validation"][k]) for k in folds]
+    pnl_rows = [pnl_row(f"F{fold.split('_')[1]}", strategy["validation"][fold]) for fold in folds]
     final_holdout_strategy = strategy["final_holdout"]
     pnl_rows.append(pnl_row(f"**F{config.FINAL_HOLDOUT_FOLD_ID} — final holdout**", final_holdout_strategy))
     exits = ", ".join(f"{name} {final_holdout_strategy['exit_counts'][name]}"
@@ -235,7 +237,7 @@ Research window {config.RESEARCH_START_UTC} → {config.RESEARCH_END_UTC}, seed 
 
 ## Files
 
-{markdown_table(["file", "holds", "size"], files)}
+{markdown_table(["file", "holds", "size"], file_rows)}
 
 Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers['label_horizon_minutes'] * config.MILLISECONDS_PER_MINUTE // config.timeframe_entry(cat, cat['decision_timeframe'])['duration_ms']} rows more than `{config.labels_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}`: the tail decisions whose full {barriers['label_horizon_minutes']}-minute label horizon does not fit inside the research window have features but no label. `{config.oos_predictions_parquet(ticker, cat['decision_timeframe']).relative_to(config.STORE_ASSETS_ARTIFACTS_DIR).as_posix()}` holds the {len(config.VALIDATION_FOLD_IDS) + 1} OOS blocks end to end; the metrics score only the supervised rows of each that leave room for the experiment's maximum label horizon, {dataset.load_maximum_label_horizon_minutes(ticker, barriers)} minutes, before the fold's end.
 
@@ -247,17 +249,17 @@ Each of the {len(config.timeframes(cat))} catalogue partitions carries {barriers
 
 ## Labels
 
-{labels['decision_count']:,} decisions, of which **{labels['trainable_row_count']:,} supervised** ({100 * labels['trainable_row_count'] / labels['decision_count']:.3f}%) — {labels['ambiguous_event_count']:,} events resolve ambiguously and {labels['untraded_entry_minute_count']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised:,} total).
+{labels['decision_count']:,} decisions, of which **{labels['trainable_row_count']:,} supervised** ({100 * labels['trainable_row_count'] / labels['decision_count']:.3f}%) — {labels['ambiguous_event_count']:,} events resolve ambiguously and {labels['untraded_entry_minute_count']:,} entry minutes printed no trade, so neither trains anything. Classes over the supervised population: short {counts['short']:,}, neutral {counts['neutral']:,}, long {counts['long']:,} ({supervised_row_count:,} total).
 
 ## Model
 
 HPO: {hyperparameter_search_result['hpo_trial_count']} Optuna trials, best {hpo.OBJECTIVE_KEY} {hyperparameter_search_result[hpo.OBJECTIVE_KEY]:.6f}. Winner: depth {best_params['max_depth']}, eta {best_params['eta']:.4f}, {best_params['num_boost_round']} boosting rounds, subsample {best_params['subsample']:.3f}, colsample {best_params['colsample_bytree']:.3f}, min_child_weight {best_params['min_child_weight']}, lambda {best_params['lambda']:.4f}, alpha {best_params['alpha']:.4f}.
 
-{markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], cls_rows)}
+{markdown_table(["fold", "prior log-loss", "model log-loss", "rel. skill", "scored"], classification_rows)}
 
 ## Fold geometry
 
-{markdown_table(["fold", "trained on", "purged", "OOS block rows", "scored"], geo_rows)}
+{markdown_table(["fold", "trained on", "purged", "OOS block rows", "scored"], fold_geometry_rows)}
 
 `purged` counts the training events that had not finished before the fold opened; they are dropped, never truncated. Average-uniqueness weights are measured on each of these populations separately, after the purge.
 
@@ -275,7 +277,7 @@ Final-holdout exits: {exits}.
 
 The OHLCV is the asset's partition of the family `ohlcv_1m_canonical` — the market object the whole chain reads, outside the manifest above because its size moves with every top-up and this file is promised byte-reproducible.
 
-{promoted_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
+{promoted_reproduce_note}F{config.FINAL_HOLDOUT_FOLD_ID} never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds {', '.join('F' + str(i) for i in config.VALIDATION_FOLD_IDS)} carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
 """
 
 

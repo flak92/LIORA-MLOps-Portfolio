@@ -38,7 +38,7 @@ def search_state_key(search_state: dict) -> str:
     return json.dumps(search_state, sort_keys=True, separators=(",", ":"))
 
 
-def build_asset(ticker: str) -> dict:
+def build_asset_material(ticker: str) -> dict:
     """The asset's material, loaded once for a whole request: the catalogue and its feature grids, the labels
     and the set the asset holds today, and the 1m path a backtest walks. It is what a search state is scored against,
     and it says nothing about which search states those are."""
@@ -62,7 +62,7 @@ def fit_identity(search_state: dict) -> str:
                              if name not in config.TRADE_EXIT_COORDINATE_NAMES})
 
 
-def score_results(asset: dict, search_states: list[dict]) -> list[dict]:
+def score_results(asset_material: dict, search_states: list[dict]) -> list[dict]:
     """A state evaluation per search state, in the order the request named them. The first search state of a fit
     identity pays for its fits and the rest inherit them, so a request that moves only the trade's exit costs one set
     of fits."""
@@ -71,14 +71,14 @@ def score_results(asset: dict, search_states: list[dict]) -> list[dict]:
     for search_state in search_states:
         identity = fit_identity(search_state)
         inherited = fitted.get(identity)
-        material = search_state_material(asset, search_state, inherited)
+        material = search_state_material(asset_material, search_state, inherited)
         if inherited is None:
             fitted[identity] = material
-        results.append(state_evaluation(asset, search_state, material))
+        results.append(state_evaluation(asset_material, search_state, material))
     return results
 
 
-def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int) -> list[dict]:
+def hpo_results(ticker: str, asset_material: dict, parents: list[dict], round_number: int) -> list[dict]:
     """A study per beam parent, in the order the request named them, and the candidate the study offers. The
     gate of each study reads its own parent's numbers: the growth rate of every validation fold it stands at. A
     parent whose study offers nothing answers with null, which is an answer; `hpo_trial_count` is every point the
@@ -92,15 +92,15 @@ def hpo_results(ticker: str, asset: dict, parents: list[dict], round_number: int
         search_state = theta(parent)
         parent_validation_by_fold = {fold_id: parent["validation"][f"fold_{fold_id}"]
                                      for fold_id in config.VALIDATION_FOLD_IDS}
-        study = hpo.search_hyperparameters(xy_for_search_state(asset, search_state), asset["bars_1m"],
+        study = hpo.search_hyperparameters(xy_for_search_state(asset_material, search_state), asset_material["bars_1m"],
                                            config.SEED + round_number, parent_validation_by_fold)
         studies.append(study)
         params = hpo.admissible_point(study)
         candidate = None
         if params is not None:
             offered = {**search_state, "best_params": params}
-            candidate = state_evaluation(asset, offered,
-                                         search_state_material(asset, offered, None))
+            candidate = state_evaluation(asset_material, offered,
+                                         search_state_material(asset_material, offered, None))
         results.append({"search_state_key": search_state_key(search_state), "hpo_trial_count": len(study.trials),
                         "candidate": candidate})
     for study in studies:
@@ -130,9 +130,9 @@ def main() -> int:
         kind, round_number, search_states = request["kind"], request["round"], request["search_states"]
         if kind == KIND_SCORE:
             # a question naming no search state asks for the evaluation contract alone, and builds no material
-            results = score_results(build_asset(ticker), search_states) if search_states else []
+            results = score_results(build_asset_material(ticker), search_states) if search_states else []
         elif kind == KIND_HYPERPARAMETER:
-            results = hpo_results(ticker, build_asset(ticker), search_states, round_number)
+            results = hpo_results(ticker, build_asset_material(ticker), search_states, round_number)
         else:
             raise SystemExit(f"{ticker}: {kind!r} is no kind of scoring this stage answers")
         dataset.write_json(config.score_response_json(ticker),
@@ -142,23 +142,24 @@ def main() -> int:
     return 0
 
 
-def xy_for_search_state(asset: dict, search_state: dict) -> dict:
+def xy_for_search_state(asset_material: dict, search_state: dict) -> dict:
     """X and Y for one search state: the asset's own Y when the label's geometry is still the asset's — only X is
     stacked again — else Y walked down the 1m path in process and the feature grids joined to the decisions
     the new label horizon admits."""
     barriers = dataset.barriers_from({name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES})
-    if all(asset["xy"]["barriers"][name] == barriers[name] for name in config.BARRIER_COORDINATE_NAMES
+    if all(asset_material["xy"]["barriers"][name] == barriers[name] for name in config.BARRIER_COORDINATE_NAMES
            if name not in config.TRADE_EXIT_COORDINATE_NAMES):
-        x, feature_columns = dataset.build_x(asset["xy"]["catalogue_values"],
-                                             search_state["columns_by_timeframe"], asset["timeframes"])
-        return {**asset["xy"], "x": x, "feature_columns": feature_columns, "barriers": barriers}
-    label_events = labels.label_events(asset["label_inputs"], asset["catalogue"], barriers)
-    return dataset.build_xy(asset["catalogue"], asset["timeframes"], asset["catalogue_values"],
-                            asset["decision_grids"], label_events, search_state["columns_by_timeframe"], barriers,
-                            asset["xy"]["maximum_label_horizon_minutes"])
+        x, feature_columns = dataset.build_x(asset_material["xy"]["catalogue_values"],
+                                             search_state["columns_by_timeframe"], asset_material["timeframes"])
+        return {**asset_material["xy"], "x": x, "feature_columns": feature_columns, "barriers": barriers}
+    label_events = labels.label_events(asset_material["label_inputs"], asset_material["catalogue"], barriers)
+    return dataset.build_xy(asset_material["catalogue"], asset_material["timeframes"],
+                            asset_material["catalogue_values"], asset_material["decision_grids"], label_events,
+                            search_state["columns_by_timeframe"], barriers,
+                            asset_material["xy"]["maximum_label_horizon_minutes"])
 
 
-def search_state_material(asset: dict, search_state: dict, inherited: dict | None) -> dict:
+def search_state_material(asset_material: dict, search_state: dict, inherited: dict | None) -> dict:
     """What a search state is scored from — X and Y, the three boosters' out-of-fold predictions and their skill.
 
     A search state of the fit identity of an earlier one inherits all of it: neither a fit nor a prediction depends on
@@ -167,23 +168,23 @@ def search_state_material(asset: dict, search_state: dict, inherited: dict | Non
     barriers = dataset.barriers_from({name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES})
     if inherited is not None:
         return {**inherited, "xy": {**inherited["xy"], "barriers": barriers}}
-    xy = xy_for_search_state(asset, search_state)
+    xy = xy_for_search_state(asset_material, search_state)
     y_cls = model.to_class(xy["y"])
     prediction_records, skill_by_fold = [], {}
     for fold_id in config.VALIDATION_FOLD_IDS:
-        metrics, _, rows, _ = train.fold_evaluation(xy, y_cls, search_state["best_params"], fold_id)
+        metrics, _, prediction_rows, _ = train.fold_evaluation(xy, y_cls, search_state["best_params"], fold_id)
         skill_by_fold[fold_id] = metrics["relative_logloss_skill"]
-        prediction_records.extend(rows)
+        prediction_records.extend(prediction_rows)
     return {"xy": xy, "skill_by_fold": skill_by_fold,
             "oos_predictions": train.to_oos_predictions(prediction_records)}
 
 
-def state_evaluation(asset: dict, search_state: dict, material: dict) -> dict:
+def state_evaluation(asset_material: dict, search_state: dict, material: dict) -> dict:
     """Score one search state: the strategy's threshold selection on the boosters' predictions, the folds it chose
     at, and the path those folds chain into. The evaluation carries the whole search state, so the gate, the ranking,
     the beam and the cache never ask which coordinate moved."""
     selection = strategy.entry_edge_threshold_selection(
-        strategy.build_simulation_inputs(material["xy"], asset["bars_1m"], material["oos_predictions"]))
+        strategy.build_simulation_inputs(material["xy"], asset_material["bars_1m"], material["oos_predictions"]))
     by_fold, skill_by_fold = selection["validation_by_fold"], material["skill_by_fold"]
     return {
         "columns_by_timeframe": search_state["columns_by_timeframe"],

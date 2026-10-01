@@ -77,4 +77,4 @@ Final-holdout exits: upper_barrier 24, lower_barrier 16, vertical 45, ambiguous 
 
 The OHLCV is the asset's partition of the family `ohlcv_1m_canonical` — the market object the whole chain reads, outside the manifest above because its size moves with every top-up and this file is promised byte-reproducible.
 
-F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/skill_methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
+F5 never participates in feature definition, hyper-parameter selection, entry-edge-threshold selection or strategy-rule selection — folds F2, F3, F4 carry the data-driven selection of the hyper-parameters, the entry edge threshold and, once a search state is promoted, the feature set and the barrier geometry. The method is in `module_ml/skills/methodology_ml.md`, the field names in `module_skills/skill_glossary.md`.
