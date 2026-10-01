@@ -3,7 +3,7 @@ place this sub-module builds a path.
 
 It reads the feature layer's own configuration for what the layer already knows: where an asset's artifacts are,
 how a ticker reaches a stage, and the research window the experiment froze. What it does not read is the other
-module: the values a search state is made of and the files the evaluation contract names are registered copies,
+module: the values a search state is made of and the names of its question and answer files are registered copies,
 because the search state this sub-module moves is the search state that module scores, and a copy that drifts makes
 every cache lookup miss.
 """
@@ -47,7 +47,8 @@ SERPENTINE_SEARCH_ROUND_BUDGET = VALUE_BY_CONFIGURABLE["SERPENTINE_SEARCH_ROUND_
 # ---- what the search is made of ---------------------------------------------------------------------------
 SERPENTINE_SEARCH_MOVE_FORWARD = "forward"     # a move that grows the search state
 SERPENTINE_SEARCH_MOVE_BACKWARD = "backward"   # a move that shrinks it — kept when no worse on every fold
-# the search axes: the part of a search state each moves — its barrier geometry, its feature set, its HPO point
+# the search axes: the part of a search state each moves — its barrier geometry, its feature set, its hyper-parameter
+# point
 SERPENTINE_SEARCH_AXIS_BARRIER = "barrier"
 SERPENTINE_SEARCH_AXIS_FEATURE_SET = "feature_set"
 SERPENTINE_SEARCH_AXIS_HPO = "hpo"
@@ -129,7 +130,7 @@ def serpentine_search_profile_json(ticker):
     return features_config.artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
 
 
-# ---- the files of the evaluation contract, named by both sides ------------------------------------------------
+# ---- the question and the answer, the two files both sides name ------------------------------------------------
 # twice by extraction
 def score_request_json(ticker):
     return features_config.artifact_dir(ticker) / f"{ticker}_score_request.json"
@@ -153,7 +154,8 @@ def feature_set_json(ticker):
 
 # twice by extraction
 def barriers_json(ticker):
-    """The asset's promoted barrier geometry — absent, the frozen constants of the module that labels are."""
+    """The asset's promoted barrier geometry — absent, `START_BY_COORDINATE_DEFAULT` of the module that labels is the
+    asset's geometry."""
     return features_config.artifact_dir(ticker) / f"{ticker}_barriers.json"
 
 

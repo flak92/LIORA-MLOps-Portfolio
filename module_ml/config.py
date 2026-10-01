@@ -384,7 +384,7 @@ def serpentine_search_profile_json(ticker):
 
 # twice by extraction
 def barriers_json(ticker):
-    """The asset's promoted barrier geometry — absent, the frozen constants above are the asset's."""
+    """The asset's promoted barrier geometry — absent, `START_BY_COORDINATE_DEFAULT` above is the asset's geometry."""
     return artifact_dir(ticker) / f"{ticker}_barriers.json"
 
 
