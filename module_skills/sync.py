@@ -1,4 +1,4 @@
-"""Stage: every Skill and the register rendered from the sheet beside what each governs — `make skills-sync`.
+"""The sync: every Skill and the register rendered from the sheet beside what each governs — `make skills-sync`.
 
 The sheet is read once — `sheet.load_sheet()` refuses, in one line, a workbook that is not whole — and every document
 is rendered in memory, written through a temporary file and `os.replace`, and only after the last of them is written

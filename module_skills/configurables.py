@@ -1,4 +1,4 @@
-"""Stage: the table of every CONFIGURABLES record the project holds, on stdout — `make skills-configurables`.
+"""The table of every CONFIGURABLES record the project holds, on stdout — `make skills-configurables`.
 
 The files are the files matrix's own: every controlled `config.py` whose module level assigns the block, in path
 order. A file is read as text and its block evaluated as a literal, never imported, so no stage of any module

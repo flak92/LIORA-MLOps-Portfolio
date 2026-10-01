@@ -1,5 +1,5 @@
-"""Stage: every controlled file of the files matrix, read by the active vendor against the Skills marked for it —
-`make skills-crawl`, after `make skills-sync` has rendered the Skills it sends.
+"""The crawler: every controlled file of the files matrix, read by the active vendor against the Skills marked for
+it — `make skills-crawl`, after `make skills-sync` has rendered the Skills it sends.
 
 The crawl reads the sheet and resolves the files matrix: every glob under the root of the tree, the marks of two rows
 that reach one file joined, the whole sorted by key; each Skill's text is the document the sync rendered. One vendor is
