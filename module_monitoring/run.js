@@ -21,13 +21,13 @@ function buildRunHeader(record) {
   const first = stages[0];
   const last = stages[stages.length - 1];
   const failed = stages.filter((stage) => stage.exit_code !== 0);
-  const wallSeconds = (millisecondsSinceEpoch(last.ended_at_utc) - millisecondsSinceEpoch(first.started_at_utc))
+  const totalSeconds = (millisecondsSinceEpoch(last.ended_at_utc) - millisecondsSinceEpoch(first.started_at_utc))
     / MILLISECONDS_PER_SECOND;
   const stageSeconds = stages.reduce((total, stage) => total + stage.duration_seconds, 0);
   return buildKeyValueBox([
     ["run", record.run_id],
     ["start / end", first.started_at_utc + "  ->  " + last.ended_at_utc + " UTC"],
-    ["total time", formatSeconds(wallSeconds) + "  (stages " + formatSeconds(stageSeconds) + ")"],
+    ["total time", formatSeconds(totalSeconds) + "  (stages " + formatSeconds(stageSeconds) + ")"],
     ["stages", stages.length + (failed.length
       ? "  ·  failed at " + failed.map((stage) => stage.stage).join(", ")
       : "  ·  every exit code 0")],
@@ -50,10 +50,10 @@ function renderRunStages(body, stages) {
 function renderRunStores(body, stages) {
   const rows = [];
   stages.forEach((stage) => {
-    ["added", "changed", "removed"].forEach((state) => {
-      stage.store_diff[state].forEach((entry) => {
-        rows.push([stage.stage, entry.store, entry.path, state,
-                   state === "removed" ? "-" : formatBytes(entry.size_bytes)]);
+    ["added", "changed", "removed"].forEach((change) => {
+      stage.store_diff[change].forEach((entry) => {
+        rows.push([stage.stage, entry.store, entry.path, change,
+                   change === "removed" ? "-" : formatBytes(entry.size_bytes)]);
       });
     });
   });
@@ -61,7 +61,7 @@ function renderRunStores(body, stages) {
     body.appendChild(buildFootnote("no stage of this run wrote a file."));
     return;
   }
-  body.appendChild(buildTable(["stage", "store", "path", "state", "size"], rows));
+  body.appendChild(buildTable(["stage", "store", "path", "change", "size"], rows));
 }
 
 function renderRun(record) {

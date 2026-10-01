@@ -72,7 +72,7 @@ function renderPipeline(status) {
       row.last_observation_utc,
       ageCell(row.last_observation_utc, status.download_cadence_minutes),
       ageCell(status.generated_at_utc, status.download_cadence_minutes),
-      buildPercentageCell(realDataPct(row)),
+      buildPercentCell(realDataPct(row)),
       [formatCount(row.ffill_bars), row.ffill_bars > 0],
       [formatCount(row.longest_ffill_streak_minutes), row.longest_ffill_streak_minutes > 0],
       formatCount(row.longest_flat_streak_minutes),
@@ -91,7 +91,7 @@ function renderRawSources(status) {
       ["symbol", "rows", "coverage", "gaps", "gaps (since first obs.)", "dups", "invalid",
        "zero-vol", "flat", "last close", "first", "last"],
       status.venues[venue].map((row) => [
-        row.symbol, formatCount(row.row_count), buildPercentageCell(row.coverage_pct),
+        row.symbol, formatCount(row.row_count), buildPercentCell(row.coverage_pct),
         formatCount(row.gap_count),
         [formatCount(row.gap_count_after_first_observation), row.gap_count_after_first_observation > 0],
         [formatCount(row.duplicate_count), row.duplicate_count > 0],
@@ -116,7 +116,7 @@ function renderCanonicalSource(status) {
       return [
         row.symbol, formatCount(row.row_count),
         /* the primary tier carries the bar; the tiers below it are read against it as numbers */
-        ...venues.map((venue, tier) => (tier === 0 ? buildPercentageCell(shares[venue])
+        ...venues.map((venue, tier) => (tier === 0 ? buildPercentCell(shares[venue])
                                                    : shares[venue].toFixed(3) + "%")),
         [formatCount(row.ffill_bars), row.ffill_bars > 0],
         [formatCount(row.longest_ffill_streak_minutes), row.longest_ffill_streak_minutes > 0],

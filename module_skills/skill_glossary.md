@@ -1210,7 +1210,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the store diff: what the stage did to the stores — every file added, changed (size or mtime moved) or removed, by store and path
   - Code: `listing()`, `store_diff()` in `record.py`, over the three stores of `STORES` — every store but the trials store and the run records it writes
   - Artifact key: `store_diff` with `added`, `changed` — each `store`, `path`, `size_bytes`, `mtime_ns` — and `removed` — each `store`, `path`
-  - Ui label: added / changed / removed; bytes written; the STORES frame
+  - Ui label: added / changed / removed; bytes written; the STORES frame — stage, store, path, change, size
   - Never: output, artifacts, a stage → artifact map; a trial ledger read by the recorder
 - the basket one run covered — not in the record: the recorder knows no basket
   - Code: the launcher's `TICKERS`, which the make target the recorder wraps carries into every stage command

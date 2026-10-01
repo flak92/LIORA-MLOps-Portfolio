@@ -87,7 +87,7 @@ function buildModelFrame(asset, mlStatus) {
 function buildStrategyFrame(asset, mlStatus) {
   const frame = buildFrame("STRATEGY — model picks the side, the hierarchy gates it");
   frame.body.appendChild(buildKeyValueBox([
-    ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : "  (fallback)")],
+    ["entry edge threshold (τ)", asset.strategy.entry_edge_threshold.toFixed(2) + (asset.strategy.entry_edge_threshold_constraint_met ? "" : " !")],
       ["chosen out of", asset.strategy.cleared_point_count === null ? "no grid point qualified"
         : asset.strategy.cleared_point_count + " grid points cleared the trade floor"
           + "  (median " + formatPercent(asset.strategy.median_cagr_over_cleared, 2)

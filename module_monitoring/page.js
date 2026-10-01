@@ -73,7 +73,7 @@ function buildMeter(pctValue) {
   return track;
 }
 
-function buildPercentageCell(pctValue) {
+function buildPercentCell(pctValue) {
   const wrap = document.createElement("span");
   wrap.appendChild(buildMeter(pctValue));
   wrap.appendChild(document.createTextNode(pctValue.toFixed(3) + "%"));
@@ -157,7 +157,7 @@ function buildTickerLink(ticker, select) {
   return button;
 }
 
-/* One pill component for every group: top tabs, summary views, ticker rows.
+/* One pill component for every group: the top tabs, the ML Assets views, the asset rows.
    A group is [data-pills="NAME"]; its panels carry data-panel="NAME" and a
    matching data-key. Groups without static panels drive a hook instead, so
    pills injected after a fetch work through event delegation. */

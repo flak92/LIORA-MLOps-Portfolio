@@ -1,6 +1,6 @@
 /* ML Research and ML Assets tabs: two fetches — status/ml_status.json and
    status/features_status.json (the catalogue frame and each asset's serpentine search) — feed the cross-section
-   table, the catalogue frame, the five summary views, and — through asset.js and features.js — the per-asset panel
+   table, the catalogue frame, the five ML Assets views, and — through asset.js and features.js — the per-asset panel
    and the Features tab. Classic script using renderTable, buildFrame, buildMeter, buildTickerLink, formatCount,
    formatNumber, formatPercent, mean, validationFolds and buildConfigurablesTable from page.js. */
 "use strict";
