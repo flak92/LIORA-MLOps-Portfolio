@@ -132,8 +132,8 @@ def main() -> int:
                                   "install gum 2: https://github.com/charmbracelet/gum#installation")
     try:
         snapshots = _snapshot_rows()
-        present = sum(row["generated_at_utc"] != "absent" for row in snapshots)
-        tui.gum_style(["Monitoring terminal", f"{present} of {len(snapshots)} snapshots"], "CURRENT")
+        present_snapshot_count = sum(row["generated_at_utc"] != "absent" for row in snapshots)
+        tui.gum_style(["Monitoring terminal", f"{present_snapshot_count} of {len(snapshots)} snapshots"], "CURRENT")
         print()
         tui.gum_table(("snapshot", "generated_at_utc"), snapshots)
         print()

@@ -475,8 +475,8 @@ def main() -> int:
             return _failure_exit_code("the TUI needs an asset", "the asset asked for", "no asset was named",
                                       "type at least one ticker, e.g. BTC")
         rows = _asset_rows(tickers)
-        contracts = sum(1 for row in rows if row["contract"] == "yes")
-        tui.gum_style(["Features terminal", f"{' '.join(tickers)} · {len(tickers)} assets · {contracts} contracts"],
+        contract_count = sum(1 for row in rows if row["contract"] == "yes")
+        tui.gum_style(["Features terminal", f"{' '.join(tickers)} · {len(tickers)} assets · {contract_count} contracts"],
                       "CURRENT")
         print()
         tui.gum_table(STATE_COLUMNS, rows, STATE_COLUMNS_DROP_ORDER)
