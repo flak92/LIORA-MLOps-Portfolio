@@ -1,7 +1,9 @@
 /* ML Assets tab: the per-asset panel. Classic script — uses buildMeter, buildFrame, buildTable,
-   buildKeyValueBox, buildFootnote, formatCount, formatNumber, formatPercent, mean and validationFolds from page.js,
-   and buildShareCell, CLASS_NAMES, ML_STATUS and FEATURES_STATUS from ml.js. */
+   buildKeyValueBox, buildFootnote, buildShareCell, formatCount, formatNumber, formatPercent, mean and validationFolds
+   from page.js, and ML_STATUS and FEATURES_STATUS from ml.js. */
 "use strict";
+
+const CLASS_NAMES = ["short", "neutral", "long"];
 
 /* single-series line with a dashed reference level; no legend needed, the
    frame title names the series. Native <title> carries the hover summary. */

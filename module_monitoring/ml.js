@@ -1,21 +1,12 @@
 /* ML Research and ML Assets tabs: two fetches — status/ml_status.json and
    status/features_status.json (the catalogue frame and each asset's serpentine search) — feed the cross-section
    table, the catalogue frame, the five ML Assets views, and — through asset.js and features.js — the per-asset panel
-   and the Features tab. Classic script using renderTable, buildFrame, buildMeter, buildTickerLink, formatCount,
-   formatNumber, formatPercent, mean, validationFolds and buildConfigurablesTable from page.js. */
+   and the Features tab. Classic script using renderTable, buildFrame, buildMeter, buildShareCell, buildTickerLink,
+   formatCount, formatNumber, formatPercent, mean, validationFolds and buildConfigurablesTable from page.js. */
 "use strict";
 
-const CLASS_NAMES = ["short", "neutral", "long"];
 let ML_STATUS = null;
 let FEATURES_STATUS = null;
-
-function buildShareCell(part, whole) {
-  const pctValue = whole ? (100 * part) / whole : 0;
-  const wrap = document.createElement("span");
-  wrap.appendChild(buildMeter(pctValue));
-  wrap.appendChild(document.createTextNode(formatCount(part) + " (" + pctValue.toFixed(1) + "%)"));
-  return wrap;
-}
 
 /* ---- ML Research tab: the wide cross-section table ---- */
 

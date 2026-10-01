@@ -80,6 +80,14 @@ function buildPercentCell(pctValue) {
   return wrap;
 }
 
+function buildShareCell(part, whole) {
+  const pctValue = whole ? (100 * part) / whole : 0;
+  const wrap = document.createElement("span");
+  wrap.appendChild(buildMeter(pctValue));
+  wrap.appendChild(document.createTextNode(formatCount(part) + " (" + pctValue.toFixed(1) + "%)"));
+  return wrap;
+}
+
 function appendCell(row, content, isWarning) {
   const td = document.createElement("td");
   if (content instanceof Node) td.appendChild(content);
