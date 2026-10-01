@@ -62,7 +62,7 @@ services:
     <<: *service
     command: python -m module_monitoring.serve
     ports:
-      - "127.0.0.1:${PORT:-8900}:8900"
+      - "127.0.0.1:${PORT}:8900"
     volumes:
       - .:/app:ro
       - ./store/run_records:/store/run_records:ro
