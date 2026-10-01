@@ -574,7 +574,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Never: a project synonym for an xgboost parameter; a second name for any of them; registering them one by one
   - External vocabulary: xgboost
 - the frozen constants — what the experiment fixes before any search starts and no search moves
-  - Code: every CONFIGURABLES record whose `experiment_identity` is true but `START_BY_COORDINATE_DEFAULT`, frozen as a default alone — the serpentine search moves that geometry and a promotion writes it; beside the records the constants of the method: `FEATURE_CATALOGUE` and the `WARMUP_TOP_TIMEFRAME_BARS` it sets, `XGBOOST_FIXED_PARAMETERS`, `MINUTES_PER_YEAR`
+  - Code: every CONFIGURABLES record whose `experiment_identity` is true but `START_BY_COORDINATE_DEFAULT`, frozen as a default alone — the serpentine search moves that geometry and a promotion writes it; beside the records the constants of the method: `FEATURE_CATALOGUE` and the `WARMUP_TOP_TIMEFRAME_BARS` it sets, `XGBOOST_FIXED_PARAMETERS` and the `LABEL_CLASS_COUNT` its `num_class` reads, `MINUTES_PER_YEAR`
   - Artifact key: `experiment_identity` of a record in `configurables` of `features_status.json` and `ml_status.json`
   - Ui label: the CONFIGURABLES frames of the Features and ML Research tabs, `experiment identity` = yes
   - Never: a searched parameter among them; a value changed without a commit that says so; a feature parameter copied out of the catalogue into a named constant; `ATR_WILDER_SMOOTHING_PERIOD_BARS`; `LABEL_BARRIER_TRUE_RANGE_MULTIPLIER`, `LABEL_HORIZON`, `LABEL_HORIZON_MINUTES` — names no code carries

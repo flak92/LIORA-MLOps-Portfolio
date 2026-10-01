@@ -108,11 +108,12 @@ def gum_choose(header: str, rows: list[dict], value_column: str, drop_order: tup
     colours = () if config.OUTPUT_PLAIN else tuple(
         argument for flag in ("--cursor.foreground", "--header.foreground", "--selected.foreground")
         for argument in (flag, STATE_COLOURS["CURRENT"]))
-    height = max(3, min(len(rows), shutil.get_terminal_size().lines - 6))
+    height_lines = max(3, min(len(rows), shutil.get_terminal_size().lines - 6))
     # gum 2 matches --selected against a label, never the value after --label-delimiter, and splits it at commas
     chosen = [label for label, row in zip(labels, rows) if selected is not None and row[value_column] in selected]
     preselected = "*" if len(chosen) == len(rows) else ",".join(chosen)
-    return _gum("choose", "--header", header, "--label-delimiter", "\t", "--select-if-one", "--height", str(height),
+    return _gum("choose", "--header", header, "--label-delimiter", "\t", "--select-if-one",
+                "--height", str(height_lines),
                 "--cursor", "> ", "--cursor-prefix", "[ ] ", "--selected-prefix", "[x] ", "--unselected-prefix", "[ ] ",
                 *colours, *(("--no-limit",) if selected is not None else ()),
                 *(("--selected", preselected) if preselected else ()),

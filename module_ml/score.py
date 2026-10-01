@@ -172,9 +172,10 @@ def search_state_material(asset_material: dict, search_state: dict, inherited: d
     y_cls = model.to_class(xy["y"])
     prediction_records, skill_by_fold = [], {}
     for fold_id in config.VALIDATION_FOLD_IDS:
-        metrics, _, prediction_rows, _ = train.fold_evaluation(xy, y_cls, search_state["best_params"], fold_id)
+        metrics, _, fold_prediction_records, _ = train.fold_evaluation(xy, y_cls, search_state["best_params"],
+                                                                       fold_id)
         skill_by_fold[fold_id] = metrics["relative_logloss_skill"]
-        prediction_records.extend(prediction_rows)
+        prediction_records.extend(fold_prediction_records)
     return {"xy": xy, "skill_by_fold": skill_by_fold,
             "oos_predictions": train.to_oos_predictions(prediction_records)}
 

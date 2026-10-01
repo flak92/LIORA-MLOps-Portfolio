@@ -229,9 +229,10 @@ FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT = VALUE_BY_CONFIGURABLE["HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT"]
 HYPERPARAMETER_SEARCH_TRIAL_COUNT = VALUE_BY_CONFIGURABLE["HYPERPARAMETER_SEARCH_TRIAL_COUNT"]
 HYPERPARAMETER_SEARCH_SPACE = VALUE_BY_CONFIGURABLE["HYPERPARAMETER_SEARCH_SPACE"]
+LABEL_CLASS_COUNT = 3   # the classes of y, {-1, 0, +1} read as {0, 1, 2}: short, neutral, long
 XGBOOST_FIXED_PARAMETERS = {
     "objective": "multi:softprob",
-    "num_class": 3,
+    "num_class": LABEL_CLASS_COUNT,
     "tree_method": "hist",
     "nthread": 1,
     "seed": SEED,

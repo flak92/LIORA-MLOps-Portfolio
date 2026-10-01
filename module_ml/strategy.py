@@ -91,38 +91,39 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     xy = simulation_inputs["xy"]
     oos_predictions = simulation_inputs["oos_predictions"]
     in_fold = oos_predictions["oos_fold_id"] == fold_id
-    ts = oos_predictions["decision_ts"][in_fold].astype(np.int64)
-    pos = np.searchsorted(xy["decision_ts"], ts)
+    fold_decision_ts = oos_predictions["decision_ts"][in_fold].astype(np.int64)
+    decision_rows = np.searchsorted(xy["decision_ts"], fold_decision_ts)
     p_short, p_long = oos_predictions["p_short"][in_fold], oos_predictions["p_long"][in_fold]
     p_neutral = oos_predictions["p_neutral"][in_fold]
     directional_probability_edge = p_long - p_short
     side = np.sign(directional_probability_edge)
     agreeing_trend_timeframe_count = sum(
-        (np.sign(simulation_inputs["trend"][timeframe][pos]) == side).astype(np.int64)
+        (np.sign(simulation_inputs["trend"][timeframe][decision_rows]) == side).astype(np.int64)
         for timeframe in xy["timeframes"])
     gate_open = (
         (np.maximum(p_long, p_short) > p_neutral)
         & (side != 0)
-        & (side == np.sign(simulation_inputs["trend"][config.trend_gate_timeframe(xy["catalogue"])][pos]))
+        & (side == np.sign(simulation_inputs["trend"][config.trend_gate_timeframe(xy["catalogue"])]
+                           [decision_rows]))
         & (agreeing_trend_timeframe_count >= config.MINIMUM_AGREEING_TREND_TIMEFRAMES)
     )
     barriers = xy["barriers"]
     label_horizon_minutes = barriers["label_horizon_minutes"]
-    entry_ts, entry_price = xy["entry_ts"][pos], xy["entry_price"][pos]
+    entry_ts, entry_price = xy["entry_ts"][decision_rows], xy["entry_price"][decision_rows]
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
     # the evaluation population, the experiment's and one for every search state: a decision of the fold whose entry
     # leaves room for the maximum label horizon before the fold's end, decided at t_0 and never by the search state's
     # own horizon or by the event that follows. The gate, which reads the search state's predictions, and the traded
     # entry minute choose the eligible entries among it; the trade then walks the search state's own label horizon
-    decision_in_evaluation_population = ((ts >= fold_start_ms)
+    decision_in_evaluation_population = ((fold_decision_ts >= fold_start_ms)
                                          & (entry_ts + xy["maximum_label_horizon_minutes"]
                                             * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
-    entry_eligible = decision_in_evaluation_population & gate_open & xy["entry_minute_traded"][pos]
+    entry_eligible = decision_in_evaluation_population & gate_open & xy["entry_minute_traded"][decision_rows]
     eligible_rows = np.flatnonzero(entry_eligible)
 
     upper_barrier, lower_barrier = trade_barriers(
         side[eligible_rows], entry_price[eligible_rows],
-        xy["upper_barrier"][pos][eligible_rows], xy["lower_barrier"][pos][eligible_rows],
+        xy["upper_barrier"][decision_rows][eligible_rows], xy["lower_barrier"][decision_rows][eligible_rows],
         barriers["label_barrier_true_range_multiplier"], barriers["take_profit_true_range_multiplier"],
         barriers["stop_loss_true_range_multiplier"])
     _, resolution_offset_minutes, event_resolution, exit_reference_price = labels.triple_barrier(
@@ -131,10 +132,10 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
 
     # the trade's event scattered back onto the fold's decision grid: a row no threshold can take
     # carries none, and backtest() reads a row only after entry_eligible admitted it
-    trade = {"event_end_ts": np.zeros(pos.size, dtype=np.int64),
-             "event_resolution": np.zeros(pos.size, dtype=np.int8),
-             "exit_reference_price": np.zeros(pos.size),
-             "upper_barrier": np.zeros(pos.size), "lower_barrier": np.zeros(pos.size)}
+    trade = {"event_end_ts": np.zeros(decision_rows.size, dtype=np.int64),
+             "event_resolution": np.zeros(decision_rows.size, dtype=np.int8),
+             "exit_reference_price": np.zeros(decision_rows.size),
+             "upper_barrier": np.zeros(decision_rows.size), "lower_barrier": np.zeros(decision_rows.size)}
     trade["event_end_ts"][eligible_rows] = labels.event_end_ts(entry_ts[eligible_rows], resolution_offset_minutes,
                                                                label_horizon_minutes)
     trade["event_resolution"][eligible_rows] = event_resolution
@@ -172,19 +173,19 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
     close_1m = simulation_inputs["bars_1m"]["close"]
     equity_1m = np.empty(fold_minute_count)
 
-    take = np.flatnonzero(signals["entry_eligible"]
-                          & (np.abs(signals["directional_probability_edge"]) >= entry_edge_threshold))
+    taken_rows = np.flatnonzero(signals["entry_eligible"]
+                                & (np.abs(signals["directional_probability_edge"]) >= entry_edge_threshold))
 
     equity, cursor, in_pos_ms = 1.0, 0, 0
     trades = []
     # the exit counts are counts by event_resolution, so they carry its names
     exits = {name: 0 for name in config.EVENT_RESOLUTION_NAMES.values()}
-    for k in take:
-        i = int((signals["entry_ts"][k] - config.RESEARCH_START_MS)
-                // config.MILLISECONDS_PER_MINUTE) - fold_start_minute
-        j = int((signals["event_end_ts"][k] - config.RESEARCH_START_MS)
-                // config.MILLISECONDS_PER_MINUTE) - fold_start_minute - 1
-        if i < cursor:
+    for k in taken_rows:
+        entry_offset_minutes = int((signals["entry_ts"][k] - config.RESEARCH_START_MS)
+                                   // config.MILLISECONDS_PER_MINUTE) - fold_start_minute
+        exit_offset_minutes = int((signals["event_end_ts"][k] - config.RESEARCH_START_MS)
+                                  // config.MILLISECONDS_PER_MINUTE) - fold_start_minute - 1
+        if entry_offset_minutes < cursor:
             continue                                     # position still open
         s = float(signals["side"][k])
         entry_price = float(signals["entry_price"][k])
@@ -192,13 +193,14 @@ def backtest(simulation_inputs: dict, signals: dict, entry_edge_threshold: float
         px = fill_price(s, resolution, float(signals["upper_barrier"][k]),
                         float(signals["lower_barrier"][k]),
                         float(signals["exit_reference_price"][k]))
-        equity_1m[cursor:i] = equity                     # flat while out of the market
-        equity_1m[i:j] = equity * (1.0 - c + s * (
-            close_1m[fold_start_minute + i:fold_start_minute + j] / entry_price - 1.0))
+        equity_1m[cursor:entry_offset_minutes] = equity                     # flat while out of the market
+        held_minutes = slice(fold_start_minute + entry_offset_minutes, fold_start_minute + exit_offset_minutes)
+        equity_1m[entry_offset_minutes:exit_offset_minutes] = equity * (1.0 - c + s * (
+            close_1m[held_minutes] / entry_price - 1.0))
         r = s * (px / entry_price - 1.0) - c - c * (px / entry_price)
         equity *= 1.0 + r
-        equity_1m[j] = equity
-        cursor = j + 1
+        equity_1m[exit_offset_minutes] = equity
+        cursor = exit_offset_minutes + 1
         in_pos_ms += int(signals["event_end_ts"][k] - signals["entry_ts"][k])
         trades.append(r)
         exits[config.EVENT_RESOLUTION_NAMES[resolution]] += 1
@@ -283,8 +285,8 @@ def validation_path_block(validation_by_fold: dict[int, dict]) -> dict:
 
 
 def equity_curve(equity_1m: np.ndarray) -> dict:
-    idx = np.arange(0, equity_1m.size, EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES)
-    return {"equity": np.round(equity_1m[idx], 6).tolist()}
+    sample_rows = np.arange(0, equity_1m.size, EQUITY_CURVE_SAMPLE_INTERVAL_MINUTES)
+    return {"equity": np.round(equity_1m[sample_rows], 6).tolist()}
 
 
 # the key the selection score is published under, named for what it is under the objective the experiment froze, and
@@ -309,7 +311,7 @@ def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
     path's growth rate among those clearing the trade floor, ties to the smaller threshold, the grid floor when none
     clears it — with the fold results at that point, the path they chain into, and how many points it was
     chosen out of. The one selection the stage and `score.py` both run, the latter for every search state."""
-    validation_rows = {fold_id: signals_for_fold(simulation_inputs, fold_id)
+    signals_by_fold = {fold_id: signals_for_fold(simulation_inputs, fold_id)
                        for fold_id in config.VALIDATION_FOLD_IDS}
     validation_bounds = {fold_id: validation.fold_bounds(fold_id)
                          for fold_id in config.VALIDATION_FOLD_IDS}
@@ -319,7 +321,7 @@ def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
     results_at_grid_floor = None                     # kept for the fallback below
     cleared_scores = []                              # what the chosen point was chosen out of
     for threshold in config.ENTRY_EDGE_THRESHOLD_GRID:
-        results_by_fold = {fold_id: backtest(simulation_inputs, validation_rows[fold_id], threshold,
+        results_by_fold = {fold_id: backtest(simulation_inputs, signals_by_fold[fold_id], threshold,
                                              *validation_bounds[fold_id])
                            for fold_id in config.VALIDATION_FOLD_IDS}
         if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:

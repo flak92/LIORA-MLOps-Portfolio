@@ -8,12 +8,12 @@ import numpy as np
 from . import config, dataset, model, validation
 
 
-def write_predictions(ticker: str, cat: dict, rows: list[tuple]) -> Path:
+def write_oos_predictions(ticker: str, cat: dict, prediction_records: list[tuple]) -> Path:
     return dataset.write_parquet(
         config.oos_predictions_parquet(ticker, cat["decision_timeframe"]),
         {"decision_ts": "BIGINT", "oos_fold_id": "TINYINT",
          "p_short": "DOUBLE", "p_neutral": "DOUBLE", "p_long": "DOUBLE"},
-        ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in rows),
+        ([int(r[0]), int(r[1])] + [repr(float(v)) for v in r[2:]] for r in prediction_records),
         order_by="oos_fold_id, decision_ts",
         family="oos_predictions",
     )
@@ -56,7 +56,8 @@ def fold_importance_block(booster, xy: dict, fold_id: int) -> dict:
     }
 
 
-def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tuple[dict, dict, list[tuple], object]:
+def fold_evaluation(xy: dict, y_cls: np.ndarray, best_params: dict,
+                    fold_id: int) -> tuple[dict, dict, list[tuple], object]:
     """Fit before the fold, predict its whole OOS block, score the supervised subset only. Returns (metrics,
     segment, prediction_records, booster)."""
     fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
@@ -67,18 +68,19 @@ def fold_evaluation(xy: dict, y_cls: np.ndarray, best: dict, fold_id: int) -> tu
         xy["decision_ts"], xy["entry_ts"], xy["event_end_ts"],
         xy["sample_valid"], fold_start_ms, fold_end_ms, xy["maximum_label_horizon_minutes"])
     prior_train = validation.weighted_class_prior(y_cls[training_rows], train_weight)
-    booster = model.fit(best, xy["x"][training_rows], xy["y"][training_rows], train_weight, xy["feature_columns"])
+    booster = model.fit(best_params, xy["x"][training_rows], xy["y"][training_rows], train_weight,
+                        xy["feature_columns"])
     oos_block_proba = model.predict_proba(booster, xy["x"][oos_block_rows], xy["feature_columns"])
-    pos = np.searchsorted(oos_block_rows, scoring_rows)   # scoring_rows ⊂ oos_block_rows
-    metrics = fold_metrics(y_cls[scoring_rows], oos_block_proba[pos], scoring_weight, prior_train)
+    scoring_block_rows = np.searchsorted(oos_block_rows, scoring_rows)   # scoring_rows ⊂ oos_block_rows
+    metrics = fold_metrics(y_cls[scoring_rows], oos_block_proba[scoring_block_rows], scoring_weight, prior_train)
     prediction_records = [
         (xy["decision_ts"][i], fold_id, oos_block_proba[k, 0], oos_block_proba[k, 1], oos_block_proba[k, 2])
         for k, i in enumerate(oos_block_rows)
     ]
-    eligible = int((xy["sample_valid"] & (xy["decision_ts"] < fold_start_ms)).sum())
+    eligible_event_count = int((xy["sample_valid"] & (xy["decision_ts"] < fold_start_ms)).sum())
     segment = {
         "training_row_count": int(training_rows.size),
-        "purged_event_count": eligible - int(training_rows.size),
+        "purged_event_count": eligible_event_count - int(training_rows.size),
         "oos_block_row_count": int(oos_block_rows.size),
         "scored_row_count": int(scoring_rows.size),
     }
@@ -89,25 +91,26 @@ def main() -> int:
     args = config.build_ticker_parser("frozen-parameter training and the final-holdout report").parse_args()
 
     for ticker in config.parse_tickers(args.tickers):
-        best = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
+        best_params = dataset.load_json(config.parameters_json(ticker))["hyperparameter_search_result"]["best_params"]
         xy = dataset.load_xy(ticker)
         y_cls = model.to_class(xy["y"])
 
         prediction_records, per_fold, segments, validation_importance = [], {}, {}, {}
         for fold_id in config.VALIDATION_FOLD_IDS:
-            metrics, segments[f"fold_{fold_id}"], rows, booster = fold_evaluation(xy, y_cls, best, fold_id)
+            metrics, segments[f"fold_{fold_id}"], fold_prediction_records, booster = fold_evaluation(
+                xy, y_cls, best_params, fold_id)
             per_fold[f"fold_{fold_id}"] = metrics
             validation_importance[f"fold_{fold_id}"] = fold_importance_block(booster, xy, fold_id)
-            prediction_records.extend(rows)
+            prediction_records.extend(fold_prediction_records)
 
         # the final holdout: fitted on everything before it, never used for a choice — and never attributed,
         # so that no importance of it can be read
-        final_holdout, segments[f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"], rows, _ = fold_evaluation(
-            xy, y_cls, best, config.FINAL_HOLDOUT_FOLD_ID)
-        prediction_records.extend(rows)
-        write_predictions(ticker, xy["catalogue"], prediction_records)
+        final_holdout, segments[f"fold_{config.FINAL_HOLDOUT_FOLD_ID}"], fold_prediction_records, _ = fold_evaluation(
+            xy, y_cls, best_params, config.FINAL_HOLDOUT_FOLD_ID)
+        prediction_records.extend(fold_prediction_records)
+        write_oos_predictions(ticker, xy["catalogue"], prediction_records)
 
-        trainable = xy["sample_valid"]
+        sample_valid = xy["sample_valid"]
         payload = {
             "validation": per_fold,
             "final_holdout": final_holdout,
@@ -115,15 +118,15 @@ def main() -> int:
             "feature_columns": list(xy["feature_columns"]),
             # classes over the supervised population only: an ambiguous event carries y = 0 in the file
             "class_counts": {
-                "short": int((trainable & (xy["y"] == -1)).sum()),
-                "neutral": int((trainable & (xy["y"] == 0)).sum()),
-                "long": int((trainable & (xy["y"] == 1)).sum()),
+                "short": int((sample_valid & (xy["y"] == -1)).sum()),
+                "neutral": int((sample_valid & (xy["y"] == 0)).sum()),
+                "long": int((sample_valid & (xy["y"] == 1)).sum()),
             },
             "labels": {
                 "decision_count": int(xy["y"].size),
                 "ambiguous_event_count": int((~xy["label_valid"]).sum()),
                 "untraded_entry_minute_count": int((~xy["entry_minute_traded"]).sum()),
-                "trainable_row_count": int(trainable.sum()),
+                "trainable_row_count": int(sample_valid.sum()),
             },
             "segments": {
                 **segments,

@@ -41,8 +41,8 @@ def training_set(entry_ts: np.ndarray, event_end_ts: np.ndarray,
     """Purged training rows — event_end_ts <= fold_start_ms is exactly no overlap, the end being exclusive — and
     their weights, measured after the purge."""
     keep = sample_valid & (event_end_ts <= fold_start_ms)
-    idx = np.flatnonzero(keep)
-    return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
+    training_rows = np.flatnonzero(keep)
+    return training_rows, average_uniqueness_weight(entry_ts[training_rows], event_end_ts[training_rows])
 
 
 def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.ndarray,
@@ -55,8 +55,8 @@ def scoring_set(decision_ts: np.ndarray, entry_ts: np.ndarray, event_end_ts: np.
     rows apart; the metrics these rows feed select nothing."""
     keep = (sample_valid & (decision_ts >= fold_start_ms)
             & (entry_ts + maximum_label_horizon_minutes * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
-    idx = np.flatnonzero(keep)
-    return idx, average_uniqueness_weight(entry_ts[idx], event_end_ts[idx])
+    scoring_rows = np.flatnonzero(keep)
+    return scoring_rows, average_uniqueness_weight(entry_ts[scoring_rows], event_end_ts[scoring_rows])
 
 
 def oos_block_rows(decision_ts: np.ndarray, fold_start_ms: int, fold_end_ms: int) -> np.ndarray:
@@ -73,22 +73,22 @@ def multiclass_logloss(y_cls: np.ndarray, proba: np.ndarray, weight: np.ndarray)
 
 def weighted_class_prior(y_cls: np.ndarray, weight: np.ndarray) -> np.ndarray:
     """Weight-normalised class frequencies — the baseline a model must beat."""
-    prior = np.array([weight[y_cls == c].sum() for c in range(3)], dtype=np.float64)
+    prior = np.array([weight[y_cls == c].sum() for c in range(config.LABEL_CLASS_COUNT)], dtype=np.float64)
     return prior / prior.sum()
 
 
 def prior_logloss(prior: np.ndarray, y_cls: np.ndarray, weight: np.ndarray) -> float:
     """Log-loss of predicting the training prior everywhere, weighted by the same function."""
-    return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, 3)), weight)
+    return multiclass_logloss(y_cls, np.broadcast_to(prior, (y_cls.size, config.LABEL_CLASS_COUNT)), weight)
 
 
 def sharpe_annualised(bar_returns: np.ndarray, decision_bars_per_year: float) -> float | None:
     """The mean decision-bar return over its standard deviation, annualised; None where the returns never varied —
     a fold that took no trade — the ratio having no denominator, as calmar() and profit_factor() are None."""
-    sd = bar_returns.std(ddof=1)
-    if sd == 0.0:
+    bar_return_standard_deviation = bar_returns.std(ddof=1)
+    if bar_return_standard_deviation == 0.0:
         return None
-    return float(bar_returns.mean() / sd * np.sqrt(decision_bars_per_year))
+    return float(bar_returns.mean() / bar_return_standard_deviation * np.sqrt(decision_bars_per_year))
 
 
 def cagr(final_equity: float, minute_count: int) -> float:

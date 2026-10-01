@@ -170,9 +170,9 @@ def main() -> int:
         if not tickers:
             return _failure_exit_code("the TUI needs an asset", "the asset asked for", "no asset was named",
                                       "type at least one ticker, e.g. BTC")
-        complete = sum(1 for ticker in tickers if ml_config.is_artifact_set_complete(ticker))
-        tui.gum_style(["ML terminal", f"{' '.join(tickers)} · {len(tickers)} assets · {complete} artifact sets complete"],
-                      "CURRENT")
+        complete_artifact_set_count = sum(1 for ticker in tickers if ml_config.is_artifact_set_complete(ticker))
+        tui.gum_style(["ML terminal", f"{' '.join(tickers)} · {len(tickers)} assets · "
+                                      f"{complete_artifact_set_count} artifact sets complete"], "CURRENT")
         print()
         tui.gum_table(STATE_COLUMNS, _asset_rows(tickers), STATE_COLUMNS_DROP_ORDER)
         print()
