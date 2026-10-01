@@ -58,9 +58,9 @@ def write_text(path: Path, text: str) -> None:
 
 
 def delete_stale(documents: dict[Path, str]) -> None:
-    """Every generated file the sheet no longer names is deleted: in every place a Skill of any family may lie — only
+    """Every generated file the sheet no longer names is deleted: in every place a Skill of any owner may lie — only
     a file whose first line is the marker."""
-    places = {place for family in ("module_skills", "module_*") for place in config.skill_places(family)}
+    places = {place for sheet_tab in ("module_skills", "module_*") for place in config.skill_places(sheet_tab)}
     for place in sorted(places):
         for path in sorted(config.TREE_ROOT_DIR.glob(place)):
             if path not in documents and path.is_file():

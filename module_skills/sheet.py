@@ -15,9 +15,9 @@ from xml.etree import ElementTree
 
 from . import config
 
-MAIN = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-RELATIONSHIPS = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
-PACKAGE = "{http://schemas.openxmlformats.org/package/2006/relationships}"
+WORKBOOK_NAMESPACE = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+RELATIONSHIP_ID_NAMESPACE = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+RELATIONSHIP_PART_NAMESPACE = "{http://schemas.openxmlformats.org/package/2006/relationships}"
 
 
 class Rule(NamedTuple):
@@ -30,7 +30,7 @@ class Rule(NamedTuple):
 
 
 class Skill(NamedTuple):
-    sheet_tab: str     # the tab holding its rules, which is also its family: module_skills or module_<domain>
+    sheet_tab: str     # the tab holding its rules, named for its owner: module_skills or module_<domain>
     skill_path: str    # relative to the root of the tree; its stem is the Skill's identifier
     summary: str
     rules: list[Rule]
@@ -61,29 +61,30 @@ def _column_index(reference: str) -> int:
 def _shared_strings(package: zipfile.ZipFile) -> list[str]:
     if "xl/sharedStrings.xml" not in package.namelist():
         return []
-    return ["".join(node.text or "" for node in item.iter(f"{MAIN}t"))
-            for item in ElementTree.fromstring(package.read("xl/sharedStrings.xml")).iter(f"{MAIN}si")]
+    return ["".join(node.text or "" for node in item.iter(f"{WORKBOOK_NAMESPACE}t"))
+            for item in ElementTree.fromstring(package.read("xl/sharedStrings.xml")).iter(f"{WORKBOOK_NAMESPACE}si")]
 
 
 def _sheet_parts(package: zipfile.ZipFile) -> list[tuple[str, str]]:
     """Every tab's name and the zip member that holds it, through the workbook's relationships."""
     targets = {}
-    for relationship in ElementTree.fromstring(package.read("xl/_rels/workbook.xml.rels")).iter(f"{PACKAGE}Relationship"):
+    relationship_part = ElementTree.fromstring(package.read("xl/_rels/workbook.xml.rels"))
+    for relationship in relationship_part.iter(f"{RELATIONSHIP_PART_NAMESPACE}Relationship"):
         target = relationship.get("Target", "")
         targets[relationship.get("Id")] = target.lstrip("/") if target.startswith("/") else f"xl/{target}"
-    return [(tab.get("name"), targets[tab.get(f"{RELATIONSHIPS}id")])
-            for tab in ElementTree.fromstring(package.read("xl/workbook.xml")).iter(f"{MAIN}sheet")]
+    return [(tab.get("name"), targets[tab.get(f"{RELATIONSHIP_ID_NAMESPACE}id")])
+            for tab in ElementTree.fromstring(package.read("xl/workbook.xml")).iter(f"{WORKBOOK_NAMESPACE}sheet")]
 
 
 def _cell_text(cell, shared: list[str]) -> str:
     kind = cell.get("t", "")
     if kind == "s":
-        value = cell.find(f"{MAIN}v")
+        value = cell.find(f"{WORKBOOK_NAMESPACE}v")
         text = shared[int(value.text)] if value is not None and value.text else ""
     elif kind == "inlineStr":
-        text = "".join(node.text or "" for node in cell.iter(f"{MAIN}t"))
+        text = "".join(node.text or "" for node in cell.iter(f"{WORKBOOK_NAMESPACE}t"))
     else:
-        value = cell.find(f"{MAIN}v")
+        value = cell.find(f"{WORKBOOK_NAMESPACE}v")
         text = value.text or "" if value is not None else ""
     return " ".join(text.split())
 
@@ -92,11 +93,11 @@ def _grid(package: zipfile.ZipFile, member: str, shared: list[str]) -> list[list
     """The tab as rows of text, a missing row or cell being empty."""
     rows: dict[int, dict[int, str]] = {}
     number = 0
-    for row in ElementTree.fromstring(package.read(member)).iter(f"{MAIN}row"):
+    for row in ElementTree.fromstring(package.read(member)).iter(f"{WORKBOOK_NAMESPACE}row"):
         number = int(row.get("r", number + 1))
         cells: dict[int, str] = {}
         column = -1
-        for cell in row.iter(f"{MAIN}c"):
+        for cell in row.iter(f"{WORKBOOK_NAMESPACE}c"):
             column = _column_index(cell.get("r", "")) if cell.get("r") else column + 1
             cells[column] = _cell_text(cell, shared)
         rows[number] = cells
@@ -141,7 +142,7 @@ def _one_table(tabs: dict, is_wanted, headed: str) -> tuple[str, list[str], list
     return found[0]
 
 
-def _filled(cells: dict[str, str], where: str) -> None:
+def _refuse_empty_cells(cells: dict[str, str], where: str) -> None:
     empty = [column for column, value in cells.items() if not value]
     if empty:
         _refuse(f"{where} leaves {', '.join(empty)} empty")
@@ -178,7 +179,7 @@ def load_sheet() -> Sheet:
     for row in register_rows:
         cells = dict(zip(config.SKILL_REGISTER_HEADER, row))
         where = f"the skill register: {cells['sheet_tab']} | {cells['skill_path']}"
-        _filled(cells, where)
+        _refuse_empty_cells(cells, where)
         key = (cells["sheet_tab"], cells["skill_path"])
         if key in skills:
             _refuse(f"{where} is registered twice")
@@ -201,7 +202,7 @@ def load_sheet() -> Sheet:
         for row in rows:
             cells = dict(zip(config.RULE_HEADER, row))
             where = f"{tab}: {cells['rule_id'] or cells['skill_path']}"
-            _filled(cells, where)
+            _refuse_empty_cells(cells, where)
             skill = skills.get((tab, cells["skill_path"]))
             if skill is None:
                 _refuse(f"{where}: {cells['skill_path']} has no row of the skill register for the tab {tab}")
@@ -240,7 +241,7 @@ def load_sheet() -> Sheet:
     for row in matrix_rows:
         cells = dict(zip(config.FILES_MATRIX_HEADER, row[:1]))
         where = f"the files matrix: {cells['path']}"
-        _filled(cells, where)
+        _refuse_empty_cells(cells, where)
         if cells["path"] in keys:
             _refuse(f"{where} is listed twice; one row per path")
         keys.add(cells["path"])

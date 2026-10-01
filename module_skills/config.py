@@ -2,9 +2,9 @@
 
 It imports nothing from any module and needs nothing installed: the standard library reads the sheet and
 writes the documents. The sheet is the one source of every Skill and of the register; this file says where
-the sheet is, where a Skill of a tab's family may lie in the tree, and how a generated file is told from a hand-written
-one. It names no module: a tab is found by its family, so a new module is rows of the sheet and nothing here. The tools
-run on the host over the tree this package sits in, its root one level up.
+the sheet is, where a Skill may lie in the tree by the owner of its tab, and how a generated file is told from a
+hand-written one. It names no module: a tab is placed by its owner, so a new module is rows of the sheet and nothing
+here. The tools run on the host over the tree this package sits in, its root one level up.
 """
 
 from pathlib import Path
@@ -37,9 +37,9 @@ def skill_document_path(skill_path: str) -> Path:
 
 
 def skill_places(sheet_tab: str) -> tuple[str, ...]:
-    """Where a Skill of a tab's family may lie, relative to the root of the tree: the canon's in `module_skills/`, its
-    glossary among them, and beside each of its sub-modules; a module's in its `skills/` and beside each of its
-    sub-modules. A tab of no family has no place, and the sheet reader refuses it."""
+    """Where a Skill may lie by the owner of its tab, relative to the root of the tree: the canon's in `module_skills/`,
+    the register among them, and beside each of its sub-modules; a module's in its `skills/` and beside each of its
+    sub-modules. A tab of no owner has no place, and the sheet reader refuses it."""
     if sheet_tab == "module_skills":
         return ("module_skills/skill_*.md", "module_skills/sub_module_*/skill_*.md")
     if sheet_tab.startswith("module_"):
