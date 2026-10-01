@@ -36,19 +36,21 @@ def main() -> int:
             print(f"{ticker} search state unchanged — the proposal, state evaluation {state_evaluation_index}, is the "
                   f"active search state", flush=True)
             continue
-        added = axis_feature_set.column_count(axis_feature_set.columns_added(
+        added_column_count = axis_feature_set.column_count(axis_feature_set.columns_added(
             search_state["columns_by_timeframe"], active["columns_by_timeframe"], timeframes), timeframes)
-        removed = axis_feature_set.column_count(axis_feature_set.columns_removed(
+        removed_column_count = axis_feature_set.column_count(axis_feature_set.columns_removed(
             search_state["columns_by_timeframe"], active["columns_by_timeframe"], timeframes), timeframes)
-        moved = [name for name in (*config.BARRIER_COORDINATE_NAMES, "best_params")
+        moved_coordinate_names = [name for name in (*config.BARRIER_COORDINATE_NAMES, "best_params")
                  if search_state[name] != active[name]]
         dataset.write_json(config.feature_set_json(ticker),
                            {"columns_by_timeframe": search_state["columns_by_timeframe"]})
         dataset.write_json(config.barriers_json(ticker),
                            {name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES})
         dataset.write_json(config.hyperparameter_point_json(ticker), {"best_params": search_state["best_params"]})
-        print(f"{ticker} <- the proposal, state evaluation {state_evaluation_index} (+{added} -{removed} columns"
-              f"{', ' + ', '.join(moved) if moved else ''}); rerun the ML chain for this asset", flush=True)
+        print(f"{ticker} <- the proposal, state evaluation {state_evaluation_index} "
+              f"(+{added_column_count} -{removed_column_count} columns"
+              f"{', ' + ', '.join(moved_coordinate_names) if moved_coordinate_names else ''}); "
+              f"rerun the ML chain for this asset", flush=True)
     return 0
 
 

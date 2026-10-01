@@ -1,6 +1,6 @@
-"""The feature-set axis of the search: the algebra of a set of columns and the moves a pass expands
-one by — a column of the catalogue in, a column of the set out. The two search families are expanded in that
-order, the second seeded by what the first left, which is what makes a pass one pass and not two.
+"""The feature-set axis of the search: the algebra of a set of columns and the moves its two search families
+offer — a column of the catalogue in, a column of the set out. The two run in that order, each a pass of its own,
+the second seeded by the beam the first left.
 
 It scores nothing and runs nothing: a turn asks for a search state to be scored and decides which moves it keeps."""
 
@@ -42,13 +42,14 @@ def moves(search_state: dict, cat: dict, profile: dict, search_family: str) -> t
 
     The catalogue fixes the order — the profile says which columns are admitted, never in what order they
     are tried — and the last column of a set is never taken out, so a search state always has one."""
-    timeframes, catalogue = config.timeframes(cat), cat["columns_by_timeframe"]
+    timeframes, catalogue_columns_by_timeframe = config.timeframes(cat), cat["columns_by_timeframe"]
     admitted, active = profile["columns_admitted_by_timeframe"], search_state["columns_by_timeframe"]
     if search_family == config.SERPENTINE_SEARCH_MOVE_FORWARD:
         return tuple(
             (config.SERPENTINE_SEARCH_MOVE_FORWARD, f"+{features_config.feature_id(name, timeframe)}",
-             {**search_state, "columns_by_timeframe": with_column(active, timeframe, name, catalogue[timeframe])})
-            for timeframe in timeframes for name in catalogue[timeframe]
+             {**search_state, "columns_by_timeframe": with_column(active, timeframe, name,
+                                                                  catalogue_columns_by_timeframe[timeframe])})
+            for timeframe in timeframes for name in catalogue_columns_by_timeframe[timeframe]
             if name in admitted[timeframe] and name not in active[timeframe])
     if column_count(active, timeframes) <= 1:
         return ()

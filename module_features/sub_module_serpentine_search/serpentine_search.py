@@ -297,7 +297,7 @@ def result_key(kind: str, result: dict) -> str:
     return result["search_state_key"] if kind == KIND_HYPERPARAMETER else search_state_key(theta(result))
 
 
-def answers_the_question(response: dict | None, kind: str, round_number: int, keys: list[str]) -> bool:
+def is_question_answered(response: dict | None, kind: str, round_number: int, keys: list[str]) -> bool:
     """Whether an answer on disk is the answer to the question this turn would ask: the same kind, the same
     round and the same search states in the same order. Anything else answers a question no longer asked."""
     return (response is not None and response["kind"] == kind and response["round"] == round_number
@@ -337,7 +337,7 @@ def candidates_of(beam: list[int], state_evaluations: list[dict], cat: dict, pro
     return offered
 
 
-def of_this_pass(row: dict, round_number: int, search_axis: str, search_family: str, candidate: dict) -> bool:
+def is_of_this_pass(row: dict, round_number: int, search_axis: str, search_family: str, candidate: dict) -> bool:
     """Whether a line already in the ledger is one this very pass wrote before it was interrupted — the
     round, the search axis, the search family and the first move that reached the search state, all of them. An
     older line with the same search state is a cache hit, and a cache hit was never part of the question."""
@@ -354,7 +354,7 @@ def pass_membership(candidates: list[dict], state_evaluations: list[dict], index
     members = []
     for candidate in candidates:
         index = index_by_search_state_key.get(candidate["key"])
-        if index is None or of_this_pass(state_evaluations[index - 1], round_number, search_axis, search_family,
+        if index is None or is_of_this_pass(state_evaluations[index - 1], round_number, search_axis, search_family,
                                          candidate):
             members.append(candidate)
     return members
@@ -375,11 +375,11 @@ def turn(ticker: str) -> None:
     profile = dataset.load_json(config.serpentine_search_profile_json(ticker))
     # the asset's noise sigma, or None on the calibration search that measures it
     noise_sigma = profile["path_cagr_noise_standard_deviation"]
-    best = load_best_params(ticker)
+    best_params = load_best_params(ticker)
     cat = dataset.load_json(features_config.catalogue_json(ticker))
     timeframes = config.timeframes(cat)
     columns, barriers = load_feature_columns(ticker, cat), load_barrier_coordinates(ticker)
-    inputs = dataset.to_json_safe(build_search_inputs(best, columns, barriers, cat, profile))
+    inputs = dataset.to_json_safe(build_search_inputs(best_params, columns, barriers, cat, profile))
 
     search_progress_path = config.serpentine_search_json(ticker)
     ledger = config.serpentine_search_state_evaluations_jsonl(ticker)
@@ -414,7 +414,7 @@ def turn(ticker: str) -> None:
         collections.Counter(search_progress["selection_hypothesis_count_by_search_axis"])
         - collections.Counter(row["search_axis"] for row in state_evaluations
                               if row["search_axis"] and row["round"] <= search_progress["round_count"]))
-    start = start_search_state(profile, columns, barriers, best, timeframes)
+    start = start_search_state(profile, columns, barriers, best_params, timeframes)
     # a quiet round proves a fixed point only where no search family the profile runs draws its neighbourhood anew
     # each round
     fixed_point_provable = not any((search_axis, search_family) in config.ROUND_DEPENDENT_SEARCH_FAMILIES
@@ -433,7 +433,7 @@ def turn(ticker: str) -> None:
         round_number = search_progress["round_count"] + 1
         # the search state the search starts from is scored like any other, and its line is the round it predates
         if not state_evaluations:
-            if not answers_the_question(response, KIND_SCORE, round_number, [search_state_key(start)]):
+            if not is_question_answered(response, KIND_SCORE, round_number, [search_state_key(start)]):
                 leave_question(ticker, KIND_SCORE, round_number, [start])
                 return
             write_state_evaluations(ticker, state_evaluations, index_by_search_state_key,
@@ -452,7 +452,7 @@ def turn(ticker: str) -> None:
                 # the study family asks about lines the ledger already holds — the beam's own — so it is never
                 # completed by the ledger and only ever by an answer
                 parents = [state_evaluations[index - 1] for index in beam]
-                if not answers_the_question(response, KIND_HYPERPARAMETER, round_number,
+                if not is_question_answered(response, KIND_HYPERPARAMETER, round_number,
                                             [search_state_key(theta(row)) for row in parents]):
                     leave_question(ticker, KIND_HYPERPARAMETER, round_number, parents)
                     return
@@ -486,7 +486,7 @@ def turn(ticker: str) -> None:
                 members = pass_membership(candidates, state_evaluations, index_by_search_state_key, round_number,
                                           search_axis, search_family)
                 if any(candidate["key"] not in index_by_search_state_key for candidate in members):
-                    if not answers_the_question(response, KIND_SCORE, round_number,
+                    if not is_question_answered(response, KIND_SCORE, round_number,
                                                 [candidate["key"] for candidate in members]):
                         leave_question(ticker, KIND_SCORE, round_number,
                                        [candidate["search_state"] for candidate in members])
