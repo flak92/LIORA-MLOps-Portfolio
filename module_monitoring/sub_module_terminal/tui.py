@@ -47,13 +47,15 @@ def _fitting_columns(columns: tuple[str, ...], rows: list[dict], drop_order: tup
                      gap_columns: int) -> list[str]:
     """The columns that fit the terminal: while wider, drop_order's leave in turn, and one line names them; off a
     terminal every column stays."""
-    kept, width = list(columns), shutil.get_terminal_size((sys.maxsize, 0)).columns
+    kept, terminal_columns = list(columns), shutil.get_terminal_size((sys.maxsize, 0)).columns
     for column in drop_order:
-        if margin_columns + sum(column_width + gap_columns for column_width in _column_widths(kept, rows)) <= width:
+        if (margin_columns + sum(column_width + gap_columns for column_width in _column_widths(kept, rows))
+                <= terminal_columns):
             break
         kept.remove(column)
     if len(kept) < len(columns):
-        print(f"left out at {width} columns: {', '.join(column for column in columns if column not in kept)}")
+        print(f"left out at {terminal_columns} columns: "
+              f"{', '.join(column for column in columns if column not in kept)}")
     return kept
 
 

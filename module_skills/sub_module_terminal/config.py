@@ -19,6 +19,4 @@ import sys
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-# the targets of the one Makefile this terminal offers: the canon's, read off `make help` by name — `skills-<action>`
-# (AGENTS.md § Canonical vocabulary, the terminal-menu row)
-MENU_TARGET_PATTERN = re.compile(r"^skills-")
+MENU_TARGET_PATTERN = re.compile(r"^skills-")  # the canon's targets of `make help`, the terminal-menu row

@@ -62,10 +62,8 @@ def serpentine_search_profile_json(ticker: str) -> Path:
     return artifact_dir(ticker) / f"{ticker}_serpentine_search_profile.json"
 
 
-# the one target this terminal opens its own screen for: its plan shows the proposal it promotes before the gate — a
-# record of the serpentine search's CONFIGURABLES
 # twice by extraction
-PROMOTE_TARGET = "features-serpentine-search-promote"
+PROMOTE_TARGET = "features-serpentine-search-promote"  # the one target with a screen of its own, its plan the proposal
 
 
 # twice by extraction
@@ -134,7 +132,4 @@ def write_json(path: Path, payload: dict) -> None:
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-# the targets of the one Makefile this terminal offers: its module's, read off `make help` by name — `features-<stage>`,
-# `features-all`, `features-<process>` with its actions, and a `tmux-` twin (AGENTS.md § Canonical vocabulary, the
-# terminal-menu row)
-MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?features-")
+MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?features-")  # this module's targets of `make help`, the terminal-menu row

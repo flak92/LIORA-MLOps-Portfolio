@@ -16,6 +16,4 @@ import sys
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-# the targets of the one Makefile this terminal offers: its module's, read off `make help` by name — `data-<stage>`,
-# `data-all` and a stage's `tmux-` twin (AGENTS.md § Canonical vocabulary, the terminal-menu row)
-MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?data-")
+MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?data-")  # this module's targets of `make help`, the terminal-menu row

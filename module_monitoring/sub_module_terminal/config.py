@@ -30,6 +30,4 @@ def load_json(path: Path) -> dict:
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-# the targets of the one Makefile this terminal offers: its module's, read off `make help` by name — the presentation
-# switch, `on` and `off` (AGENTS.md § Canonical vocabulary, the terminal-menu row)
-MENU_TARGET_PATTERN = re.compile(r"^(on|off)$")
+MENU_TARGET_PATTERN = re.compile(r"^(on|off)$")  # the presentation switch of `make help`, the terminal-menu row

@@ -37,8 +37,8 @@ from . import config, tui
 DRAFT_STEPS = ["action", "columns to admit", "start search state", "coordinates to search", "search axes", "plan"]
 STATE_COLUMNS = ("asset", "bars", "catalogue", "contract", "profile", "state evaluations")
 STATE_COLUMNS_DROP_ORDER = ("state evaluations", "profile", "catalogue", "contract")
-PROPOSAL_COLUMNS = ("#", "state evaluation", "coordinates moved", "path CAGR", "path Calmar", "path maxDD", "trades")
-PROPOSAL_COLUMNS_DROP_ORDER = ("path maxDD", "trades", "path Calmar", "coordinates moved")
+PROPOSAL_COLUMNS = ("#", "state evaluation", "changes", "path CAGR", "path Calmar", "path maxDD", "trades")
+PROPOSAL_COLUMNS_DROP_ORDER = ("path maxDD", "trades", "path Calmar", "changes")
 PATH_COLUMNS = ("#", "round", "search axis", "search family", "state evaluation", "path CAGR", "path Calmar",
                 "path maxDD", "trades")
 PATH_COLUMNS_DROP_ORDER = ("trades", "path maxDD", "path Calmar", "search family")
@@ -122,7 +122,7 @@ def _profile_state(profile: dict | None, search: dict | None) -> str:
     return "matches the search" if search["inputs"]["profile"] == profile else "differs from the search"
 
 
-def _asset_files(ticker: str) -> tuple[dict | None, dict | None, dict | None]:
+def _load_asset_json(ticker: str) -> tuple[dict | None, dict | None, dict | None]:
     """The three files of one asset the serpentine search's actions read as objects — the contract, the profile and
     the search's progress — each None where the file is not there."""
     catalogue_path = config.catalogue_json(ticker)
@@ -146,7 +146,7 @@ def _asset_rows(tickers: list[str]) -> list[dict]:
     state evaluation."""
     rows = []
     for ticker in tickers:
-        catalogue, profile, search = _asset_files(ticker)
+        catalogue, profile, search = _load_asset_json(ticker)
         state_evaluations = _state_evaluation_rows(ticker)
         rows.append({"asset": ticker,
                      "bars": len(list(config.partition_dir("bars", ticker).glob("timeframe=*/bars.parquet"))),
@@ -157,7 +157,7 @@ def _asset_rows(tickers: list[str]) -> list[dict]:
     return rows
 
 
-def _state_rows(ticker: str, profile: dict | None, search: dict | None,
+def _recorded_search_rows(ticker: str, profile: dict | None, search: dict | None,
                 state_evaluations: list[dict]) -> list[dict]:
     """What the asset holds, one fact a row — every cell the file's own value, never an age or a share."""
     rows = [{"parameter": "asset", "value": ticker},
@@ -198,7 +198,7 @@ def _proposal_rows(search: dict, state_evaluations: list[dict]) -> list[dict]:
     """The proposals, each read off the ledger line its state evaluation index names — the search's progress holds
     the rank and the index, and no number of the state evaluation."""
     return [{"#": proposal["proposal"], "state evaluation": proposal["state_evaluation_index"],
-             "coordinates moved": _moved(state_evaluations[proposal["state_evaluation_index"] - 1], search),
+             "changes": _moved(state_evaluations[proposal["state_evaluation_index"] - 1], search),
              **_path_block_cells(state_evaluations[proposal["state_evaluation_index"] - 1]["validation_path"])}
             for proposal in search["proposals"]]
 
@@ -353,7 +353,7 @@ def _write_search_profile(ticker: str, catalogue: dict | None, profile: dict | N
             "start_columns_by_timeframe": start_columns,
         }
         path = config.serpentine_search_profile_json(ticker)
-        changes = [{"parameter": key, "now": _short(profile.get(key) if profile else None), "after": _short(value)}
+        changes = [{"parameter": key, "now": _to_line(profile.get(key) if profile else None), "after": _to_line(value)}
                    for key, value in sorted(drafted.items())
                    if not profile or profile.get(key) != value]
         tui.gum_table(("step", "state", "choice"), _step_rows(DRAFT_STEPS, chosen))
@@ -392,7 +392,7 @@ def _recorded_search_tables(ticker: str, profile: dict | None, search: dict | No
                                   "no turn has run for this asset", "draft a profile, then run "
                                   "make features-serpentine-search")
     state_evaluations = _state_evaluation_rows(ticker)
-    tui.gum_table(("parameter", "value"), _state_rows(ticker, profile, search, state_evaluations))
+    tui.gum_table(("parameter", "value"), _recorded_search_rows(ticker, profile, search, state_evaluations))
     print()
     if search["path"]:
         tui.gum_table(PATH_COLUMNS, _path_rows(search, state_evaluations), PATH_COLUMNS_DROP_ORDER)
@@ -421,7 +421,7 @@ def _write_promoted_proposal(ticker: str, search: dict | None) -> int:
     tui.gum_table(("parameter", "value"),
                   [{"parameter": "asset", "value": ticker},
                    {"parameter": "state evaluation", "value": state_evaluation_index},
-                   {"parameter": "coordinates moved",
+                   {"parameter": "changes",
                     "value": _moved(state_evaluations[state_evaluation_index - 1], search)},
                    {"parameter": "writes",
                     "value": f"{config.feature_set_json(ticker).name}, {config.barriers_json(ticker).name}, "
@@ -442,7 +442,7 @@ def _write_promoted_proposal(ticker: str, search: dict | None) -> int:
     return 0
 
 
-def _short(value) -> str:
+def _to_line(value) -> str:
     """One profile value on one line: a list by its length, a mapping by its own, everything else as it stands."""
     if value is None:
         return "—"
@@ -489,7 +489,7 @@ def main() -> int:
         ticker = tui.gum_choose("asset", [{"asset": ticker} for ticker in tickers], "asset")
         if ticker in (None, ""):
             return _cancelled_exit_code()
-        catalogue, profile, search = _asset_files(ticker)
+        catalogue, profile, search = _load_asset_json(ticker)
         # the target whose plan shows the search state it promotes keeps its own screen; everything else is the
         # Makefile's own target, run through the one plan and gate
         if action == config.PROMOTE_TARGET:

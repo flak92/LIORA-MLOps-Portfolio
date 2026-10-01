@@ -41,14 +41,14 @@ probe compares — and stays `module_features/status.py`'s, because answering it
 
 ## The actions
 
-After the menu, the asset form — the assets of `--tickers` as rows, one answered without asking. Then:
+After the menu, the asset choice — the assets of `--tickers` as rows, one answered without asking. Then:
 
 - **a target** — the plan and the gate (`TUI-DESIGNER-A-PLAN-NAMES-WHAT-WILL-RUN`, `TUI-DESIGNER-A-GATE-IS-NOT-A-GUARD`).
   `features-status` folds the whole basket whatever `ASSET` says. `tmux-features-serpentine-search` starts the search
   detached, alive after this terminal closes; there is no stop here: `tmux attach -t` its session and Ctrl-C stop it,
   as `make help` says, and a rerun resumes.
 - **`features-serpentine-search-promote`**, the target `PROMOTE_TARGET` names — its own screen, whose plan shows the
-  search state it promotes: the asset, the proposal's state evaluation, the coordinates it moves and what it writes,
+  search state it promotes: the asset, the proposal's state evaluation, what it changes and what it writes,
   `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json` — then the line
   `command  make features-serpentine-search-promote ASSET=<TICKER>` and the gate `promote the proposal of <TICKER>?`.
   A search proposes one search state at most, so nothing is chosen before the gate. The target copies the proposal and
@@ -69,13 +69,13 @@ After the menu, the asset form — the assets of `--tickers` as rows, one answer
   `draft <TICKER>_serpentine_search_profile.json?` offers `draft` — absent when nothing changes —, `back` and
   `cancel`. A draft needs the contract: without it the run ends on the failure block, whose *next* is
   `make features-catalogue ASSET=<TICKER>`.
-- **recorded search** — writes nothing and ends on its last table: the state table, `parameter | value` — the asset,
+- **recorded search** — writes nothing and ends on its last table: the recorded search's own `parameter | value` table — the asset,
   the profile, the coordinates searched, the search axes, the state evaluations and the rounds, the selection
   hypotheses and their terms by search axis as the search counted them at a round boundary, its outcome
   (`converged`, `stopped by budget` or `in progress`) and whether its last round changed the beam, the champion and
   the proposal count — then the path table and the proposals table, or the lines `no accepted move` and
   `no proposal`. Which state evaluations the path and the proposals hold comes from the search's progress;
-  each one's numbers from its line of the ledger; the coordinates a proposal moves are that line against the asset's
+  each one's numbers from its line of the ledger; what a proposal changes is that line against the asset's
   own search state the search recorded in its inputs. The word is
   *recorded search* and not *status*, which is a stage's.
 
@@ -85,7 +85,7 @@ steps table (`step`, `state`, `choice`), the start search state form, the search
 | table | columns | left out, in turn |
 |---|---|---|
 | the path table | `#`, `round`, `search axis`, `search family`, `state evaluation`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `trades`, `path maxDD`, `path Calmar`, `search family` |
-| the proposals table | `#`, `state evaluation`, `coordinates moved`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `path maxDD`, `trades`, `path Calmar`, `coordinates moved` |
+| the proposals table | `#`, `state evaluation`, `changes`, `path CAGR`, `path Calmar`, `path maxDD`, `trades` | `path maxDD`, `trades`, `path Calmar`, `changes` |
 | the columns form | `column`, `timeframe`, `definition` | `definition`, `timeframe` |
 | the coordinates form | `coordinate`, `grid`, `points` | `points`, `grid` |
 
