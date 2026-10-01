@@ -195,7 +195,7 @@ mapping, and the skills its seats imply are `AGENTS.md` § Skills absent here, d
 
 - **Pipeline** — canonical rows, real-data share and forward-filled bars per asset, its observation lag and
   measurement age, each warned past the download cadence;
-- **Data Quality** — raw-source coverage, gaps, duplicates, OHLC violations and zero-volume bars per provider,
+- **Data Quality** — raw-source coverage, gap, duplicate and OHLC violation counts and zero-volume bars per provider,
   then canonical construction: source shares, switches, the largest 1m move at a switch, cross-source divergence;
 - **Features** — the serpentine search of every asset as the feature layer last wrote it, read against the ML
   snapshot's numbers for the asset's own search state, then each asset's PROPOSALS and the feature module's
@@ -218,7 +218,7 @@ every definition on the timeframes of the register, each column named by `featur
 (`module_features/skills/skill_feature_taxonomy.md`) — and writes the contract, `<TICKER>_catalogue.json`, that
 names them to the next layer. `module_ml/` takes the asset's feature set as X, triple-barrier labels resolved on
 the canonical 1-minute path, a purged walk-forward protocol with average-uniqueness weights and an Optuna search
-over XGBoost, a final out-of-sample fold that selects nothing, and a top-down gated strategy with explicit costs,
+over XGBoost, a final holdout that selects nothing, and a top-down gated strategy with explicit costs,
 whose trades leave at their own take-profit and stop while the label they learned from stays symmetric.
 
 Beside the chain, the serpentine search moves the asset's feature set, its barrier geometry and its

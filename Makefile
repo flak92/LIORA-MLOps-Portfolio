@@ -147,7 +147,7 @@ features-serpentine-search-promote: ## copy the proposal of one asset's serpenti
 # a new experiment for one asset: every file the turn or ml-score writes for it is removed, on the host, over the stores'
 # host paths — the search's progress, its ledger, the question, the answer and the asset's partition of score_trials;
 # its inputs, the chain's files, the promoted search state, hpo_trials and the profile stay. It runs no stage. ASSET= is required
-features-serpentine-search-reset: ## remove one asset's serpentine search — its progress, ledger, question, answer and score_trials partition — keeping its inputs and its profile; ASSET= is required
+features-serpentine-search-reset: ## remove one asset's serpentine search — its progress, ledger, question, answer and score_trials partition — keeping the files it reads and its profile; ASSET= is required
 	$(one_asset)
 	rm -f $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_serpentine_search_state_evaluations.jsonl $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_request.json $(STORE_ASSETS_ARTIFACTS_DIR)/ticker=$(ASSET)/$(ASSET)_score_response.json
 	rm -rf $(STORE_TRIALS_DIR)/score_trials/ticker=$(ASSET)

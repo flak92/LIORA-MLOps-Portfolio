@@ -140,7 +140,8 @@ RESEARCH_END_MS = to_utc_ms(RESEARCH_END_UTC)
 # ---- the timeframe hierarchy: the experiment's literal, finest first — the decision grid, the trend gate's timeframe
 # and the count the strategy's agreement reads all follow from it, so a new token is one line here and a new
 # experiment. Every entry is an exact aggregation of the canonical 1m series, written by bars.py; a token is
-# <integer><unit>, and its duration and the slot the snapshot carries derive from the token (skills/skill_feature_taxonomy.md)
+# <integer><unit>, and its duration and the slot the snapshot carries derive from the token
+# (module_features/skills/skill_feature_taxonomy.md)
 HIERARCHY_TIMEFRAMES = VALUE_BY_CONFIGURABLE["HIERARCHY_TIMEFRAMES"]
 DECISION_TIMEFRAME = VALUE_BY_CONFIGURABLE["DECISION_TIMEFRAME"]
 TIMEFRAME_UNIT_MS = {"m": MILLISECONDS_PER_MINUTE, "h": MILLISECONDS_PER_HOUR, "d": MILLISECONDS_PER_DAY}

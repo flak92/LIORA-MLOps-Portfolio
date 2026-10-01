@@ -38,5 +38,5 @@ method, its thresholds and their limits are `module_features/skills/methodology_
   copies the proposal's whole search state (`promote.py`) and runs `ml-all` for the asset, whose study starts from the
   promoted point (`SERPENTINE-SEARCH-PROMOTION-IS-A-HAND`).
 - **The reset** — `make features-serpentine-search-reset ASSET=<TICKER>` — removes the search's own files and keeps
-  its inputs and its profile; it runs no stage. What a change of data or configuration asks of a hand before the next
+  the files it reads and its profile; it runs no stage. What a change of data or configuration asks of a hand before the next
   search is one rule, `SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`.

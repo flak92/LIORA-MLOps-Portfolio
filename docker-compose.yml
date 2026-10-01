@@ -43,7 +43,7 @@ services:
       - .:/app
       - ./store/assets_artifacts:/store/assets_artifacts
       - ./store/status:/store/status
-  # the one task that needs the ceiling: HPO and XGBoost above DuckDB's 4GB memory_limit
+  # the one runner that needs the ceiling: HPO and XGBoost above DUCKDB_MEMORY_LIMIT
   ml:
     <<: *service
     volumes:

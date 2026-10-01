@@ -41,13 +41,18 @@ for the one asset `ASSET` names, and `status` once over the whole basket.
 | bars | `make features-bars` | `bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet`, one partition per entry of the register, and `bars/schema.json` |
 | catalogue | `make features-catalogue` | `catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet`, one partition per timeframe, `catalogue/schema.json` from the register, and `<TICKER>_catalogue.json` — the contract the ML layer reads |
 | status | `make features-status` | `store/status/features_status.json` |
-| serpentine turn — outside the chain, by a hand | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_state_evaluations.jsonl` and the next question `<TICKER>_score_request.json`, or an ended search |
-| promotion — outside the chain, by a hand | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, then the asset's ML chain |
+
+Outside the chain, a hand's actions on the serpentine search:
+
+| action | target | writes |
+|---|---|---|
+| a turn | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_state_evaluations.jsonl` and the next question `<TICKER>_score_request.json`, or an ended search |
+| the promotion | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, then the asset's ML chain |
 
 ## What it writes
 
 ```
-store/assets_artifacts/bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet            one timeframe's bars: the bar's open, OHLCV, ffill_bars, zero_volume_bars
+store/assets_artifacts/bars/ticker=<TICKER>/timeframe=<timeframe>/bars.parquet            one timeframe's bars: timestamp_ms, OHLCV, ffill_bars, zero_volume_bars
 store/assets_artifacts/bars/schema.json                                                   the family's columns, read off a written partition
 store/assets_artifacts/catalogue/ticker=<TICKER>/timeframe=<timeframe>/catalogue.parquet  decision_ts and the definitions offered on that timeframe
 store/assets_artifacts/catalogue/schema.json                                              the family's columns, from the register
@@ -71,7 +76,7 @@ and what it costs is known before it is made.
 | an indicator | its kernel and one record in `INDICATORS` (`indicators.py`): its `parameter_word`, its `warmup_multiple`, its `warmup_offset_bars` for a window over changes, its fixed `inputs` and bounded `output_range` where it has them, and its `historical_aliases` | nothing, until a catalogue record names it | the existing partitions byte-identical |
 | a derived series | one entry in `SERIES_KERNELS` (`indicators.py`) | nothing, until a term names it | the existing partitions byte-identical |
 | an operator or a normaliser | one record in `OPERATORS` or `NORMALISERS`, beside its kernel (`catalogue.py`) | nothing, until a catalogue record names it | the existing partitions byte-identical |
-| a feature definition | one record appended to `FEATURE_CATALOGUE` (`config.py`), never inserted (`FEATURE-TAXONOMY-A-DEFINITION-IS-APPENDED`), carrying every field (`FEATURE-TAXONOMY-A-CATALOGUE-RECORD-CARRIES-EVERY-FIELD`) and `definition_in_default_set: False`; then its equation in the catalogue table of `skills/methodology_features.md` § The catalogue | every `catalogue` partition of a timeframe it is offered on gains a column, `catalogue/schema.json` a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the serpentine search's `inputs` change; a definition whose warm-up exceeds `WARMUP_TOP_TIMEFRAME_BARS` raises it, and the first decision of every asset moves with it | while the warm-up stands, the existing columns byte-identical and `ml-labels` … `ml-strategy` untouched; a recorded search is reset and run again (`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`), and a model sees the column only after a promotion; `catalogue.nesting` in `features_status.json` shows whether each level's longest history stays below the shortest of the level above (`FEATURE-TAXONOMY-EFFECTIVE-HISTORIES-ARE-SHOWN-NOT-ASSERTED`) |
+| a feature definition | one record appended to `FEATURE_CATALOGUE` (`config.py`), never inserted (`FEATURE-TAXONOMY-A-DEFINITION-IS-APPENDED`), carrying every field (`FEATURE-TAXONOMY-A-CATALOGUE-RECORD-CARRIES-EVERY-FIELD`) and `definition_in_default_set: False`; then its equation in the catalogue table of `skills/methodology_features.md` § The catalogue | every `catalogue` partition of a timeframe it is offered on gains a column, `catalogue/schema.json` a column, `<TICKER>_catalogue.json` a column name, the catalogue frame a row, and the serpentine search's `inputs` change; a definition whose warm-up exceeds `WARMUP_TOP_TIMEFRAME_BARS` raises it, and the first decision of every asset moves with it | while the warm-up stands, the existing columns byte-identical and `ml-labels` … `ml-strategy` untouched; a recorded search is reset and run again (`SERPENTINE-SEARCH-ONE-SEARCH-IS-ONE-EXPERIMENT`), and a model sees the column only after a promotion; `catalogue.nesting` in `features_status.json` shows whether each timeframe's longest effective history stays below the shortest of the timeframe above (`FEATURE-TAXONOMY-EFFECTIVE-HISTORIES-ARE-SHOWN-NOT-ASSERTED`) |
 | a second parameter for an indicator | the record and the name grammar, in one commit (`FEATURE-TAXONOMY-A-TERM-IS-ITS-TOKEN-AND-ONE-PARAMETER`) | the derived names of existing terms do not change | the existing partitions byte-identical |
 
 `definition_in_default_set: True` is a different move: it puts the column into every asset's X where no feature set is
