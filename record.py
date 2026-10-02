@@ -6,7 +6,8 @@ The recorder knows no module. Given the execution name RUN_ID, it lists the thre
 (STORE_RAW_1M_DIR, STORE_ASSETS_ARTIFACTS_DIR, STORE_STATUS_DIR — path, size and mtime of every file), runs the command
 with its output passed through, lists them again, and writes store/run_records/<RUN_ID>/<stage>.json: when the stage
 started and ended, how it exited, and what it added, changed and removed in the stores. Its exit code is the command's.
-This is what a task scheduler records about a task — what it wrote — and nothing a stage could say about itself.
+This is what a scheduler records about a stage's one-off process — what it wrote — and nothing a stage could say about
+itself.
 STORE_TRIALS_DIR is deliberately absent: a trial ledger is the stage's own account of its search, which is the one thing
 this recorder never reads. STORE_RUN_RECORDS_DIR is where the record goes, and no stage writes it.
 
@@ -35,15 +36,15 @@ def listing(root: Path) -> dict[str, tuple[int, int]]:
     """Every file under a store as path relative to it -> (size_bytes, mtime_ns); a file that vanishes between the walk
     and its stat — a temporary file a process beside the run moves onto its place, a search in its tmux session or a
     crawl — is simply not there."""
-    out = {}
+    size_and_mtime_by_path = {}
     for path in root.rglob("*"):
         try:
-            info = path.stat()
+            file_status = path.stat()
         except OSError:
             continue
-        if stat.S_ISREG(info.st_mode):
-            out[str(path.relative_to(root))] = (info.st_size, info.st_mtime_ns)
-    return out
+        if stat.S_ISREG(file_status.st_mode):
+            size_and_mtime_by_path[str(path.relative_to(root))] = (file_status.st_size, file_status.st_mtime_ns)
+    return size_and_mtime_by_path
 
 
 def store_diff(store: str, before: dict, after: dict) -> dict[str, list]:
@@ -95,13 +96,13 @@ def main() -> int:
         "started_at_utc": started_at.strftime("%Y-%m-%d %H:%M:%S"),
         "ended_at_utc": ended_at.strftime("%Y-%m-%d %H:%M:%S"),
         "duration_seconds": duration_seconds,
-        "store_diff": {state: [row for diff in diffs for row in diff[state]] for state in ("added", "changed", "removed")},
+        "store_diff": {change: [row for diff in diffs for row in diff[change]] for change in ("added", "changed", "removed")},
     }
-    out = run_records / run_id / f"{stage}.json"
-    write_json(out, record)
+    record_path = run_records / run_id / f"{stage}.json"
+    write_json(record_path, record)
     write_json(run_records / "index.json", build_run_index(run_records))
     print(f"{stage}: exit {exit_code} in {duration_seconds}s — "
-          f"+{len(record['store_diff']['added'])} ~{len(record['store_diff']['changed'])} -{len(record['store_diff']['removed'])} files -> {out}",
+          f"+{len(record['store_diff']['added'])} ~{len(record['store_diff']['changed'])} -{len(record['store_diff']['removed'])} files -> {record_path}",
           flush=True)
     return exit_code if exit_code >= 0 else 128 - exit_code   # a signal, in the shell's own convention
 
