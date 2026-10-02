@@ -109,7 +109,7 @@ def relative_change(close: np.ndarray, lookback_bars: int) -> np.ndarray:
 
 
 def _directional_movement(high: np.ndarray, low: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Wilder's upward and downward movement on the change grid: the larger of the two moves, and only when it rises."""
+    """The upward and downward movement on the change grid: the larger of the two moves, and only when it rises."""
     upward_move, downward_move = np.diff(high), -np.diff(low)
     return (np.where((upward_move > downward_move) & (upward_move > 0.0), upward_move, 0.0),
             np.where((downward_move > upward_move) & (downward_move > 0.0), downward_move, 0.0))

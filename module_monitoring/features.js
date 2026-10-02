@@ -90,9 +90,9 @@ function renderSerpentineSearch(mlStatus) {
   const widestDelta = Math.max(0, ...deltas.filter((delta) => delta !== null));
   renderTable("serpentine-search",
     ["asset", "state evaluations", "selection hypotheses", "rounds", "outcome", "proposal &Delta; skill"],
-    mlStatus.assets.map((asset, i) => {
+    mlStatus.assets.map((asset, assetIndex) => {
       const search = serpentineSearch(asset.ticker);
-      const delta = deltas[i];
+      const delta = deltas[assetIndex];
       const deltaCell = document.createElement("span");
       if (delta !== null) {
         deltaCell.appendChild(buildMeter(widestDelta > 0 ? (100 * Math.max(0, delta)) / widestDelta : 0));
