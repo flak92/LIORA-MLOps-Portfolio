@@ -99,7 +99,8 @@ transport, paging or ordering — Binance's one request per day, used in the ord
 it returns and checked minute by minute by `is_full_utc_day()`; Bybit's two
 request windows, returned newest-first and sorted — is resolved inside the downloader
 that speaks the venue, and `ingest.py` reads every tree through the one
-`parse_zip()` (`CANDLE-CANONICALISATION-ONE-CANDLE-SCHEMA-AFTER-THE-DOWNLOADERS`).
+`parse_zip()` of `lean.py`, beside the writer of the same format
+(`CANDLE-CANONICALISATION-ONE-CANDLE-SCHEMA-AFTER-THE-DOWNLOADERS`).
 
 Each venue's leaf stays its own, one ZIP per UTC day: raw data is the proof of
 what one venue observed, and a raw file combining two venues would destroy the one

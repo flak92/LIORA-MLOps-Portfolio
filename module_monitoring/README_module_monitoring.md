@@ -35,8 +35,8 @@ two stores it serves read-only, published on the host's loopback alone
 | file | written by | the tab that reads it |
 |---|---|---|
 | `status/data_status.json` | `module_data.status` | Pipeline and Data Quality |
-| `status/features_status.json` | `module_features.status` | Features, ML Research |
-| `status/ml_status.json` | `module_ml.status` | ML Research, ML Assets |
+| `status/features_status.json` | `module_features.status` | Features, ML Research, ML Assets |
+| `status/ml_status.json` | `module_ml.status` | Features, ML Research, ML Assets |
 | `status/skills_status.json` | the canon's crawler | Scalability |
 | `run_records/index.json` and the records it lists | `record.py`, under `make all-record` | Lifecycle |
 

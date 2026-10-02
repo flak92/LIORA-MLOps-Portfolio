@@ -33,5 +33,6 @@ def moves(search_state: dict, profile: dict, search_family: str) -> tuple:
          {**search_state, name: points[neighbour]})
         for name in COORDINATES_BY_SEARCH_FAMILY[search_family]
         for points in (grid(profile, name),)
-        for neighbour in (points.index(search_state[name]) - 1, points.index(search_state[name]) + 1)
+        for here in (points.index(search_state[name]),)
+        for neighbour in (here - 1, here + 1)
         if 0 <= neighbour < len(points))

@@ -42,10 +42,10 @@ def main() -> int:
                                 canonical_parquet=config.ohlcv_1m_canonical_parquet(ticker),
                                 start_ms=config.RESEARCH_START_MS, end_ms=config.RESEARCH_END_MS, path=path)
             )
-            # every partition of the family carries the same columns, so every timeframe writes the same bytes
-            dataset.write_json(config.schema_json("bars"), dataset.load_partition_schema(con, path))
             bar_count = con.execute(f"SELECT count(*) FROM read_parquet('{path}')").fetchone()[0]
             print(f"{timeframe} {ticker}: {bar_count} bars", flush=True)
+        # every partition of the family carries the same columns, so the last one written gives the family's schema
+        dataset.write_json(config.schema_json("bars"), dataset.load_partition_schema(con, path))
         con.close()
     return 0
 

@@ -33,8 +33,8 @@ def theta(row: dict) -> dict:
 def search_state_key(search_state: dict) -> str:
     """A search state as the ledger's index keys it — its own canonical text. A search state is written the way the
     artifacts carry it, so a search state read back off disk keys the same as the one that wrote it, with no shape
-    to repair first. Every value is a string, a whole number or a multiple of a quarter, so the equality is
-    exact and asks for no tolerance."""
+    to repair first. Every value is a string, an integer or a float, and JSON writes a float as the shortest text
+    that reads back to the same float, so the equality is exact and asks for no tolerance."""
     return json.dumps(search_state, sort_keys=True, separators=(",", ":"))
 
 
@@ -44,15 +44,15 @@ def build_asset_material(ticker: str) -> dict:
     and it says nothing about which search states those are."""
     cat = dataset.load_catalogue(ticker)
     timeframes = config.timeframes(cat)
-    catalogue_values, decision_grids = dataset.load_feature_material(ticker, cat, timeframes)
+    catalogue_values, decision_grids = dataset.load_feature_material(cat, timeframes)
     barriers = dataset.load_barriers(ticker)
     xy = dataset.build_xy(cat, timeframes, catalogue_values, decision_grids,
                           dataset.load_label_events(ticker, cat), dataset.load_feature_columns(ticker, cat),
                           barriers, dataset.load_maximum_label_horizon_minutes(ticker, barriers))
+    label_inputs = labels.load_label_inputs(ticker, cat)
     return {"xy": xy, "catalogue": cat, "timeframes": timeframes,
             "catalogue_values": catalogue_values, "decision_grids": decision_grids,
-            "label_inputs": labels.load_label_inputs(ticker, cat),
-            "bars_1m": strategy.load_bars_1m(ticker)}
+            "label_inputs": label_inputs, "bars_1m": label_inputs["bars_1m"]}
 
 
 def fit_identity(search_state: dict) -> str:
@@ -165,8 +165,8 @@ def search_state_material(asset_material: dict, search_state: dict, inherited: d
     A search state of the fit identity of an earlier one inherits all of it: neither a fit nor a prediction depends on
     where a position leaves, so only the geometry the backtest reads is replaced. Anything else is three fits, and Y
     before them when the label's own geometry moved."""
-    barriers = dataset.barriers_from({name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES})
     if inherited is not None:
+        barriers = dataset.barriers_from({name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES})
         return {**inherited, "xy": {**inherited["xy"], "barriers": barriers}}
     xy = xy_for_search_state(asset_material, search_state)
     y_cls = model.to_class(xy["y"])
@@ -188,9 +188,7 @@ def state_evaluation(asset_material: dict, search_state: dict, material: dict) -
         strategy.build_simulation_inputs(material["xy"], asset_material["bars_1m"], material["oos_predictions"]))
     by_fold, skill_by_fold = selection["validation_by_fold"], material["skill_by_fold"]
     return {
-        "columns_by_timeframe": search_state["columns_by_timeframe"],
-        "best_params": search_state["best_params"],
-        **{name: search_state[name] for name in config.BARRIER_COORDINATE_NAMES},
+        **theta(search_state),
         "validation": {f"fold_{fold_id}": {
             "relative_logloss_skill": skill_by_fold[fold_id],
             "sharpe": by_fold[fold_id]["sharpe"],

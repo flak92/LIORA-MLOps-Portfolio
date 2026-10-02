@@ -4,7 +4,7 @@
     agreeing_trend_timeframe_count = #{timeframe : sign(TREND_GATE_FEATURE_DEFINITION_<timeframe>) == side}
     enter = |edge| >= entry_edge_threshold  AND  max(p_long, p_short) > p_neutral  AND  side != 0
             AND side == sign(TREND_GATE_FEATURE_DEFINITION_<TREND_GATE_TIMEFRAME>)
-            AND agreeing_trend_timeframe_count >= 2
+            AND agreeing_trend_timeframe_count >= MINIMUM_AGREEING_TREND_TIMEFRAMES
             AND entry_minute_traded
 
 USDT-perpetual PnL at a fixed quantity, linear in price (compounding per-bar returns would misprice shorts):
@@ -110,14 +110,14 @@ def signals_for_fold(simulation_inputs: dict, fold_id: int) -> dict:
     barriers = xy["barriers"]
     label_horizon_minutes = barriers["label_horizon_minutes"]
     entry_ts, entry_price = xy["entry_ts"][decision_rows], xy["entry_price"][decision_rows]
-    fold_start_ms, fold_end_ms = validation.fold_bounds(fold_id)
-    # the evaluation population, the experiment's and one for every search state: a decision of the fold whose entry
-    # leaves room for the maximum label horizon before the fold's end, decided at t_0 and never by the search state's
-    # own horizon or by the event that follows. The gate, which reads the search state's predictions, and the traded
-    # entry minute choose the eligible entries among it; the trade then walks the search state's own label horizon
-    decision_in_evaluation_population = ((fold_decision_ts >= fold_start_ms)
-                                         & (entry_ts + xy["maximum_label_horizon_minutes"]
-                                            * config.MILLISECONDS_PER_MINUTE <= fold_end_ms))
+    _, fold_end_ms = validation.fold_bounds(fold_id)
+    # the evaluation population, the experiment's and one for every search state: a decision of the fold — these rows
+    # are the fold's own predictions — whose entry leaves room for the maximum label horizon before the fold's end,
+    # decided at t_0 and never by the search state's own horizon or by the event that follows. The gate, which reads
+    # the search state's predictions, and the traded entry minute choose the eligible entries among it; the trade
+    # then walks the search state's own label horizon
+    decision_in_evaluation_population = (entry_ts + xy["maximum_label_horizon_minutes"]
+                                         * config.MILLISECONDS_PER_MINUTE <= fold_end_ms)
     entry_eligible = decision_in_evaluation_population & gate_open & xy["entry_minute_traded"][decision_rows]
     eligible_rows = np.flatnonzero(entry_eligible)
 
@@ -295,13 +295,19 @@ SELECTION_SCORE_KEY = "selection_score_cagr_validation_path"
 SELECTION_EXPOSURE_KEYS = ("cleared_point_count", "median_cagr_over_cleared", "max_cagr_over_cleared")
 
 
+def is_trade_floor_cleared(results_by_fold: dict[int, dict]) -> bool:
+    """Whether one threshold traded at least the floor in every fold given — the admissibility every selection of a
+    threshold reads first: the stage's, a search state's and a study's."""
+    return all(result["trade_count"] >= config.MINIMUM_TRADES_PER_VALIDATION_FOLD
+               for result in results_by_fold.values())
+
+
 def selection_score(validation_by_fold: dict[int, dict]) -> float:
-    """What a threshold is chosen on: the CAGR of the chained validation path. One rule for the stage and
-    for the search, so the chain and the search can never choose a different threshold for the same
-    predictions.
+    """What a threshold is chosen on: the CAGR of the chained validation path. One rule for the stage, for the
+    search and for a study, so none of them can choose a different threshold for the same predictions.
 
     It reads what each fold settled at and nothing else. The path's drawdown and its profit factor need the
-    folds' 1m curves chained; its growth rate does not, and a selection walks sixty-one grid points."""
+    folds' 1m curves chained; its growth rate does not, and a selection walks every point of the grid."""
     return validation_path_cagr({fold_id: validation_by_fold[fold_id]["final_equity"]
                                  for fold_id in config.VALIDATION_FOLD_IDS})
 
@@ -326,8 +332,7 @@ def entry_edge_threshold_selection(simulation_inputs: dict) -> dict:
                            for fold_id in config.VALIDATION_FOLD_IDS}
         if threshold == config.ENTRY_EDGE_THRESHOLD_GRID[0]:
             results_at_grid_floor = results_by_fold
-        if any(r["trade_count"] < config.MINIMUM_TRADES_PER_VALIDATION_FOLD
-               for r in results_by_fold.values()):
+        if not is_trade_floor_cleared(results_by_fold):
             continue
         entry_edge_threshold_constraint_met = True
         score = selection_score(results_by_fold)

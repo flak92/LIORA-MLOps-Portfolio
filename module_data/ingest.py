@@ -11,18 +11,14 @@ normative source; this file is its one implementation and keeps no second copy o
 """
 
 import csv
-import io
 import json
 import tempfile
-import zipfile
-from collections.abc import Iterator
-from datetime import UTC, datetime
 from pathlib import Path
 
 import duckdb
 
 from . import config
-from .lean import LEAN_DAY_ZIP_NAME_PATTERN, load_lean_day_zip_paths
+from .lean import load_lean_day_zip_paths, parse_zip
 
 VENUE_DDL = """
 CREATE TABLE ohlcv_1m_{venue} (
@@ -49,8 +45,8 @@ OHLC_INTACT_PREDICATE = """(isfinite(open) AND isfinite(high) AND isfinite(low)
           AND low <= least(open, close) AND high >= greatest(open, close))"""
 
 # use_binance: the primary venue wins whenever it is valid and either traded, or Bybit did not trade
-# either; end_ms is the asset's own grid end, the last minute either venue printed for it. The columns: the full grid,
-# every minute of the data window; OHLC and the verbatim venue volume (0 on ffill rows); source 'binance' / 'bybit' / 'ffill';
+# either; end_ms is the asset's own grid end, exclusive — one minute after the last minute either venue printed for
+# it. The columns: the full grid, every minute from the data window's start to that end; OHLC and the verbatim venue volume (0 on ffill rows); source 'binance' / 'bybit' / 'ffill';
 # zero_volume — the winning candle was valid and traded nothing; <venue>_valid — the venue's row present with intact
 # OHLC; rel_divergence — |c_bin - c_byb| / mid when both valid: a quality measurement, never a selection rule (`CANDLE-CANONICALISATION-PRIMARY-FAILOVER-IS-A-TABLE`).
 # One asset's partition of the canonical family: one Parquet file, zstd, the rows in grid order
@@ -129,19 +125,6 @@ ORDER BY timestamp_ms
 """
 
 CSV_COLUMNS = "{'timestamp_ms':'BIGINT','open':'DOUBLE','high':'DOUBLE','low':'DOUBLE','close':'DOUBLE','volume':'DOUBLE'}"
-
-
-def utc_midnight_ms(yyyymmdd: str) -> int:
-    return int(datetime.strptime(yyyymmdd, "%Y%m%d").replace(tzinfo=UTC).timestamp() * config.MILLISECONDS_PER_SECOND)
-
-
-def parse_zip(zip_path: Path) -> Iterator[tuple[int, str, str, str, str, str]]:
-    """Yield (epoch_ms, open, high, low, close, volume) from one Lean minute ZIP."""
-    midnight_ms = utc_midnight_ms(LEAN_DAY_ZIP_NAME_PATTERN.match(zip_path.name).group(1))
-    with zipfile.ZipFile(zip_path) as zip_file:
-        with zip_file.open(zip_file.namelist()[0]) as csv_file:
-            for row in csv.reader(io.TextIOWrapper(csv_file, encoding="utf-8", newline="")):
-                yield (midnight_ms + int(row[0]), row[1], row[2], row[3], row[4], row[5])
 
 
 # twice by extraction

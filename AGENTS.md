@@ -214,7 +214,7 @@ return value (`SELF-EXPLAINING-NAMING-EXTERNAL-VOCABULARY-IS-REGISTERED`). The b
 owns it: the Lean tree (`module_data/lean.py`); the Binance and Bybit REST parameters (the two downloaders, and
 `module_data/config.py` for the constants carrying `KLINE`); xgboost and optuna (`module_ml/model.py`,
 `module_ml/hpo.py`); numpy and DuckDB SQL (every module that computes or queries); argparse (the one parser of the
-data, feature and ML `config.py`, `promote.py` and every terminal); Hive's `key=value` (every `config.py` that builds a partition);
+data, feature and ML `config.py`, and every terminal); Hive's `key=value` (every `config.py` that builds a partition);
 SVG and the DOM (the page's scripts); docker compose and tmux (`Makefile`, `docker-compose.yml`); `urllib` (the two
 downloaders); `subprocess` over a stage's command line (`record.py`), a vendor's (`crawl.py`), gum's (`tui.py`) and
 make's (every `terminal.py`); TOML (`vendors_for_crawling.toml`, read by `crawl.py` and the canon's terminal); a

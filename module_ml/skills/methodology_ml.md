@@ -284,8 +284,8 @@ position.
 
 Supervision uses both. An untraded entry minute gives `P₀ = open` of a minute that
 printed no trade, so its barriers are anchored to a quote nothing traded at: not an executable decision and not a sound
-measurement. `sample_valid` therefore governs the training rows, the HPO
-objective and the classification metrics — and, through them, the populations
+measurement. `sample_valid` therefore governs the training rows and the
+classification metrics — and, through them, the populations
 the uniqueness weights are measured on — while the strategy gates on
 `entry_minute_traded` alone.
 
@@ -451,7 +451,8 @@ compared is a note; this one is evidence.
 stopped after its studies' lines and before its response, then run again — leaves
 its studies twice, under a later `study_index`. That is what a partition is for,
 a record of the work done, and it is why it is not the exposure a proposal is read
-against: that number is the search's own `selection_hypothesis_count` (§ 4). A study's
+against: that number is the search's own `selection_hypothesis_count`
+(`module_features/skills/methodology_features.md` § The serpentine search). A study's
 `study_index` is read off its partition before its lines are appended, so a
 partition takes one writer at a time: each family is written by its own stage
 alone, one process per asset.
@@ -532,9 +533,10 @@ offers nothing that round — which is an answer, not a failure.
 threshold does not beat the parent on every fold; the serpentine search's gate refuses that
 child. Offering it would mean the study answered nothing while holding, further
 down its own list, a point the gate would have kept — so the trials are read by
-value, descending, and the first admissible one that beats the parent's own path
-is offered; where that point is the parent's own parameters, it is no move and
-nothing is offered. Whether a trial's chosen threshold was admissible is decided
+value, descending, and the first admissible one is offered. Admissible, it beats the
+parent on every fold, so it beats the parent's path too and cannot be the parent's
+own parameters: no further comparison is made, and a study with no admissible
+point offers nothing. Whether a trial's chosen threshold was admissible is decided
 where the sweeps already are, and carried on its ledger line as `admissible`, so
 the question is asked without refitting anything.
 
@@ -638,12 +640,14 @@ that rule a bar-based backtest silently assumes every gap fills at the barrier.
      ties → the smaller τ
 ```
 
-where `⌢` is the chaining of § 4: each fold's 1-minute equity scaled by what the
+where `⌢` is the chaining: each fold's 1-minute equity scaled by what the
 folds before it settled at, so the validation folds are one walk-forward path and
 its CAGR is the growth of one capital through them. It is the **same function**
 the stage and `ml-score` both call (`strategy.entry_edge_threshold_selection()`) —
 the latter for every search state the serpentine search asks about — so the chain and
-the search can never choose a different threshold for the same predictions. The
+the search can never choose a different threshold for the same predictions; a study
+scores its trials by the same score over the same trade floor
+(`strategy.selection_score()`, `strategy.is_trade_floor_cleared()`). The
 rule reads what each fold settled at and nothing else: the path's drawdown and its
 profit factor need the folds' curves chained, its growth rate does not, and a
 selection walks every point of the grid.
@@ -651,7 +655,8 @@ selection walks every point of the grid.
 The trade floor keeps a threshold from winning on three or five trades with an
 accidentally high number. If no point of the grid meets it, the run falls back to
 the grid's first point and reports `entry_edge_threshold_constraint_met = false`;
-the serpentine search refuses such a search state before it compares it (§ 4), because
+the serpentine search refuses such a search state before it compares it
+(`module_features/skills/methodology_features.md` § The serpentine search, 4. The thresholds), because
 its numbers stand at a threshold nothing qualified for.
 
 **A fold's own numbers, and the path they chain into.** From the same 1-minute

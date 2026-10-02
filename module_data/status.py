@@ -133,7 +133,7 @@ def venue_block(venue: str, tickers: list[str], venue_rows: dict, canonical_rows
                 "row_count": venue_row_count,
                 "coverage_pct": share_pct(distinct_timestamp_count, expected_minute_count),
                 "gap_count": expected_minute_count - distinct_timestamp_count,
-                # measured from the first observation to the end of the data window, so a stale feed reports its gap
+                # measured from the first observation to the asset's canonical end, so a stale feed reports its gap
                 "gap_count_after_first_observation": (
                     (asset_canonical_end_ms - venue_row["first_timestamp_ms"]) // config.CANONICAL_GRID_INTERVAL_MS
                     - distinct_timestamp_count

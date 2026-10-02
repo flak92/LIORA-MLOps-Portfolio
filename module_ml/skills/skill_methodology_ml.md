@@ -171,9 +171,9 @@ The rules of the research layer, `module_ml`: one canonical series read through 
   - Expected: `hpo.trial_row()` setting `hpo_trial_outcome` from `trial.state`, `cagr_validation_path` and `admissible` `null` and `pruned_at_fold` set on a pruned line; every key of `TRIAL_COLUMNS` on every line.
   - Exception: none
 - `METHODOLOGY-ML-A-STUDY-OFFERS-ITS-BEST-ADMISSIBLE-POINT`
-  - Description: A beam parent's study offers its best admissible point, not its best point: the completed trials read by value, descending, and the first whose chosen threshold is admissible and whose path beats the parent's own offered — or nothing, which is an answer.
+  - Description: A beam parent's study offers its best admissible point, not its best point: the completed trials read by value, descending, and the first whose chosen threshold is admissible offered — admissible, it beats the parent on every fold, so it beats the parent's path too and is not the parent's own point — or nothing, which is an answer.
   - Scope: `module_ml/hpo.py`, `module_ml/score.py`
-  - Expected: `hpo.admissible_point()` over the completed trials with `admissible` true and a value above the parent's path CAGR; `None` when none is, or when the point is the parent's own parameters.
+  - Expected: `hpo.admissible_point()` the completed trial of the highest value, ties to the earlier, among those whose `admissible` is true; `None` when none is; no second comparison with the parent, which admissibility already makes.
   - Exception: none
 - `METHODOLOGY-ML-ONE-WALK-FINDS-EVERY-BARRIER-TOUCH`
   - Description: The label and a trade find the first barrier touched by the same walk down the 1m path, a touch requiring a traded minute, and a trade's barriers are the label's half-widths rescaled, never a σ recovered from one of them.

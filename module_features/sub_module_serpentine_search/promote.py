@@ -50,7 +50,7 @@ def main() -> int:
         print(f"{ticker} <- the proposal, state evaluation {state_evaluation_index} "
               f"(+{added_column_count} -{removed_column_count} columns"
               f"{', ' + ', '.join(moved_coordinate_names) if moved_coordinate_names else ''}); "
-              f"rerun the ML chain for this asset", flush=True)
+              f"the target reruns the ML chain for this asset next", flush=True)
     return 0
 
 

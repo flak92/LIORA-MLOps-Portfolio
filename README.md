@@ -140,11 +140,11 @@ stores, their variables and what each family and file holds are the register's, 
 | to add | change | where |
 |---|---|---|
 | an asset | one ticker in `TICKERS`; every stage is told its assets by `--tickers` | the `Makefile`; nothing changes in any module |
-| a stage of a module | the stage in its module and one `<module>-<stage>` target — a `fanout` or a `basket` line — and its name in `RECORDED_STAGES` if a run should record it | `module_<domain>/`, then the `Makefile` |
+| a stage of a module | the stage in its module, one `<module>-<stage>` target — a `fanout` or a `basket` line — and its name in its module's `DATA_STAGES`, `FEATURES_STAGES` or `ML_STAGES`, which `<module>-all` runs and `RECORDED_STAGES` derives from | `module_<domain>/`, then the `Makefile` |
 | a timeframe | one token in `HIERARCHY_TIMEFRAMES` of `module_features/config.py` — another experiment: the chain runs again, and a recorded search after its reset | `module_features/` |
 | a feature | one record of `FEATURE_CATALOGUE` (`module_features/README_module_features.md` § Extending) | `module_features/` |
-| a search axis of the serpentine search | its search families in `ROUND_SCHEDULE`, its moves in an `axis_<search_axis>.py` like `axis_barrier.py` and `axis_feature_set.py`, its grid in the profile | `module_features/sub_module_serpentine_search/` |
-| a venue | `download_<venue>.py` beside its sibling and the failover order in `ingest.py` (`module_data/README_module_data.md`) | `module_data/` |
+| a search axis of the serpentine search | its search families in `ROUND_SCHEDULE`, its moves in an `axis_<search_axis>.py` like `axis_barrier.py` and `axis_feature_set.py`, handed to `candidates_of()`, its grid in the profile, and the search axis in the features terminal's copy `SERPENTINE_SEARCH_AXES` | `module_features/sub_module_serpentine_search/`, then `module_features/sub_module_terminal/config.py` |
+| a venue | `download_<venue>.py` beside its sibling, the failover order in `ingest.py` and one `basket` line in the Makefile's `data-download` (`module_data/README_module_data.md`) | `module_data/`, then the `Makefile` |
 | a module | a package `module_<domain>/` with a runner service on the one image | `module_<domain>/` beside the others |
 
 ## Parity
@@ -194,7 +194,7 @@ mapping, and the skills its seats imply are `AGENTS.md` § Skills absent here, d
 
 - **Pipeline** — canonical rows, real-data share and forward-filled bars per asset, its observation lag and
   measurement age, each warned past the download cadence;
-- **Data Quality** — raw-source coverage, gap, duplicate and OHLC violation counts and zero-volume bars per provider,
+- **Data Quality** — raw-source coverage, gap, duplicate and invalid-row counts and zero-volume bars per provider,
   then canonical construction: source shares, switches, the largest 1m move at a switch, cross-source divergence;
 - **Features** — the serpentine search of every asset as the feature layer last wrote it, read against the ML
   snapshot's numbers for the asset's own search state, then each asset's PROPOSALS and the feature module's

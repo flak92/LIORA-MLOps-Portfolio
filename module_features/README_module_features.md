@@ -47,7 +47,10 @@ Outside the chain, a hand's actions on the serpentine search:
 | action | target | writes |
 |---|---|---|
 | a turn | `make features-serpentine-turn` | `<TICKER>_serpentine_search.json`, its ledger `<TICKER>_serpentine_search_state_evaluations.jsonl` and the next question `<TICKER>_score_request.json`, or an ended search |
+| the search | `make features-serpentine-search [ASSET=<TICKER>]` — a turn, then `ml-score` and a turn again while a question stands | what its turns write, until the search has an outcome |
+| the search, detached | `make tmux-features-serpentine-search ASSET=<TICKER>` | the same, in a tmux session that outlives the terminal |
 | the promotion | `make features-serpentine-search-promote ASSET=<TICKER>` | `<TICKER>_feature_set.json`, `<TICKER>_barriers.json` and `<TICKER>_hyperparameter_point.json`, then the asset's ML chain |
+| the reset | `make features-serpentine-search-reset ASSET=<TICKER>` | nothing: it removes the search's progress, ledger, question, answer and `score_trials` partition, keeping its profile |
 
 ## What it writes
 

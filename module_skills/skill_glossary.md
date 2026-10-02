@@ -238,7 +238,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: `constraint met` (yes / fallback); `!` beside a fallback threshold
   - Never: `tau_ok`, a name that says a constraint without saying which
 - the trade floor — the least trades a validation fold must hold for a number measured on it to count: the threshold is chosen among the grid points clearing it in every fold, a study's gate reads it fold by fold, and the serpentine search's gate refuses a search state whose threshold fell back below it
-  - Code: `MINIMUM_TRADES_PER_VALIDATION_FOLD` (a CONFIGURABLES record)
+  - Code: `MINIMUM_TRADES_PER_VALIDATION_FOLD` (a CONFIGURABLES record); `strategy.is_trade_floor_cleared()`, read by the stage's selection, a search state's and a study's
   - Never: MIN_TRADES; a floor read twice, in two places, with two values
 - the trend agreement — how many timeframes must agree with the side
   - Code: `MINIMUM_AGREEING_TREND_TIMEFRAMES` (a CONFIGURABLES record), `agreeing_trend_timeframe_count`
@@ -765,7 +765,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 - the asset's folder: its non-tabular files, one file per artifact responsibility, named `<TICKER>_<artifact>.<ext>`, at the segment `ticker=<TICKER>/` of the artifacts store
   - Code: `store/assets_artifacts/ticker=<TICKER>/`; `artifact_dir()` in `module_features/config.py`, `module_ml/config.py` and `module_features/sub_module_terminal/config.py`; one descriptor per file in the `config.py` of the module that writes it
   - Never: a Parquet file in the asset's folder; a file without the `<TICKER>_` prefix; `<TICKER>/` without its key; a path assembled at the point of use
-  - Holds: its tracked remnant: `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once written, `<TICKER>_serpentine_search_profile.json`, `<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_trials.jsonl`, `<TICKER>_feature_set.json`, `<TICKER>_barriers.json`, `<TICKER>_hyperparameter_point.json`; every other file the chain rebuilds
+  - Holds: its tracked remnant: `<TICKER>_README.md`, `<TICKER>_parameters.json` and, once written, `<TICKER>_serpentine_search_profile.json`, `<TICKER>_serpentine_search.json`, `<TICKER>_serpentine_search_state_evaluations.jsonl`, `<TICKER>_feature_set.json`, `<TICKER>_barriers.json`, `<TICKER>_hyperparameter_point.json`; every other file the chain rebuilds
 - the asset: the one a per-asset process is run for, and the namespace every partition and every per-asset file is selected by
   - Code: `ticker` — in code, in a key, and as the partition value `ticker=<TICKER>`; `--tickers` of a stage's command line, `build_ticker_parser()` with no default; `ASSET=<TICKER>` on the make line narrowing `TICKER_LIST`, read by no stage
   - Never: `TICKER`, `SYMBOL`, `ASSET_TICKER` as its name; a per-asset `.env`; a module, a file, a function, a compose service or an image named for a ticker; `ASSET` read by a stage
@@ -944,7 +944,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Why twice: one plan, one gate and one call for every target a menu offers; each owner holds its own local adapter with the same signature
 - `_tickers()`
   - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_features/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`
-  - Why twice: the three terminals whose module takes an asset read the assets `--tickers` names and ask for them only when a direct run named none; no module defines a basket of its own, and no terminal imports another module's code
+  - Why twice: the three terminals whose module takes an asset read the assets `--tickers` names and ask for them only when a direct invocation named none; no module defines a basket of its own, and no terminal imports another module's code
 - `_present()`
   - Code: identical in `module_data/sub_module_terminal/terminal.py`, `module_ml/sub_module_terminal/terminal.py`
   - Why twice: the data and ML terminals answer whether an asset's file stands in the same word, and a terminal reads another module's files through none of that module's code
@@ -1423,7 +1423,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Ui label: `<current>/<total> | <controlled file> | <vendor> | <state>`; `<processed>/<total> | crawl | <vendor> | done`, `failed` or `interrupted`
   - Never: a spinner, a progress bar, a percentage; an answer summarised on the screen — the report holds it; a results table
 - the refusals and the exits: a state the crawler cannot read ends it in one named line before anything is reset; a file the vendor fails is `failed` and the crawl goes on — 0 every file done, 1 a refusal or a failed file, 130 Ctrl-C
-  - Code: `SystemExit` in `module_skills/sheet.py`, `module_skills/sync.py` and the crawler's `crawl.py`
+  - Code: `SystemExit` in `module_skills/sheet.py`, whose reading of the sheet the sync and the crawl share, and in the crawler's `crawl.py`
   - Never: a traceback for an expected failure; exit 0 after a failure; a crawl that stops at the first failed file
 - the snapshot: `skills_status.json`, the current state of every controlled file, sorted by path and rewritten whole at every change; tracked in its neutral state, every controlled file `pending` with no report
   - Code: `SKILLS_STATUS_JSON_PATH` in the crawler's `config.py`; `row()`, `write_skills_status()` in `status.py`, through `write_text()` of `module_skills/sync.py`

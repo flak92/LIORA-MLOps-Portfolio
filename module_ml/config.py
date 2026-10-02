@@ -20,7 +20,8 @@ CONFIGURABLES = (
     {"name": "SEED", "value": 42, "class": "DEFAULT", "unit": "seed",
      "meaning": "the seed of every fit and of the chain's study; a study of the serpentine search takes it plus its "
                 "round", "tui": False, "experiment_identity": True,
-     "requires_rerun": "ml-all, features-serpentine-search", "risk": "another experiment: every study, fit and trade changes"},
+     "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
+     "risk": "another experiment: every study, fit and trade changes"},
     {"name": "FOLD_BOUNDS_UTC", "class": "DEFAULT", "unit": "UTC days, the first inclusive and the last exclusive",
      "value": ("2021-01-01", "2022-01-01", "2023-01-01", "2024-01-01", "2025-01-01", "2026-08-26"),
      "meaning": "the bounds of the five folds — F1 trained on, F2 to F4 validation, F5 the final holdout — the first "
@@ -66,7 +67,7 @@ CONFIGURABLES = (
      "risk": "another space: the chosen point and everything after it change"},
     {"name": "EXECUTION_COST_RATE_PER_TRADE_SIDE", "value": 0.0006, "class": "DEFAULT", "unit": "share of notional per side",
      "meaning": "taker fee and slippage, charged on the entry and on the exit of every trade", "tui": False,
-     "experiment_identity": True, "requires_rerun": "ml-all, features-serpentine-search",
+     "experiment_identity": True, "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
      "risk": "every path, threshold and study objective moves with it"},
     {"name": "ENTRY_EDGE_THRESHOLD_GRID", "class": "SPECTRUM", "unit": "probability edge",
      "value": (
@@ -75,12 +76,13 @@ CONFIGURABLES = (
               0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5,
               0.51, 0.52, 0.53, 0.54, 0.55, 0.56, 0.57, 0.58, 0.59, 0.6),
      "meaning": "the thresholds of probability edge a signal must carry before it is traded — τ in the equations",
-     "tui": False, "experiment_identity": True, "requires_rerun": "ml-all, features-serpentine-search",
+     "tui": False, "experiment_identity": True, "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
      "risk": "the threshold is chosen from other points: every trade can move"},
     {"name": "MINIMUM_TRADES_PER_VALIDATION_FOLD", "value": 30, "class": "DEFAULT", "unit": "trades per validation fold",
      "meaning": "the trade floor a threshold must clear on every validation fold — a selection guardrail, not an "
                 "acceptance gate", "tui": False, "experiment_identity": True,
-     "requires_rerun": "ml-all, features-serpentine-search", "risk": "a threshold chosen on too few trades to mean anything"},
+     "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
+     "risk": "a threshold chosen on too few trades to mean anything"},
     {"name": "MINIMUM_AGREEING_TREND_TIMEFRAMES", "value": 2, "class": "DEFAULT", "unit": "timeframes",
      "meaning": "the timeframes whose trend sign must agree with the side before an entry is taken", "tui": False,
      "experiment_identity": True, "requires_rerun": "ml-hpo, ml-train, ml-strategy, ml-status, features-serpentine-search",
@@ -222,7 +224,7 @@ FINAL_HOLDOUT_FOLD_ID = 5           # F5 — evaluated, never selected on
 # ---- HPO (Optuna TPE, sequential, in-memory)
 # the smallest counts at which every part of the method runs: TPE draws at random until it has
 # HYPERPARAMETER_SEARCH_STARTUP_TRIAL_COUNT trials to fit on — completed and pruned alike, in this Optuna — and models
-# from the next one, so trials 6 to 8 of every study are the sampler's own, and a trial count at or
+# from the next one, so the trials past the startup count are the sampler's own, and a trial count at or
 # below the startup count would be a random search wearing its name. The startup count is written here rather than left
 # to the library: a number that decides how the experiment searches is the experiment's, and a default that moves with a
 # version bump is not a frozen method
@@ -240,7 +242,7 @@ XGBOOST_FIXED_PARAMETERS = {
 
 # ---- strategy (evaluation only)
 EXECUTION_COST_RATE_PER_TRADE_SIDE = VALUE_BY_CONFIGURABLE["EXECUTION_COST_RATE_PER_TRADE_SIDE"]
-ENTRY_EDGE_THRESHOLD_GRID = VALUE_BY_CONFIGURABLE["ENTRY_EDGE_THRESHOLD_GRID"]   # 0.00 .. 0.60
+ENTRY_EDGE_THRESHOLD_GRID = VALUE_BY_CONFIGURABLE["ENTRY_EDGE_THRESHOLD_GRID"]
 MINIMUM_TRADES_PER_VALIDATION_FOLD = VALUE_BY_CONFIGURABLE["MINIMUM_TRADES_PER_VALIDATION_FOLD"]
 MINUTES_PER_YEAR = 365 * 1440                   # crypto trades 24/7: the year of a path measured in minutes and of the bars it is sampled at
 MINIMUM_AGREEING_TREND_TIMEFRAMES = VALUE_BY_CONFIGURABLE["MINIMUM_AGREEING_TREND_TIMEFRAMES"]

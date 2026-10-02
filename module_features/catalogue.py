@@ -91,8 +91,8 @@ def build_catalogue(con: duckdb.DuckDBPyConnection, ticker: str) -> tuple[np.nda
         for name in config.catalogue_columns(timeframe):
             catalogue_values[config.feature_id(name, timeframe)] = catalogue[timeframe][name][closed_bar_rows]
 
-    catalogue_matrix = np.column_stack([catalogue_values[c] for c in config.CATALOGUE_COLUMNS])
-    assert np.isfinite(catalogue_matrix).all(), "NaN/inf in the catalogue after the research warm-up"
+    assert all(np.isfinite(catalogue_values[c]).all() for c in config.CATALOGUE_COLUMNS), \
+        "NaN/inf in the catalogue after the research warm-up"
     return decision_ts, catalogue_values
 
 

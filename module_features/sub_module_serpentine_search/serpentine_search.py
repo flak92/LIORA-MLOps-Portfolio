@@ -46,8 +46,8 @@ def theta(row: dict) -> dict:
 def search_state_key(search_state: dict) -> str:
     """A search state as the ledger's index keys it — its own canonical text. A search state is written the way the
     artifacts carry it, so a search state read back off disk keys the same as the one that wrote it, with no shape
-    to repair first. Every value is a string, a whole number or a multiple of a quarter, so the equality is
-    exact and asks for no tolerance."""
+    to repair first. Every value is a string, an integer or a float, and JSON writes a float as the shortest text
+    that reads back to the same float, so the equality is exact and asks for no tolerance."""
     return json.dumps(search_state, sort_keys=True, separators=(",", ":"))
 
 
@@ -165,8 +165,9 @@ def top_beam(children: list[int], state_evaluations: list[dict], timeframes: tup
 # ---- the search's progress ----------------------------------------------------------------------------
 
 def path_entry(round_number: int, search_axis: str, search_family: str, move: str, beam: list[int]) -> dict:
-    """One accepted expansion of the research path: which search axis and search family moved the search, in which
-    direction, the state evaluation it landed on and what the beam held after it. The direction is the search
+    """One accepted expansion of the research path: which search axis and search family changed the beam, in which
+    direction, the leader of the beam it left — a family that improves only a later member leaves the leader where it
+    was — and what the beam held after it. The direction is the search
     family's own, not the one the ledger kept for the search state's first provenance; the state evaluation is named
     by its index and nothing of it is copied: its skill and its path are the ledger's line, and a reader reads them
     there."""
@@ -174,7 +175,7 @@ def path_entry(round_number: int, search_axis: str, search_family: str, move: st
             "state_evaluation_index": beam[0], "beam": list(beam), "move": move}
 
 
-def proposals_block(state_evaluations: list[dict], champion_state_evaluation_index: int,
+def proposals_block(state_evaluations: list[dict], champion_state_evaluation_index: int | None,
                     noise_sigma: float | None, selection_hypothesis_count: int,
                     search_outcome: str | None) -> list[dict]:
     """The search state a hand may promote: the champion alone, and only when it is not the search state the search
@@ -206,7 +207,7 @@ def write_search_progress(ticker: str, search_progress: dict, state_evaluations:
     proposals name their state evaluations by index and copy none of their numbers, so what the file holds beside
     its inputs is a few hundred bytes however long the search runs."""
     search_progress["proposals"] = proposals_block(
-        state_evaluations, search_progress["champion_state_evaluation_index"] or 1,
+        state_evaluations, search_progress["champion_state_evaluation_index"],
         search_progress["inputs"]["profile"]["path_cagr_noise_standard_deviation"],
         search_progress["selection_hypothesis_count"], search_progress["search_outcome"])
     dataset.write_json(config.serpentine_search_json(ticker), search_progress)
@@ -236,11 +237,14 @@ def build_search_inputs(best_params: dict, active_columns_by_timeframe: dict, ac
 
 
 def start_search_state(profile: dict, active_columns_by_timeframe: dict, active_barriers: dict,
-                       best_params: dict, timeframes: tuple[str, ...]) -> dict:
-    """The search state a search starts from: the columns the profile names, else the asset's own set, with the
+                       best_params: dict, cat: dict) -> dict:
+    """The search state a search starts from: the columns the profile names, else the asset's own set, in catalogue
+    order whatever order a hand wrote them in — as the asset's own set is read and every move keeps them — with the
     asset's own barrier geometry and the parameters it holds fixed."""
     columns = profile["start_columns_by_timeframe"] or active_columns_by_timeframe
-    return {"columns_by_timeframe": {timeframe: list(columns[timeframe]) for timeframe in timeframes},
+    return {"columns_by_timeframe": {timeframe: sorted(columns[timeframe],
+                                                       key=cat["columns_by_timeframe"][timeframe].index)
+                                     for timeframe in config.timeframes(cat)},
             "best_params": best_params,
             **{name: active_barriers[name] for name in config.BARRIER_COORDINATE_NAMES}}
 
@@ -414,7 +418,7 @@ def turn(ticker: str) -> None:
         collections.Counter(search_progress["selection_hypothesis_count_by_search_axis"])
         - collections.Counter(row["search_axis"] for row in state_evaluations
                               if row["search_axis"] and row["round"] <= search_progress["round_count"]))
-    start = start_search_state(profile, columns, barriers, best_params, timeframes)
+    start = start_search_state(profile, columns, barriers, best_params, cat)
     # a quiet round proves a fixed point only where no search family the profile runs draws its neighbourhood anew
     # each round
     fixed_point_provable = not any((search_axis, search_family) in config.ROUND_DEPENDENT_SEARCH_FAMILIES
@@ -441,9 +445,8 @@ def turn(ticker: str) -> None:
                                        "move": None, "round": 0, "parent_state_evaluation_index": None}])
             response = None
             print(f"{ticker} start search state {objective_line(state_evaluations[0])}", flush=True)
-        # state evaluation 1 is the search state the search started from — the champion until a search family keeps a
-        # move
-        beam = search_progress["beam"] or [search_progress["champion_state_evaluation_index"] or 1]
+        # state evaluation 1 is the search state the search started from — the beam of a search no round has ended yet
+        beam = search_progress["beam"] or [1]
         round_start_beam, round_path, round_drawn = beam, [], collections.Counter()
         for search_axis, search_family in config.ROUND_SCHEDULE:
             if search_axis not in profile["search_axes"]:

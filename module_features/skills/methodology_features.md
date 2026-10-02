@@ -429,8 +429,8 @@ cache hit adds nothing. A study's candidate that became a line is the drawn poin
 counts once, as that point; a candidate whose search state the ledger already held adds no line and
 counts as the point it was drawn as. The terms by search axis are
 `selection_hypothesis_count_by_search_axis`, beside the sum, in `<TICKER>_serpentine_search.json`.
-On BTC's ledger at `618d115` — 31 lines: the start, 8 of the barrier axis, 22 of the feature-set
-axis, none of the hpo axis — and its one study of 8 points, N = 8 + 22 + 8 = (31 − 1) − 0 + 8 = 38.
+On BTC's tracked ledger — 31 lines: the start, 8 of the barrier axis, 22 of the feature-set axis,
+none of the hpo axis — and its five studies of 8 points each, N = 8 + 22 + 40 = (31 − 1) − 0 + 40 = 70.
 
 These thresholds are this method's assumptions — the baseline it holds itself to — and not
 conditions of correctness for every optimiser: another search could keep other moves and still be a

@@ -157,7 +157,7 @@ def _asset_rows(tickers: list[str]) -> list[dict]:
     return rows
 
 
-def _recorded_search_rows(ticker: str, profile: dict | None, search: dict | None,
+def _recorded_search_rows(ticker: str, profile: dict | None, search: dict,
                 state_evaluations: list[dict]) -> list[dict]:
     """What the asset holds, one fact a row — every cell the file's own value, never an age or a share."""
     rows = [{"parameter": "asset", "value": ticker},
@@ -166,9 +166,6 @@ def _recorded_search_rows(ticker: str, profile: dict | None, search: dict | None
         rows.append({"parameter": "coordinates searched",
                      "value": f"{sum(len(grid) > 1 for grid in profile['grid_by_coordinate'].values())} of {len(config.GRID_BY_COORDINATE_DEFAULT)}"})
         rows.append({"parameter": "search axes", "value": " ".join(profile["search_axes"]) or "—"})
-    if search is None:
-        rows.append({"parameter": "serpentine search", "value": "none"})
-        return rows
     # the serpentine search counted these at a round boundary; the terminal shows them and adds nothing to them
     by_search_axis = search["selection_hypothesis_count_by_search_axis"]
     rows += [{"parameter": "serpentine search",

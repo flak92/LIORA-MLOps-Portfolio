@@ -136,8 +136,7 @@ function renderStrategy(mlStatus) {
       const finalHoldoutStrategy = asset.strategy.final_holdout;
       const validationPath = asset.strategy.validation_path;
       const selectionScore = asset.strategy.selection_score_cagr_validation_path;
-      const holdoutDegradation = finalHoldoutStrategy.cagr === null || validationPath.cagr === null
-        ? null : finalHoldoutStrategy.cagr - validationPath.cagr;
+      const holdoutDegradation = finalHoldoutStrategy.cagr - validationPath.cagr;
       const exitCounts = finalHoldoutStrategy.exit_counts;
       return [
         buildTickerLink(asset.ticker, selectAsset),
@@ -151,7 +150,7 @@ function renderStrategy(mlStatus) {
         formatPercent(validationPath.max_drawdown, 1),
         formatNumber(validationPath.profit_factor, 2),
         formatPercent(finalHoldoutStrategy.cagr, 2),
-        holdoutDegradation === null ? "-" : (holdoutDegradation >= 0 ? "+" : "") + (100 * holdoutDegradation).toFixed(2) + " pp",
+        (holdoutDegradation >= 0 ? "+" : "") + (100 * holdoutDegradation).toFixed(2) + " pp",
         formatNumber(finalHoldoutStrategy.sharpe, 2),
         formatPercent(finalHoldoutStrategy.max_drawdown, 1),
         formatCount(finalHoldoutStrategy.trade_count),

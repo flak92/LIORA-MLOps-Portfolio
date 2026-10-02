@@ -125,9 +125,9 @@ def barriers_from(coordinates: dict) -> dict:
 
 def load_barriers(ticker: str) -> dict:
     """The asset's barrier geometry: the promoted file's when it exists, else the frozen constants of
-    the experiment. The label horizon travels as a duration token and is turned into minutes here and
-    nowhere else, so the grid, the purge, the scored population and the trade's eligibility read one
-    number."""
+    the experiment. The label horizon travels as a duration token and is turned into minutes in `barriers_from()`
+    and nowhere else, so the labels, the purge and the trade's walk read one number; the scored population and the
+    trade's eligibility read the experiment's maximum label horizon instead."""
     path = config.barriers_json(ticker)
     promoted = load_json(path) if path.exists() else {}
     return barriers_from({
@@ -157,7 +157,7 @@ def build_x(catalogue_values: dict[str, np.ndarray], columns_by_timeframe: dict[
     return np.column_stack([catalogue_values[c] for c in feature_columns]), feature_columns
 
 
-def load_feature_material(ticker: str, cat: dict, timeframes: tuple[str, ...]) -> tuple[dict, list]:
+def load_feature_material(cat: dict, timeframes: tuple[str, ...]) -> tuple[dict, list]:
     """The catalogue's partitions as build_xy takes them: every catalogue column's values, keyed by feature id,
     and the decision grid each timeframe was read on. `score.py`, which relabels an asset for a search state, reads
     these once and joins them to each new Y."""
@@ -191,11 +191,11 @@ def load_label_events(ticker: str, cat: dict) -> dict[str, np.ndarray]:
 
 def load_xy(ticker: str) -> dict:
     """The asset's catalogue and labels partitions read once and handed to build_xy: X and Y on Y's decision
-    grid, with the values of every catalogue column beside X and the contract that named them; X may
-    carry tail rows Y had to drop."""
+    grid, with the values of every catalogue column beside X and the contract that named them. The catalogue's
+    partitions carry the tail decisions Y had to drop; X, narrowed to Y's rows, does not."""
     cat = load_catalogue(ticker)
     timeframes = config.timeframes(cat)
-    catalogue_values, decision_grids = load_feature_material(ticker, cat, timeframes)
+    catalogue_values, decision_grids = load_feature_material(cat, timeframes)
     barriers = load_barriers(ticker)
     return build_xy(cat, timeframes, catalogue_values, decision_grids, load_label_events(ticker, cat),
                     load_feature_columns(ticker, cat), barriers, load_maximum_label_horizon_minutes(ticker, barriers))

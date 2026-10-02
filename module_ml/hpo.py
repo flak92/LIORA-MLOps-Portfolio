@@ -86,26 +86,25 @@ def admissible_thresholds(sweeps_by_fold: dict[int, dict], parent_validation_by_
     stops a trial exactly when the trial can no longer produce a child the serpentine search would keep, at
     the first fold that settles it."""
     return [threshold for threshold in config.ENTRY_EDGE_THRESHOLD_GRID
-            if all(sweeps_by_fold[fold_id][threshold]["trade_count"] >= config.MINIMUM_TRADES_PER_VALIDATION_FOLD
-                   and (parent_validation_by_fold is None
-                        or sweeps_by_fold[fold_id][threshold][config.SELECTION_FOLD_MEASURE]
-                        > parent_validation_by_fold[fold_id][config.SELECTION_FOLD_MEASURE])
-                   for fold_id in fold_ids)]
+            if strategy.is_trade_floor_cleared({fold_id: sweeps_by_fold[fold_id][threshold] for fold_id in fold_ids})
+            and (parent_validation_by_fold is None
+                 or all(sweeps_by_fold[fold_id][threshold][config.SELECTION_FOLD_MEASURE]
+                        > parent_validation_by_fold[fold_id][config.SELECTION_FOLD_MEASURE] for fold_id in fold_ids))]
 
 
-def sweep_selection(sweeps_by_fold: dict[int, dict]) -> tuple[float, float]:
-    """The threshold the one selection rule would pick over these folds, and the chained path's growth rate
-    there — the trial's own value. Ties keep the smaller threshold, as the rule takes them.
+def sweep_selection(sweeps_by_fold: dict[int, dict], floor_clearing_thresholds: list[float]) -> tuple[float, float]:
+    """The threshold the one selection rule would pick over these folds — among those clearing the trade floor in
+    every fold, the best `strategy.selection_score()` — and that score, the trial's own value. Ties keep the smaller
+    threshold, as the rule takes them.
 
     The rule reads the trade floor and nothing else, never the parent: a trial's value is what it is worth,
     not what it is worth against something. A trial with no threshold clearing the floor in every fold never
     reaches here — the fold loop stops it — because the grid floor it would otherwise be scored at is a
     fallback for a *report*, a number to show when nothing qualified: handed to a sampler, it would let a trial
     that never qualified compete on the numbers of a threshold nothing qualified for."""
-    cleared_thresholds = admissible_thresholds(sweeps_by_fold, None, config.VALIDATION_FOLD_IDS)
-    value, negated = max((strategy.validation_path_cagr(
-        {fold_id: sweeps_by_fold[fold_id][threshold]["final_equity"] for fold_id in config.VALIDATION_FOLD_IDS}),
-        -threshold) for threshold in cleared_thresholds)
+    value, negated = max((strategy.selection_score({fold_id: sweeps_by_fold[fold_id][threshold]
+                                                     for fold_id in config.VALIDATION_FOLD_IDS}), -threshold)
+                         for threshold in floor_clearing_thresholds)
     return -negated, value
 
 
@@ -148,7 +147,8 @@ def build_objective(xy: dict[str, np.ndarray], bars_1m: dict[str, np.ndarray],
             if not floor_clearing_thresholds or (parent_admissible_thresholds is not None
                                                  and not parent_admissible_thresholds):
                 raise optuna.TrialPruned()
-        threshold, value = sweep_selection(sweeps_by_fold)
+        # the last fold's floor-clearing thresholds are those of every validation fold
+        threshold, value = sweep_selection(sweeps_by_fold, floor_clearing_thresholds)
         # whether the threshold the rule chose for this trial is one at which every fold beats the parent —
         # the serpentine search's gate's own question about this trial's own tau, answered where the sweeps already
         # are so the loop need not refit to ask it. Not "the set is non-empty": a non-empty set the chosen threshold
@@ -239,6 +239,8 @@ def main() -> int:
         study = search_hyperparameters(xy, bars_1m, config.SEED,
                                        first_point=dataset.load_json(hyperparameter_point_json)["best_params"]
                                        if hyperparameter_point_json.exists() else None)
+        # every point the study drew is the ledger's, a study whose every trial was pruned among them
+        write_trials(study, "hpo", None, config.hpo_trials_jsonl(ticker))
         if not study.get_trials(deepcopy=False, states=(optuna.trial.TrialState.COMPLETE,)):
             raise SystemExit(f"{ticker}: no admissible strategy on every validation fold at any threshold — "
                              f"every one of the {config.HYPERPARAMETER_SEARCH_TRIAL_COUNT} trials was pruned")
@@ -251,7 +253,6 @@ def main() -> int:
         }
         parameters_json = config.parameters_json(ticker)
         dataset.write_json(parameters_json, payload)
-        write_trials(study, "hpo", None, config.hpo_trials_jsonl(ticker))
         print(f"{ticker} {parameters_json.name}: {OBJECTIVE_KEY} {study.best_value:.6f} "
               f"(HPO trial {study.best_trial.number + 1})", flush=True)
     return 0

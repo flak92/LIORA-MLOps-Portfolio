@@ -330,12 +330,11 @@ DEFAULT_FEATURE_COLUMNS_BY_TIMEFRAME = {
 
 
 def catalogue_schema() -> list[dict[str, str]]:
-    """The schema of the `catalogue` family, from the register: the decision grid, then every definition offered on a
-    timeframe of the hierarchy, in catalogue order — the union of the partitions' columns, a partition holding the
-    definitions offered on its timeframe."""
+    """The schema of the `catalogue` family, from the register: the decision grid, then every definition, in catalogue
+    order — the union of the partitions' columns, a partition holding the definitions offered on its timeframe, and
+    every definition offered on a timeframe of the hierarchy."""
     return [{"column": "decision_ts", "type": "BIGINT"},
-            *({"column": feature_definition_name(definition), "type": "DOUBLE"} for definition in FEATURE_CATALOGUE
-              if any(timeframe in definition["timeframes"] for timeframe in HIERARCHY_TIMEFRAMES))]
+            *({"column": feature_definition_name(definition), "type": "DOUBLE"} for definition in FEATURE_CATALOGUE)]
 
 
 FEATURES_STATUS_JSON_PATH = STORE_STATUS_DIR / "features_status.json"   # the snapshot this module writes: the catalogue's facts, each asset's row counts and its serpentine search

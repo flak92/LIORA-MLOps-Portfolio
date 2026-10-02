@@ -12,7 +12,7 @@ STORE_STATUS_DIR=store/status python3 -B -m module_skills.sub_module_terminal.te
 ## The screen
 
 Its header block names the root of the tree and the sheet it works on, `skills_sheet.xlsx`. Its state table,
-`parameter | value`, is the crawl as its two files hold it: the active vendor of `vendors_for_crawling.toml`, `none`
+`parameter | value`, is the crawl as its two files hold it: the active vendor of `vendors_for_crawling.toml`, `—`
 where no vendor is active, and, counted off the snapshot `skills_status.json`, how many controlled files stand
 `pending`, `running`, `done`, `failed` and `interrupted` — `absent` where there is no snapshot. Then the menu, the
 targets `make help` lists that `MENU_TARGET_PATTERN` gives the canon (`TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE`), then
