@@ -13,7 +13,9 @@ SUB_MODULE_DIR = Path(__file__).resolve().parent
 CRAWLERS_MISSION_MD_PATH = SUB_MODULE_DIR / "crawlers_mission.md"
 VENDORS_FOR_CRAWLING_TOML_PATH = SUB_MODULE_DIR / "vendors_for_crawling.toml"
 REPORTS_DIR = STORE_STATUS_DIR / "reports_after_crawled_files"     # <path>.report.md, one current report per file
-AGENT_TIMEOUT_SECONDS = 30 * 60
+# twice by extraction
+SECONDS_PER_MINUTE = 60
+AGENT_TIMEOUT_SECONDS = 30 * SECONDS_PER_MINUTE
 
 
 def report_path(key: str) -> Path:

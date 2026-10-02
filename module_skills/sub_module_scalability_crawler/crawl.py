@@ -35,7 +35,7 @@ class ControlledFile(NamedTuple):
 
 
 def load_vendor() -> tuple[str, list[str]]:
-    """The one active vendor and its command line; a file that cannot be read, zero or two active ends the run in one line."""
+    """The one active vendor and its command line; a file that cannot be read, zero or two active ends the crawl in one line."""
     try:
         with config.VENDORS_FOR_CRAWLING_TOML_PATH.open("rb") as stream:
             vendors = tomllib.load(stream)
@@ -53,7 +53,7 @@ def load_vendor() -> tuple[str, list[str]]:
 def build_controlled_files(loaded: sheet.Sheet) -> list[ControlledFile]:
     """Every file the files matrix reaches, with the marks of every row that reaches it joined, in the matrix's column
     order, the files sorted by key; a row that reaches no file, or a generated one — a rendered Skill, the snapshot —
-    ends the run in one line."""
+    ends the crawl in one line."""
     generated = {skills_config.skill_document_path(skill.skill_path) for skill in loaded.skills}
     found: dict[str, ControlledFile] = {}
     for mark in loaded.marks:
@@ -103,22 +103,23 @@ def main() -> int:
     shutil.rmtree(config.REPORTS_DIR, ignore_errors=True)
     rows = {controlled_file.key: status.row(controlled_file.key) for controlled_file in controlled_files}
     status.write_skills_status(list(rows.values()))
-    total, processed, failed = len(controlled_files), 0, 0
+    total, processed, failed_file_count = len(controlled_files), 0, 0
     for number, controlled_file in enumerate(controlled_files, 1):
         rows[controlled_file.key] = status.row(controlled_file.key, "running", vendor)
         status.write_skills_status(list(rows.values()))
         why = None
         try:
-            answer = subprocess.run(argv, shell=False, cwd=skills_config.TREE_ROOT_DIR,
-                                    input=build_message(skill_texts, controlled_file, mission), text=True,
-                                    encoding="utf-8", capture_output=True, timeout=config.AGENT_TIMEOUT_SECONDS)
-            text = answer.stdout.strip()
-            if answer.returncode != 0:
-                why = f"exit {answer.returncode}: {(answer.stderr.strip().splitlines() or [''])[-1]}"[:200]
-            elif not text:
+            vendor_process = subprocess.run(argv, shell=False, cwd=skills_config.TREE_ROOT_DIR,
+                                            input=build_message(skill_texts, controlled_file, mission), text=True,
+                                            encoding="utf-8", capture_output=True,
+                                            timeout=config.AGENT_TIMEOUT_SECONDS)
+            answer = vendor_process.stdout.strip()
+            if vendor_process.returncode != 0:
+                why = f"exit {vendor_process.returncode}: {(vendor_process.stderr.strip().splitlines() or [''])[-1]}"[:200]
+            elif not answer:
                 why = "empty answer"
         except subprocess.TimeoutExpired:
-            why = f"no answer within {config.AGENT_TIMEOUT_SECONDS // 60} minutes"
+            why = f"no answer within {config.AGENT_TIMEOUT_SECONDS // config.SECONDS_PER_MINUTE} minutes"
         except (OSError, UnicodeError) as failure:
             why = f"{type(failure).__name__}: {failure}"[:200]
         except KeyboardInterrupt:
@@ -127,22 +128,22 @@ def main() -> int:
             print(f"{number}/{total} | {controlled_file.key} | {vendor} | interrupted", flush=True)
             print(f"{processed}/{total} | crawl | {vendor} | interrupted", flush=True)
             return 130
-        finished = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        finished_at_utc = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
         if why is None:
             report = config.report_path(controlled_file.key)
-            sync.write_text(report, f"{controlled_file.key} · {vendor} · {finished}\n\n{text}\n")
-            rows[controlled_file.key] = status.row(controlled_file.key, "done", vendor, finished,
+            sync.write_text(report, f"{controlled_file.key} · {vendor} · {finished_at_utc}\n\n{answer}\n")
+            rows[controlled_file.key] = status.row(controlled_file.key, "done", vendor, finished_at_utc,
                                                    report.relative_to(config.REPORTS_DIR).as_posix())
             print(f"{number}/{total} | {controlled_file.key} | {vendor} | done", flush=True)
         else:
-            failed += 1
-            rows[controlled_file.key] = status.row(controlled_file.key, "failed", vendor, finished)
+            failed_file_count += 1
+            rows[controlled_file.key] = status.row(controlled_file.key, "failed", vendor, finished_at_utc)
             print(f"{controlled_file.key}: {why}", file=sys.stderr, flush=True)
             print(f"{number}/{total} | {controlled_file.key} | {vendor} | failed", flush=True)
         processed += 1
         status.write_skills_status(list(rows.values()))
-    print(f"{processed}/{total} | crawl | {vendor} | {'failed' if failed else 'done'}", flush=True)
-    return 1 if failed else 0
+    print(f"{processed}/{total} | crawl | {vendor} | {'failed' if failed_file_count else 'done'}", flush=True)
+    return 1 if failed_file_count else 0
 
 
 if __name__ == "__main__":

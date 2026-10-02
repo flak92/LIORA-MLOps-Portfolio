@@ -807,7 +807,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
 ## Twice by extraction
 
 - the unit constants — equal by value, each holder keeping the ones it uses
-  - Code: `MILLISECONDS_PER_SECOND` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/page.js`; `MILLISECONDS_PER_MINUTE` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`; `MILLISECONDS_PER_DAY` in `module_data/config.py`, `module_features/config.py`; `MINUTES_PER_HOUR` in `module_features/config.py`, `module_monitoring/data.js`; `HOURS_PER_DAY` in `module_monitoring/data.js`; `SECONDS_PER_MINUTE` in `module_monitoring/page.js`
+  - Code: `MILLISECONDS_PER_SECOND` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`, `module_monitoring/page.js`; `MILLISECONDS_PER_MINUTE` in `module_data/config.py`, `module_features/config.py`, `module_ml/config.py`; `MILLISECONDS_PER_DAY` in `module_data/config.py`, `module_features/config.py`; `MINUTES_PER_HOUR` in `module_features/config.py`, `module_monitoring/data.js`; `HOURS_PER_DAY` in `module_monitoring/data.js`; `SECONDS_PER_MINUTE` in `module_monitoring/page.js`, `module_skills/sub_module_scalability_crawler/config.py`
   - Why twice: a unit is a unit: importing one across a boundary would drag the module behind it (`AGENTS.md` D02), and the page's scripts import no Python
 - `BYTES_PER_KIBIBYTE` — equal by value
   - Code: `module_ml/config.py`; the browser's own in `module_monitoring/page.js`

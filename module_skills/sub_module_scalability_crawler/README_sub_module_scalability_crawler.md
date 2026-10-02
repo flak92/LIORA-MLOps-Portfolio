@@ -15,24 +15,18 @@ make skills-crawl     # make skills-sync, then every controlled file sent with i
   (`SCALABILITY-CRAWLER-MATRIX-IS-PATH-BY-SKILL`); `crawlers_mission.md`, what the vendor receives and how it answers;
   and `vendors_for_crawling.toml`, one table per vendor (`SCALABILITY-CRAWLER-VENDOR-IS-DATA`,
   `SCALABILITY-CRAWLER-ONE-VENDOR-IS-ACTIVE`).
-- **Sent** once per controlled file, on the vendor's stdin: the Skills marked for it as `make skills-sync` rendered
-  them, the file with every line after its number, then the mission; the answer names the `rule_id` of every
-  departure (`SCALABILITY-CRAWLER-FINDING-NAMES-A-RULE`).
+- **Sent** once per controlled file: the file, the Skills marked for it and the mission; the answer names the
+  `rule_id` of every departure (`SCALABILITY-CRAWLER-FINDING-NAMES-A-RULE`).
 - **Written:** one current report per file under `store/status/reports_after_crawled_files/`
   (`SCALABILITY-CRAWLER-ONE-CURRENT-REPORT-PER-FILE`) and `store/status/skills_status.json`, which the page's
   Scalability tab shows (`SCALABILITY-CRAWLER-SNAPSHOT-KEEPS-ITS-KEYS`).
 
-## What a run prints
+## What a crawl prints
 
 The files go one after another, in the order of their paths, one line on stdout after each file's result and one
-closing line after the last:
+closing line after the last, in the form of the register's row for the crawl's progress.
 
-```
-<current>/<total> | <path> | <vendor> | <state>
-<processed>/<total> | crawl | <vendor> | <state>
-```
-
-`done` says the report was written, not that the file conforms: read the report. What ends a run and what does not:
+`done` says the report was written, not that the file conforms: read the report. What ends a crawl and what does not:
 `SCALABILITY-CRAWLER-REFUSAL-IS-ONE-LINE` and `SCALABILITY-CRAWLER-FAILED-FILE-DOES-NOT-STOP-THE-CRAWL`.
 
 ## Design rationale

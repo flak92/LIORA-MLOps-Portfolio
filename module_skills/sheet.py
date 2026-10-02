@@ -109,8 +109,8 @@ def _grid(package: zipfile.ZipFile, member: str, shared: list[str]) -> list[list
 
 
 def _tables(grid: list[list[str]]) -> list[tuple[list[str], list[list[str]]]]:
-    """Every run of non-blank rows as (header, rows), each row as wide as its header; a header with a blank cell
-    inside it, or a row wider than its header, ends the run in one line."""
+    """Every block of non-blank rows as (header, rows), each row as wide as its header; a header with a blank cell
+    inside it, or a row wider than its header, is refused in one line."""
     found, block = [], []
     for row in [*grid, []]:
         if any(cell for cell in row):
@@ -135,7 +135,7 @@ def _refuse(message: str):
 
 
 def _one_table(tabs: dict, is_wanted, headed: str) -> tuple[str, list[str], list[list[str]]]:
-    """The one table of the workbook whose header is wanted, wherever it lies — none or two ends the run."""
+    """The one table of the workbook whose header is wanted, wherever it lies — none or two is refused in one line."""
     found = [(tab, header, rows) for tab, tables in tabs.items() for header, rows in tables if is_wanted(header)]
     if len(found) != 1:
         _refuse(f"{len(found)} tables are headed {headed}; exactly one must be")

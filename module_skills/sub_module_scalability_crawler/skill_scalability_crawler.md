@@ -13,7 +13,7 @@
 - `SCALABILITY-CRAWLER-ROW-REACHES-A-FILE-AND-NO-GENERATED-ONE`
   - Description: Every row of the files matrix reaches at least one file, and never a generated one: a rendered Skill or the snapshot is not a controlled file.
   - Scope: `module_skills/skills_sheet.xlsx`, `module_skills/sub_module_scalability_crawler/crawl.py`
-  - Expected: `build_controlled_files()` globbing each row from the root of the tree over files alone, a folder reached through a glob such as `module_data/**/*.py`; a row that matches no file — a bare folder among them — or that reaches a document `make skills-sync` renders or `skills_status.json` ends the run in one line.
+  - Expected: `build_controlled_files()` globbing each row from the root of the tree over files alone, a folder reached through a glob such as `module_data/**/*.py`; a row that matches no file — a bare folder among them — or that reaches a document `make skills-sync` renders or `skills_status.json` ends the crawl in one line.
   - Exception: none
 - `SCALABILITY-CRAWLER-FINDING-NAMES-A-RULE`
   - Description: A departure names the rule it departs from, so a reader can go to the rule and disagree with the rule.
@@ -49,9 +49,9 @@
   - Expected: `write_skills_status()` after every transition — `pending` for every controlled file before the first vendor call, `running` before each, `done` or `failed` after each, `interrupted` on Ctrl-C — so the snapshot never lags the reports.
   - Exception: none
 - `SCALABILITY-CRAWLER-FAILED-FILE-DOES-NOT-STOP-THE-CRAWL`
-  - Description: A file the vendor fails is `failed`, and the crawl goes on to the next controlled file; the run fails only after the last one.
+  - Description: A file the vendor fails is `failed`, and the crawl goes on to the next controlled file; the crawl fails only after the last one.
   - Scope: `module_skills/sub_module_scalability_crawler/crawl.py`
-  - Expected: `failed` on a non-zero exit, an empty answer, no answer within `AGENT_TIMEOUT_SECONDS`, a command that cannot start or text that cannot be decoded; the reason one line `<path>: <why>` on stderr and no report for the file; then the next controlled file; the run ending non-zero once every file is processed.
+  - Expected: `failed` on a non-zero exit, an empty answer, no answer within `AGENT_TIMEOUT_SECONDS`, a command that cannot start or text that cannot be decoded; the reason one line `<path>: <why>` on stderr and no report for the file; then the next controlled file; the crawl ending non-zero once every file is processed.
   - Exception: none
 
 ## UI_TUI
