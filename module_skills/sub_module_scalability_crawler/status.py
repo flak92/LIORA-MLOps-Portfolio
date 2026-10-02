@@ -18,4 +18,6 @@ def row(key: str, state: str = "pending", vendor: str | None = None, finished_at
 
 
 def write_skills_status(rows: list[dict]) -> None:
-    sync.write_text(config.SKILLS_STATUS_JSON_PATH, json.dumps({"files": rows}, sort_keys=True, indent=1) + "\n")
+    """The snapshot, whole, its rows sorted by path."""
+    files = sorted(rows, key=lambda file_row: file_row["path"])
+    sync.write_text(config.SKILLS_STATUS_JSON_PATH, json.dumps({"files": files}, sort_keys=True, indent=1) + "\n")
