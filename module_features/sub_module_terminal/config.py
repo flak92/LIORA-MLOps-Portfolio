@@ -132,4 +132,4 @@ def write_json(path: Path, payload: dict) -> None:
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?features-")  # this module's targets of `make help`, the terminal-menu row
+MENU_TARGET_PATTERN = re.compile(r"^(tmux-)?features-")  # this module's targets of `make help` (TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE)

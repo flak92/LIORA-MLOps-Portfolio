@@ -6,7 +6,7 @@ of them. What it shows of the canon — the root of the tree and the sheet — i
 `module_skills/config.py`.
 
 It runs on the host, on `python3` and gum, with no virtual environment: it imports the standard library and its own
-package alone, and every action it starts, it starts through `make`, the Makefile being where the canon's stages
+package alone, and every action it starts, it starts through `make`, the Makefile being where the canon's actions
 are named."""
 
 import os
@@ -19,4 +19,4 @@ import sys
 OUTPUT_PLAIN = (bool(os.environ.get("NO_COLOR")) or os.environ.get("TERM") == "dumb"
                 or not sys.stdout.isatty())
 
-MENU_TARGET_PATTERN = re.compile(r"^skills-")  # the canon's targets of `make help`, the terminal-menu row
+MENU_TARGET_PATTERN = re.compile(r"^skills-")  # the canon's targets of `make help` (TUI-DESIGNER-ACTIONS-COME-FROM-MAKEFILE)

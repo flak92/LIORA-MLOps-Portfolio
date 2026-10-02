@@ -53,7 +53,7 @@ def _crawl_rows() -> list[dict]:
     controlled files stand in each state — counted to display, `absent` where the snapshot is not there."""
     with crawler_config.VENDORS_FOR_CRAWLING_TOML_PATH.open("rb") as stream:
         vendors = tomllib.load(stream)
-    rows = [{"parameter": "vendor", "value": ", ".join(name for name, vendor in vendors.items() if vendor.get("active")) or "none"}]
+    rows = [{"parameter": "vendor", "value": ", ".join(name for name, vendor in vendors.items() if vendor.get("active")) or "—"}]
     snapshot = crawler_config.SKILLS_STATUS_JSON_PATH
     files = json.loads(snapshot.read_text(encoding="utf-8"))["files"] if snapshot.is_file() else None
     for state in ("pending", "running", "done", "failed", "interrupted"):
