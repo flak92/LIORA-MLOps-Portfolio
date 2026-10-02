@@ -77,11 +77,11 @@ def _sheet_parts(package: zipfile.ZipFile) -> list[tuple[str, str]]:
 
 
 def _cell_text(cell, shared: list[str]) -> str:
-    kind = cell.get("t", "")
-    if kind == "s":
+    cell_type = cell.get("t", "")
+    if cell_type == "s":
         value = cell.find(f"{WORKBOOK_NAMESPACE}v")
         text = shared[int(value.text)] if value is not None and value.text else ""
-    elif kind == "inlineStr":
+    elif cell_type == "inlineStr":
         text = "".join(node.text or "" for node in cell.iter(f"{WORKBOOK_NAMESPACE}t"))
     else:
         value = cell.find(f"{WORKBOOK_NAMESPACE}v")

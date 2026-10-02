@@ -19,10 +19,10 @@ def to_markdown(skill: sheet.Skill, rule_type_ids: list[str], glossary: list[dic
     a list item per rule; the glossary adds one section per register section, an item per concept. An empty cell
     writes no sub-bullet; `none` is a value and stays."""
     lines = [config.GENERATED_MARKER, f"# {Path(skill.skill_path).stem}", "", skill.summary]
-    for kind in rule_type_ids:
-        rules = [rule for rule in skill.rules if rule.rule_type_id == kind]
+    for rule_type_id in rule_type_ids:
+        rules = [rule for rule in skill.rules if rule.rule_type_id == rule_type_id]
         if rules:
-            lines += ["", f"## {kind}", ""]
+            lines += ["", f"## {rule_type_id}", ""]
             for rule in rules:
                 lines.append(f"- `{rule.rule_id}`")
                 for label, value in (("Description", rule.description), ("Scope", rule.scope),
@@ -65,8 +65,8 @@ def delete_stale(documents: dict[Path, str]) -> None:
         for path in sorted(config.TREE_ROOT_DIR.glob(place)):
             if path not in documents and path.is_file():
                 with path.open(encoding="utf-8") as stream:
-                    generated = stream.readline().rstrip("\n") == config.GENERATED_MARKER
-                if generated:
+                    file_generated = stream.readline().rstrip("\n") == config.GENERATED_MARKER
+                if file_generated:
                     path.unlink()
 
 
