@@ -58,7 +58,7 @@ def _cancelled_exit_code() -> int:
 
 # twice by extraction
 def _failure_exit_code(what: str, where: str, why: str | None, next_action: str) -> int:
-    """A failure as the run's last block, on stderr: exit 1."""
+    """A failure as the invocation's last block, on stderr: exit 1."""
     tui.gum_style(tui.error_lines(what, where, why, next_action), "ERROR", sys.stderr)
     return 1
 
@@ -138,13 +138,14 @@ def _write_target(target: str, purpose: str, *variables: str) -> int:
 
 # twice by extraction
 def _tickers(given: str | None) -> list[str] | None:
-    """The assets this run is about: the ones `--tickers` named, or the ones a hand types when it named none.
+    """The assets this invocation is about: the ones `--tickers` named, or the ones a hand types when it named none.
 
     The Makefile's recipe passes the basket, or `ASSET` on the make line, as `--tickers`, so the answer is asked here
-    only when a run names none. This module defines no basket of its own and reads none from a store: the launcher
-    names the assets (`module_skills/skill_glossary.md` § Asset containers). None for Esc.
+    only when an invocation names none. This module defines no basket of its own and reads none from a store: the
+    launcher names the assets (`module_skills/skill_glossary.md` § Asset containers). None for Esc.
     """
-    answer = given if given is not None else tui.gum_input("asset", "the assets this run is about — BTC, or BTC,ETH")
+    answer = given if given is not None else tui.gum_input("asset",
+                                                           "the assets this invocation is about — BTC, or BTC,ETH")
     if answer is None:
         return None
     return [ticker.strip().upper() for ticker in answer.split(",") if ticker.strip()]
@@ -154,7 +155,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="python3 -B -m module_ml.sub_module_terminal.terminal",
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter, allow_abbrev=False)
-    parser.add_argument("--tickers", help="the assets this run is about, comma-separated, e.g. BTC")
+    parser.add_argument("--tickers", help="the assets this invocation is about, comma-separated, e.g. BTC")
     args = parser.parse_args()
 
     if not sys.stdin.isatty():

@@ -965,7 +965,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `HELP_LINE_PATTERN`, `_target_rows()` in each `terminal.py`; `MENU_TARGET_PATTERN` in each terminal's `config.py`; `_write_target()`
   - Ui label: action
   - Never: a second list of the targets in the program that opens the menu; a menu written out by hand; a target offered in a second terminal; the terminal's own entry among its options; `MODULE_TOKEN`, `STAGES`, `WRITES_BY_STAGE`, a target map; a grouping or a sorting of the targets; `run`, `exit`
-- the asset choice: the assets a run is about — the ones `--tickers` named, typed only when a direct run named none — then the one asset an action is for, one answered without asking
+- the asset choice: the assets an invocation is about — the ones `--tickers` named, typed only when a direct invocation named none — then the one asset an action is for, one answered without asking
   - Code: `_tickers()` and its `gum_input` headed `asset`; `gum_choose` headed `asset` over those assets
   - Ui label: asset
   - Never: a ticker typed where the launcher already named the set; a basket the terminal defines; a list of assets read from a store to fill it; a default basket in a module
@@ -1010,7 +1010,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Code: `STATE_SYMBOLS`, `STATE_COLOURS`, `state_label()` in `tui.py`
   - Ui label: DONE; CURRENT; PENDING; CANCELLED; WARN; ERROR
   - Never: a colour or a symbol without its word; a coloured row; `ok`, `success` as a state word
-- the failure block and the exits: a failure on stderr as what failed, where, why and what next, the run's last block — 0 an action done or cancelled, 1 a failure, 2 an unknown argument, 130 Ctrl-C
+- the failure block and the exits: a failure on stderr as what failed, where, why and what next, the invocation's last block — 0 an action done or cancelled, 1 a failure, 2 an unknown argument, 130 Ctrl-C
   - Code: `error_lines()`, `INTERRUPTED_EXIT_CODE` in `tui.py`; `_failure_exit_code()`, `_cancelled_exit_code()` in each `terminal.py`
   - Ui label: where; why; next; `nothing written`
   - Never: a traceback for an expected failure; a failure on stdout; exit 0 after a failure
@@ -1188,6 +1188,9 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `run_id`
   - Ui label: run
   - Never: an experiment; a turn; a stage; a make invocation as such; a streak of minutes; the methodology
+- an invocation — one start of a program from its command line to its exit: one make command, a terminal opened until it closes, one crawl; it ends with one exit code, and it is never a run by itself — a serpentine search's run spans many
+  - Code: `main()`, whose return value is the invocation's exit code
+  - Never: a run; a session — tmux's word for what it keeps alive; a launch
 - a stage — one pipeline stage: one make target of `RECORDED_STAGES`, wrapped by `record.py` from outside every container; one seam, `data-download`, runs the two download commands in one target
   - Code: the target name; `RECORDED_STAGES` in the `Makefile` — `DATA_STAGES`, `FEATURES_STAGES`, `ML_STAGES` in order; `make all-record`
   - Artifact key: `stage` — the file name `<stage>.json`
@@ -1415,7 +1418,7 @@ The one register of this project's names — a register, not an encyclopaedia: i
   - Artifact key: `state`
   - Ui label: pending; running; done; failed; interrupted
   - Never: `done` read as conformant — it says the report was written; a change of state left out of the snapshot
-- the crawl's progress: one line per controlled file after its result, then one closing line; the reason a file failed one line on stderr
+- the crawl's progress: one line per controlled file after its result, then one closing line; the reason a file failed one line on stderr, a non-zero exit named by its code and the vendor's last line
   - Code: `main()` in `crawl.py`
   - Ui label: `<current>/<total> | <controlled file> | <vendor> | <state>`; `<processed>/<total> | crawl | <vendor> | done`, `failed` or `interrupted`
   - Never: a spinner, a progress bar, a percentage; an answer summarised on the screen — the report holds it; a results table

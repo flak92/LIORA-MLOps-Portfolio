@@ -115,7 +115,9 @@ def main() -> int:
                                             timeout=config.AGENT_TIMEOUT_SECONDS)
             answer = vendor_process.stdout.strip()
             if vendor_process.returncode != 0:
-                why = f"exit {vendor_process.returncode}: {(vendor_process.stderr.strip().splitlines() or [''])[-1]}"[:200]
+                # the vendor's last line, wherever it wrote it — a CLI out of its usage limit says so on stdout
+                vendor_last_line = (vendor_process.stderr.strip() or answer or "no message").splitlines()[-1]
+                why = f"exit {vendor_process.returncode}: {vendor_last_line}"[:200]
             elif not answer:
                 why = "empty answer"
         except subprocess.TimeoutExpired:

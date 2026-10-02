@@ -67,7 +67,7 @@ After the menu, the asset choice — the assets of `--tickers` as rows, one answ
   under another profile puts one `WARN` line above the gate — the next turn starts a new search and overwrites the
   search's progress —, a fact about how the search resumes and not a refusal. The gate
   `draft <TICKER>_serpentine_search_profile.json?` offers `draft` — absent when nothing changes —, `back` and
-  `cancel`. A draft needs the contract: without it the run ends on the failure block, whose *next* is
+  `cancel`. A draft needs the contract: without it the invocation ends on the failure block, whose *next* is
   `make features-catalogue ASSET=<TICKER>`.
 - **recorded search** — writes nothing and ends on its last table: the recorded search's own `parameter | value` table — the asset,
   the profile, the coordinates searched, the search axes, the state evaluations and the rounds, the selection

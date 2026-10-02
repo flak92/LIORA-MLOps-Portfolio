@@ -51,7 +51,7 @@
 - `SCALABILITY-CRAWLER-FAILED-FILE-DOES-NOT-STOP-THE-CRAWL`
   - Description: A file the vendor fails is `failed`, and the crawl goes on to the next controlled file; the crawl fails only after the last one.
   - Scope: `module_skills/sub_module_scalability_crawler/crawl.py`
-  - Expected: `failed` on a non-zero exit, an empty answer, no answer within `AGENT_TIMEOUT_SECONDS`, a command that cannot start or text that cannot be decoded; the reason one line `<path>: <why>` on stderr and no report for the file; then the next controlled file; the crawl ending non-zero once every file is processed.
+  - Expected: `failed` on a non-zero exit, an empty answer, no answer within `AGENT_TIMEOUT_SECONDS`, a command that cannot start or text that cannot be decoded; the reason one line `<path>: <why>` on stderr — a non-zero exit's why its exit code and the last line the vendor wrote, on its stderr or else on its stdout, `no message` when it wrote none — and no report for the file; then the next controlled file; the crawl ending non-zero once every file is processed.
   - Exception: none
 
 ## UI_TUI

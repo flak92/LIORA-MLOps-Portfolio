@@ -53,7 +53,7 @@ def _cancelled_exit_code() -> int:
 
 # twice by extraction
 def _failure_exit_code(what: str, where: str, why: str | None, next_action: str) -> int:
-    """A failure as the run's last block, on stderr: exit 1."""
+    """A failure as the invocation's last block, on stderr: exit 1."""
     tui.gum_style(tui.error_lines(what, where, why, next_action), "ERROR", sys.stderr)
     return 1
 
